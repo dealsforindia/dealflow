@@ -104,9 +104,9 @@ function App() {
 
       {/* Toast Notifications */}
       {toasts.length > 0 && (
-        <div className="toast-stack">
+        <div className="toast-container">
           {toasts.map(t => (
-            <div key={t.id} className={`toast-item toast-${t.type}`}>
+            <div key={t.id} className={`toast-msg ${t.type}`}>
               {t.msg}
             </div>
           ))}

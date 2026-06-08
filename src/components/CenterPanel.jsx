@@ -4,18 +4,23 @@ import { cleanTitle, fmt, resolveChannelName, categoryEmoji, fmtPrice, calcDisco
 import EditDrawer from './EditDrawer';
 import {
   Inbox, ShoppingBag, Sparkles, ExternalLink, Check, PenLine, X,
-  ChevronDown, ChevronUp, Filter, XCircle, Tag, Zap
+  ChevronDown, ChevronUp, Filter, XCircle, Tag, Zap, Search, CheckSquare
 } from 'lucide-react';
 
 // ── Category emoji for image placeholder
 function DealImage({ deal, size = 52 }) {
   const [err, setErr] = useState(false);
   const emoji = categoryEmoji(deal.category || deal.dealType);
+  let imgUrl = deal.img_url || deal.image_url || deal.image || deal.photo || deal.photo_url || deal.img || deal.thumbnail;
 
-  if (deal.image_url && !err) {
+  if (imgUrl && imgUrl.startsWith('http://74.225.250.0/images/')) {
+    imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
+  }
+
+  if (imgUrl && !err) {
     return (
       <img
-        src={deal.image_url}
+        src={imgUrl}
         alt=""
         style={{ width: size, height: size, objectFit: 'cover', borderRadius: 8 }}
         onError={() => setErr(true)}
@@ -57,7 +62,7 @@ function RawPostExpander({ deal }) {
 }
 
 // ── Single deal card
-function DealCard({ deal, focused, onFocus, onApprove, onReject, onEdit, onFilterChannel }) {
+function DealCard({ deal, focused, onFocus, onApprove, onReject, onEdit, onFilterChannel, selected, onToggleSelect }) {
   const isProduct  = (deal.dealType || 'product') === 'product';
   const title      = cleanTitle(deal);
   const chName     = CHANNEL_NAME_MAP[deal.channel] || CHANNEL_NAME_MAP[deal.source_channel] || resolveChannelName(deal.channel || deal.source_channel);
@@ -74,6 +79,13 @@ function DealCard({ deal, focused, onFocus, onApprove, onReject, onEdit, onFilte
     >
       {/* Left accent bar */}
       <div className={`deal-accent ${isProduct ? 'product' : 'trick'}`} />
+
+      {/* Bulk Select Checkbox */}
+      {!isPosted && !isRejected && (
+        <div className="deal-select-box" onClick={e => { e.stopPropagation(); onToggleSelect && onToggleSelect(deal.fp_hash); }}>
+          {selected ? <CheckSquare size={16} className="selected" /> : <div className="checkbox-empty" />}
+        </div>
+      )}
 
       {/* Image */}
       <div className="deal-thumb" onClick={e => e.stopPropagation()}>
@@ -233,7 +245,34 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
   const [chFilter,   setChFilter]   = useState(null);
   const [srcFilter,  setSrcFilter]  = useState(null); // 'telegram' | 'desidime' | null
   const [showFilters,setShowFilters]= useState(false);
+  const [searchQuery,setSearchQuery]= useState('');
+  const [selectedDeals,setSelectedDeals] = useState(new Set());
   const boardRef = useRef(null);
+
+  const handleToggleSelect = (hash) => {
+    setSelectedDeals(prev => {
+      const next = new Set(prev);
+      if (next.has(hash)) next.delete(hash);
+      else next.add(hash);
+      return next;
+    });
+  };
+
+  const handleBulkApprove = async () => {
+    for (const hash of selectedDeals) {
+      await approveDeal(hash);
+    }
+    addToast(`Bulk approved ${selectedDeals.size} deals`);
+    setSelectedDeals(new Set());
+  };
+
+  const handleBulkReject = async () => {
+    for (const hash of selectedDeals) {
+      await rejectDeal(hash);
+    }
+    addToast(`Bulk rejected ${selectedDeals.size} deals`, "error");
+    setSelectedDeals(new Set());
+  };
 
   // Consume initial navigation from topbar/sidebar
   useEffect(() => {
@@ -250,6 +289,14 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
     let filtered = arr;
     if (chFilter) filtered = filtered.filter(d => (d.channel || d.source_channel) === chFilter);
     if (srcFilter) filtered = filtered.filter(d => (d.source || 'telegram') === srcFilter);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(d => 
+        (d.prod_name || '').toLowerCase().includes(q) || 
+        (d.aff_text || '').toLowerCase().includes(q) || 
+        (d.message || '').toLowerCase().includes(q)
+      );
+    }
     return filtered;
   };
 
@@ -257,7 +304,7 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
                      : subTab === 'Tricks & Loot' ? applyFilters(tricks)
                      : deals.filter(d => d.status === 'posted');
 
-  const activeFiltersCount = (chFilter ? 1 : 0) + (srcFilter ? 1 : 0);
+  const activeFiltersCount = (chFilter ? 1 : 0) + (srcFilter ? 1 : 0) + (searchQuery ? 1 : 0);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -330,6 +377,15 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
         {/* Filter controls */}
         <div className="header-actions">
           <div className="filter-group">
+            <div className="header-search">
+              <Search size={14} color="var(--text-ter)" />
+              <input 
+                type="text" 
+                placeholder="Search deals..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+              />
+            </div>
             {/* Channel filter dropdown */}
             <div className="filter-dropdown">
               <button
@@ -454,10 +510,27 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
                   onReject={rejectDeal}
                   onEdit={setEditingDeal}
                   onFilterChannel={handleFilterChannel}
+                  selected={selectedDeals.has(deal.fp_hash)}
+                  onToggleSelect={handleToggleSelect}
                 />
               ))
             )}
           </div>
+
+          {/* Bulk Action Bar */}
+          {selectedDeals.size > 0 && (
+            <div className="bulk-action-bar">
+              <span className="bulk-count">{selectedDeals.size} Selected</span>
+              <div className="bulk-actions">
+                <button className="pill-btn approve" onClick={handleBulkApprove}>
+                  <Check size={13} strokeWidth={2.5} /> Approve All
+                </button>
+                <button className="pill-btn reject" onClick={handleBulkReject}>
+                  <X size={12} strokeWidth={2.5} /> Reject All
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Keyboard shortcuts bar */}
           {visibleDeals.length > 0 && (

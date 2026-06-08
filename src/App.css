@@ -2060,3 +2060,70 @@ kbd {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── UI UPGRADES (Search, Bulk Actions, Toasts) ── */
+.header-search {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-dim);
+  border-radius: 20px;
+  padding: 6px 12px;
+  margin-right: 12px;
+  transition: border-color 0.15s;
+}
+.header-search:focus-within { border-color: var(--accent-blue); }
+.header-search input {
+  background: transparent; border: none; color: var(--text-primary);
+  font-family: var(--sans); font-size: 13px; outline: none;
+  width: 160px;
+}
+.header-search input::placeholder { color: var(--text-ter); }
+
+.deal-select-box {
+  padding: 8px; cursor: pointer; color: var(--text-ter);
+  display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s;
+}
+.deal-select-box:hover { color: var(--text-sec); }
+.deal-select-box .selected { color: var(--accent-blue); }
+.checkbox-empty {
+  width: 16px; height: 16px; border-radius: 4px;
+  border: 1.5px solid var(--border-card); transition: border-color 0.15s;
+}
+.deal-select-box:hover .checkbox-empty { border-color: var(--text-ter); }
+
+.bulk-action-bar {
+  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-panel); border: 1px solid var(--border-bright);
+  border-radius: 30px; padding: 10px 24px;
+  display: flex; align-items: center; gap: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  z-index: 100;
+  animation: slide-up 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.bulk-count { font-weight: 700; color: var(--text-primary); font-size: 13px; }
+.bulk-actions { display: flex; gap: 8px; }
+
+/* ── TOASTS ── */
+.toast-container {
+  position: fixed; top: 20px; right: 20px;
+  display: flex; flex-direction: column; gap: 10px; z-index: 9999;
+}
+.toast-msg {
+  background: linear-gradient(135deg, #1e1e2d 0%, #151521 100%);
+  border-left: 4px solid var(--accent-blue);
+  color: var(--text-primary); padding: 12px 20px;
+  border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+  font-weight: 500; font-size: 13px;
+  animation: slide-in-right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.toast-msg.success { border-left-color: var(--accent-green); }
+.toast-msg.error { border-left-color: var(--accent-red); }
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
