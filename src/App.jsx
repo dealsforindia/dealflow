@@ -9,6 +9,15 @@ import Topbar from './components/Topbar'
 import Login from './components/Login'
 import useStore from './store'
 import './App.css'
+import { LayoutDashboard, Activity, GitFork, Radio, Settings2 } from 'lucide-react'
+
+const MOB_NAV = [
+  { label: 'Review',    icon: LayoutDashboard },
+  { label: 'Dashboard', icon: Activity },
+  { label: 'Clones',    icon: GitFork },
+  { label: 'Channels',  icon: Radio },
+  { label: 'Settings',  icon: Settings2 },
+];
 
 
 function App() {
@@ -112,6 +121,20 @@ function App() {
           ))}
         </div>
       )}
+
+      {/* Mobile Bottom Nav */}
+      <nav className="mobile-bottom-nav">
+        {MOB_NAV.map(({ label, icon: Icon }) => (
+          <div
+            key={label}
+            className={`mob-nav-item${activeTab === label ? ' active' : ''}`}
+            onClick={() => { setActiveTab(label); setIsSidebarOpen(false); }}
+          >
+            <Icon size={20} strokeWidth={activeTab === label ? 2.5 : 1.8} />
+            {label}
+          </div>
+        ))}
+      </nav>
     </div>
       )}
     </>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import useStore, { CHANNEL_NAME_MAP } from '../store';
 import { cleanTitle, fmt, resolveChannelName, categoryEmoji, fmtPrice, calcDiscount } from '../utils/helpers';
+import { WS_URL, API_URL } from '../config';
 import EditDrawer from './EditDrawer';
 import {
   Inbox, ShoppingBag, Sparkles, ExternalLink, Check, PenLine, X,
@@ -15,6 +16,9 @@ function DealImage({ deal, size = 52 }) {
 
   if (imgUrl && imgUrl.startsWith('http://74.225.250.0/images/')) {
     imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
+  }
+  if (imgUrl && imgUrl.startsWith('/')) {
+    imgUrl = API_URL + imgUrl;
   }
 
   if (imgUrl && !err) {

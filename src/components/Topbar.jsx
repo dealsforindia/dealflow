@@ -55,11 +55,11 @@ export default function Topbar({ onToggleSidebar, setActiveTab }) {
         <strong className="green">{postedCount}</strong>
       </div>
 
-      <div className="topbar-stat">
+      <div className="topbar-stat hide-mobile">
         <span><Layers size={8} strokeWidth={2.5} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 2 }} />QUEUE</span>
         <strong>{stats?.redis?.queue_depth ?? stats?.queue_len ?? '—'}</strong>
       </div>
-      <div className="topbar-stat">
+      <div className="topbar-stat hide-mobile">
         <span><Database size={8} strokeWidth={2.5} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 2 }} />REDIS</span>
         <strong>{stats?.redis?.memory_used ?? '—'}</strong>
       </div>

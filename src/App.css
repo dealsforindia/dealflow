@@ -1227,137 +1227,6 @@ kbd {
 }
 
 /* ── RESPONSIVE MOBILE ── */
-@media (max-width: 768px) {
-  /* Layout */
-  .deck {
-    grid-template-columns: 1fr;
-    padding: 0;
-    gap: 0;
-  }
-  
-  /* Sidebar Drawer */
-  .left-panel {
-    position: fixed;
-    top: 0; bottom: 0; left: 0;
-    width: 260px;
-    z-index: 1000;
-    transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 0;
-    border: none;
-    border-right: 1px solid var(--border-dim);
-  }
-  .left-panel.open {
-    transform: translateX(0);
-  }
-  .sidebar-overlay {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(4px);
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-  .sidebar-overlay.open {
-    display: block;
-    opacity: 1;
-  }
-  .mobile-menu-btn {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--text-sec);
-  }
-  
-  /* Center Panel / Review Board */
-  .center-panel {
-    border-radius: 0;
-    border: none;
-    border-top: 1px solid var(--border-dim);
-  }
-  .deal-card {
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    gap: 12px;
-  }
-  .deal-image-wrapper {
-    width: 100%;
-    height: 180px;
-    margin-bottom: 8px;
-  }
-  .deal-side {
-    flex-direction: row;
-    border-left: none;
-    border-top: 1px solid var(--border-dim);
-    padding-top: 12px;
-    justify-content: space-between;
-    width: 100%;
-    align-items: stretch;
-  }
-  .deal-side .pill-btn {
-    flex: 1;
-    justify-content: center;
-  }
-  .trick-type-col {
-    display: none;
-  }
-  .deal-channel-row {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .deal-name {
-    font-size: 14px;
-  }
-
-  /* Command Center Dashboard */
-  .dashboard-kpi-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .dashboard-zone-grid {
-    grid-template-columns: 1fr;
-    height: auto;
-    flex: none;
-  }
-  
-  /* Clones Panel */
-  .clones-layout-grid {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    flex: none;
-  }
-  .clones-graph-area {
-    height: 380px;
-    min-height: 380px;
-    overflow: hidden;
-  }
-  .clones-stats-panel {
-    border-left: none;
-    border-top: 1px solid var(--border-dim);
-    max-height: none;
-    overflow-y: visible;
-  }
-
-  /* Topbar */
-  .topbar-time { display: none; }
-  .topbar-spacer { display: none; }
-  .topbar { justify-content: flex-start; gap: 10px; padding: 0 12px; overflow: hidden; }
-  .topbar-logo { font-size: 14px; flex-shrink: 0; }
-  .topbar-stat { display: flex; flex-shrink: 0; }
-  .topbar-stat strong { font-size: 13px; }
-  .topbar-divider { display: none; }
-  
-  /* Drawer */
-  .edit-drawer {
-    width: 100% !important;
-    right: -100% !important;
-  }
-  .edit-drawer.open {
-    right: 0 !important;
   }
 }
 
@@ -2018,48 +1887,6 @@ kbd {
 .graph-node:hover { transform: scale(1.05); z-index: 10; }
 
 /* ── MOBILE RESPONSIVENESS ── */
-@media (max-width: 768px) {
-  .deck {
-    grid-template-columns: 1fr;
-    padding: 0 8px 8px;
-  }
-  .sidebar {
-    display: none;
-  }
-  .deal-card {
-    flex-direction: column;
-    padding: 12px;
-    gap: 12px;
-  }
-  .deal-thumb-wrapper {
-    width: 100%;
-    height: 140px;
-    border-radius: var(--radius-md);
-  }
-  .deal-thumb-wrapper.large {
-    height: 180px;
-  }
-  .deal-side {
-    width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px solid var(--border-dim);
-    padding-top: 10px;
-  }
-  .edit-drawer {
-    width: 100vw;
-  }
-  .analytics-stat-grid {
-    grid-template-columns: 1fr;
-  }
-  .analytics-row {
-    flex-direction: column;
-  }
-  .channel-row, .channel-table-head {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* ── UI UPGRADES (Search, Bulk Actions, Toasts) ── */
 .header-search {
@@ -2126,4 +1953,519 @@ kbd {
 @keyframes slide-in-right {
   from { opacity: 0; transform: translateX(40px); }
   to { opacity: 1; transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE — complete overhaul  (max-width: 768px)
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Bottom Nav Bar ── */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  /* ── BODY / ROOT ── */
+  body {
+    overflow: hidden;
+  }
+
+  /* ── APP SHELL ── */
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ── BOTTOM NAV ── */
+  .mobile-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(56px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border-dim);
+    z-index: 500;
+    backdrop-filter: blur(12px);
+  }
+  .mob-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    color: var(--text-ter);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: var(--mono);
+    min-width: 52px;
+    transition: color 0.15s;
+  }
+  .mob-nav-item.active {
+    color: var(--accent-blue-lt);
+  }
+  .mob-nav-item svg {
+    transition: color 0.15s;
+  }
+
+  /* ── DECK / LAYOUT ── */
+  .deck {
+    grid-template-columns: 1fr;
+    padding: 0 0 calc(56px + env(safe-area-inset-bottom));
+    gap: 0;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR — hidden on mobile (replaced by bottom nav) ── */
+  .left-panel {
+    position: fixed;
+    top: 0; bottom: 0; left: 0;
+    width: 280px;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0;
+    border: none;
+    border-right: 1px solid var(--border-card);
+  }
+  .left-panel.open {
+    transform: translateX(0);
+  }
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.28s;
+  }
+  .sidebar-overlay.open {
+    display: block;
+    opacity: 1;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    height: 44px;
+    padding: 0 12px;
+    gap: 8px;
+    overflow: visible;
+    justify-content: flex-start;
+  }
+  .topbar-logo {
+    font-size: 15px;
+    letter-spacing: -0.5px;
+  }
+  .topbar-divider {
+    display: none;
+  }
+  .topbar-spacer {
+    display: none;
+  }
+  .topbar-time {
+    display: none;
+  }
+  /* Hide QUEUE and REDIS on mobile — too noisy */
+  .topbar-stat.hide-mobile {
+    display: none !important;
+  }
+  .topbar-stat {
+    flex-shrink: 0;
+  }
+  .topbar-stat strong {
+    font-size: 14px;
+    letter-spacing: -0.5px;
+  }
+  .topbar-stat span {
+    font-size: 7px;
+  }
+  .mobile-menu-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-sec);
+    flex-shrink: 0;
+  }
+
+  /* ── CENTER PANEL ── */
+  .center-panel {
+    border-radius: 0;
+    border: none;
+    padding-top: 16px;
+    padding-left: 14px;
+    padding-right: 14px;
+    height: 100%;
+    overflow: hidden;
+  }
+  .center-header {
+    padding-bottom: 12px;
+  }
+  .center-title {
+    font-size: 20px;
+    letter-spacing: -0.4px;
+  }
+  .center-subtitle {
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  /* Header actions — search + filter in a row */
+  .header-actions {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .header-search {
+    flex: 1;
+    margin-right: 0;
+  }
+  .header-search input {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  /* ── SUBTABS — horizontal scroll, no wrap ── */
+  .subtabs {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .subtabs::-webkit-scrollbar { display: none; }
+  .subtab {
+    padding: 7px 14px;
+    font-size: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* ── DEAL BOARD ── */
+  .board {
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
+  /* ── DEAL CARD — mobile layout ── */
+  .deal-card {
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 12px;
+    gap: 10px;
+    border-radius: var(--radius-lg);
+  }
+
+  /* Thumbnail stays left, small */
+  .deal-thumb {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 8px;
+  }
+
+  /* Body takes full width */
+  .deal-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Title slightly smaller */
+  .deal-title {
+    font-size: 13px;
+    -webkit-line-clamp: 2;
+  }
+
+  /* Price slightly smaller */
+  .deal-price {
+    font-size: 15px;
+  }
+  .deal-mrp {
+    font-size: 11px;
+  }
+
+  /* Actions — full width row BELOW the card body */
+  .deal-actions {
+    flex-direction: row !important;
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100%;
+    gap: 6px;
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  /* Make the 3 buttons equal-width full row */
+  .btn-approve, .btn-edit, .btn-reject {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 4px;
+    font-size: 11px;
+    border-radius: 8px;
+    min-height: 36px;
+  }
+
+  /* Posted / Rejected badge */
+  .deal-posted-badge, .deal-rejected-badge {
+    width: 100%;
+    text-align: center;
+    padding: 8px;
+    border-radius: 8px;
+  }
+
+  /* Reflow: card content + actions stacked vertically */
+  .deal-card > .deal-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Fix: deal card inner layout — thumb left, body right, actions below all */
+  .deal-card {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    grid-template-rows: auto auto;
+    gap: 8px 10px;
+  }
+  .deal-card > .deal-thumb {
+    grid-column: 1;
+    grid-row: 1;
+    width: 48px;
+    height: 48px;
+  }
+  .deal-card > .deal-body {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .deal-card > .deal-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    border-top: 1px solid var(--border-dim);
+    padding-top: 8px;
+    margin-top: 0;
+  }
+
+  /* Trick card: hide the left type column */
+  .trick-type-col {
+    display: none;
+  }
+
+  /* ── EDIT DRAWER — full screen bottom sheet ── */
+  .drawer-overlay {
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .edit-drawer {
+    width: 100vw !important;
+    max-width: 100vw;
+    height: 92dvh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-left: none;
+    border-top: 1px solid var(--border-card);
+    animation: slideUp 0.25s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* ── DASHBOARD / COMMAND CENTER ── */
+  .dashboard-kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .analytics-stat-card {
+    padding: 14px;
+  }
+  .analytics-stat-val {
+    font-size: 24px !important;
+  }
+  .dashboard-zone-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    min-height: auto;
+    flex: none;
+  }
+  .analytics-card {
+    min-height: 200px;
+  }
+
+  /* ── CHANNELS PANEL ── */
+  /* Source cards — stack description below icon+name */
+  .source-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+  .source-card-left {
+    width: 100%;
+    gap: 12px;
+  }
+  .source-card-right {
+    width: 100%;
+    justify-content: space-between;
+    padding-left: 52px;
+  }
+
+  /* Channel table → card list */
+  .channel-table-head {
+    display: none;
+  }
+  .channel-row {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 4px 12px;
+    padding: 12px;
+    border-radius: var(--radius-md);
+  }
+  .ch-name {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .ch-toggle-col {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+  .ch-del-btn {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    width: auto;
+    padding: 4px 10px;
+  }
+
+  /* Add channel input */
+  .channel-add-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ch-input {
+    width: 100%;
+  }
+  .ch-add-btn {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+  }
+
+  /* ── SETTINGS PANEL ── */
+  .setting-block {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .setting-control {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .setting-slider {
+    width: 100%;
+  }
+  .setting-input {
+    width: 100%;
+  }
+  .api-key-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .save-settings-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* ── CLONES PANEL ── */
+  .clones-layout-grid {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    flex: none;
+  }
+  .clones-graph-area {
+    height: 320px;
+    min-height: 320px;
+    overflow: hidden;
+  }
+  .clones-stats-panel {
+    border-left: none;
+    border-top: 1px solid var(--border-dim);
+    overflow-y: visible;
+  }
+
+  /* ── TOASTS — bottom of screen on mobile ── */
+  .toast-container {
+    top: auto;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    right: 12px;
+    left: 12px;
+  }
+  .toast-msg {
+    font-size: 12px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+
+  /* ── FILTER DROPDOWN ── */
+  .filter-dropdown-menu {
+    right: auto;
+    left: 0;
+    min-width: 180px;
+    max-height: 300px;
+  }
+
+  /* ── KEYBOARD SHORTCUT BAR — hide on mobile ── */
+  .kb-bar {
+    display: none;
+  }
+
+  /* ── BULK ACTION BAR ── */
+  .bulk-action-bar {
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    left: 12px;
+    right: 12px;
+    transform: none;
+    padding: 10px 16px;
+    gap: 12px;
+    border-radius: 14px;
+  }
+
+  /* ── POSTED FEED ROWS ── */
+  .posted-row {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .posted-thumb {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* ── PIPELINE / ANALYTICS ── */
+  .analytics-stat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .analytics-row {
+    flex-direction: column;
+  }
+  .analytics-card {
+    padding: 14px 16px;
+  }
 }
