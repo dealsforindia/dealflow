@@ -2166,23 +2166,32 @@ kbd {
 
   /* ── DEAL CARD — mobile layout ── */
   .deal-card {
-    flex-direction: row;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "thumb body"
+      "actions actions";
     padding: 12px;
-    gap: 10px;
+    gap: 12px 10px;
     border-radius: var(--radius-lg);
   }
 
   /* Thumbnail stays left, small */
   .deal-thumb {
+    grid-area: thumb;
     width: 48px;
     height: 48px;
     flex-shrink: 0;
     border-radius: 8px;
   }
+  .deal-thumb img, .deal-thumb div {
+    width: 100% !important;
+    height: 100% !important;
+  }
 
   /* Body takes full width */
   .deal-body {
+    grid-area: body;
     flex: 1;
     min-width: 0;
   }
@@ -2203,6 +2212,7 @@ kbd {
 
   /* Actions — full width row BELOW the card body */
   .deal-actions {
+    grid-area: actions;
     flex-direction: row !important;
     align-items: stretch;
     justify-content: stretch;
