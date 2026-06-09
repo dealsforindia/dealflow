@@ -146,6 +146,8 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
                   alt=""
                   className="details-main-img"
                   onError={() => setImageFailed(true)}
+                  onClick={() => window.open(imageUrl, '_blank', 'noopener,noreferrer')}
+                  style={{ cursor: 'pointer' }}
                 />
               ) : (
                 <div className="details-image-fallback">
@@ -153,7 +155,12 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
                   <span>No product image</span>
                 </div>
               )}
-              <button type="button" className="image-expand-btn" title="Open image">
+              <button 
+                type="button" 
+                className="image-expand-btn" 
+                title="Open image"
+                onClick={() => imageUrl && window.open(imageUrl, '_blank', 'noopener,noreferrer')}
+              >
                 <Maximize2 size={14} />
               </button>
             </div>
