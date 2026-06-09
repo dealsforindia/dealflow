@@ -283,7 +283,12 @@ export const useDealStore = create((set, get) => ({
     setTimeout(() => get().setPipeActive("post_telegram", false), 4000);
 
     try {
-      const r = await fetch(`${API}/api/v1/deals/${fp_hash}/approve`, { method: "PUT" });
+      const dealToApprove = get().deals.find(d => d.fp_hash === fp_hash);
+      const r = await fetch(`${API}/api/v1/deals/${fp_hash}/approve`, { 
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: dealToApprove ? JSON.stringify(dealToApprove) : undefined
+      });
       const data = await r.json();
       if (data.tg_posted === false) {
         get().addToast("⚠️ Approved but Telegram post failed", "error");
