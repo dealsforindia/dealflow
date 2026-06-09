@@ -555,9 +555,9 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
         <EditDrawer
           deal={editingDeal}
           onClose={() => setEditingDeal(null)}
-          onApprove={(changes) => {
-            editDeal(editingDeal.fp_hash, changes);
-            approveDeal(editingDeal.fp_hash);
+          onApprove={async (changes) => {
+            await editDeal(editingDeal.fp_hash, changes);
+            await approveDeal(editingDeal.fp_hash);
             setEditingDeal(null);
           }}
         />

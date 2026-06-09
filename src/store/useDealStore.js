@@ -131,8 +131,20 @@ export const useDealStore = create((set, get) => ({
     }));
   },
 
-  editDeal: (fp_hash, changes) => {
+  editDeal: async (fp_hash, changes) => {
+    // Optimistic local update
     set(s => ({ deals: s.deals.map(d => d.fp_hash === fp_hash ? { ...d, ...changes } : d) }));
+    
+    // Save to backend
+    try {
+      await fetch(`${API}/api/v1/deals/${fp_hash}/edit`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(changes)
+      });
+    } catch (e) {
+      console.error("Failed to save edit to backend:", e);
+    }
   },
 
   // ── API Fetches
