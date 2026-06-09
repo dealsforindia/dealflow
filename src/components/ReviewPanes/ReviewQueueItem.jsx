@@ -1,48 +1,101 @@
-import React from 'react';
+import { useMemo, useState } from 'react';
+import { Check, ImageOff } from 'lucide-react';
+import { API_URL } from '../../config';
+import { calcDiscount, cleanTitle, fmt, fmtPrice, resolveChannelName } from '../../utils/helpers';
 
 const CATEGORY_COLORS = {
   Fashion: 'var(--accent-purple)',
   Electronics: 'var(--accent-blue)',
   Footwear: 'var(--accent-amber)',
   General: 'var(--accent-green)',
-  Home: 'var(--accent-cyan)'
+  Home: 'var(--accent-cyan)',
+  Grocery: 'var(--accent-green)',
+  Beauty: 'var(--accent-pink, var(--accent-purple))',
 };
 
-function ReviewQueueItem({ deal, isSelected, onClick }) {
-  const title = deal.title || deal.prod_name || 'Unknown Item';
-  const price = deal.price ? `₹${deal.price}` : 'N/A';
-  const category = deal.category || 'General';
-  const channelName = deal.channel || 'System';
-  
-  // Calculate relative age
-  const ageStr = deal.ts ? getRelativeTime(deal.ts * 1000) : '1h ago';
-  const score = deal.score ? Math.round(deal.score * 10) : 95; // Assuming score out of 10, scale to 100
-
-  return (
-    <div className={`queue-item ${isSelected ? 'selected' : ''}`} onClick={onClick}>
-      <div className="queue-item-score">{score}</div>
-      <img src={deal.img_path || 'https://via.placeholder.com/48'} alt="Thumb" className="queue-item-thumb" />
-      <div className="queue-item-details">
-        <div className="queue-item-meta" style={{ marginBottom: '4px' }}>
-          <span style={{ color: CATEGORY_COLORS[category] || CATEGORY_COLORS.General, fontWeight: 600 }}>{category}</span>
-          <span className="queue-item-age">{ageStr}</span>
-        </div>
-        <div className="queue-item-title">{title}</div>
-        <div className="queue-item-meta">
-          <span className="queue-item-price">{price}</span>
-          <span className="queue-item-channel">{channelName}</span>
-        </div>
-      </div>
-    </div>
-  );
+function normalizeImageUrl(deal) {
+  let imgUrl = deal?.img_path || deal?.img_url || deal?.image_url || deal?.image || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail;
+  if (!imgUrl) return null;
+  if (imgUrl.startsWith('http://74.225.250.0/images/')) {
+    imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
+  }
+  if (imgUrl.startsWith('/')) return API_URL + imgUrl;
+  return imgUrl;
 }
 
-function getRelativeTime(ts) {
-  const diff = Date.now() - ts;
-  const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return '<1h ago';
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours/24)}d ago`;
+function normalizeScore(score) {
+  const n = Number(score);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n <= 10 ? n * 10 : n);
+}
+
+function ReviewQueueItem({ deal, isSelected, onClick }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const imageUrl = useMemo(() => normalizeImageUrl(deal), [deal]);
+
+  const title = cleanTitle(deal);
+  const price = fmtPrice(deal.price || deal.prices?.sale);
+  const category = deal.category || deal.dealType || 'General';
+  const channelName = deal.channelName || resolveChannelName(deal.channel || deal.source_channel);
+  const ageStr = fmt(deal.ts);
+  const score = normalizeScore(deal.score);
+  const categoryColor = CATEGORY_COLORS[category] || CATEGORY_COLORS.General;
+
+  return (
+    <button
+      type="button"
+      className={`queue-item premium-queue-item${isSelected ? ' selected' : ''}`}
+      onClick={onClick}
+      aria-pressed={isSelected}
+    >
+      <div className="checkbox-rail">
+        <div className={`custom-checkbox ${isSelected ? 'checked' : ''}`}>
+          {isSelected && <Check size={10} strokeWidth={3} />}
+        </div>
+      </div>
+
+      <div className="queue-item-content">
+        <div className="queue-item-header">
+          <span className="queue-deal-id">#{deal.fp_hash?.substring(0, 7) || 'Unknown'} <span className="queue-item-age">{ageStr}</span></span>
+          <span className="queue-category-pill" style={{ '--queue-category-color': categoryColor }}>
+            {category}
+          </span>
+        </div>
+
+        <div className="queue-item-body">
+          <div className="queue-thumb-shell">
+            {imageUrl && !imageFailed ? (
+              <img
+                src={imageUrl}
+                alt=""
+                className="queue-item-thumb"
+                loading="lazy"
+                onError={() => setImageFailed(true)}
+              />
+            ) : (
+              <div className="queue-thumb-fallback">
+                <ImageOff size={18} />
+              </div>
+            )}
+          </div>
+
+          <div className="queue-item-details">
+            <div className="queue-item-title">{title}</div>
+            
+            <div className="queue-item-bottom">
+              <div className="queue-price-stack">
+                <span className="queue-item-price">{price || 'No price'}</span>
+                <span className="queue-channel-badge" title={channelName}>
+                  {channelName}
+                </span>
+              </div>
+              {score && score >= 90 && <span className="queue-fire-icon">🔥</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
 }
 
 export default ReviewQueueItem;

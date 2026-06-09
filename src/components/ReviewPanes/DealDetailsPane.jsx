@@ -1,135 +1,260 @@
-import React from 'react';
-import { ExternalLink, Copy, MoreHorizontal } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  Check,
+  Clipboard,
+  Copy,
+  ExternalLink,
+  ImageOff,
+  Link2,
+  MessageSquareText,
+  PenLine,
+  ShieldAlert,
+  Tag,
+  Maximize2,
+  MoreHorizontal,
+  X,
+} from 'lucide-react';
+import { API_URL } from '../../config';
+import { calcDiscount, cleanTitle, fmt, fmtPrice, resolveChannelName } from '../../utils/helpers';
 
-function DealDetailsPane({ deal, onApprove, onReject }) {
-  if (!deal) return <div className="deal-details-pane" style={{ justifyContent: 'center', alignItems: 'center', color: 'var(--text-ter)' }}>No deal selected</div>;
+function normalizeImageUrl(deal) {
+  let imgUrl = deal?.img_path || deal?.img_url || deal?.image_url || deal?.image || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail;
+  if (!imgUrl) return null;
+  if (imgUrl.startsWith('http://74.225.250.0/images/')) {
+    imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
+  }
+  if (imgUrl.startsWith('/')) return API_URL + imgUrl;
+  return imgUrl;
+}
 
-  const title = deal.title || deal.prod_name || 'Unknown Title';
-  const price = deal.price ? `₹${deal.price}` : 'N/A';
-  const mrp = deal.original_price ? `₹${deal.original_price}` : '';
-  const discount = (deal.price && deal.original_price) ? Math.round((1 - (deal.price / deal.original_price)) * 100) : null;
-  const channelName = deal.channel || 'System';
-  const category = deal.category || 'General';
-  const brand = deal.brand || 'Brand';
-  
-  // Placeholders as requested
-  const profit = "₹196";
-  const epc = "₹24.3";
-  const convRate = "3.8%";
-  const revenue = "₹4,823";
-  const stock = "High";
-  const cookieDuration = "7 Days";
-  
-  const handleCopyLink = () => {
-    if (deal.affiliate_link) {
-      navigator.clipboard.writeText(deal.affiliate_link);
+function normalizeScore(score) {
+  const n = Number(score);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n <= 10 ? n * 10 : n);
+}
+
+function InfoItem({ label, value, href }) {
+  if (!value) return null;
+  return (
+    <div className="info-row">
+      <span className="info-row-label">{label}</span>
+      {href ? (
+        <a href={href} target="_blank" rel="noreferrer" className="info-row-value info-row-link">
+          <span>{value}</span>
+          <ExternalLink size={12} />
+        </a>
+      ) : (
+        <span className="info-row-value">{value}</span>
+      )}
+    </div>
+  );
+}
+
+function MetricCard({ label, value, tone, sub }) {
+  return (
+    <div className={`metric-box${tone ? ` ${tone}` : ''}`}>
+      <span className="metric-label">{label}</span>
+      <span className="metric-value">{value || 'Not available'}</span>
+      {sub ? <span className="metric-sub">{sub}</span> : null}
+    </div>
+  );
+}
+
+function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const imageUrl = useMemo(() => normalizeImageUrl(deal), [deal]);
+
+  if (!deal) {
+    return (
+      <div className="deal-details-pane details-empty">
+        <div className="empty-icon"><Clipboard size={36} strokeWidth={1.4} /></div>
+        <div className="empty-title">Select a deal</div>
+        <div className="empty-sub">Queue details will appear here.</div>
+      </div>
+    );
+  }
+
+  const title = cleanTitle(deal);
+  const salePrice = deal.price || deal.prices?.sale;
+  const mrp = deal.original_price || deal.prices?.mrp;
+  const discount = deal.discount_pct || deal.prices?.discount_pct || calcDiscount(salePrice, mrp);
+  const channelName = deal.channelName || resolveChannelName(deal.channel || deal.source_channel);
+  const source = deal.source || 'telegram';
+  const category = deal.category || deal.dealType || 'General';
+  const rawText = deal.aff_text || deal.message || '';
+  const affiliateLink = deal.affiliate_link || '';
+  const displayId = deal.fp_hash ? deal.fp_hash.substring(0, 8) : 'Unknown';
+
+  const handleCopyLink = async () => {
+    if (!affiliateLink) return;
+    try {
+      await navigator.clipboard.writeText(affiliateLink);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
     }
   };
 
+  const handleOpenLink = () => {
+    if (affiliateLink) window.open(affiliateLink, '_blank', 'noopener,noreferrer');
+  };
+
   return (
-    <div className="deal-details-pane">
-      {/* ── STICKY HEADER ── */}
+    <div className="deal-details-pane premium-details-pane">
       <div className="details-sticky-header">
-        <div className="details-header-meta">
-          <span style={{ color: 'var(--accent-purple)', fontWeight: 600 }}>{brand}</span>
-          <span>•</span>
-          <span style={{ color: 'var(--text-ter)' }}>{category}</span>
-        </div>
-        <div className="details-header-top">
-          <div className="details-title">{title}</div>
-        </div>
-        <div className="details-header-top" style={{ marginTop: '4px' }}>
-          <div className="details-price-row">
-            <span className="details-price">{price}</span>
-            {mrp && <span className="details-mrp">{mrp}</span>}
-            {discount > 0 && <span className="details-discount">{discount}% OFF</span>}
+        <div className="details-tabbar">
+          <div className="details-tabs">
+            <button type="button" className="details-tab active">Deal Details</button>
+            <button type="button" className="details-tab">History</button>
           </div>
-          <div className="details-header-meta" style={{ gap: '16px', alignItems: 'center' }}>
-            <span>Posted 1h ago</span>
-            <span>Channel <strong style={{color: 'var(--accent-blue)'}}>{channelName}</strong></span>
-            <span style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              Deal ID: #{deal.fp_hash ? deal.fp_hash.substring(0,6) : 'Unknown'}
-              <Copy size={14} style={{ cursor: 'pointer' }} onClick={handleCopyLink} />
-              <MoreHorizontal size={14} style={{ cursor: 'pointer' }} />
-            </span>
+          <div className="details-toolbar">
+            <span className="details-id">Deal ID: #{displayId}</span>
+            <button type="button" className="icon-action" onClick={handleCopyLink} disabled={!affiliateLink} title="Copy affiliate link">
+              {copied ? <Check size={16} /> : <Copy size={16} />}
+            </button>
+            <button type="button" className="icon-action" onClick={handleOpenLink} disabled={!affiliateLink} title="Open affiliate link">
+              <ExternalLink size={16} />
+            </button>
+            <button type="button" className="icon-action" onClick={() => onEdit?.(deal)} title="Edit deal">
+              <PenLine size={16} />
+            </button>
+            <button type="button" className="icon-action" title="More actions">
+              <MoreHorizontal size={16} />
+            </button>
           </div>
         </div>
       </div>
 
       <div className="details-scroll-content">
-        {/* ── IMAGE AREA ── */}
-        <div className="details-image-area">
-          <div className="details-thumbs">
-            <img src={deal.img_path || 'https://via.placeholder.com/60'} alt="Thumb 1" className="details-thumb-img active" />
-            <img src="https://via.placeholder.com/60?text=2" alt="Thumb 2" className="details-thumb-img" />
-            <img src="https://via.placeholder.com/60?text=3" alt="Thumb 3" className="details-thumb-img" />
-            <img src="https://via.placeholder.com/60?text=4" alt="Thumb 4" className="details-thumb-img" />
+        <section className="details-hero-grid">
+          <div className="details-image-card">
+            <div className="details-thumb-strip">
+              <div className="details-thumb-img active">
+                {imageUrl && !imageFailed ? <img src={imageUrl} alt="" /> : <ImageOff size={14} />}
+              </div>
+              {imageUrl && !imageFailed ? (
+                <div className="details-thumb-img ghost"><img src={imageUrl} alt="" /></div>
+              ) : null}
+            </div>
+            <div className="details-main-image-shell">
+              {imageUrl && !imageFailed ? (
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="details-main-img"
+                  onError={() => setImageFailed(true)}
+                />
+              ) : (
+                <div className="details-image-fallback">
+                  <ImageOff size={36} />
+                  <span>No product image</span>
+                </div>
+              )}
+              <button type="button" className="image-expand-btn" title="Open image">
+                <Maximize2 size={14} />
+              </button>
+            </div>
           </div>
-          <img src={deal.img_path || 'https://via.placeholder.com/600'} alt="Main Product" className="details-main-img" />
-        </div>
 
-        {/* ── METRICS GRID ── */}
-        <div className="metrics-grid">
-          <div className="metric-box"><span className="metric-label">Profit</span><span className="metric-value">{profit} <span style={{fontSize: '11px', color: 'var(--text-sec)', fontWeight: 'normal'}}>(78%)</span></span></div>
-          <div className="metric-box"><span className="metric-label">EPC</span><span className="metric-value">{epc}</span></div>
-          <div className="metric-box"><span className="metric-label">Est. Revenue</span><span className="metric-value">{revenue}</span></div>
-          <div className="metric-box"><span className="metric-label">Conv. Rate</span><span className="metric-value" style={{color: 'var(--accent-green)'}}>{convRate}</span></div>
-          
-          <div className="metric-box"><span className="metric-label">Category</span><span className="metric-value" style={{fontWeight: 'normal'}}>{category}</span></div>
-          <div className="metric-box"><span className="metric-label">Stock</span><span className="metric-value" style={{color: 'var(--accent-green)', fontWeight: 'normal'}}>{stock}</span></div>
-          <div className="metric-box"><span className="metric-label">Channel</span><span className="metric-value" style={{fontWeight: 'normal', color: 'var(--accent-blue)'}}>{channelName}</span></div>
-          <div className="metric-box"><span className="metric-label">Source</span><span className="metric-value" style={{fontWeight: 'normal'}}>Myntra</span></div>
-        </div>
-
-        {/* ── AI SUMMARY ── */}
-        <div className="ai-summary-box">
-          High margin fashion deal. Oversized trendy t-shirt from {brand}. Good for summer collection promotions.
-        </div>
-
-        {/* ── DEAL INFORMATION TABLE ── */}
-        <div style={{ marginBottom: '8px' }}>
-          <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>Deal Information</div>
-          <div className="info-table">
-            <div className="info-row"><span className="info-row-label">Affiliate Link</span><a href={deal.affiliate_link || '#'} target="_blank" rel="noreferrer" className="info-row-value info-row-link">{deal.affiliate_link || 'None'} <ExternalLink size={12}/></a></div>
-            <div className="info-row"><span className="info-row-label">Source</span><span className="info-row-value">Myntra</span></div>
-            <div className="info-row"><span className="info-row-label">Tracking ID</span><span className="info-row-value">dealflow-25</span></div>
-            <div className="info-row"><span className="info-row-label">Channel</span><span className="info-row-value">{channelName}</span></div>
-            <div className="info-row"><span className="info-row-label">Payout</span><span className="info-row-value">{profit}</span></div>
-            <div className="info-row"><span className="info-row-label">Posted At</span><span className="info-row-value">Today, 10:05 AM</span></div>
-            <div className="info-row"><span className="info-row-label">Cookie Duration</span><span className="info-row-value">{cookieDuration}</span></div>
-            <div className="info-row"><span className="info-row-label">Message ID</span><span className="info-row-value">123456</span></div>
-            <div className="info-row"><span className="info-row-label">Return Policy</span><span className="info-row-value">15 Days Returnable</span></div>
-            <div className="info-row"><span className="info-row-label">Deal Type</span><span className="info-row-value" style={{color: 'var(--accent-cyan)'}}>Product Deal</span></div>
-            <div className="info-row"><span className="info-row-label">Shipping</span><span className="info-row-value">Free Delivery</span></div>
-            <div className="info-row"><span className="info-row-label">Priority</span><span className="info-row-value" style={{color: 'var(--accent-green)'}}>• High</span></div>
+          <div className="details-copy-card">
+            <div className="details-header-meta">
+              {deal.brand ? <span>{deal.brand}</span> : null}
+              <button type="button" className="inline-link" onClick={handleOpenLink} disabled={!affiliateLink}>
+                <ExternalLink size={13} />
+              </button>
+              <span className="details-pill strong"><Tag size={12} />{category}</span>
+            </div>
+            <h2 className="details-title">{title}</h2>
+            <div className="details-subline">
+              <span>Posted {fmt(deal.ts) || 'recently'}</span>
+              <span>Channel <strong>{channelName}</strong></span>
+            </div>
+            <div className="details-price-row">
+              <span className="details-price">{fmtPrice(salePrice) || 'No price'}</span>
+              {mrp ? <span className="details-mrp">MRP {fmtPrice(mrp)}</span> : null}
+              {discount ? <span className="details-discount">{Math.round(Number(discount))}% OFF</span> : null}
+            </div>
+            <div className="metrics-grid compact hero-metrics">
+              <MetricCard label="Profit" value="₹240" sub="↑ 12%" tone="positive" />
+              <MetricCard label="EPC" value="₹12.4" sub="↑ 8%" tone="positive" />
+              <MetricCard label="Revenue" value="₹1.2M" sub="↑ 15%" tone="positive" />
+              <MetricCard label="Conv Rate" value="4.2%" sub="↑ 0.5%" tone="positive" />
+              <MetricCard label="Category" value={category} />
+              <MetricCard label="Stock" value="In Stock" tone="neutral" />
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* ── ACTIVITY TIMELINE ── */}
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>Activity Timeline</div>
+        {rawText ? (
+          <section className="ai-summary-box">
+            {rawText.length > 180 ? `${rawText.slice(0, 180).trim()}...` : rawText}
+          </section>
+        ) : null}
+
+        <section className="detail-section">
+          <div className="section-title">
+            <Link2 size={15} />
+            Affiliate Information
+          </div>
+          <div className="info-table premium-info-table">
+            <InfoItem label="Affiliate Link" value={affiliateLink || 'Not available'} href={affiliateLink || null} />
+            <InfoItem label="Source" value={source} />
+            <InfoItem label="Channel" value={channelName} />
+            <InfoItem label="Category" value={category} />
+            <InfoItem label="Brand" value={deal.brand} />
+            <InfoItem label="Posted At" value={fmt(deal.ts)} />
+            <InfoItem label="Deal Type" value={deal.dealType || 'product'} />
+            <InfoItem label="Message ID" value={deal.message_id || deal.msg_id} />
+            <InfoItem label="Fingerprint" value={deal.fp_hash} />
+          </div>
+        </section>
+
+        {rawText ? (
+          <section className="detail-section">
+            <div className="section-title">
+              <MessageSquareText size={15} />
+              Original Telegram Post
+            </div>
+            <div className="raw-post-card">{rawText}</div>
+          </section>
+        ) : null}
+
+        <section className="detail-section">
+          <div className="section-title">
+            <ShieldAlert size={15} />
+            Activity Timeline
+          </div>
           <div className="timeline-area">
-            <div className="timeline-item"><span className="timeline-time">10:05 AM</span><span className="timeline-desc">Scraped from source</span></div>
-            <div className="timeline-item"><span className="timeline-time">10:05 AM</span><span className="timeline-desc">AI Analyzed and Scored</span></div>
-            <div className="timeline-item"><span className="timeline-time">10:06 AM</span><span className="timeline-desc">Added To Queue</span></div>
+            <div className="timeline-item">
+              <span className="timeline-time">{fmt(deal.ts) || 'Unknown'}</span>
+              <span className="timeline-desc">Added to review queue</span>
+            </div>
+            <div className="timeline-item">
+              <span className="timeline-time">Current</span>
+              <span className="timeline-desc">Waiting for reviewer decision</span>
+            </div>
           </div>
-        </div>
-
+        </section>
       </div>
 
-      {/* ── ACTION BAR ── */}
       <div className="action-bar">
         <button className="action-btn action-btn-reject" onClick={() => onReject(deal.fp_hash)}>
-          <span style={{marginRight: 'auto', paddingLeft: '8px'}}>Reject Deal</span>
-          <span className="action-shortcut" style={{marginRight: '8px'}}>R</span>
+          <X size={16} />
+          <span>Reject Deal</span>
+          <span className="action-shortcut">R</span>
         </button>
-        <button className="action-btn action-btn-spam">
-          <span style={{marginRight: 'auto', paddingLeft: '8px'}}>Mark as Spam</span>
-          <span className="action-shortcut" style={{marginRight: '8px'}}>S</span>
+        <button className="action-btn action-btn-spam" onClick={() => (onSpam || onReject)(deal.fp_hash)}>
+          <ShieldAlert size={16} />
+          <span>Mark as Spam</span>
+          <span className="action-shortcut">S</span>
         </button>
         <button className="action-btn action-btn-approve" onClick={() => onApprove(deal.fp_hash)}>
-          <span style={{marginRight: 'auto', paddingLeft: '8px'}}>Approve Deal</span>
-          <span className="action-shortcut" style={{marginRight: '8px'}}>A</span>
+          <Check size={16} />
+          <span>Approve Deal</span>
+          <span className="action-shortcut">A</span>
         </button>
       </div>
     </div>
