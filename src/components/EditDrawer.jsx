@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import useStore from '../store';
 import { cleanTitle } from '../utils/helpers';
-import { PenLine, X, Sparkles, Check, Undo2 } from 'lucide-react';
+import { PenLine, X, Sparkles, Check, Undo2, Upload } from 'lucide-react';
 import TelegramPreview from './ReviewPanes/TelegramPreview';
 import { API_URL } from '../config';
 
@@ -19,7 +19,7 @@ function normalizeImageUrl(deal) {
 }
 
 export default function EditDrawer({ deal, onClose, onApprove }) {
-  const { editDeal, aiRewrite } = useStore();
+  const { editDeal, aiRewrite, uploadImage } = useStore();
 
   const [title, setTitle] = useState(deal.title || deal.prod_name || '');
   const [message, setMessage] = useState(deal.aff_text || deal.message || deal.original_text || '');
@@ -28,9 +28,11 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
   const [affiliateLink, setAffiliateLink] = useState(deal.affiliate_link || '');
   const [editImgUrl, setEditImgUrl] = useState(deal.img_url || deal.img_path || '');
   const [isRewriting, setIsRewriting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [oneInstruction, setOneInstruction] = useState('');
   const [prevMessage, setPrevMessage] = useState(null); // for undo
+  const fileInputRef = useRef(null);
 
   const dealType = deal.deal_type || deal.dealType || 'product';
   const isProduct = dealType === 'product';
@@ -82,6 +84,17 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
     onClose();
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    const data = await uploadImage(deal.fp_hash, file);
+    if (data && data.img_url) {
+      setEditImgUrl(data.img_url);
+    }
+    setIsUploading(false);
+  };
+
   return (
     <div className="drawer-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="edit-drawer" style={{ maxWidth: 960, width: '92vw' }}>
@@ -129,10 +142,16 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
               <input className="drawer-input" value={affiliateLink} onChange={e => setAffiliateLink(e.target.value)} placeholder="https://amzn.to/..." />
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload/URL */}
             <div className="drawer-field">
-              <label className="drawer-label">Image URL</label>
-              <input className="drawer-input" value={editImgUrl} onChange={e => setEditImgUrl(e.target.value)} placeholder="https://... (optional)" />
+              <label className="drawer-label">Image</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input className="drawer-input" value={editImgUrl} onChange={e => setEditImgUrl(e.target.value)} placeholder="https://... or upload file" style={{ flex: 1 }} />
+                <button type="button" className="drawer-btn" style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, height: 38 }} onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                  <Upload size={14} /> {isUploading ? 'Uploading…' : 'Upload'}
+                </button>
+                <input type="file" ref={fileInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
+              </div>
             </div>
 
             {/* Post text + AI controls */}

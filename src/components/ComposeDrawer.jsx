@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Upload } from 'lucide-react';
 import useDealStore from '../store/useDealStore';
 import TelegramPreview from './ReviewPanes/TelegramPreview';
 
@@ -8,7 +8,9 @@ import TelegramPreview from './ReviewPanes/TelegramPreview';
  * Two-column: form on left, live TG preview on right.
  */
 function ComposeDrawer({ onClose }) {
-  const { composeDeal } = useDealStore();
+  const { composeDeal, uploadImage } = useDealStore();
+  const fileInputRef = React.useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [form, setForm] = useState({
     title: '',
     text: '',
@@ -45,6 +47,20 @@ function ComposeDrawer({ onClose }) {
     });
     setSubmitting(false);
     onClose();
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    // For compose, we don't have a fp_hash yet. We'll use a temporary one just to upload the image,
+    // and the backend will return the URL which we store in the form.
+    const tempHash = `manual_tmp_${Date.now()}`;
+    const data = await uploadImage(tempHash, file);
+    if (data && data.img_url) {
+      handleChange('img_url', data.img_url);
+    }
+    setIsUploading(false);
   };
 
   return (
@@ -99,8 +115,14 @@ function ComposeDrawer({ onClose }) {
             </div>
 
             <div className="compose-field">
-              <label>Image URL</label>
-              <input value={form.img_url} onChange={(e) => handleChange('img_url', e.target.value)} placeholder="https://... (optional)" />
+              <label>Image</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input value={form.img_url} onChange={(e) => handleChange('img_url', e.target.value)} placeholder="https://... or upload file" style={{ flex: 1 }} />
+                <button type="button" className="compose-btn" style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, height: 38 }} onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                  {isUploading ? 'Uploading…' : 'Upload'}
+                </button>
+                <input type="file" ref={fileInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
+              </div>
             </div>
 
             <div className="compose-field">
