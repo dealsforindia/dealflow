@@ -7,14 +7,15 @@ import ChannelsPanel from './components/ChannelsPanel'
 import SettingsPanel from './components/SettingsPanel'
 import Topbar from './components/Topbar'
 import Login from './components/Login'
+import DesidimePanel from './components/DesidimePanel'
 import useStore from './store'
 import './App.css'
-import { LayoutDashboard, Activity, GitFork, Radio, Settings2 } from 'lucide-react'
+import { LayoutDashboard, Activity, GitFork, Radio, Settings2, Globe } from 'lucide-react'
 
 const MOB_NAV = [
   { label: 'Review',    icon: LayoutDashboard },
+  { label: 'DesiDime',  icon: Globe },
   { label: 'Dashboard', icon: Activity },
-  { label: 'Clones',    icon: GitFork },
   { label: 'Channels',  icon: Radio },
   { label: 'Settings',  icon: Settings2 },
 ];
@@ -66,6 +67,8 @@ function App() {
             onConsumeInitial={consumeSubTab}
           />
         );
+      case 'DesiDime':
+        return <DesidimePanel />;
       case 'Dashboard':
         return <DashboardPanel />;
       case 'Clones':

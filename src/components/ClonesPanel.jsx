@@ -264,21 +264,21 @@ export default function ClonesPanel() {
             )}
           </div>
 
-          <div className="clones-stats-panel">
+          <div className="clones-stats-panel" style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-panel)', borderLeft: '1px solid var(--border-dim)' }}>
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border-dim)', borderBottom: '1px solid var(--border-dim)' }}>
               {[
                 { label: 'Total Clones Blocked', val: totalClones,  color: 'var(--accent-blue)' },
-                { label: 'Active Chains',         val: activeChains, color: '#fbbf24' },
+                { label: 'Active Chains',         val: activeChains, color: 'var(--accent-amber)' },
               ].map(s => (
-                <div key={s.label} style={{ background: 'var(--bg-panel)', padding: '14px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '22px', fontWeight: '700', fontFamily: 'var(--mono)', color: s.color }}>{s.val}</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-ter)', marginTop: '3px' }}>{s.label}</div>
+                <div key={s.label} style={{ background: 'var(--bg-card)', padding: '20px 16px', textAlign: 'center', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.02)' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '700', fontFamily: 'var(--display)', color: s.color, letterSpacing: '-0.02em' }}>{s.val}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-sec)', marginTop: '4px', fontWeight: '500' }}>{s.label}</div>
                 </div>
               ))}
             </div>
 
-            <div style={{ padding: '16px', fontSize: '11px', fontWeight: '600', color: 'var(--text-ter)', letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--border-dim)' }}>
+            <div style={{ padding: '20px 16px 12px', fontSize: '12px', fontWeight: '700', color: 'var(--text-ter)', letterSpacing: '0.06em', textTransform: 'uppercase', borderBottom: '1px solid var(--border-dim)' }}>
               Recent Clone Events
             </div>
 
@@ -296,34 +296,34 @@ export default function ClonesPanel() {
                       onClick={() => toggle(id)}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: '600', lineHeight: '1.4', marginBottom: '3px' }}>
+                        <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '600', lineHeight: '1.4', marginBottom: '6px' }}>
                           {title.length > 38 ? title.slice(0, 38) + '…' : title}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '9px', background: 'rgba(251,191,36,0.1)', color: '#fbbf24', padding: '1px 5px', borderRadius: '3px', fontWeight: '600' }}>ORIGINAL</span>
-                          <span style={{ fontSize: '9px', color: 'var(--text-ter)', fontFamily: 'var(--mono)' }}>{primary}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '9px', background: 'rgba(245,158,11,0.15)', color: 'var(--accent-amber)', padding: '2px 6px', borderRadius: '4px', fontWeight: '700', letterSpacing: '0.05em' }}>ORIGINAL</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-sec)', fontFamily: 'var(--mono)' }}>{primary}</span>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', flexShrink: 0, marginLeft: '8px' }}>
-                        <span style={{ fontSize: '9px', background: 'rgba(243,18,96,0.1)', color: 'var(--accent-red)', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0, marginLeft: '12px' }}>
+                        <span style={{ fontSize: '10px', background: 'rgba(244,63,94,0.15)', color: 'var(--accent-red)', padding: '3px 8px', borderRadius: '6px', fontWeight: '700' }}>
                           {clones.length} Clones
                         </span>
-                        <span style={{ fontSize: '8px', color: 'var(--text-ter)' }}>{isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-ter)' }}>{isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</span>
                       </div>
                     </div>
                     {isExpanded && (
-                      <div style={{ paddingBottom: '8px' }}>
+                      <div style={{ paddingBottom: '12px', background: 'rgba(255,255,255,0.01)' }}>
                         {clones.map((c, i) => (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 16px 5px 24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '9px', color: 'var(--text-ter)', fontFamily: 'var(--mono)' }}><CornerDownRight size={10} style={{ opacity: 0.6 }} /></span>
-                              <span style={{ fontSize: '9px', background: 'rgba(243,18,96,0.08)', color: '#f87171', padding: '1px 5px', borderRadius: '3px', fontWeight: '600' }}>COPIED</span>
-                              <span style={{ fontSize: '10px', color: 'var(--text-sec)', fontFamily: 'var(--mono)' }}>
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 16px 6px 24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '10px', color: 'var(--text-ter)', fontFamily: 'var(--mono)' }}><CornerDownRight size={12} style={{ opacity: 0.6 }} /></span>
+                              <span style={{ fontSize: '9px', background: 'rgba(244,63,94,0.1)', color: 'var(--accent-red)', padding: '2px 6px', borderRadius: '4px', fontWeight: '700', letterSpacing: '0.05em' }}>COPIED</span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-sec)', fontFamily: 'var(--mono)' }}>
                                 {resolveChannelName(c.ch || c.channel || c.source_channel)}
                               </span>
                             </div>
                             {c.latency && (
-                              <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--accent-red)', fontFamily: 'var(--mono)' }}>{c.latency}</span>
+                              <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--accent-red)', fontFamily: 'var(--mono)' }}>{c.latency}</span>
                             )}
                           </div>
                         ))}

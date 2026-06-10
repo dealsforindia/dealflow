@@ -9,7 +9,7 @@ function normalizeScore(score) {
 }
 
 function getImagePresent(deal) {
-  return Boolean(deal?.img_path || deal?.img_url || deal?.image_url || deal?.image || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail);
+  return Boolean(deal?.img_url || deal?.img_path || deal?.image_url || deal?.image || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail);
 }
 
 function getScoreLabel(score) {

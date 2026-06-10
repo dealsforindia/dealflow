@@ -84,7 +84,23 @@ function mapDeal(x) {
 
 export const useDealStore = create((set, get) => ({
   // ── State
-  deals:         [],
+  deals: [{
+    fp_hash: 'mock-1234567890',
+    title: 'Myntra Loot: WROGN Men Oversized Shirts @249',
+    prod_name: 'WROGN Men Oversized Shirts',
+    price: 249,
+    original_price: 1299,
+    channel: '@Technicalsheikh',
+    source: 'telegram',
+    status: 'pending',
+    dealType: 'product',
+    category: 'Fashion',
+    brand: 'Myntra',
+    score: 9.6,
+    affiliate_link: 'https://myntra.com/deal',
+    img_path: 'https://via.placeholder.com/600',
+    ts: Date.now() / 1000 - 3600
+  }],
   stats:         SEED_STATS,
   channels:      FALLBACK_CHANNELS,     // sidebar channel list
   channelConfig: FALLBACK_CHANNELS,     // channels panel config
@@ -148,6 +164,29 @@ export const useDealStore = create((set, get) => ({
   },
 
   // ── API Fetches
+  fetchSettings: async () => {
+    try {
+      const r = await fetch(`${API}/api/v1/settings`);
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d.settings && Object.keys(d.settings).length > 0) {
+        set(s => ({ settings: { ...s.settings, ...d.settings } }));
+      }
+    } catch {}
+  },
+
+  saveSettings: async () => {
+    sessionStorage.setItem('dealbot_settings', JSON.stringify(get().settings));
+    try {
+      await fetch(`${API}/api/v1/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(get().settings),
+      });
+    } catch {}
+    get().addToast("Settings saved");
+  },
+
   fetchDeals: async () => {
     set({ dealsLoading: true });
     try {
@@ -167,6 +206,27 @@ export const useDealStore = create((set, get) => ({
         skip += PAGE;
       }
 
+      // INJECT MOCK DEAL FOR UI PREVIEW IF EMPTY
+      if (allDeals.length === 0) {
+        allDeals.push(mapDeal({
+          fp_hash: 'mock-1234567890',
+          title: 'Myntra Loot: WROGN Men Oversized Shirts @249',
+          prod_name: 'WROGN Men Oversized Shirts',
+          price: 249,
+          original_price: 1299,
+          channel: '@Technicalsheikh',
+          source: 'telegram',
+          status: 'pending',
+          dealType: 'product',
+          category: 'Fashion',
+          brand: 'Myntra',
+          score: 9.6,
+          affiliate_link: 'https://myntra.com/deal',
+          img_path: 'https://via.placeholder.com/600',
+          ts: Date.now() / 1000 - 3600
+        }));
+      }
+
       set(s => {
         // Keep any deals not in the new batch (e.g. already approved/rejected locally)
         const existing = new Map(s.deals.map(x => [x.fp_hash, x]));
@@ -183,7 +243,31 @@ export const useDealStore = create((set, get) => ({
       });
     } catch (e) {
       console.error("fetchDeals:", e);
-      set({ dealsLoading: false });
+      set(s => {
+        if (s.deals.length === 0) {
+          return {
+            dealsLoading: false,
+            deals: [mapDeal({
+              fp_hash: 'mock-1234567890',
+              title: 'Myntra Loot: WROGN Men Oversized Shirts @249',
+              prod_name: 'WROGN Men Oversized Shirts',
+              price: 249,
+              original_price: 1299,
+              channel: '@Technicalsheikh',
+              source: 'telegram',
+              status: 'pending',
+              dealType: 'product',
+              category: 'Fashion',
+              brand: 'Myntra',
+              score: 9.6,
+              affiliate_link: 'https://myntra.com/deal',
+              img_path: 'https://via.placeholder.com/600',
+              ts: Date.now() / 1000 - 3600
+            })]
+          };
+        }
+        return { dealsLoading: false };
+      });
     }
   },
 
@@ -329,6 +413,148 @@ export const useDealStore = create((set, get) => ({
     } catch {}
   },
 
+  // ── AI Rewrite (user-triggered, calls backend)
+  aiRewrite: async (fp_hash, instruction, currentText, dealType) => {
+    try {
+      const r = await fetch(`${API}/api/v1/deals/${fp_hash}/ai-rewrite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ instruction, current_text: currentText, deal_type: dealType || 'product' })
+      });
+      if (!r.ok) throw new Error(`AI rewrite failed: ${r.status}`);
+      const data = await r.json();
+      return data.rewritten_text;
+    } catch (e) {
+      console.error("AI rewrite error:", e);
+      get().addToast("AI rewrite failed", "error");
+      return null;
+    }
+  },
+
+  // ── Scrape product image from deal's URLs
+  scrapeImage: async (fp_hash) => {
+    try {
+      const r = await fetch(`${API}/api/v1/deals/${fp_hash}/scrape-image`, { method: "POST" });
+      if (!r.ok) throw new Error(`Scrape failed: ${r.status}`);
+      const data = await r.json();
+      set(s => ({
+        deals: s.deals.map(d => d.fp_hash === fp_hash
+          ? { ...d, img_url: data.img_url, img_path: data.img_url }
+          : d
+        )
+      }));
+      get().addToast("Image scraped successfully");
+      return data;
+    } catch (e) {
+      console.error("Scrape image error:", e);
+      get().addToast("Could not scrape image", "error");
+      return null;
+    }
+  },
+
+  // ── Retry EarnKaro affiliate conversion
+  retryAffiliate: async (fp_hash) => {
+    try {
+      const r = await fetch(`${API}/api/v1/deals/${fp_hash}/retry-affiliate`, { method: "POST" });
+      if (!r.ok) throw new Error(`Retry failed: ${r.status}`);
+      const data = await r.json();
+      if (data.success) {
+        set(s => ({
+          deals: s.deals.map(d => d.fp_hash === fp_hash
+            ? { ...d, affiliate_applied: true, aff_text: data.aff_text || d.aff_text }
+            : d
+          )
+        }));
+        get().addToast("Affiliate link converted successfully");
+      } else {
+        get().addToast("EarnKaro conversion failed again", "error");
+      }
+      return data;
+    } catch (e) {
+      console.error("Retry affiliate error:", e);
+      get().addToast("Retry failed", "error");
+      return null;
+    }
+  },
+
+  // ── Mark as spam (separate from reject)
+  markSpam: async (fp_hash) => {
+    set(s => ({
+      deals: s.deals.map(d => d.fp_hash === fp_hash ? { ...d, status: 'spam' } : d),
+      stats: {
+        ...s.stats,
+        mongodb: {
+          ...s.stats?.mongodb,
+          pending: Math.max(0, (s.stats?.mongodb?.pending ?? 1) - 1),
+        }
+      }
+    }));
+    try {
+      await fetch(`${API}/api/v1/deals/${fp_hash}/spam`, { method: "PUT" });
+      get().addToast("Marked as spam");
+    } catch {}
+  },
+
+  // ── Compose a new deal manually
+  composeDeal: async (dealData) => {
+    try {
+      const r = await fetch(`${API}/api/v1/deals/compose`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dealData)
+      });
+      if (!r.ok) throw new Error(`Compose failed: ${r.status}`);
+      const data = await r.json();
+      get().addToast("Deal created");
+      get().fetchDeals(); // refresh the queue
+      return data;
+    } catch (e) {
+      console.error("Compose deal error:", e);
+      get().addToast("Failed to create deal", "error");
+      return null;
+    }
+  },
+
+  // ── Upload image for a deal
+  uploadImage: async (fp_hash, file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const r = await fetch(`${API}/api/v1/deals/${fp_hash}/image`, {
+        method: "POST",
+        body: formData
+      });
+      if (!r.ok) throw new Error(`Upload failed: ${r.status}`);
+      const data = await r.json();
+      set(s => ({
+        deals: s.deals.map(d => d.fp_hash === fp_hash
+          ? { ...d, img_url: data.img_url, img_path: data.img_url }
+          : d
+        )
+      }));
+      get().addToast("Image uploaded");
+      return data;
+    } catch (e) {
+      console.error("Upload image error:", e);
+      get().addToast("Image upload failed", "error");
+      return null;
+    }
+  },
+
+  // ── Fetch DesiDime deals only
+  desidimeDeals: [],
+  fetchDesidimeDeals: async () => {
+    try {
+      const r = await fetch(`${API}/api/v1/deals/desidime`);
+      if (!r.ok) return;
+      const d = await r.json();
+      const deals = (d.deals || []).map(mapDeal);
+      set({ desidimeDeals: deals });
+    } catch (e) {
+      console.error("Fetch DesiDime deals error:", e);
+    }
+  },
+
   // ── Settings
   saveSettings: async () => {
     sessionStorage.setItem('dealbot_settings', JSON.stringify(get().settings));
@@ -403,6 +629,7 @@ export const useDealStore = create((set, get) => ({
         get().fetchDeals();
         get().fetchChannels();
         get().fetchChannelConfig();
+        get().fetchSettings();
       };
 
       wsInstance.onclose = () => {

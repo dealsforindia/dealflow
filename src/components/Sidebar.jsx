@@ -2,11 +2,12 @@ import React from 'react';
 import useStore from '../store';
 import { resolveChannelName } from '../utils/helpers';
 import {
-  LayoutDashboard, GitFork, Radio, Settings2, LogOut, Activity,
+  LayoutDashboard, GitFork, Radio, Settings2, LogOut, Activity, Globe,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'Review',    icon: LayoutDashboard },
+  { label: 'DesiDime',  icon: Globe },
   { label: 'Dashboard', icon: Activity },
   { label: 'Clones',    icon: GitFork },
   { label: 'Channels',  icon: Radio },

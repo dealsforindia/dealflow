@@ -77,58 +77,58 @@ export default function ChannelsPanel() {
       <div className="channel-grid-area" style={{ padding: '0 24px 40px' }}>
 
         {/* ── SOURCES SECTION ── */}
-        <div className="ch-section-label">SCRAPING SOURCES</div>
-        <div className="sources-grid">
-          <div className={`source-card ${desiDimeOn ? 'active' : 'paused'}`}>
-            <div className="source-card-left">
-              <div className="source-icon dd"><ShoppingBag size={20} strokeWidth={1.5} /></div>
+        <div className="ch-section-label" style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.06em', color: 'var(--text-ter)', marginBottom: '16px' }}>SCRAPING SOURCES</div>
+        <div className="sources-grid" style={{ display: 'grid', gap: '16px', marginBottom: '32px' }}>
+          <div className={`source-card ${desiDimeOn ? 'active' : 'paused'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: 'var(--bg-card)', border: '1px solid var(--border-dim)', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+            <div className="source-card-left" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="source-icon dd" style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(16,185,129,0.15)', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShoppingBag size={20} strokeWidth={2} /></div>
               <div>
-                <div className="source-name">DesiDime</div>
-                <div className="source-desc">Polls desidime.com/new for hot deals in real-time</div>
+                <div className="source-name" style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>DesiDime</div>
+                <div className="source-desc" style={{ fontSize: '12px', color: 'var(--text-sec)', marginTop: '2px' }}>Polls desidime.com/new for hot deals in real-time</div>
               </div>
             </div>
-            <div className="source-card-right">
-              <span className={`source-status-badge ${desiDimeOn ? 'on' : 'off'}`}>{desiDimeOn ? 'RUNNING' : 'PAUSED'}</span>
-              <div className={`toggle-switch ${desiDimeOn ? 'on' : 'off'}`} onClick={() => setSettings({ DESIDIME_ENABLED: !desiDimeOn })}>
-                <div className="toggle-knob" />
+            <div className="source-card-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <span className={`source-status-badge ${desiDimeOn ? 'on' : 'off'}`} style={{ fontSize: '10px', fontWeight: '700', padding: '4px 10px', borderRadius: '6px', background: desiDimeOn ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)', color: desiDimeOn ? 'var(--accent-green)' : 'var(--text-ter)' }}>{desiDimeOn ? 'RUNNING' : 'PAUSED'}</span>
+              <div className={`toggle-switch ${desiDimeOn ? 'on' : 'off'}`} onClick={() => { setSettings({ DESIDIME_ENABLED: !desiDimeOn }); setTimeout(() => useStore.getState().saveSettings(), 0); }} style={{ width: '40px', height: '24px', borderRadius: '12px', background: desiDimeOn ? 'var(--accent-green)' : 'var(--border-dim)', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', boxShadow: desiDimeOn ? '0 0 12px rgba(16,185,129,0.3)' : 'none' }}>
+                <div className="toggle-knob" style={{ width: '18px', height: '18px', background: '#fff', borderRadius: '50%', position: 'absolute', top: '3px', left: desiDimeOn ? '19px' : '3px', transition: 'left 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
               </div>
             </div>
           </div>
-          <div className="source-card active">
-            <div className="source-card-left">
-              <div className="source-icon tg"><Send size={20} strokeWidth={1.5} /></div>
+          <div className="source-card active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', background: 'var(--bg-card)', border: '1px solid var(--border-dim)', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+            <div className="source-card-left" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div className="source-icon tg" style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(99,102,241,0.15)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Send size={20} strokeWidth={2} /></div>
               <div>
-                <div className="source-name">Telegram</div>
-                <div className="source-desc">Passive listener on {tgChannels.length} tracked channels via Telethon</div>
+                <div className="source-name" style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)' }}>Telegram</div>
+                <div className="source-desc" style={{ fontSize: '12px', color: 'var(--text-sec)', marginTop: '2px' }}>Passive listener on {tgChannels.length} tracked channels via Telethon</div>
               </div>
             </div>
-            <div className="source-card-right">
-              <span className="source-status-badge on">LISTENING</span>
+            <div className="source-card-right" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <span className="source-status-badge on" style={{ fontSize: '10px', fontWeight: '700', padding: '4px 10px', borderRadius: '6px', background: 'rgba(99,102,241,0.1)', color: 'var(--accent-blue)' }}>LISTENING</span>
             </div>
           </div>
         </div>
 
         {/* ── TELEGRAM CHANNELS ── */}
-        <div className="ch-section-label" style={{ marginTop: 24 }}>TELEGRAM CHANNELS</div>
+        <div className="ch-section-label" style={{ fontSize: '11px', fontWeight: '600', letterSpacing: '0.06em', color: 'var(--text-ter)', marginBottom: '16px' }}>TELEGRAM CHANNELS</div>
 
-        <div className="ch-add-section">
-          <div className="channel-add-row">
+        <div className="ch-add-section" style={{ background: 'var(--bg-card)', padding: '6px', borderRadius: '12px', border: '1px solid var(--border-dim)', marginBottom: '24px', display: 'flex', flexDirection: 'column' }}>
+          <div className="channel-add-row" style={{ display: 'flex', gap: '8px' }}>
             <input
               className={`ch-input${inputErr ? ' ch-input-error' : ''}`}
               placeholder="@username, -100… numeric ID, or https://t.me/…"
               value={newCh}
               onChange={e => { setNewCh(e.target.value); setInputErr(''); }}
               onKeyDown={e => e.key === 'Enter' && handleAdd()}
-              style={{ borderColor: inputErr ? 'var(--accent-red)' : undefined }}
+              style={{ flex: 1, background: 'transparent', border: 'none', padding: '12px 16px', color: 'var(--text-primary)', outline: 'none', fontSize: '14px', fontFamily: 'var(--mono)' }}
             />
-            <button className="ch-add-btn" onClick={handleAdd}>+ Add</button>
+            <button className="ch-add-btn" onClick={handleAdd} style={{ padding: '0 20px', background: 'var(--text-primary)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>+ Add</button>
           </div>
           {inputErr ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px', fontSize: '11px', color: 'var(--accent-red)' }}>
+            <div style={{ padding: '8px 16px', fontSize: '11px', color: 'var(--accent-red)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <AlertTriangle size={12} /> {inputErr}
             </div>
           ) : (
-            <div className="ch-hint">
+            <div className="ch-hint" style={{ padding: '8px 16px', fontSize: '11px', color: 'var(--text-ter)' }}>
               Use the numeric channel ID (e.g. -1001234567890) for private groups, @username for public ones, or paste a t.me link.
             </div>
           )}
@@ -156,30 +156,30 @@ export default function ChannelsPanel() {
                 const dealCnt = dealCountMap[id] ?? (isPending ? null : 0);
 
                 return (
-                  <div key={idx} className={`channel-row ${!isOn ? 'row-paused' : ''}`} style={{ gridTemplateColumns: 'minmax(200px, 1.5fr) 120px 120px 40px' }}>
-                    <div className="ch-name">
-                      <div className="ch-avatar" style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--accent-blue)' }}>
+                  <div key={idx} className={`channel-row ${!isOn ? 'row-paused' : ''}`} style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1.5fr) 120px 120px 40px', alignItems: 'center', gap: '16px', padding: '16px 20px', background: 'var(--bg-card)', border: '1px solid var(--border-dim)', borderRadius: '12px', marginBottom: '8px', opacity: isOn ? 1 : 0.6, transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                    <div className="ch-name" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div className="ch-avatar" style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(99,102,241,0.15)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '15px' }}>
                         {(id[0] === '-' ? 'G' : (id[1] || id[0] || '?')).toUpperCase()}
                       </div>
                       <div>
                         {editingId === id ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <input
                               autoFocus
                               value={editName}
                               onChange={e => setEditName(e.target.value)}
                               onKeyDown={e => e.key === 'Enter' && handleRename(id)}
-                              style={{ background: 'var(--bg-card)', color: '#fff', border: '1px solid var(--border-color)', borderRadius: '4px', padding: '2px 6px', fontSize: '12px', width: '140px' }}
+                              style={{ background: '#0B0E14', color: '#fff', border: '1px solid var(--accent-blue)', borderRadius: '6px', padding: '4px 8px', fontSize: '13px', width: '160px', outline: 'none' }}
                             />
-                            <button onClick={() => handleRename(id)} style={{ background: 'none', border: 'none', color: 'var(--accent-green)', cursor: 'pointer', padding: 2 }}>
+                            <button onClick={() => handleRename(id)} style={{ background: 'var(--accent-green)', border: 'none', color: '#000', cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex' }}>
                               <Check size={14} />
                             </button>
-                            <button onClick={() => setEditingId(null)} style={{ background: 'none', border: 'none', color: 'var(--text-ter)', cursor: 'pointer', padding: 2 }}>
+                            <button onClick={() => setEditingId(null)} style={{ background: 'transparent', border: '1px solid var(--border-dim)', color: 'var(--text-ter)', cursor: 'pointer', padding: '4px', borderRadius: '4px', display: 'flex' }}>
                               <X size={14} />
                             </button>
                           </div>
                         ) : (
-                          <div className="ch-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div className="ch-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' }}>
                             {resolveChannelName(id)}
                             <button 
                               onClick={() => { setEditingId(id); setEditName(resolveChannelName(id)); }}
@@ -190,28 +190,23 @@ export default function ChannelsPanel() {
                             </button>
                           </div>
                         )}
-                        <div className="ch-id" style={{ color: 'var(--text-ter)', fontFamily: 'var(--mono)', fontSize: '9px' }}>
+                        <div className="ch-id" style={{ color: 'var(--text-ter)', fontFamily: 'var(--mono)', fontSize: '11px', marginTop: '2px' }}>
                           {id}
-                        </div>
-                        <div style={{ fontSize: '9px', color: 'var(--text-ter)', marginTop: '1px' }}>
-                          {ch.added
-                            ? `Added ${new Date(ch.added).toLocaleDateString('en-IN')}`
-                            : id.startsWith('-') ? 'Private group' : 'Public channel'}
                         </div>
                       </div>
                     </div>
 
                     {/* Deal count */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                       {isPending ? (
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '10px', color: '#fbbf24', fontWeight: '600' }}>0</div>
-                          <div style={{ fontSize: '9px', color: 'var(--text-ter)', fontStyle: 'italic' }}>Pending — refreshes in 60s</div>
+                          <div style={{ fontSize: '12px', color: '#fbbf24', fontWeight: '600' }}>0</div>
+                          <div style={{ fontSize: '10px', color: 'var(--text-ter)' }}>Pending</div>
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          {dealCnt !== null && dealCnt > 0 && <CheckCircle size={10} color="var(--accent-green)" />}
-                          <span style={{ fontSize: '14px', fontWeight: '700', fontFamily: 'var(--mono)', color: dealCnt > 0 ? 'var(--accent-green)' : 'var(--text-ter)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {dealCnt !== null && dealCnt > 0 && <CheckCircle size={12} color="var(--accent-green)" />}
+                          <span style={{ fontSize: '15px', fontWeight: '700', fontFamily: 'var(--mono)', color: dealCnt > 0 ? 'var(--accent-green)' : 'var(--text-ter)' }}>
                             {dealCnt ?? '—'}
                           </span>
                         </div>
@@ -219,19 +214,19 @@ export default function ChannelsPanel() {
                     </div>
 
                     {/* Toggle */}
-                    <div className="ch-toggle-col">
+                    <div className="ch-toggle-col" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <div
                         className={`toggle-switch ${isOn ? 'on' : 'off'}`}
                         onClick={() => toggleChannel(id)}
                         title={isOn ? 'Pause scraping this channel' : 'Resume scraping'}
+                        style={{ width: '40px', height: '24px', borderRadius: '12px', background: isOn ? 'var(--accent-green)' : 'var(--border-dim)', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', boxShadow: isOn ? '0 0 12px rgba(16,185,129,0.3)' : 'none' }}
                       >
-                        <div className="toggle-knob" />
+                        <div className="toggle-knob" style={{ width: '18px', height: '18px', background: '#fff', borderRadius: '50%', position: 'absolute', top: '3px', left: isOn ? '19px' : '3px', transition: 'left 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
                       </div>
-                      <span className="toggle-label">{isOn ? 'ON' : 'OFF'}</span>
                     </div>
 
-                    <button className="ch-del-btn" onClick={() => deleteChannel(id)} title="Remove channel">
-                      <Trash2 size={14} />
+                    <button className="ch-del-btn" onClick={() => deleteChannel(id)} title="Remove channel" style={{ background: 'transparent', border: 'none', color: 'var(--text-ter)', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.2s' }}>
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 );

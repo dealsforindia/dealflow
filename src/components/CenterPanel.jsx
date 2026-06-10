@@ -3,6 +3,7 @@ import useStore, { CHANNEL_NAME_MAP } from '../store';
 import { cleanTitle, fmt, resolveChannelName, categoryEmoji, fmtPrice, calcDiscount } from '../utils/helpers';
 import { WS_URL, API_URL } from '../config';
 import EditDrawer from './EditDrawer';
+import ComposeDrawer from './ComposeDrawer';
 import {
   Inbox, ShoppingBag, Sparkles, ExternalLink, Check, PenLine, X,
   ChevronDown, ChevronUp, Filter, XCircle, Tag, Zap, Search, CheckSquare
@@ -17,10 +18,18 @@ import '../ReviewPanel.css';
 function DealImage({ deal, size = 52 }) { /* Kept for PostedList */
   const [err, setErr] = useState(false);
   const emoji = categoryEmoji(deal.category || deal.dealType);
-  let imgUrl = deal.img_path || deal.img_url || deal.image_url || deal.image || deal.photo || deal.photo_url || deal.img || deal.thumbnail;
+  let imgUrl = deal.img_url || deal.img_path || deal.image_url || deal.image || deal.photo || deal.photo_url || deal.img || deal.thumbnail;
+  if (imgUrl && typeof imgUrl === 'string' && imgUrl.includes('/dealbot/images/')) {
+    imgUrl = '/images/' + imgUrl.split('/dealbot/images/')[1];
+  }
 
   if (imgUrl && imgUrl.startsWith('http://74.225.250.0/images/')) {
     imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
+  }
+  if (imgUrl && imgUrl.includes('/images/')) {
+    imgUrl = '/images/' + imgUrl.split('/images/')[1];
+  } else if (imgUrl && imgUrl.includes('\\images\\')) {
+    imgUrl = '/images/' + imgUrl.split('\\images\\')[1];
   }
   if (imgUrl && imgUrl.startsWith('/')) {
     imgUrl = API_URL + imgUrl;
@@ -136,6 +145,7 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
   const [subTab,     setSubTab]     = useState('Products');
   const [focusIdx,   setFocusIdx]   = useState(0);
   const [editingDeal,setEditingDeal]= useState(null);
+  const [showCompose, setShowCompose] = useState(false);
   const [chFilter,   setChFilter]   = useState(null);
   const [srcFilter,  setSrcFilter]  = useState(null);
   const [showFilters,setShowFilters]= useState(false);
@@ -176,13 +186,17 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
   // Keyboard shortcuts (V2)
   useEffect(() => {
     const handler = async (e) => {
-      if (editingDeal) return;
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (editingDeal || document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
 
       const currentDeals = subTab === 'Products' ? applyFilters(products)
                          : subTab === 'Tricks & Loot' ? applyFilters(tricks)
                          : [];
       const deal = currentDeals[focusIdx];
+
+      if (e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) {
+        return;
+      }
 
       if (e.code === 'ArrowDown') {
         e.preventDefault();
@@ -231,6 +245,11 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
     await rejectDeal(hash);
     setFocusIdx(i => Math.min(i, visibleDeals.length - 2));
   };
+  const handleSpam = async (hash) => {
+    await rejectDeal(hash);
+    addToast("Marked as Spam", "error");
+    setFocusIdx(i => Math.min(i, visibleDeals.length - 2));
+  };
 
   const selectedDeal = visibleDeals[focusIdx];
 
@@ -241,31 +260,54 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
           
-          <div className="review-v2-container">
-            {/* Left Pane */}
-            <ReviewQueueList 
-              deals={visibleDeals} 
-              selectedIndex={focusIdx} 
-              onSelect={setFocusIdx} 
-            />
+          {visibleDeals.length === 0 ? (
+            <div className="empty-state" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="empty-icon" style={{ marginBottom: '16px' }}>
+                {subTab === 'Tricks & Loot' ? <Sparkles size={40} strokeWidth={1} /> : <ShoppingBag size={40} strokeWidth={1} />}
+              </div>
+              <div className="empty-title" style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+                {chFilter || srcFilter ? 'No deals match this filter' : `No ${subTab.toLowerCase()} pending`}
+              </div>
+              <div className="empty-sub" style={{ color: 'var(--text-sec)', marginBottom: '24px' }}>
+                {chFilter || srcFilter ? (
+                  <button className="link-btn" style={{ color: 'var(--accent-blue)', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => { setChFilter(null); setSrcFilter(null); }}>
+                    Clear filters
+                  </button>
+                ) : 'New deals will appear here in real time.'}
+              </div>
+            </div>
+          ) : (
+            <div className="review-v2-container">
+              {/* Left Pane */}
+              <ReviewQueueList 
+                deals={visibleDeals} 
+                selectedIndex={focusIdx} 
+                onSelect={setFocusIdx}
+                onCompose={() => setShowCompose(true)}
+              />
 
-            {/* Center Pane */}
-            <DealDetailsPane 
-              deal={selectedDeal} 
-              onApprove={handleApprove} 
-              onReject={handleReject} 
-            />
+              {/* Center Pane */}
+              <DealDetailsPane 
+                deal={selectedDeal} 
+                onApprove={handleApprove} 
+                onReject={handleReject} 
+                onSpam={handleSpam}
+                onEdit={setEditingDeal}
+              />
 
-            {/* Right Pane */}
-            <AiInsightsPane 
-              deal={selectedDeal} 
-            />
-          </div>
+              {/* Right Pane */}
+              <AiInsightsPane 
+                deal={selectedDeal} 
+              />
+            </div>
+          )}
 
-          <QuickReviewFooter 
-            currentIndex={focusIdx} 
-            totalDeals={visibleDeals.length} 
-          />
+          {visibleDeals.length > 0 && (
+            <QuickReviewFooter 
+              currentIndex={focusIdx} 
+              totalDeals={visibleDeals.length} 
+            />
+          )}
         </div>
       )}
 
@@ -280,6 +322,11 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
             setEditingDeal(null);
           }}
         />
+      )}
+
+      {/* Compose drawer */}
+      {showCompose && (
+        <ComposeDrawer onClose={() => setShowCompose(false)} />
       )}
     </div>
   );

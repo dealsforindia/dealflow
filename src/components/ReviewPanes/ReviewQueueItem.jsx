@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Check, ImageOff } from 'lucide-react';
 import { API_URL } from '../../config';
 import { calcDiscount, cleanTitle, fmt, fmtPrice, resolveChannelName } from '../../utils/helpers';
@@ -14,10 +14,18 @@ const CATEGORY_COLORS = {
 };
 
 function normalizeImageUrl(deal) {
-  let imgUrl = deal?.img_path || deal?.img_url || deal?.image_url || deal?.image || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail;
+  let imgUrl = deal?.img_url || deal?.img_path || deal?.image_url || deal?.image || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail;
+  if (imgUrl && typeof imgUrl === 'string' && imgUrl.includes('/dealbot/images/')) {
+    imgUrl = '/images/' + imgUrl.split('/dealbot/images/')[1];
+  }
   if (!imgUrl) return null;
   if (imgUrl.startsWith('http://74.225.250.0/images/')) {
     imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
+  }
+  if (imgUrl.includes('/images/')) {
+    imgUrl = '/images/' + imgUrl.split('/images/')[1];
+  } else if (imgUrl.includes('\\images\\')) {
+    imgUrl = '/images/' + imgUrl.split('\\images\\')[1];
   }
   if (imgUrl.startsWith('/')) return API_URL + imgUrl;
   return imgUrl;
@@ -32,6 +40,10 @@ function normalizeScore(score) {
 function ReviewQueueItem({ deal, isSelected, onClick }) {
   const [imageFailed, setImageFailed] = useState(false);
   const imageUrl = useMemo(() => normalizeImageUrl(deal), [deal]);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [imageUrl]);
 
   const title = cleanTitle(deal);
   const price = fmtPrice(deal.price || deal.prices?.sale);
@@ -89,7 +101,21 @@ function ReviewQueueItem({ deal, isSelected, onClick }) {
                   {channelName}
                 </span>
               </div>
-              {score && score >= 90 && <span className="queue-fire-icon">🔥</span>}
+              <div className="queue-item-badges">
+                {deal.source === 'desidime' && (
+                  <span className="queue-badge desidime" title="DesiDime deal">DD</span>
+                )}
+                {deal.deal_type === 'trick' && (
+                  <span className="queue-badge trick" title="Trick / Loot">🎯</span>
+                )}
+                {deal.affiliate_applied === true && (
+                  <span className="queue-badge affiliated" title="Affiliated">💰</span>
+                )}
+                {deal.affiliate_applied === false && (
+                  <span className="queue-badge not-affiliated" title="Not Affiliated">⚠️</span>
+                )}
+                {score && score >= 90 && <span className="queue-fire-icon">🔥</span>}
+              </div>
             </div>
           </div>
         </div>
