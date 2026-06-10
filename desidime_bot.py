@@ -68,7 +68,7 @@ IMAGES_DIR.mkdir(exist_ok=True)
 try:
     _mongo = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"), serverSelectionTimeoutMS=3000)
     _mdb = _mongo[os.getenv("MONGO_DB", "dealbot")]
-    _deals_col = _mdb["deals"]
+    _deals_col = _mdb["UniqueDeals"]
     _deals_col.create_index("fp_hash", unique=True, background=True)
     _deals_col.create_index("source", background=True)
 except Exception as _me:

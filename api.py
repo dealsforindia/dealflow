@@ -767,7 +767,7 @@ async def get_desidime_deals(limit: int = 100):
     db = get_db()
     if db is None:
         raise HTTPException(503, "MongoDB not configured")
-    cursor = db.deals.find(
+    cursor = db.UniqueDeals.find(
         {"source": "desidime"},
         {"_id": 0}
     ).sort("ts", -1).limit(limit)
