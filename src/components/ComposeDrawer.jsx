@@ -17,6 +17,7 @@ function ComposeDrawer({ onClose }) {
     category: '🛍️ General',
     deal_type: 'product',
     affiliate_link: '',
+    img_url: '',
     source: 'manual',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +40,7 @@ function ComposeDrawer({ onClose }) {
       category: form.category,
       deal_type: form.deal_type,
       affiliate_link: form.affiliate_link,
+      img_url: form.img_url,
       source: 'manual',
     });
     setSubmitting(false);
@@ -97,6 +99,11 @@ function ComposeDrawer({ onClose }) {
             </div>
 
             <div className="compose-field">
+              <label>Image URL</label>
+              <input value={form.img_url} onChange={(e) => handleChange('img_url', e.target.value)} placeholder="https://... (optional)" />
+            </div>
+
+            <div className="compose-field">
               <label>Category</label>
               <select value={form.category} onChange={(e) => handleChange('category', e.target.value)}>
                 <option>🛍️ General</option>
@@ -116,7 +123,7 @@ function ComposeDrawer({ onClose }) {
             <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-ter)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               📱 Live Telegram Preview
             </label>
-            <TelegramPreview text={form.text || form.title} />
+            <TelegramPreview text={form.text || form.title} imageUrl={form.img_url} />
           </div>
         </div>
 

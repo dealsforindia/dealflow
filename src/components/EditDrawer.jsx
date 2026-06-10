@@ -26,6 +26,7 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
   const [price, setPrice] = useState(deal.price || '');
   const [originalPrice, setOriginalPrice] = useState(deal.original_price || '');
   const [affiliateLink, setAffiliateLink] = useState(deal.affiliate_link || '');
+  const [editImgUrl, setEditImgUrl] = useState(deal.img_url || deal.img_path || '');
   const [isRewriting, setIsRewriting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [oneInstruction, setOneInstruction] = useState('');
@@ -41,9 +42,10 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
       message !== (deal.aff_text || deal.message || deal.original_text || '') ||
       price !== (deal.price || '') ||
       originalPrice !== (deal.original_price || '') ||
-      affiliateLink !== (deal.affiliate_link || '')
+      affiliateLink !== (deal.affiliate_link || '') ||
+      editImgUrl !== (deal.img_url || deal.img_path || '')
     );
-  }, [title, message, price, originalPrice, affiliateLink, deal]);
+  }, [title, message, price, originalPrice, affiliateLink, editImgUrl, deal]);
 
   const handleAiRewrite = async () => {
     if (!oneInstruction.trim() && !message.trim()) return;
@@ -71,12 +73,12 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
   };
 
   const handleSaveAndApprove = () => {
-    editDeal(deal.fp_hash, { title, message, price: price || deal.price, original_price: originalPrice || deal.original_price, affiliate_link: affiliateLink || deal.affiliate_link });
-    onApprove({ ...deal, title, message, price, original_price: originalPrice, affiliate_link: affiliateLink });
+    editDeal(deal.fp_hash, { title, message, price: price || deal.price, original_price: originalPrice || deal.original_price, affiliate_link: affiliateLink || deal.affiliate_link, img_url: editImgUrl });
+    onApprove({ ...deal, title, message, price, original_price: originalPrice, affiliate_link: affiliateLink, img_url: editImgUrl });
   };
 
   const handleSaveOnly = () => {
-    editDeal(deal.fp_hash, { title, message, price, original_price: originalPrice, affiliate_link: affiliateLink });
+    editDeal(deal.fp_hash, { title, message, price, original_price: originalPrice, affiliate_link: affiliateLink, img_url: editImgUrl });
     onClose();
   };
 
@@ -125,6 +127,12 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
             <div className="drawer-field">
               <label className="drawer-label">Affiliate Link</label>
               <input className="drawer-input" value={affiliateLink} onChange={e => setAffiliateLink(e.target.value)} placeholder="https://amzn.to/..." />
+            </div>
+
+            {/* Image URL */}
+            <div className="drawer-field">
+              <label className="drawer-label">Image URL</label>
+              <input className="drawer-input" value={editImgUrl} onChange={e => setEditImgUrl(e.target.value)} placeholder="https://... (optional)" />
             </div>
 
             {/* Post text + AI controls */}
@@ -187,7 +195,7 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
             </label>
             <TelegramPreview
               text={message}
-              imageUrl={imageUrl}
+              imageUrl={editImgUrl || imageUrl}
               channelName="@dealsforindiachannel"
             />
 
