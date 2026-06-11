@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-import fcntl, sys, os
-_lf = open("/tmp/dealbot_main.lock","w")
-try: fcntl.flock(_lf, fcntl.LOCK_EX|fcntl.LOCK_NB)
-except IOError: print("bot.py already running!"); sys.exit(1)
+import sys, os
+try:
+    import fcntl
+    _lf = open("/tmp/dealbot_main.lock","w")
+    try: fcntl.flock(_lf, fcntl.LOCK_EX|fcntl.LOCK_NB)
+    except IOError: print("bot.py already running!"); sys.exit(1)
+except ImportError:
+    pass # Ignore lock on Windows
 
 """
 Telegram Deal Bot — Indian Edition v8  (Professional Grade)

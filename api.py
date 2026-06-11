@@ -231,7 +231,7 @@ async def approve_deal(fp_hash: str, req: Request):
     except Exception:
         body = {}
         
-    updates = {"status": "posted", "approved_ts": time.time()}
+    updates = {"status": "posted", "approved_ts": time.time(), "processed_ts": time.time()}
     if body:
         if "message" in body: updates["message"] = body["message"]
         if "title" in body: updates["prod_name"] = body["title"]
@@ -749,6 +749,7 @@ async def compose_deal(body: dict[str, Any]):
         "source": "manual",
         "status": "pending_approval",
         "ts": time.time(),
+        "processed_ts": time.time(),
     }
     
     await db.UniqueDeals.insert_one(deal)

@@ -151,6 +151,46 @@ function _cleanRaw(title) {
   return title.replace(/\*\*/g, '').replace(/[_*]/g, '').trim() || "Unnamed Deal";
 }
 
+import { API_URL } from '../config';
+
+// ── DesiDime / source helpers
+export const isDesidimeDeal = (deal) =>
+  deal?.source === 'desidime' || deal?.source_channel === 'desidime';
+
+export const parseDesidimeStore = (deal) => {
+  if (deal?.store) return deal.store;
+  if (Array.isArray(deal?.platforms) && deal.platforms[0]) return deal.platforms[0];
+  const text = deal?.aff_text || deal?.prod_name || '';
+  const m = text.match(/Available on:\s*(.+?)(?:\n|$)/i);
+  return m ? m[1].trim() : 'DesiDime';
+};
+
+export const dealQueueKey = (deal, idx = 0) =>
+  `${deal?.fp_hash || deal?.legacy_id || 'deal'}-${deal?.ts || idx}-${idx}`;
+
+/** Normalize deal image paths from backend → full URL */
+export const normalizeImageUrl = (deal) => {
+  let imgUrl = deal?.img_url || deal?.img_path || deal?.image_url || deal?.image
+    || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail;
+  if (!imgUrl || typeof imgUrl !== 'string') return null;
+
+  if (imgUrl.includes('/dealbot/images/')) {
+    imgUrl = '/images/' + imgUrl.split('/dealbot/images/')[1];
+  }
+  if (imgUrl.startsWith('http://74.225.250.0/images/')) {
+    imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
+  }
+  if (imgUrl.startsWith('images/')) {
+    imgUrl = '/images/' + imgUrl.slice(7);
+  } else if (imgUrl.includes('/images/')) {
+    imgUrl = '/images/' + imgUrl.split('/images/')[1];
+  } else if (imgUrl.includes('\\images\\')) {
+    imgUrl = '/images/' + imgUrl.split('\\images\\')[1];
+  }
+  if (imgUrl.startsWith('/')) return API_URL + imgUrl;
+  return imgUrl;
+};
+
 // ── Price formatter
 export const fmtPrice = (p) => {
   if (!p) return null;

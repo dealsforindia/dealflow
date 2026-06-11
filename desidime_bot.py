@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-import fcntl, sys, os
-_lf = open("/tmp/dealbot_desi.lock","w")
-try: fcntl.flock(_lf, fcntl.LOCK_EX|fcntl.LOCK_NB)
-except IOError: print("desidime_bot.py already running!"); sys.exit(1)
+import sys, os
+try:
+    import fcntl
+    _lf = open("/tmp/dealbot_desi.lock","w")
+    try: fcntl.flock(_lf, fcntl.LOCK_EX|fcntl.LOCK_NB)
+    except IOError: print("desidime_bot.py already running!"); sys.exit(1)
+except ImportError:
+    pass # Ignore lock on Windows
 
 """
 DesiDime Deal Bot — v13  (Professional Grade)
@@ -1182,7 +1186,13 @@ def run_cycle():
         )
 
         deal_id = d["uid"]
-        pending[deal_id] = {"post_text": post_text, "title": d["title"][:60], "img_path": img_path, "img_paths": img_paths, "ts": time.time()}
+        # Store original web URL for the best image so dashboard can show it
+        img_url_web = None
+        if page_images:
+            img_url_web = page_images[0]
+        elif card_img_url:
+            img_url_web = card_img_url
+        pending[deal_id] = {"post_text": post_text, "title": d["title"][:60], "img_path": img_path, "img_paths": img_paths, "img_url": img_url_web, "ts": time.time()}
         save_pending(pending)
 
         # Save to MongoDB for web dashboard
@@ -1196,6 +1206,7 @@ def run_cycle():
             "platforms": [d.get("store", "DesiDime")],
             "coupon": d.get("coupon"),
             "img_path": img_path,
+            "img_url": img_url_web,
             "status": "pending_approval",
             "source": "desidime",
             "source_channel": "desidime",
@@ -1204,6 +1215,7 @@ def run_cycle():
             "original_msg_link": d.get("link", ""),
             "store": d.get("store"),
             "ts": time.time(),
+            "processed_ts": time.time(),
         })
 
         # Admin preview header

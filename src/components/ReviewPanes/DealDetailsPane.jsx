@@ -20,26 +20,8 @@ import {
   Globe,
 } from 'lucide-react';
 import { API_URL } from '../../config';
-import { calcDiscount, cleanTitle, fmt, fmtPrice, resolveChannelName } from '../../utils/helpers';
+import { calcDiscount, cleanTitle, fmt, fmtPrice, resolveChannelName, normalizeImageUrl } from '../../utils/helpers';
 import useDealStore from '../../store/useDealStore';
-
-function normalizeImageUrl(deal) {
-  let imgUrl = deal?.img_url || deal?.img_path || deal?.image_url || deal?.image || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail;
-  if (imgUrl && typeof imgUrl === 'string' && imgUrl.includes('/dealbot/images/')) {
-    imgUrl = '/images/' + imgUrl.split('/dealbot/images/')[1];
-  }
-  if (!imgUrl) return null;
-  if (imgUrl.startsWith('http://74.225.250.0/images/')) {
-    imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
-  }
-  if (imgUrl.includes('/images/')) {
-    imgUrl = '/images/' + imgUrl.split('/images/')[1];
-  } else if (imgUrl.includes('\\images\\')) {
-    imgUrl = '/images/' + imgUrl.split('\\images\\')[1];
-  }
-  if (imgUrl.startsWith('/')) return API_URL + imgUrl;
-  return imgUrl;
-}
 
 function normalizeScore(score) {
   const n = Number(score);

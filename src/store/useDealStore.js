@@ -79,6 +79,16 @@ function mapDeal(x) {
     d.dealType = (hasTrick && !hasPrice) ? 'trick' : 'product';
   }
 
+  // DesiDime-specific normalization
+  if (d.source === 'desidime') {
+    const storeMatch = (d.aff_text || '').match(/Available on:\s*(.+?)(?:\n|$)/i);
+    const store = storeMatch ? storeMatch[1].trim() : (d.store || 'DesiDime');
+    d.store = store;
+    d.platforms = d.platforms?.length ? d.platforms : [store];
+    d.channelName = store;
+    if (!d.channel) d.channel = 'desidime';
+  }
+
   return d;
 }
 
@@ -483,7 +493,7 @@ export const useDealStore = create((set, get) => ({
   desidimeDeals: [],
   fetchDesidimeDeals: async () => {
     try {
-      const r = await fetch(`${API}/api/v1/deals/desidime`);
+      const r = await fetch(`${API}/api/v1/deals/desidime?limit=200`);
       if (!r.ok) return;
       const d = await r.json();
       const deals = (d.deals || []).map(mapDeal);
