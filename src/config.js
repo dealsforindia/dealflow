@@ -6,8 +6,8 @@ const isDev = import.meta.env.DEV;
 
 export const API_URL = isDev
   ? (import.meta.env.VITE_API_URL || 'http://74.225.250.0:8000')
-  : '';  // empty = relative path, proxied by vercel.json
+  : 'https://api.rudranil.me';
 
 export const WS_URL = isDev
   ? (import.meta.env.VITE_WS_URL || 'ws://74.225.250.0:8000/ws')
-  : `wss://${window.location.host}/ws`;  // wss:// for production HTTPS
+  : 'wss://api.rudranil.me/ws';

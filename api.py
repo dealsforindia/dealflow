@@ -155,11 +155,11 @@ async def websocket_endpoint(ws: WebSocket):
             "event":         "snapshot",
             "queue_depth":   _redis.llen("queue:deals"),
             "redis_memory":  _redis.info("memory")["used_memory_human"],
-            "pending_count": await db.UniqueDeals.count_documents({"status": "pending_approval"}) if db else 0,
+            "pending_count": await db.UniqueDeals.count_documents({"status": "pending_approval"}) if db is not None else 0,
             "posted_today":  await db.UniqueDeals.count_documents({
                 "status": "posted",
                 "processed_ts": {"$gte": time.time() - 86400}
-            }) if db else 0,
+            }) if db is not None else 0,
             "ts": time.time(),
         }
         await ws.send_text(json.dumps(snapshot))
