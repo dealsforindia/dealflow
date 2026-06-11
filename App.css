@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -34,8 +34,8 @@
   --grad-purple:  linear-gradient(135deg, #a855f7 0%, #c084fc 100%);
   --grad-price:   linear-gradient(135deg, #10b981 0%, #059669 100%);
 
-  --sans:    'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --display: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+  --sans:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --mono:    'JetBrains Mono', 'Fira Code', monospace;
 
   --radius-xl: 18px;

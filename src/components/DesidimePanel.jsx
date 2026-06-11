@@ -25,8 +25,7 @@ function DesidimePanel() {
   };
 
   useEffect(() => {
-    // Only fetch on first mount if no cached data
-    if (desidimeDeals.length === 0) loadDeals();
+    loadDeals();
   }, []);
 
   const pendingDeals = useMemo(
