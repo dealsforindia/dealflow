@@ -6,7 +6,7 @@ import { resolveChannelName } from '../../utils/helpers';
 
 function ReviewQueueList({ deals, selectedIndex, onSelect, onCompose }) {
   const containerRef = useRef(null);
-  const { channelConfig, activeFilter, setFilter, clearFilter } = useDealStore();
+  const { channelConfig, activeFilter, setFilter, clearFilter, dealsLoading } = useDealStore();
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState('latest'); // 'latest' | 'oldest' | 'score'
@@ -171,7 +171,22 @@ function ReviewQueueList({ deals, selectedIndex, onSelect, onCompose }) {
       </div>
 
       <div className="queue-list" ref={containerRef}>
-        {filteredDeals.length === 0 && (
+        {deals.length === 0 && dealsLoading && (
+          <>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="queue-item" style={{ padding: '14px 16px', opacity: 0.5 }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 8, background: 'var(--bg-card)', animation: 'pulse 1.5s infinite' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ width: '70%', height: 12, borderRadius: 4, background: 'var(--bg-card)', marginBottom: 8, animation: 'pulse 1.5s infinite' }} />
+                    <div style={{ width: '40%', height: 10, borderRadius: 4, background: 'var(--bg-card)', animation: 'pulse 1.5s infinite' }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+        {filteredDeals.length === 0 && !dealsLoading && (
           <div style={{ textAlign: 'center', color: 'var(--text-ter)', padding: 40, fontSize: 12 }}>
             {searchQuery || activeFilter ? 'No deals match your filter' : 'Queue is empty'}
           </div>
@@ -184,6 +199,11 @@ function ReviewQueueList({ deals, selectedIndex, onSelect, onCompose }) {
             onClick={() => onSelect(idx)}
           />
         ))}
+        {dealsLoading && deals.length > 0 && (
+          <div style={{ textAlign: 'center', color: 'var(--text-ter)', padding: '12px 0', fontSize: 11 }}>
+            Loading more deals…
+          </div>
+        )}
       </div>
     </div>
   );

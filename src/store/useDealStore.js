@@ -84,28 +84,12 @@ function mapDeal(x) {
 
 export const useDealStore = create((set, get) => ({
   // ── State
-  deals: [{
-    fp_hash: 'mock-1234567890',
-    title: 'Myntra Loot: WROGN Men Oversized Shirts @249',
-    prod_name: 'WROGN Men Oversized Shirts',
-    price: 249,
-    original_price: 1299,
-    channel: '@Technicalsheikh',
-    source: 'telegram',
-    status: 'pending',
-    dealType: 'product',
-    category: 'Fashion',
-    brand: 'Myntra',
-    score: 9.6,
-    affiliate_link: 'https://myntra.com/deal',
-    img_path: 'https://via.placeholder.com/600',
-    ts: Date.now() / 1000 - 3600
-  }],
+  deals: [],
   stats:         SEED_STATS,
   channels:      FALLBACK_CHANNELS,     // sidebar channel list
   channelConfig: FALLBACK_CHANNELS,     // channels panel config
   feed:          [],
-  dealsLoading:  false,             // loading state for paginated fetch
+  dealsLoading:  true,              // start as loading
   authToken:     null,
   setAuthToken:  (t) => set({ authToken: t }),
   settings: JSON.parse(sessionStorage.getItem('dealbot_settings')) || {
@@ -190,84 +174,38 @@ export const useDealStore = create((set, get) => ({
   fetchDeals: async () => {
     set({ dealsLoading: true });
     try {
-      // Paginated fetch — load ALL pending deals, not just first 150
       const PAGE = 150;
-      let allDeals = [];
-      let skip = 0;
-      let hasMore = true;
 
-      while (hasMore) {
-        const r = await fetch(`${API}/api/v1/deals/pending?limit=${PAGE}&skip=${skip}`);
-        if (!r.ok) break;
-        const d = await r.json();
-        const batch = (Array.isArray(d) ? d : (d.deals || [])).map(mapDeal);
-        allDeals = allDeals.concat(batch);
-        hasMore = batch.length >= PAGE;
-        skip += PAGE;
+      // 1) Load first page FAST and show immediately
+      const r = await fetch(`${API}/api/v1/deals/pending?limit=${PAGE}&skip=0`);
+      if (!r.ok) throw new Error(`Fetch failed: ${r.status}`);
+      const d = await r.json();
+      const firstBatch = (Array.isArray(d) ? d : (d.deals || [])).map(mapDeal);
+      const total = d.total || firstBatch.length;
+
+      // Show first batch immediately
+      set({ deals: firstBatch, dealsLoading: firstBatch.length < total });
+
+      // 2) Load remaining pages in background (if any)
+      if (firstBatch.length >= PAGE && total > PAGE) {
+        let skip = PAGE;
+        while (skip < total) {
+          try {
+            const r2 = await fetch(`${API}/api/v1/deals/pending?limit=${PAGE}&skip=${skip}`);
+            if (!r2.ok) break;
+            const d2 = await r2.json();
+            const batch = (Array.isArray(d2) ? d2 : (d2.deals || [])).map(mapDeal);
+            if (batch.length === 0) break;
+            set(s => ({ deals: [...s.deals, ...batch] }));
+            skip += PAGE;
+          } catch { break; }
+        }
       }
 
-      // INJECT MOCK DEAL FOR UI PREVIEW IF EMPTY
-      if (allDeals.length === 0) {
-        allDeals.push(mapDeal({
-          fp_hash: 'mock-1234567890',
-          title: 'Myntra Loot: WROGN Men Oversized Shirts @249',
-          prod_name: 'WROGN Men Oversized Shirts',
-          price: 249,
-          original_price: 1299,
-          channel: '@Technicalsheikh',
-          source: 'telegram',
-          status: 'pending',
-          dealType: 'product',
-          category: 'Fashion',
-          brand: 'Myntra',
-          score: 9.6,
-          affiliate_link: 'https://myntra.com/deal',
-          img_path: 'https://via.placeholder.com/600',
-          ts: Date.now() / 1000 - 3600
-        }));
-      }
-
-      set(s => {
-        // Keep any deals not in the new batch (e.g. already approved/rejected locally)
-        const existing = new Map(s.deals.map(x => [x.fp_hash, x]));
-        allDeals.forEach(x => existing.set(x.fp_hash, x));
-        return {
-          dealsLoading: false,
-          deals: [...existing.values()].sort((a, b) => {
-            // Sort: pending first, then by timestamp desc
-            if (a.status === 'pending' && b.status !== 'pending') return -1;
-            if (b.status === 'pending' && a.status !== 'pending') return 1;
-            return (b.ts || 0) - (a.ts || 0);
-          })
-        };
-      });
+      set({ dealsLoading: false });
     } catch (e) {
       console.error("fetchDeals:", e);
-      set(s => {
-        if (s.deals.length === 0) {
-          return {
-            dealsLoading: false,
-            deals: [mapDeal({
-              fp_hash: 'mock-1234567890',
-              title: 'Myntra Loot: WROGN Men Oversized Shirts @249',
-              prod_name: 'WROGN Men Oversized Shirts',
-              price: 249,
-              original_price: 1299,
-              channel: '@Technicalsheikh',
-              source: 'telegram',
-              status: 'pending',
-              dealType: 'product',
-              category: 'Fashion',
-              brand: 'Myntra',
-              score: 9.6,
-              affiliate_link: 'https://myntra.com/deal',
-              img_path: 'https://via.placeholder.com/600',
-              ts: Date.now() / 1000 - 3600
-            })]
-          };
-        }
-        return { dealsLoading: false };
-      });
+      set({ dealsLoading: false });
     }
   },
 
