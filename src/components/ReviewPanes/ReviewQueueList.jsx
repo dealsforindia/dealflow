@@ -107,6 +107,17 @@ function ReviewQueueList({
 
   return (
     <div className="review-queue-pane">
+      {/* Mobile review queue header */}
+      <div className="mob-hot-header">
+        <h1 className="mob-hot-title">Review Queue</h1>
+        <div className="mob-hot-meta">
+          <span className="mob-live-badge">
+            <span className="mob-live-dot" />
+            🔥 LIVE
+          </span>
+          <span className="mob-deal-count">{deals.length} pending deals</span>
+        </div>
+      </div>
       <div className="queue-header">
         <div className="queue-header-left">
           <span className="queue-header-title">{title}</span>

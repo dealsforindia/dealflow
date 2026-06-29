@@ -653,7 +653,7 @@ kbd {
     height: auto;
     min-height: 100vh;
   }
-  .left-panel {
+  .app-container > .left-panel {
     width: 100%;
     min-width: 100%;
     flex-direction: row;
@@ -661,12 +661,12 @@ kbd {
     padding: 12px;
     overflow-x: auto;
   }
-  .nav-menu {
+  .app-container > .left-panel .nav-menu {
     display: flex;
     flex-direction: row;
     gap: 8px;
   }
-  .nav-item {
+  .app-container > .left-panel .nav-item {
     padding: 8px 12px;
     font-size: 11px;
   }
@@ -1051,6 +1051,13 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.drawer-body-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
 }
 
 .drawer-field { display: flex; flex-direction: column; gap: 6px; }
@@ -2094,9 +2101,22 @@ kbd {
 
 @media (max-width: 768px) {
 
+  /* ── MOBILE WARM CREAM THEME ── */
+  :root {
+    --mob-bg: #FFF8F0;
+    --mob-card: #FFFFFF;
+    --mob-border: #E8E0D6;
+    --mob-text: #1A1A1A;
+    --mob-text-sec: #5C5C5C;
+    --mob-text-ter: #A0958A;
+  }
+
   /* ── BODY / ROOT ── */
   body {
     overflow: hidden;
+    background: var(--mob-bg);
+    background-image: none;
+    color: var(--mob-text);
   }
 
   /* ── APP SHELL ── */
@@ -2105,21 +2125,22 @@ kbd {
     flex-direction: column;
     height: 100dvh;
     overflow: hidden;
+    background: var(--mob-bg);
   }
 
-  /* ── BOTTOM NAV ── */
+  /* ── BOTTOM NAV — warm cream style ── */
   .mobile-bottom-nav {
     display: flex;
     align-items: center;
     justify-content: space-around;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: calc(56px + env(safe-area-inset-bottom));
+    height: calc(60px + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
-    background: var(--bg-panel);
-    border-top: 1px solid var(--border-dim);
+    background: var(--mob-card);
+    border-top: 1px solid var(--mob-border);
     z-index: 500;
-    backdrop-filter: blur(12px);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
   }
   .mob-nav-item {
     display: flex;
@@ -2129,17 +2150,17 @@ kbd {
     padding: 6px 10px;
     border-radius: var(--radius-md);
     cursor: pointer;
-    color: var(--text-ter);
+    color: var(--mob-text-ter);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    font-family: var(--mono);
+    font-family: var(--sans);
     min-width: 52px;
     transition: color 0.15s;
   }
   .mob-nav-item.active {
-    color: var(--accent-blue-lt);
+    color: #1A1A1A;
   }
   .mob-nav-item svg {
     transition: color 0.15s;
@@ -2148,11 +2169,12 @@ kbd {
   /* ── DECK / LAYOUT ── */
   .deck {
     grid-template-columns: 1fr;
-    padding: 0 0 calc(56px + env(safe-area-inset-bottom));
+    padding: 0 0 calc(60px + env(safe-area-inset-bottom));
     gap: 0;
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    background: var(--mob-bg);
   }
 
   /* ── SIDEBAR — hidden on mobile (replaced by bottom nav) ── */
@@ -2166,6 +2188,7 @@ kbd {
     border-radius: 0;
     border: none;
     border-right: 1px solid var(--border-card);
+    background: var(--bg-panel); /* keep sidebar dark */
   }
   .left-panel.open {
     transform: translateX(0);
@@ -2185,17 +2208,28 @@ kbd {
     opacity: 1;
   }
 
-  /* ── TOPBAR ── */
+  /* ── TOPBAR — warm cream ── */
   .topbar {
-    height: 44px;
-    padding: 0 12px;
-    gap: 8px;
+    height: 48px;
+    padding: 0 14px;
+    gap: 10px;
     overflow: visible;
     justify-content: flex-start;
+    background: var(--mob-card);
+    border-bottom: 1px solid var(--mob-border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  }
+  .topbar::after {
+    display: none;
   }
   .topbar-logo {
-    font-size: 15px;
+    font-size: 16px;
     letter-spacing: -0.5px;
+    background: none;
+    -webkit-background-clip: initial;
+    -webkit-text-fill-color: #1A1A1A;
+    background-clip: initial;
+    color: #1A1A1A;
   }
   .topbar-divider {
     display: none;
@@ -2206,7 +2240,7 @@ kbd {
   .topbar-time {
     display: none;
   }
-  /* Hide QUEUE and REDIS on mobile — too noisy */
+  /* Hide QUEUE and REDIS on mobile */
   .topbar-stat.hide-mobile {
     display: none !important;
   }
@@ -2216,28 +2250,46 @@ kbd {
   .topbar-stat strong {
     font-size: 14px;
     letter-spacing: -0.5px;
+    color: #1A1A1A;
+  }
+  .topbar-stat strong.green {
+    color: #059669;
+  }
+  .topbar-stat strong.amber {
+    color: #d97706;
   }
   .topbar-stat span {
     font-size: 7px;
+    color: var(--mob-text-ter);
+  }
+  .ws-indicator.live {
+    color: #059669;
+  }
+  .ws-indicator.dead {
+    color: var(--mob-text-ter);
   }
   .mobile-menu-btn {
     display: flex !important;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: var(--text-sec);
+    color: var(--mob-text-sec);
     flex-shrink: 0;
   }
 
-  /* ── CENTER PANEL ── */
+  /* ── CENTER PANEL — warm ── */
   .center-panel {
     border-radius: 0;
     border: none;
-    padding-top: 16px;
-    padding-left: 14px;
-    padding-right: 14px;
+    padding-top: 0;
+    padding-left: 0;
+    padding-right: 0;
     height: 100%;
     overflow: hidden;
+    background: var(--mob-bg);
+  }
+  .center-panel-v2 {
+    background: var(--mob-bg);
   }
   .center-header {
     padding-bottom: 12px;
@@ -2245,10 +2297,12 @@ kbd {
   .center-title {
     font-size: 20px;
     letter-spacing: -0.4px;
+    color: #1A1A1A;
   }
   .center-subtitle {
     font-size: 11px;
     margin-top: 3px;
+    color: var(--mob-text-sec);
   }
 
   /* Header actions — search + filter in a row */
@@ -2304,6 +2358,8 @@ kbd {
     padding: 12px;
     gap: 12px 10px;
     border-radius: var(--radius-lg);
+    background: var(--mob-card);
+    border-color: var(--mob-border);
   }
 
   /* Thumbnail stays left, small */
@@ -2330,14 +2386,17 @@ kbd {
   .deal-title {
     font-size: 13px;
     -webkit-line-clamp: 2;
+    color: #1A1A1A;
   }
 
   /* Price slightly smaller */
   .deal-price {
     font-size: 15px;
+    color: #E53E3E;
   }
   .deal-mrp {
     font-size: 11px;
+    color: var(--mob-text-ter);
   }
 
   /* Actions — full width row BELOW the card body */
@@ -2376,7 +2435,7 @@ kbd {
     flex-direction: column;
   }
 
-  /* Fix: deal card inner layout — thumb left, body right, actions below all */
+  /* Fix: deal card inner layout */
   .deal-card {
     display: grid;
     grid-template-columns: 48px 1fr;
@@ -2396,7 +2455,7 @@ kbd {
   .deal-card > .deal-actions {
     grid-column: 1 / -1;
     grid-row: 2;
-    border-top: 1px solid var(--border-dim);
+    border-top: 1px solid var(--mob-border);
     padding-top: 8px;
     margin-top: 0;
   }
@@ -2406,35 +2465,115 @@ kbd {
     display: none;
   }
 
-  /* ── EDIT DRAWER — full screen bottom sheet ── */
+  /* ── EDIT DRAWER — full screen bottom sheet, light theme ── */
   .drawer-overlay {
     align-items: flex-end;
     justify-content: center;
+    background: rgba(0,0,0,0.4);
   }
   .edit-drawer {
     width: 100vw !important;
     max-width: 100vw;
     height: 92dvh;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border-radius: 20px 20px 0 0;
     border-left: none;
-    border-top: 1px solid var(--border-card);
+    border-top: 1px solid var(--mob-border);
     animation: slideUp 0.25s cubic-bezier(0.16,1,0.3,1);
+    background: #FEFBF6;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.12);
   }
   @keyframes slideUp {
     from { transform: translateY(100%); }
     to   { transform: translateY(0); }
   }
 
-  /* ── DASHBOARD / COMMAND CENTER ── */
+  /* Edit drawer — single column on mobile */
+  .drawer-body-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px;
+  }
+
+  .drawer-header {
+    background: #FEFBF6;
+    border-bottom-color: var(--mob-border);
+  }
+  .drawer-title {
+    color: #1A1A1A;
+  }
+  .drawer-label {
+    color: var(--mob-text-sec);
+  }
+  .drawer-input {
+    background: #FFFFFF;
+    border-color: var(--mob-border);
+    color: #1A1A1A;
+  }
+  .drawer-input:focus {
+    border-color: #6366f1;
+  }
+  .drawer-textarea {
+    background: #FFFFFF;
+    border-color: var(--mob-border);
+    color: #1A1A1A;
+  }
+  .drawer-textarea:focus {
+    border-color: #6366f1;
+  }
+  .drawer-footer {
+    background: #FEFBF6;
+    border-top-color: var(--mob-border);
+  }
+  .drawer-btn.cancel {
+    background: var(--mob-card);
+    border: 1px solid var(--mob-border);
+    color: var(--mob-text-sec);
+  }
+  .drawer-btn.save-only {
+    background: rgba(59,130,246,0.08);
+    border-color: rgba(59,130,246,0.25);
+    color: #3b82f6;
+  }
+  .drawer-btn.approve {
+    background: #1A1A1A;
+    color: #FFFFFF;
+  }
+  .drawer-char-count {
+    color: var(--mob-text-ter);
+  }
+
+  /* ── POSTED CARDS — light ── */
+  .posted-card, .deal-card.posted-card {
+    background: var(--mob-card);
+    border-color: var(--mob-border);
+  }
+  .card-title {
+    color: #1A1A1A;
+  }
+  .price {
+    color: #E53E3E;
+  }
+  .mrp {
+    color: var(--mob-text-ter);
+    text-decoration: line-through;
+  }
+  .posted-status {
+    color: #059669;
+  }
+
+  /* ── DASHBOARD / COMMAND CENTER — light ── */
   .dashboard-kpi-grid {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
   .analytics-stat-card {
     padding: 14px;
+    background: var(--mob-card);
+    border-color: var(--mob-border);
   }
   .analytics-stat-val {
     font-size: 24px !important;
+    color: #1A1A1A;
   }
   .dashboard-zone-grid {
     grid-template-columns: 1fr;
@@ -2444,15 +2583,18 @@ kbd {
   }
   .analytics-card {
     min-height: 200px;
+    background: var(--mob-card);
+    border-color: var(--mob-border);
   }
 
   /* ── CHANNELS PANEL ── */
-  /* Source cards — stack description below icon+name */
   .source-card {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
     padding: 14px 16px;
+    background: var(--mob-card);
+    border-color: var(--mob-border);
   }
   .source-card-left {
     width: 100%;
@@ -2474,10 +2616,13 @@ kbd {
     gap: 4px 12px;
     padding: 12px;
     border-radius: var(--radius-md);
+    background: var(--mob-card);
+    border-color: var(--mob-border);
   }
   .ch-name {
     grid-column: 1;
     grid-row: 1;
+    color: #1A1A1A;
   }
   .ch-toggle-col {
     grid-column: 2;
@@ -2499,6 +2644,9 @@ kbd {
   }
   .ch-input {
     width: 100%;
+    background: var(--mob-card);
+    border-color: var(--mob-border);
+    color: #1A1A1A;
   }
   .ch-add-btn {
     width: 100%;
@@ -2520,6 +2668,9 @@ kbd {
   }
   .setting-input {
     width: 100%;
+    background: var(--mob-card);
+    border-color: var(--mob-border);
+    color: #1A1A1A;
   }
   .api-key-input {
     width: 100%;
@@ -2544,14 +2695,14 @@ kbd {
   }
   .clones-stats-panel {
     border-left: none;
-    border-top: 1px solid var(--border-dim);
+    border-top: 1px solid var(--mob-border);
     overflow-y: visible;
   }
 
   /* ── TOASTS — bottom of screen on mobile ── */
   .toast-container {
     top: auto;
-    bottom: calc(64px + env(safe-area-inset-bottom));
+    bottom: calc(68px + env(safe-area-inset-bottom));
     right: 12px;
     left: 12px;
   }
@@ -2559,6 +2710,9 @@ kbd {
     font-size: 12px;
     padding: 10px 14px;
     text-align: center;
+    background: var(--mob-card);
+    color: #1A1A1A;
+    border-color: var(--mob-border);
   }
 
   /* ── FILTER DROPDOWN ── */
@@ -2576,13 +2730,15 @@ kbd {
 
   /* ── BULK ACTION BAR ── */
   .bulk-action-bar {
-    bottom: calc(64px + env(safe-area-inset-bottom));
+    bottom: calc(68px + env(safe-area-inset-bottom));
     left: 12px;
     right: 12px;
     transform: none;
     padding: 10px 16px;
     gap: 12px;
     border-radius: 14px;
+    background: var(--mob-card);
+    border-color: var(--mob-border);
   }
 
   /* ── POSTED FEED ROWS ── */
@@ -2605,5 +2761,152 @@ kbd {
   }
   .analytics-card {
     padding: 14px 16px;
+  }
+
+  /* ── Empty states ── */
+  .empty-state, .review-empty-state {
+    color: var(--mob-text-sec);
+  }
+  .empty-icon {
+    color: var(--mob-text-ter);
+  }
+  .empty-title {
+    color: #1A1A1A;
+  }
+  .empty-sub {
+    color: var(--mob-text-sec);
+  }
+
+  /* ── Posted list wrapper light ── */
+  .posted-list-wrapper {
+    background: var(--mob-bg);
+  }
+  .posted-board .deal-card {
+    background: var(--mob-card);
+    border-color: var(--mob-border);
+  }
+
+  /* ── AI instruction bar — light ── */
+  .ai-instruction-bar {
+    background: var(--mob-card);
+    border-color: var(--mob-border);
+  }
+  .ai-instruction-input {
+    background: transparent;
+    color: #1A1A1A;
+  }
+  .ai-instruction-input::placeholder {
+    color: var(--mob-text-ter);
+  }
+}
+
+/* Responsive shell repair for the current deck-based app. */
+.deck > .left-panel {
+  width: auto;
+  min-width: 0;
+  flex-direction: column;
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+  .deck {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 10px;
+    padding: 0 10px 10px;
+  }
+
+  .deck > .left-panel {
+    width: 72px;
+    min-width: 72px;
+    padding: 0;
+  }
+
+  .deck > .left-panel .logo-block {
+    justify-content: center;
+    padding: 14px 10px;
+  }
+
+  .deck > .left-panel .logo-text,
+  .deck > .left-panel .section-title,
+  .deck > .left-panel .channel-list,
+  .deck > .left-panel .user-info,
+  .deck > .left-panel .user-block svg {
+    display: none;
+  }
+
+  .deck > .left-panel .nav-menu {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .deck > .left-panel .nav-item {
+    width: 52px;
+    height: 46px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+    transform: none;
+  }
+
+  .deck > .left-panel .nav-item:hover {
+    transform: none;
+  }
+
+  .deck > .left-panel .user-block {
+    justify-content: center;
+    padding: 12px 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .deck > .left-panel {
+    width: min(300px, 86vw);
+    min-width: 0;
+    padding: 0;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .deck > .left-panel .nav-menu {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .deck > .left-panel .nav-item {
+    height: auto;
+    width: auto;
+    justify-content: flex-start;
+    font-size: 13px;
+  }
+
+  .deck > .left-panel .logo-block,
+  .deck > .left-panel .user-block {
+    height: auto;
+  }
+
+  .topbar {
+    min-width: 0;
+  }
+
+  .topbar-logo {
+    flex: 0 1 auto;
+  }
+
+  .topbar-stat {
+    min-width: 42px;
+  }
+
+  .mobile-bottom-nav {
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(6px, env(safe-area-inset-right));
+  }
+
+  .mob-nav-item {
+    min-width: 0;
+    flex: 1 1 0;
+    padding-left: 2px;
+    padding-right: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
