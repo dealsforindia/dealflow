@@ -18,15 +18,57 @@ import {
   Trash2,
   RefreshCw,
   Globe,
+  Clock,
 } from 'lucide-react';
 import { API_URL } from '../../config';
-import { calcDiscount, cleanTitle, fmt, fmtPrice, resolveChannelName, normalizeImageUrl } from '../../utils/helpers';
+import { calcDiscount, cleanTitle, fmt, fmtPrice, resolveChannelName, normalizeImageUrl, normalizeScore } from '../../utils/helpers';
 import useDealStore from '../../store/useDealStore';
 
-function normalizeScore(score) {
-  const n = Number(score);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return Math.round(n <= 10 ? n * 10 : n);
+/**
+ * Parses text containing markdown-style links [text](url) and bare URLs,
+ * converting them into clickable <a> elements.
+ */
+function renderTextWithLinks(text) {
+  if (!text) return '(No text)';
+  // Match [text](url) — including empty text like [](url)
+  const mdLinkRegex = /\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
+  // First pass: replace markdown links
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = mdLinkRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const linkText = match[1].trim() || match[2].replace(/^https?:\/\//, '').split('/')[0];
+    parts.push(
+      <a key={match.index} href={match[2]} target="_blank" rel="noreferrer" className="tg-inline-link">
+        {linkText}
+      </a>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  // If no markdown links were found, try bare URLs
+  if (parts.length === 1 && typeof parts[0] === 'string') {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urlParts = [];
+    let li = 0;
+    while ((match = urlRegex.exec(parts[0])) !== null) {
+      if (match.index > li) urlParts.push(parts[0].slice(li, match.index));
+      urlParts.push(
+        <a key={match.index} href={match[0]} target="_blank" rel="noreferrer" className="tg-inline-link">
+          {match[0].replace(/^https?:\/\//, '').split('/')[0]}
+        </a>
+      );
+      li = match.index + match[0].length;
+    }
+    if (li < parts[0].length) urlParts.push(parts[0].slice(li));
+    if (urlParts.length > 1) return urlParts;
+  }
+  return parts.length > 0 ? parts : text;
 }
 
 function InfoItem({ label, value, href }) {
@@ -61,6 +103,7 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
   const [copied, setCopied] = useState(false);
   const [retryLoading, setRetryLoading] = useState(false);
   const [scrapeLoading, setScrapeLoading] = useState(false);
+  const [detailsTab, setDetailsTab] = useState('details');
   const fileInputRef = useRef(null);
   const imageUrl = useMemo(() => normalizeImageUrl(deal), [deal]);
   const { retryAffiliate, scrapeImage, uploadImage, markSpam } = useDealStore();
@@ -141,8 +184,8 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
       <div className="details-sticky-header">
         <div className="details-tabbar">
           <div className="details-tabs">
-            <button type="button" className="details-tab active">Deal Details</button>
-            <button type="button" className="details-tab">History</button>
+            <button type="button" className={`details-tab${detailsTab === 'details' ? ' active' : ''}`} onClick={() => setDetailsTab('details')}>Deal Details</button>
+            <button type="button" className={`details-tab${detailsTab === 'history' ? ' active' : ''}`} onClick={() => setDetailsTab('history')}>History</button>
           </div>
           <div className="details-toolbar">
             <span className="details-id">#{displayId}</span>
@@ -162,7 +205,23 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
       </div>
 
       <div className="details-scroll-content">
-        {/* ── SECTION 1: RAW TELEGRAM POST ── */}
+        {detailsTab === 'history' ? (
+        <section className="detail-section">
+          <div className="section-title"><Clock size={15} /> Activity Timeline</div>
+          <div className="timeline-area">
+            <div className="timeline-item">
+              <span className="timeline-time">{fmt(deal.ts) || 'Unknown'}</span>
+              <span className="timeline-desc">Added to review queue</span>
+            </div>
+            <div className="timeline-item">
+              <span className="timeline-time">Current</span>
+              <span className="timeline-desc">Waiting for reviewer decision</span>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <>
+      {/* ── SECTION 1: RAW TELEGRAM POST ── */}
         <section className="raw-tg-bubble">
           <div className="raw-tg-bubble-header">
             <div className="raw-tg-bubble-avatar">{channelInitial}</div>
@@ -178,14 +237,14 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
               onError={() => setImageFailed(true)}
             />
           )}
-          <div className="raw-tg-bubble-text">{rawText || '(No text)'}</div>
+          <div className="raw-tg-bubble-text">{renderTextWithLinks(rawText)}</div>
         </section>
 
         {/* ── SECTION 2: AFTER AFFILIATE CONVERSION ── */}
         {affText && affText !== rawText && (
           <section className="raw-tg-bubble">
             <div className="raw-tg-bubble-label">📤 After Affiliate Conversion</div>
-            <div className="raw-tg-bubble-text">{affText}</div>
+            <div className="raw-tg-bubble-text">{renderTextWithLinks(affText)}</div>
           </section>
         )}
 
@@ -210,7 +269,7 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
               {imageUrl && !imageFailed ? <img src={imageUrl} alt="" /> : <ImageOff size={14} />}
             </div>
           </div>
-          <div>
+          <div style={{ position: 'relative' }}>
             <div className="details-main-image-shell">
               {imageUrl && !imageFailed ? (
                 <img
@@ -345,6 +404,8 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
             </div>
           </div>
         </section>
+        </>
+      )}
       </div>
 
       <div className="action-bar">

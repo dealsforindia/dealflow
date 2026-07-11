@@ -97,7 +97,7 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
 
   return (
     <div className="drawer-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="edit-drawer" style={{ maxWidth: 960, width: '92vw' }}>
+      <div className="edit-drawer">
         {/* Header */}
         <div className="drawer-header">
           <div className="drawer-title">
@@ -112,10 +112,10 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
           </div>
         </div>
 
-        {/* Body — Two Column */}
-        <div className="drawer-body" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
+        {/* Body — Two Column (responsive via CSS) */}
+        <div className="drawer-body drawer-body-grid">
           {/* LEFT: Edit Form */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="drawer-form-column">
             {/* Title */}
             <div className="drawer-field">
               <label className="drawer-label">Title / Headline</label>
@@ -145,9 +145,9 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
             {/* Image Upload/URL */}
             <div className="drawer-field">
               <label className="drawer-label">Image</label>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input className="drawer-input" value={editImgUrl} onChange={e => setEditImgUrl(e.target.value)} placeholder="https://... or upload file" style={{ flex: 1 }} />
-                <button type="button" className="drawer-btn" style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, height: 38 }} onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+              <div className="drawer-inline-control">
+                <input className="drawer-input" value={editImgUrl} onChange={e => setEditImgUrl(e.target.value)} placeholder="https://... or upload file" />
+                <button type="button" className="drawer-btn drawer-btn-compact" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                   <Upload size={14} /> {isUploading ? 'Uploading…' : 'Upload'}
                 </button>
                 <input type="file" ref={fileInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
@@ -208,8 +208,8 @@ export default function EditDrawer({ deal, onClose, onApprove }) {
           </div>
 
           {/* RIGHT: Live TG Preview */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'sticky', top: 0 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-ter)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div className="drawer-preview-column">
+            <label className="drawer-preview-label">
               📱 Live Telegram Preview
             </label>
             <TelegramPreview

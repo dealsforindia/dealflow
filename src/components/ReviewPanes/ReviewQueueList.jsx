@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { SlidersHorizontal, Plus, Search, X, RefreshCw } from 'lucide-react';
 import ReviewQueueItem from './ReviewQueueItem';
-import useDealStore, { CHANNEL_NAME_MAP } from '../../store/useDealStore';
+import useDealStore from '../../store/useDealStore';
 import { resolveChannelName, dealQueueKey } from '../../utils/helpers';
 
 function ReviewQueueList({

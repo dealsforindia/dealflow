@@ -644,41 +644,21 @@ kbd {
 .feed-type.dup { color: var(--text-muted, var(--text-ter)); background: var(--bg-hover); }
 .feed-time { font-size: 10px; color: var(--text-ter); font-family: var(--mono); }
 
-/* ── MOBILE RESPONSIVENESS ── */
+/* ── TABLET RESPONSIVENESS ── */
 @media (max-width: 1024px) {
-  .app-container {
-    flex-direction: column;
-    padding: 10px;
-    gap: 12px;
-    height: auto;
-    min-height: 100vh;
+  .deck {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 0;
   }
-  .app-container > .left-panel {
-    width: 100%;
-    min-width: 100%;
-    flex-direction: row;
-    height: auto;
-    padding: 12px;
-    overflow-x: auto;
+  .left-panel {
+    display: none;
   }
-  .app-container > .left-panel .nav-menu {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-  }
-  .app-container > .left-panel .nav-item {
-    padding: 8px 12px;
-    font-size: 11px;
-  }
-  .nav-icon { width: 16px; height: 16px; }
   .center-panel {
     flex: 1;
     min-height: 80vh;
   }
   .dashboard-zone-grid {
-    grid-template-columns: 1fr;
-  }
-  .channel-grid {
     grid-template-columns: 1fr;
   }
   .channel-row {
@@ -2141,6 +2121,7 @@ kbd {
     border-top: 1px solid var(--mob-border);
     z-index: 500;
     box-shadow: 0 -2px 12px rgba(0,0,0,0.04);
+    isolation: isolate;
   }
   .mob-nav-item {
     display: flex;
@@ -2158,6 +2139,9 @@ kbd {
     font-family: var(--sans);
     min-width: 52px;
     transition: color 0.15s;
+    position: relative;
+    z-index: 1;
+    -webkit-tap-highlight-color: transparent;
   }
   .mob-nav-item.active {
     color: #1A1A1A;

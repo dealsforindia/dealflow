@@ -1,12 +1,8 @@
+import { useRef, useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, CircleHelp, Gauge, Link2, Search, ShieldCheck, Sparkles, TrendingUp } from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer, YAxis } from 'recharts';
-import { calcDiscount, fmtPrice } from '../../utils/helpers';
+import { LineChart, Line, YAxis } from 'recharts';
+import { calcDiscount, fmtPrice, normalizeScore } from '../../utils/helpers';
 
-function normalizeScore(score) {
-  const n = Number(score);
-  if (!Number.isFinite(n) || n <= 0) return null;
-  return Math.max(0, Math.min(100, Math.round(n <= 10 ? n * 10 : n)));
-}
 
 function getImagePresent(deal) {
   return Boolean(deal?.img_url || deal?.img_path || deal?.image_url || deal?.image || deal?.photo || deal?.photo_url || deal?.img || deal?.thumbnail);
@@ -34,6 +30,35 @@ function InsightItem({ icon: Icon, text, tone = 'positive' }) {
     <div className={`insight-item ${tone}`}>
       <Icon size={16} />
       <span>{text}</span>
+    </div>
+  );
+}
+
+const CHART_DATA = [{v:12},{v:15},{v:14},{v:22},{v:28},{v:26},{v:35}];
+
+function SafeChart() {
+  const containerRef = useRef(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = Math.floor(entry.contentRect.width);
+      if (w > 0) setWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ height: 60, width: '100%', marginTop: 14 }}>
+      {width > 0 && (
+        <LineChart width={width} height={60} data={CHART_DATA}>
+          <YAxis domain={['dataMin - 5', 'dataMax + 5']} hide />
+          <Line type="monotone" dataKey="v" stroke="#7C3AED" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+        </LineChart>
+      )}
     </div>
   );
 }
@@ -190,14 +215,7 @@ function AiInsightsPane({ deal }) {
         <div className="similar-note">
           Historical similar-deal performance based on past 7 days.
         </div>
-        <div style={{ height: 60, width: '100%', marginTop: 14 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={[{v:12},{v:15},{v:14},{v:22},{v:28},{v:26},{v:35}]}>
-              <YAxis domain={['dataMin - 5', 'dataMax + 5']} hide />
-              <Line type="monotone" dataKey="v" stroke="#7C3AED" strokeWidth={2.5} dot={false} isAnimationActive={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <SafeChart />
       </section>
     </aside>
   );

@@ -72,9 +72,9 @@ function ComposeDrawer({ onClose }) {
           <button className="icon-action" onClick={onClose}><X size={18} /></button>
         </div>
 
-        <div className="compose-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="compose-body compose-body-grid">
           {/* Left: Form */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="compose-form-column">
             <div className="compose-field">
               <label>Deal Type</label>
               <select value={form.deal_type} onChange={(e) => handleChange('deal_type', e.target.value)}>
@@ -98,7 +98,7 @@ function ComposeDrawer({ onClose }) {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="compose-two-col">
               <div className="compose-field">
                 <label>Sale Price (₹)</label>
                 <input value={form.price} onChange={(e) => handleChange('price', e.target.value)} placeholder="299" type="number" />
@@ -116,9 +116,9 @@ function ComposeDrawer({ onClose }) {
 
             <div className="compose-field">
               <label>Image</label>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input value={form.img_url} onChange={(e) => handleChange('img_url', e.target.value)} placeholder="https://... or upload file" style={{ flex: 1 }} />
-                <button type="button" className="compose-btn" style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, height: 38 }} onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+              <div className="compose-inline-control">
+                <input value={form.img_url} onChange={(e) => handleChange('img_url', e.target.value)} placeholder="https://... or upload file" />
+                <button type="button" className="compose-btn compose-btn-compact" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                   {isUploading ? 'Uploading…' : 'Upload'}
                 </button>
                 <input type="file" ref={fileInputRef} accept="image/*" style={{ display: 'none' }} onChange={handleFileUpload} />
@@ -141,8 +141,8 @@ function ComposeDrawer({ onClose }) {
           </div>
 
           {/* Right: Live Preview */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-ter)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div className="compose-preview-column">
+            <label className="compose-preview-label">
               📱 Live Telegram Preview
             </label>
             <TelegramPreview text={form.text || form.title} imageUrl={form.img_url} />

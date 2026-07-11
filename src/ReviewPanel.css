@@ -1485,11 +1485,6 @@
   .mob-live-badge {
     background: #111827;
     color: #ffffff;
-    font-size: 0;
-  }
-
-  .mob-live-badge::after {
-    content: "LIVE";
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.05em;
@@ -1612,11 +1607,6 @@
   }
 
   .mob-store-verified {
-    font-size: 0;
-  }
-
-  .mob-store-verified::after {
-    content: "OK";
     font-size: 10px;
     font-weight: 800;
     color: #2563eb;
@@ -2037,6 +2027,17 @@
   color: var(--text-sec);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.tg-inline-link {
+  color: var(--accent-blue, #60a5fa);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(96, 165, 250, 0.3);
+  transition: border-color 0.15s;
+  word-break: break-all;
+}
+.tg-inline-link:hover {
+  border-color: var(--accent-blue, #60a5fa);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2839,44 +2840,670 @@
   .ai-insights-pane {
     display: none;
   }
+  .desidime-panel .review-v2-container {
+    grid-template-columns: 300px 1fr;
+  }
 }
 
 @media (max-width: 768px) {
+  /* ── Review grid → single column on mobile ── */
   .review-v2-container {
     grid-template-columns: 1fr;
   }
+  .desidime-panel .review-v2-container {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide detail + AI panes on mobile (replaced by overlay) */
+  .review-v2-container > .deal-details-pane,
+  .review-v2-container > .ai-insights-pane {
+    display: none;
+  }
+
+  /* ── Review page header — compact mobile ── */
   .review-page-header {
-    padding: 10px 12px;
+    padding: 10px 14px 8px;
+    background: var(--mob-card, #FFFFFF);
+    border-bottom-color: var(--mob-border, #E8E0D6);
+  }
+  .review-page-header .center-title,
+  .review-page-header h2,
+  .review-page-header .queue-header-title {
+    color: #1A1A1A;
+    font-size: 16px;
+  }
+  .review-page-header .review-page-subtitle {
+    color: var(--mob-text-sec, #5C5C5C);
+  }
+  .review-subtabs {
+    gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  .review-subtabs::-webkit-scrollbar { display: none; }
+  .review-subtab {
+    flex-shrink: 0;
+    height: 30px;
+    padding: 0 12px;
+    font-size: 11px;
+    background: var(--mob-card, #FFFFFF);
+    border-color: var(--mob-border, #E8E0D6);
+    color: var(--mob-text-sec, #5C5C5C);
+  }
+  .review-subtab.active {
+    background: rgba(124, 58, 237, 0.08);
+    border-color: rgba(124, 58, 237, 0.3);
+    color: #7C3AED;
+  }
+
+  /* ── Queue pane — full width, cream theme ── */
+  .review-queue-pane {
+    border-right: none;
+    background: var(--mob-bg, #FFF8F0);
+  }
+  .queue-header {
+    padding: 12px 14px;
+    background: var(--mob-card, #FFFFFF);
+    border-bottom-color: var(--mob-border, #E8E0D6);
+    backdrop-filter: none;
+  }
+  .queue-header-title {
+    font-size: 14px;
+    color: #1A1A1A;
+  }
+  .queue-header-count {
+    color: var(--mob-text-sec, #5C5C5C);
+  }
+  .queue-list {
+    padding: 10px;
+    gap: 6px;
+    background: var(--mob-bg, #FFF8F0);
+  }
+
+  /* ── Queue items — mobile cards ── */
+  .premium-queue-item {
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--mob-card, #FFFFFF);
+    border-color: var(--mob-border, #E8E0D6);
+    gap: 10px;
+  }
+  .premium-queue-item:hover {
+    background: var(--mob-card, #FFFFFF);
+    border-color: var(--mob-border, #E8E0D6);
+  }
+  .premium-queue-item.selected {
+    background: rgba(124, 58, 237, 0.06);
+    border-color: rgba(124, 58, 237, 0.3);
+  }
+  .queue-item-content {
+    gap: 6px;
+  }
+  .queue-deal-id {
+    color: var(--mob-text-sec, #5C5C5C);
+    font-size: 10px;
+  }
+  .queue-item-title {
+    font-size: 13px;
+    color: #1A1A1A;
+    -webkit-line-clamp: 2;
+  }
+  .queue-item-price {
+    color: #059669;
+  }
+  .queue-item-age {
+    color: var(--mob-text-ter, #A0958A);
+  }
+  .queue-thumb-shell {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+  }
+  /* Checkbox rail */
+  .checkbox-rail {
+    display: none;
+  }
+
+  /* ── Queue search mobile ── */
+  .queue-search-wrap {
+    padding: 8px 10px 0;
+  }
+  .queue-search-input {
+    background: var(--mob-card, #FFFFFF);
+    border-color: var(--mob-border, #E8E0D6);
+    color: #1A1A1A;
+    font-size: 13px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  .queue-search-input:focus {
+    border-color: #6366f1;
+  }
+
+  /* ── Sort/filter buttons mobile ── */
+  .queue-sort-btn,
+  .queue-filter-btn {
+    background: var(--mob-card, #FFFFFF);
+    border-color: var(--mob-border, #E8E0D6);
+    color: var(--mob-text-sec, #5C5C5C);
+    height: 30px;
+    font-size: 10px;
+  }
+
+  /* ── Quick review footer mobile ── */
+  .quick-review-footer {
+    padding: 8px 12px;
+    background: var(--mob-card, #FFFFFF);
+    border-top-color: var(--mob-border, #E8E0D6);
+  }
+  .kb-bar {
+    display: none;
+  }
+
+  /* ── Empty states mobile ── */
+  .review-empty-state {
+    padding: 32px 20px;
+    color: var(--mob-text-sec, #5C5C5C);
+  }
+  .review-empty-state .empty-title {
+    color: #1A1A1A;
+    font-size: 16px;
+  }
+  .review-empty-state .empty-sub {
+    color: var(--mob-text-sec, #5C5C5C);
+  }
+
+  /* ── DesiDime header mobile ── */
+  .desidime-header {
+    background: var(--mob-card, #FFFFFF);
+  }
+  .desidime-header-top {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .desidime-brand h2 {
+    color: #1A1A1A;
+    font-size: 15px;
+  }
+  .desidime-brand p {
+    color: var(--mob-text-ter, #A0958A);
+  }
+  .desidime-stats {
+    gap: 6px;
+  }
+  .desidime-stat {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  /* ── Skeleton loading mobile ── */
+  .queue-skeleton {
+    background: var(--mob-card, #FFFFFF);
+    border-radius: 10px;
+  }
+  .queue-skeleton-thumb,
+  .queue-skeleton-line {
+    background: rgba(0,0,0,0.06);
+  }
+
+  /* ── MOBILE DETAIL OVERLAY ── */
+  .mobile-detail-overlay {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    inset: 0;
+    z-index: 800;
+    background: var(--mob-bg, #FFF8F0);
+    animation: mobileDetailSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes mobileDetailSlideUp {
+    from { transform: translateY(100%); opacity: 0.5; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+
+  .mobile-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--mob-card, #FFFFFF);
+    border-bottom: 1px solid var(--mob-border, #E8E0D6);
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  }
+
+  .mobile-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: #6366f1;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background 0.12s;
+    font-family: var(--sans);
+  }
+  .mobile-back-btn:hover {
+    background: rgba(99,102,241,0.08);
+  }
+
+  .mobile-detail-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1A1A1A;
+    font-family: var(--display);
+  }
+
+  .mobile-detail-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  /* Re-enable the detail pane INSIDE the mobile overlay */
+  .mobile-detail-body .deal-details-pane {
+    display: flex !important;
+    border-right: none;
+    background: var(--mob-bg, #FFF8F0);
+    overflow: visible;
+  }
+  .mobile-detail-body .details-scroll-content {
+    overflow: visible;
+    padding: 14px;
+  }
+
+  /* Detail pane — cream theme overrides inside mobile overlay */
+  .mobile-detail-body .detail-header {
+    background: var(--mob-card, #FFFFFF);
+    border-bottom-color: var(--mob-border, #E8E0D6);
+    padding: 14px;
+  }
+  .mobile-detail-body .detail-title {
+    color: #1A1A1A;
+    font-size: 16px;
+  }
+  .mobile-detail-body .detail-section-title {
+    color: #1A1A1A;
+    font-size: 12px;
+  }
+  .mobile-detail-body .detail-section {
+    background: var(--mob-card, #FFFFFF);
+    border-color: var(--mob-border, #E8E0D6);
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .mobile-detail-body .detail-row-label {
+    color: var(--mob-text-sec, #5C5C5C);
+  }
+  .mobile-detail-body .detail-row-value {
+    color: #1A1A1A;
+  }
+  .mobile-detail-body .detail-raw-text {
+    background: var(--mob-card, #FFFFFF);
+    border-color: var(--mob-border, #E8E0D6);
+    color: #1A1A1A;
+  }
+
+  /* ── Mobile action buttons in detail view ── */
+  .mobile-detail-body .detail-actions {
+    position: sticky;
+    bottom: 0;
+    padding: 12px 14px;
+    background: var(--mob-card, #FFFFFF);
+    border-top: 1px solid var(--mob-border, #E8E0D6);
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+  .mobile-detail-body .detail-actions .pill-btn,
+  .mobile-detail-body .detail-actions .btn-approve,
+  .mobile-detail-body .detail-actions .btn-reject,
+  .mobile-detail-body .detail-actions .btn-edit,
+  .mobile-detail-body .detail-actions button {
+    flex: 1;
+    justify-content: center;
+    padding: 12px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    min-height: 42px;
+  }
+
+  /* ── TG Preview inside mobile detail ── */
+  .mobile-detail-body .tg-preview-shell {
+    border-radius: 10px;
+    margin: 0;
   }
 }
 
-/* True final mobile overrides for repeated legacy breakpoint blocks above. */
-@media (max-width: 760px) {
-  .mob-live-badge {
-    font-size: 0;
+/* ── Small phone tweaks ── */
+@media (max-width: 420px) {
+  .queue-header-actions {
+    gap: 4px;
+  }
+  .queue-sort-btn {
+    padding: 0 8px;
+    font-size: 9px;
+  }
+  .premium-queue-item {
+    padding: 8px;
+  }
+  .queue-thumb-shell {
+    width: 44px;
+    height: 44px;
+  }
+  .queue-item-title {
+    font-size: 12px;
+  }
+  .desidime-header-top {
+    gap: 8px;
+  }
+}
+
+/* Hide mobile overlay on desktop (it's only rendered conditionally in JSX, but just in case) */
+@media (min-width: 769px) {
+  .mobile-detail-overlay {
+    display: none !important;
+  }
+}
+
+/* Clean modal/drawer system: one surface, no stacked visual noise. */
+.drawer-overlay,
+.compose-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(6, 8, 14, 0.62);
+  backdrop-filter: none;
+}
+
+.edit-drawer,
+.compose-drawer {
+  position: relative;
+  inset: auto;
+  width: min(1080px, calc(100vw - 40px)) !important;
+  max-width: 1080px;
+  height: min(820px, calc(100dvh - 40px));
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #10131b;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  animation: none;
+  transform: none;
+}
+
+.compose-drawer {
+  position: fixed;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9001;
+}
+
+.drawer-header,
+.compose-header {
+  min-height: 58px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #10131b;
+}
+
+.drawer-title,
+.compose-header h3 {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: 0;
+}
+
+.compose-header h3 {
+  font-size: 0;
+}
+
+.compose-header h3::after {
+  content: "Compose Deal";
+  font-size: 15px;
+}
+
+.drawer-header-actions {
+  min-width: 0;
+  gap: 8px;
+}
+
+.deal-channel-badge.prominent {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-close-btn,
+.compose-header .icon-action {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+}
+
+.drawer-body,
+.compose-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px;
+}
+
+.drawer-body-grid,
+.compose-body-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 18px;
+  align-items: start;
+}
+
+.drawer-form-column,
+.compose-form-column,
+.drawer-preview-column,
+.compose-preview-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.drawer-preview-column,
+.compose-preview-column {
+  position: sticky;
+  top: 0;
+}
+
+.drawer-preview-label,
+.compose-preview-label {
+  color: var(--text-ter);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.drawer-inline-control,
+.compose-inline-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.compose-two-col,
+.drawer-field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.drawer-input,
+.drawer-textarea,
+.compose-field input,
+.compose-field textarea,
+.compose-field select {
+  min-width: 0;
+  border-radius: 8px;
+  background: #0b0e14;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.drawer-textarea {
+  min-height: 220px;
+  resize: vertical;
+}
+
+.ai-instruction-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+}
+
+.drawer-btn,
+.compose-btn {
+  min-height: 40px;
+  border-radius: 8px;
+  justify-content: center;
+}
+
+.drawer-btn-compact,
+.compose-btn-compact {
+  width: auto;
+  min-width: 92px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.drawer-status-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-sec);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.drawer-status-card.ok {
+  color: var(--accent-green-lt);
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.drawer-status-card.warn {
+  color: var(--accent-amber);
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.drawer-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.drawer-footer,
+.compose-footer {
+  flex-shrink: 0;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #10131b;
+}
+
+@media (max-width: 900px) {
+  .drawer-body-grid,
+  .compose-body-grid {
+    grid-template-columns: 1fr;
   }
 
-  .mob-live-badge::after {
-    content: "LIVE";
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.05em;
+  .drawer-preview-column,
+  .compose-preview-column {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .drawer-overlay,
+  .compose-overlay {
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+    background: rgba(6, 8, 14, 0.5);
   }
 
-  .mob-store-verified {
-    font-size: 0;
+  .edit-drawer,
+  .compose-drawer {
+    width: 100vw !important;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: 0;
+    transform: none;
   }
 
-  .mob-store-verified::after {
-    content: "OK";
-    font-size: 10px;
-    font-weight: 800;
-    color: #2563eb;
+  .compose-drawer {
+    top: 0;
+    left: 0;
   }
 
-  .premium-queue-item,
-  .queue-item-mobile-card {
-    height: auto;
-    min-height: 0;
+  .drawer-body,
+  .compose-body {
+    padding: 14px;
+  }
+
+  .drawer-inline-control,
+  .compose-inline-control,
+  .compose-two-col,
+  .drawer-field-row,
+  .ai-instruction-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .drawer-footer,
+  .compose-footer {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+
+  .drawer-header-actions .deal-channel-badge,
+  .drawer-header-actions .desidime-source-badge {
+    display: none;
+  }
+
+  .mobile-detail-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    background: var(--mob-bg, #f6f7fb);
+    animation: none;
   }
 }

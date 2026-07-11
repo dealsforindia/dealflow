@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import useStore from '../store';
-import { cleanTitle, resolveChannelName, categoryEmoji, fmtPrice, isDesidimeDeal } from '../utils/helpers';
-import { API_URL } from '../config';
+import { cleanTitle, resolveChannelName, categoryEmoji, fmtPrice, isDesidimeDeal, normalizeImageUrl } from '../utils/helpers';
 import EditDrawer from './EditDrawer';
 import ComposeDrawer from './ComposeDrawer';
-import { ShoppingBag, Sparkles, ExternalLink, Check, Tag, CheckSquare } from 'lucide-react';
+import { ShoppingBag, Sparkles, ExternalLink, Check, Tag, CheckSquare, ArrowLeft } from 'lucide-react';
 import ReviewQueueList from './ReviewPanes/ReviewQueueList';
 import DealDetailsPane from './ReviewPanes/DealDetailsPane';
 import AiInsightsPane from './ReviewPanes/AiInsightsPane';
@@ -14,24 +13,9 @@ import '../ReviewPanel.css';
 function DealImage({ deal, size = 52 }) {
   const [err, setErr] = useState(false);
   const emoji = categoryEmoji(deal.category || deal.dealType);
-  let imgUrl = deal.img_url || deal.img_path || deal.image_url || deal.image || deal.photo || deal.photo_url || deal.img || deal.thumbnail;
-  if (imgUrl && typeof imgUrl === 'string' && imgUrl.includes('/dealbot/images/')) {
-    imgUrl = '/images/' + imgUrl.split('/dealbot/images/')[1];
-  }
-  if (imgUrl && imgUrl.startsWith('http://74.225.250.0/images/')) {
-    imgUrl = imgUrl.replace('http://74.225.250.0/images/', '/images/');
-  }
-  if (imgUrl && imgUrl.startsWith('images/')) {
-    imgUrl = '/images/' + imgUrl.slice(7);
-  }
-  if (imgUrl && imgUrl.includes('/images/')) {
-    imgUrl = '/images/' + imgUrl.split('/images/')[1];
-  } else if (imgUrl && imgUrl.includes('\\images\\')) {
-    imgUrl = '/images/' + imgUrl.split('\\images\\')[1];
-  }
-  if (imgUrl && imgUrl.startsWith('/')) {
-    imgUrl = API_URL + imgUrl;
-  }
+  const imgUrl = normalizeImageUrl(deal);
+
+  useEffect(() => { setErr(false); }, [imgUrl]);
 
   if (imgUrl && !err) {
     return (
@@ -123,17 +107,20 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
   const [selectedDealId, setSelectedDealId] = useState(null);
   const [editingDeal, setEditingDeal] = useState(null);
   const [showCompose, setShowCompose] = useState(false);
-  const filteredDealsRef = useRef([]);
+  const [filteredDeals, setFilteredDeals] = useState([]);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   useEffect(() => {
+    let consumed = false;
     if (initialSubTab) {
       setSubTab(initialSubTab);
-      onConsumeInitial?.();
+      consumed = true;
     }
     if (initialChannelFilter) {
       setFilter(initialChannelFilter);
-      onConsumeInitial?.();
+      consumed = true;
     }
+    if (consumed) onConsumeInitial?.();
   }, [initialSubTab, initialChannelFilter, onConsumeInitial, setFilter]);
 
   // Telegram-only deals — DesiDime has its own tab
@@ -167,8 +154,8 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
   );
 
   const selectedIndex = useMemo(
-    () => filteredDealsRef.current.findIndex(d => d.fp_hash === selectedDealId),
-    [selectedDealId, visibleDeals]
+    () => filteredDeals.findIndex(d => d.fp_hash === selectedDealId),
+    [selectedDealId, filteredDeals]
   );
 
   const tabs = REVIEW_TABS.map(t => ({
@@ -183,7 +170,7 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
       if (editingDeal || ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
       if (subTab === 'Posted') return;
 
-      const list = filteredDealsRef.current;
+      const list = filteredDeals;
       const idx = list.findIndex(d => d.fp_hash === selectedDealId);
       const deal = list[idx];
       if (!deal && list.length > 0) {
@@ -220,7 +207,7 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedDealId, subTab, editingDeal, approveDeal, rejectDeal, addToast]);
+  }, [selectedDealId, subTab, editingDeal, filteredDeals, approveDeal, rejectDeal, addToast]);
 
   const handleApprove = async (hash) => {
     await approveDeal(hash);
@@ -269,10 +256,10 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
             <ReviewQueueList
               deals={visibleDeals}
               selectedDealId={selectedDealId}
-              onSelectDeal={(deal) => setSelectedDealId(deal.fp_hash)}
+              onSelectDeal={(deal) => { setSelectedDealId(deal.fp_hash); setMobileDetailOpen(true); }}
               onCompose={() => setShowCompose(true)}
               title="Review Queue"
-              onFilteredDealsChange={(list) => { filteredDealsRef.current = list; }}
+              onFilteredDealsChange={setFilteredDeals}
             />
             <DealDetailsPane
               deal={selectedDeal}
@@ -283,9 +270,31 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
             />
             <AiInsightsPane deal={selectedDeal} />
           </div>
+
+          {/* Mobile detail slide-up overlay */}
+          {mobileDetailOpen && selectedDeal && (
+            <div className="mobile-detail-overlay">
+              <div className="mobile-detail-header">
+                <button type="button" className="mobile-back-btn" onClick={() => setMobileDetailOpen(false)}>
+                  <ArrowLeft size={18} /> Back
+                </button>
+                <span className="mobile-detail-title">Deal Details</span>
+              </div>
+              <div className="mobile-detail-body">
+                <DealDetailsPane
+                  deal={selectedDeal}
+                  onApprove={(hash) => { handleApprove(hash); setMobileDetailOpen(false); }}
+                  onReject={(hash) => { handleReject(hash); setMobileDetailOpen(false); }}
+                  onSpam={(hash) => { handleSpam(hash); setMobileDetailOpen(false); }}
+                  onEdit={(d) => { setEditingDeal(d); setMobileDetailOpen(false); }}
+                />
+              </div>
+            </div>
+          )}
+
           <QuickReviewFooter
             currentIndex={Math.max(0, selectedIndex)}
-            totalDeals={filteredDealsRef.current.length || visibleDeals.length}
+            totalDeals={filteredDeals.length || visibleDeals.length}
           />
         </div>
       )}

@@ -503,19 +503,6 @@ export const useDealStore = create((set, get) => ({
     }
   },
 
-  // ── Settings
-  saveSettings: async () => {
-    sessionStorage.setItem('dealbot_settings', JSON.stringify(get().settings));
-    try {
-      await fetch(`${API}/api/v1/settings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(get().settings),
-      });
-    } catch {}
-    get().addToast("Settings saved");
-  },
-
   // ── Channel management
   toggleChannel: async (channelId) => {
     set(s => ({

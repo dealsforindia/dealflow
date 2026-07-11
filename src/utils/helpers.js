@@ -2,6 +2,13 @@
 export const scoreClass = s => s >= 8 ? "high" : s >= 5 ? "mid" : s ? "low" : "none";
 export const cardClass  = s => s >= 8 ? "score-high" : s <= 3 ? "score-low" : "";
 
+// ── Normalize a raw score (0-10 or 0-100 scale) → 0-100 integer
+export const normalizeScore = (score) => {
+  const n = Number(score);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.max(0, Math.min(100, Math.round(n <= 10 ? n * 10 : n)));
+};
+
 // ── Timestamp formatter
 export const fmt = ts => {
   if (!ts) return "";

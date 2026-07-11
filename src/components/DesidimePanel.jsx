@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { Globe } from 'lucide-react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { Globe, ArrowLeft } from 'lucide-react';
 import useDealStore from '../store/useDealStore';
 import ReviewQueueList from './ReviewPanes/ReviewQueueList';
 import DealDetailsPane from './ReviewPanes/DealDetailsPane';
@@ -18,11 +18,12 @@ function DesidimePanel() {
   const [selectedDealId, setSelectedDealId] = useState(null);
   const [loading, setLoading] = useState(false);
   const filteredDealsRef = useRef([]);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
-  const loadDeals = () => {
+  const loadDeals = useCallback(() => {
     setLoading(true);
     return fetchDesidimeDeals().finally(() => setLoading(false));
-  };
+  }, [fetchDesidimeDeals]);
 
   useEffect(() => {
     loadDeals();
@@ -86,7 +87,7 @@ function DesidimePanel() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedDealId, subTab, approveDeal, rejectDeal, markSpam, addToast]);
+  }, [selectedDealId, subTab, approveDeal, rejectDeal, markSpam, addToast, loadDeals]);
 
   const handleAction = async (action, hash) => {
     await action(hash);
@@ -148,7 +149,7 @@ function DesidimePanel() {
             <ReviewQueueList
               deals={visibleDeals}
               selectedDealId={selectedDealId}
-              onSelectDeal={(deal) => setSelectedDealId(deal.fp_hash)}
+              onSelectDeal={(deal) => { setSelectedDealId(deal.fp_hash); setMobileDetailOpen(true); }}
               onRefresh={loadDeals}
               loading={loading}
               title="DesiDime Queue"
@@ -164,6 +165,27 @@ function DesidimePanel() {
             />
             <AiInsightsPane deal={selectedDeal} />
           </div>
+
+          {/* Mobile detail slide-up overlay */}
+          {mobileDetailOpen && selectedDeal && (
+            <div className="mobile-detail-overlay">
+              <div className="mobile-detail-header">
+                <button type="button" className="mobile-back-btn" onClick={() => setMobileDetailOpen(false)}>
+                  <ArrowLeft size={18} /> Back
+                </button>
+                <span className="mobile-detail-title">Deal Details</span>
+              </div>
+              <div className="mobile-detail-body">
+                <DealDetailsPane
+                  deal={selectedDeal}
+                  onApprove={(hash) => { handleAction(approveDeal, hash); setMobileDetailOpen(false); }}
+                  onReject={(hash) => { handleAction(rejectDeal, hash); setMobileDetailOpen(false); }}
+                  onSpam={(hash) => { handleAction(markSpam, hash); setMobileDetailOpen(false); }}
+                />
+              </div>
+            </div>
+          )}
+
           {subTab === 'pending' && visibleDeals.length > 0 && (
             <QuickReviewFooter
               currentIndex={Math.max(0, selectedIndex)}
