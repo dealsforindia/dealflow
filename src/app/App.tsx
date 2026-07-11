@@ -824,7 +824,7 @@ function DesiDimeView(){
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-[11px] font-mono font-bold text-foreground">{fmt(d.price)}</span>
                   {d.original_price>0&&<span className="text-[10px] font-semibold" style={{color:"#10b981"}}>{Math.round((1-d.price/d.original_price)*100)}% off</span>}
-                  <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground ml-auto"><ThumbsUp size={9}/>{d.upvotes}</span>
+                  <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground ml-auto"><ThumbsUp size={9}/>{d.upvotes || 0}</span>
                 </div>
               </div>
             </button>

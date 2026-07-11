@@ -513,10 +513,10 @@ export const useDealStore = create<DealStoreState>((set, get) => ({
   fetchDesidimeDeals: async () => {
     try {
       const r = await fetch(`${API}/api/v1/deals/desidime?limit=200`);
-      if (!r.ok) return;
-      const d = await r.json();
-      const deals = (d.deals || []).map(mapDeal);
-      set({ desidimeDeals: deals });
+      if (r.ok) {
+        const data = await r.json();
+        set({ desidimeDeals: (data.deals || []).map(mapDeal) });
+      }
     } catch (e) {
       console.error("Fetch DesiDime deals error:", e);
     }
