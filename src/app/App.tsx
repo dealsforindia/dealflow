@@ -767,7 +767,7 @@ function QueueView({deals,onApprove,onReject,onSpam,onEdit}:{deals:Deal[];onAppr
 
 // ─── DesiDime View ────────────────────────────────────────────────────────────
 function DesiDimeView(){
-  const deals = useDealStore(s => s.desidimeDeals).map(toUIDeal);
+  const deals = useDealStore(s => s.desidimeDeals).map(toUIDeal).sort((a, b) => b.ts - a.ts);
   const [selected,setSelected]=useState<any>(null);
   const [filter,setFilter]=useState<"pending"|"posted"|"rejected"|"all">("pending");
   let visible=deals.filter(d=>filter==="all"?true:d.status===filter);
@@ -872,7 +872,7 @@ function DesiDimeView(){
 
 // ─── Posted View ──────────────────────────────────────────────────────────────
 function PostedView(){
-  const entries = useDealStore(s => s.deals.filter(d => d.status === 'posted')).map(toUIDeal);
+  const entries = useDealStore(s => s.deals.filter(d => d.status === 'posted')).map(toUIDeal).sort((a, b) => b.ts - a.ts);
   return(
     <div className="flex-1 overflow-y-auto">
       <div className="px-5 pt-5 pb-3 border-b border-border flex items-center justify-between">
@@ -1115,7 +1115,7 @@ export default function App(){
   
   const deals = useDealStore(s => s.deals);
   const activeFilter = useDealStore(s => s.activeFilter);
-  const filteredDeals = (activeFilter ? deals.filter(d => d.channel === activeFilter || d.source_channel === activeFilter) : deals).map(toUIDeal);
+  const filteredDeals = (activeFilter ? deals.filter(d => d.channel === activeFilter || d.source_channel === activeFilter) : deals).map(toUIDeal).sort((a, b) => b.ts - a.ts);
   
   const [editing,setEditing]=useState<Deal|null>(null);
   const [composing,setComposing]=useState(false);
