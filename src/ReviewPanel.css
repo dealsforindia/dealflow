@@ -3055,7 +3055,8 @@
     display: flex;
     flex-direction: column;
     position: fixed;
-    inset: 0;
+    top: 0; left: 0; right: 0;
+    bottom: calc(60px + env(safe-area-inset-bottom));
     z-index: 800;
     background: var(--mob-bg, #FFF8F0);
     animation: mobileDetailSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -3499,11 +3500,7 @@
     display: none;
   }
 
-  .mobile-detail-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 40;
-    background: var(--mob-bg, #f6f7fb);
-    animation: none;
+  .action-shortcut {
+    display: none !important;
   }
 }

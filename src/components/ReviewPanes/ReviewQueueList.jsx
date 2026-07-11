@@ -77,9 +77,10 @@ function ReviewQueueList({
     onFilteredDealsChange?.(filteredDeals);
   }, [filteredDeals, onFilteredDealsChange]);
 
-  // Auto-select first deal when list changes and nothing selected
+  // Auto-select first deal when list changes and nothing selected (Desktop only)
   useEffect(() => {
     if (filteredDeals.length === 0) return;
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) return; // Don't auto-select on mobile
     const stillVisible = filteredDeals.some(d => d.fp_hash === selectedDealId);
     if (!selectedDealId || !stillVisible) {
       onSelectDeal?.(filteredDeals[0]);

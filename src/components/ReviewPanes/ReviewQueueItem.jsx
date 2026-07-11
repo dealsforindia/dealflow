@@ -83,8 +83,9 @@ function ReviewQueueItem({ deal, isSelected, onClick }) {
   const channelInitial = channelName ? channelName.charAt(0).toUpperCase() : '🏷';
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       className={`queue-item premium-queue-item${isSelected ? ' selected' : ''}`}
       onClick={onClick}
       aria-pressed={isSelected}
@@ -218,7 +219,7 @@ function ReviewQueueItem({ deal, isSelected, onClick }) {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
