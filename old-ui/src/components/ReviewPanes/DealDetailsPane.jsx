@@ -412,17 +412,14 @@ function DealDetailsPane({ deal, onApprove, onReject, onSpam, onEdit }) {
         <button className="action-btn action-btn-reject" onClick={() => onReject(deal.fp_hash)}>
           <X size={16} />
           <span>Reject Deal</span>
-          <span className="action-shortcut">R</span>
         </button>
         <button className="action-btn action-btn-spam" onClick={handleSpam}>
           <ShieldAlert size={16} />
           <span>Mark as Spam</span>
-          <span className="action-shortcut">S</span>
         </button>
         <button className="action-btn action-btn-approve" onClick={() => onApprove(deal.fp_hash)}>
           <Check size={16} />
           <span>Approve Deal</span>
-          <span className="action-shortcut">A</span>
         </button>
       </div>
     </div>

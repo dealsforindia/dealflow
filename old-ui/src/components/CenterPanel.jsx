@@ -3,11 +3,12 @@ import useStore from '../store';
 import { cleanTitle, resolveChannelName, categoryEmoji, fmtPrice, isDesidimeDeal, normalizeImageUrl } from '../utils/helpers';
 import EditDrawer from './EditDrawer';
 import ComposeDrawer from './ComposeDrawer';
-import { ShoppingBag, Sparkles, ExternalLink, Check, Tag, CheckSquare, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Sparkles, ExternalLink, Check, Tag, CheckSquare, ArrowLeft, LayoutList, Layers } from 'lucide-react';
 import ReviewQueueList from './ReviewPanes/ReviewQueueList';
 import DealDetailsPane from './ReviewPanes/DealDetailsPane';
 import AiInsightsPane from './ReviewPanes/AiInsightsPane';
 import QuickReviewFooter from './ReviewPanes/QuickReviewFooter';
+import SwipeReviewView from './ReviewPanes/SwipeReviewView';
 import '../ReviewPanel.css';
 
 function DealImage({ deal, size = 52 }) {
@@ -104,6 +105,7 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
   const { deals, approveDeal, rejectDeal, editDeal, addToast, setFilter } = useStore();
 
   const [subTab, setSubTab] = useState('Products');
+  const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'card' : 'list');
   const [selectedDealId, setSelectedDealId] = useState(null);
   const [editingDeal, setEditingDeal] = useState(null);
   const [showCompose, setShowCompose] = useState(false);
@@ -165,49 +167,7 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
       : telegramDeals.filter(d => d.status === 'posted').length,
   }));
 
-  useEffect(() => {
-    const handler = async (e) => {
-      if (editingDeal || ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
-      if (subTab === 'Posted') return;
 
-      const list = filteredDeals;
-      const idx = list.findIndex(d => d.fp_hash === selectedDealId);
-      const deal = list[idx];
-      if (!deal && list.length > 0) {
-        setSelectedDealId(list[0].fp_hash);
-        return;
-      }
-      if (!deal) return;
-
-      if (e.code === 'ArrowDown') {
-        e.preventDefault();
-        const next = list[Math.min(idx + 1, list.length - 1)];
-        if (next) setSelectedDealId(next.fp_hash);
-      } else if (e.code === 'ArrowUp') {
-        e.preventDefault();
-        const prev = list[Math.max(idx - 1, 0)];
-        if (prev) setSelectedDealId(prev.fp_hash);
-      } else if (e.key === 'a' || e.key === 'A') {
-        e.preventDefault();
-        await approveDeal(deal.fp_hash);
-      } else if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
-        await rejectDeal(deal.fp_hash);
-      } else if (e.key === 's' || e.key === 'S') {
-        e.preventDefault();
-        await rejectDeal(deal.fp_hash);
-        addToast('Marked as Spam', 'error');
-      } else if (e.code === 'Enter') {
-        e.preventDefault();
-        if (deal.affiliate_link) window.open(deal.affiliate_link, '_blank');
-      } else if (e.key === 'e' || e.key === 'E') {
-        e.preventDefault();
-        setEditingDeal(deal);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [selectedDealId, subTab, editingDeal, filteredDeals, approveDeal, rejectDeal, addToast]);
 
   const handleApprove = async (hash) => {
     await approveDeal(hash);
@@ -237,7 +197,14 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
             </button>
           ))}
         </div>
-        <p className="review-page-subtitle">Telegram channel deals · DesiDime deals are in the DesiDime tab</p>
+        <div className="view-mode-toggle" style={{ display: 'flex', gap: 4, background: 'var(--bg-card)', padding: 4, borderRadius: 8, border: '1px solid var(--border-subtle)', marginLeft: 'auto' }}>
+          <button className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')} style={{ padding: '6px 12px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, background: viewMode === 'list' ? 'var(--accent-blue-15)' : 'transparent', color: viewMode === 'list' ? 'var(--accent-blue)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+            <LayoutList size={14} /> List
+          </button>
+          <button className={`view-toggle-btn ${viewMode === 'card' ? 'active' : ''}`} onClick={() => setViewMode('card')} style={{ padding: '6px 12px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 500, background: viewMode === 'card' ? 'var(--accent-blue-15)' : 'transparent', color: viewMode === 'card' ? 'var(--accent-blue)' : 'var(--text-muted)', border: 'none', cursor: 'pointer' }}>
+            <Layers size={14} /> Swipe
+          </button>
+        </div>
       </div>
 
       {subTab === 'Posted' ? (
@@ -250,6 +217,14 @@ export default function CenterPanel({ initialSubTab, initialChannelFilter, onCon
           <div className="empty-title">No {subTab.toLowerCase()} pending</div>
           <div className="empty-sub">New Telegram deals will appear here in real time.</div>
         </div>
+      ) : viewMode === 'card' ? (
+        <SwipeReviewView
+          deals={visibleDeals}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onSpam={handleSpam}
+          onEdit={setEditingDeal}
+        />
       ) : (
         <div className="review-v2-body">
           <div className="review-v2-container">
