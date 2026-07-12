@@ -116,7 +116,8 @@ BOT_START_TIME   = time.time()
 #  MONGODB + REDIS  (side-channel for web dashboard)
 # ═══════════════════════════════════════════════════════════════════
 try:
-    _mongo = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/"), serverSelectionTimeoutMS=3000)
+    mongo_uri = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI") or "mongodb://localhost:27017/"
+    _mongo = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
     _db = _mongo[os.getenv("MONGO_DB", "dealbot")]
     _deals_col = _db["deals"]
     _deals_col.create_index("fp_hash", unique=True, background=True)
