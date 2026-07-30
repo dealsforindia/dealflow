@@ -76,7 +76,7 @@ const rawEntries = Object.entries(pendingDealsRaw as Record<string, RawDeal>)
     return b.score - a.score;
   }).slice(0, 120);
 
-const API_BASE = import.meta.env.VITE_API_URL || "";
+const API_BASE = import.meta.env.PROD ? "https://api.rudranil.me" : (import.meta.env.VITE_API_URL || "");
 
 const BASE_DEALS: Deal[] = rawEntries.map(([id, d]) => ({
   id, title: d.prod_name || "Untitled Deal",
@@ -163,7 +163,7 @@ const STYLES = `
   .tg-text{white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.65;font-family:'Inter',sans-serif;}
 `;
 
-const WS_URL = import.meta.env.VITE_WS_URL || `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
+const WS_URL = import.meta.env.PROD ? "wss://api.rudranil.me/ws" : (import.meta.env.VITE_WS_URL || `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`);
 
 // ─── API Helpers ──────────────────────────────────────────────────────────────
 function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): Deal {
