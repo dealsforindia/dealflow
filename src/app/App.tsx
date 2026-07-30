@@ -197,7 +197,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
 }
 
 async function fetchPendingDeals(): Promise<Deal[]> {
-  const res = await fetch(`${API_BASE}/api/v1/deals/pending?limit=120`);
+  const res = await fetch(`${API_BASE}/api/v1/deals/pending?limit=1000`);
   if (!res.ok) throw new Error("Failed to fetch deals");
   const data = await res.json();
   let rows: (RawDeal & { fp_hash?: string })[];
