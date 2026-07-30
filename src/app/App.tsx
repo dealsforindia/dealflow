@@ -1,969 +1,1152 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import useDealStore from "../store";
-import { cleanTitle, normalizeImageUrl, resolveChannelName, categoryEmoji, normalizeScore } from "../utils/helpers";
+import { toast, Toaster } from "sonner";
 import {
-  Activity, Check, X, Radio, Settings2, Zap, Tag,
-  ToggleLeft, ToggleRight, Plus, Share2,
-  PenLine, Sparkles, Upload, Search, Undo2, ImageOff, RefreshCw,
-  AlertTriangle, ExternalLink, Shield,
-  CheckCircle2, ThumbsUp, Rss,
-  CheckSquare, Inbox as InboxIcon,
+  Check, X, Search, Sun, Moon, Zap, Tag, Settings2, Radio,
+  CheckSquare, Rss, Plus, PenLine, Upload, Sparkles,
+  Undo2, ExternalLink, Shield,
+  Clock, TrendingUp, Flame, RefreshCw, CheckCircle2,
+  ToggleLeft, ToggleRight, Maximize2, Copy, Link, FileText,
 } from "lucide-react";
+import pendingDealsRaw from "../imports/pending_deals.json";
+import dailyStatsRaw from "../imports/daily_stats.json";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+type DealStatus = "pending" | "approved" | "rejected" | "draft";
 type DealType = "product" | "trick";
-type Status = "pending" | "posted" | "rejected";
 type Tab = "Review" | "DesiDime" | "Posted" | "Channels" | "Settings";
 
 interface Deal {
-  fp_hash: string; title: string; description: string;
-  price: number; original_price: number; category: string;
-  dealType: DealType; channel: string; channelName: string;
-  status: Status; emoji: string; ai_score: number; ts: number;
-  discount_pct: number; signals: string[]; verdict: string;
-  risk_factors: string[]; original_text: string; aff_text: string;
-  img_url: string; affiliate_applied: boolean;
+  id: string; title: string; price: number; mrp: number; discount: number;
+  category: string; catEmoji: string; channel: string; channelRaw: string;
+  score: number; ts: number; status: DealStatus; dealType: DealType;
+  affiliate: boolean; coupon: string | null; imgUrl: string;
+  platforms: string[]; originalText: string; affText: string;
+  verdict: string; signals: string[];
 }
 
-interface DesiDeal {
-  id: string; title: string; price: number; original_price: number;
-  category: string; emoji: string; upvotes: number; comments: number;
-  ai_score: number; ts: number; status: Status; description: string; url: string;
+interface RawDeal {
+  aff_text: string; prices: { mrp: number | null; sale: number | null; discount_pct: number | null };
+  prod_name: string; category: string; platforms: string[]; coupon: string | null;
+  bank_offers: string[]; flash: unknown; img_path: string | null; ts: number;
+  original_text: string; source_channel: string; affiliate_applied: boolean;
+  original_msg_link: string; deal_type: string; score: number | null;
+  img_url?: string;
 }
 
 interface PostedEntry {
-  id: string; title: string; emoji: string; price: number;
-  discount_pct: number; category: string; channel: string;
-  posted_at: number; affiliate_applied: boolean;
+  id: string; title: string; catEmoji: string; price: number; discount: number;
+  channel: string; postedAt: number; affiliate: boolean;
 }
 
 interface AppSettings {
-  output_channel: string; ai_style_prompt: string;
-  dedup_window_hours: number; max_posts_per_cycle: number;
+  outputChannel: string; stylePrompt: string; dedupHours: number; maxPerCycle: number;
 }
 
-// ─── Store Deal → UI Deal Conversion ──────────────────────────────────────────
-const buildVerdict = (score: number | null): string => {
-  if (score === null) return "Unrated — AI score unavailable for this deal. Review manually.";
-  if (score >= 8) return "Strong deal — high confidence score. Recommend posting immediately.";
-  if (score >= 6) return "Decent deal — good price. Worth reviewing before posting.";
-  if (score >= 4) return "Borderline — review carefully. Check if discount is genuine.";
-  return "Low quality — likely spam or poor value. Reject unless compelling reason.";
+// ─── Data ─────────────────────────────────────────────────────────────────────
+const extractEmoji = (cat: string) => cat.split(" ")[0] || "🛍️";
+const extractCatName = (cat: string) => cat.split(" ").slice(1).join(" ") || cat;
+const toChName = (ch: string) => {
+  if (!ch) return "";
+  const clean = ch.replace(/^@/, "");
+  if (/^-?\d+$/.test(clean)) return clean;
+  return clean.split(/[_-]/).map(w => w[0]?.toUpperCase() + w.slice(1)).join(" ");
+};
+const buildVerdict = (s: number | null) =>
+  s === null ? "Unrated — review manually." :
+  s >= 8 ? "Strong deal — high confidence score." :
+  s >= 6 ? "Decent deal — worth reviewing." :
+  s >= 4 ? "Borderline — check if genuine." : "Low quality — likely spam.";
+const buildSignals = (d: RawDeal): string[] => {
+  const s: string[] = [];
+  if (d.prices.discount_pct && d.prices.discount_pct > 0) s.push(`${Math.round(d.prices.discount_pct)}% off`);
+  if (d.affiliate_applied) s.push("Affiliated");
+  if (d.coupon) s.push(`Coupon: ${d.coupon}`);
+  if (d.bank_offers?.length > 0) s.push(`${d.bank_offers.length} bank offer${d.bank_offers.length > 1 ? "s" : ""}`);
+  if (d.platforms?.[0]) s.push(d.platforms[0]);
+  if (d.flash) s.push("Flash sale");
+  return s.slice(0, 4);
 };
 
-function toUIDeal(d: any): Deal {
-  const cat = (d.category || 'General').replace(/^[\p{Emoji}\s\u200d\ufe0f]+/u, '').trim() || 'General';
-  const emoji = categoryEmoji(d.category || cat);
-  const title = d.prod_name || d.title || cleanTitle(d) || "Untitled Deal";
-  const price = Number(d.price) || Number(d.prices?.sale) || 0;
-  const originalPrice = Number(d.original_price) || Number(d.prices?.mrp) || 0;
-  const discountPct = d.discount_pct || d.prices?.discount_pct || 0;
-  const rawScore = d.score != null ? d.score : d.ai_score;
-  const score = rawScore != null ? (normalizeScore(rawScore) || 0) : 0;
-  const signals: string[] = [];
-  if (discountPct > 0) signals.push(`${Math.round(discountPct)}% off`);
-  if (d.affiliate_applied) signals.push("Affiliated");
-  if (d.coupon) signals.push(`Coupon: ${d.coupon}`);
-  if (d.bank_offers?.length > 0) signals.push(`${d.bank_offers.length} bank offer${d.bank_offers.length > 1 ? 's' : ''}`);
-  if (d.platforms?.length > 0) signals.push(d.platforms[0]);
-  const channelName = d.channelName || resolveChannelName(d.channel || d.source_channel || '');
-  return {
-    ...d,
-    fp_hash: d.fp_hash || d.id || '', title,
-    description: d.description || (d.platforms?.length ? `Available on ${d.platforms.join(', ')}.` : ''),
-    price, original_price: originalPrice, category: cat,
-    dealType: (d.dealType || d.deal_type || 'product') as DealType,
-    channel: d.channel || d.source_channel || '', channelName,
-    status: (d.status || 'pending') as Status, emoji,
-    ai_score: score, ts: Math.floor(d.ts || Date.now() / 1000),
-    discount_pct: discountPct, signals: signals.slice(0, 4),
-    risk_factors: d.risk_factors || [],
-    verdict: buildVerdict(rawScore != null && rawScore <= 10 ? rawScore : rawScore != null ? rawScore / 10 : null),
-    original_text: d.original_text || '', aff_text: d.aff_text || d.original_text || '',
-    img_url: normalizeImageUrl(d) || '', affiliate_applied: !!d.affiliate_applied,
-  };
-}
+const rawEntries = Object.entries(pendingDealsRaw as Record<string, RawDeal>)
+  .sort(([, a], [, b]) => {
+    if (a.score === null && b.score === null) return b.ts - a.ts;
+    if (a.score === null) return 1;
+    if (b.score === null) return -1;
+    return b.score - a.score;
+  }).slice(0, 120);
 
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
+const BASE_DEALS: Deal[] = rawEntries.map(([id, d]) => ({
+  id, title: d.prod_name || "Untitled Deal",
+  price: d.prices.sale ?? 0, mrp: d.prices.mrp ?? 0,
+  discount: d.prices.discount_pct ?? 0,
+  category: extractCatName(d.category), catEmoji: extractEmoji(d.category),
+  channel: toChName(d.source_channel), channelRaw: d.source_channel,
+  score: d.score !== null ? Math.min(100, Math.round(d.score * 10)) : 0,
+  ts: Math.floor(d.ts), status: "pending",
+  dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
+  affiliate: d.affiliate_applied, coupon: d.coupon,
+  imgUrl: (() => {
+    // Prefer img_url if it's a full http URL
+    if ((d as RawDeal & { img_url?: string }).img_url?.startsWith("http")) return (d as RawDeal & { img_url?: string }).img_url!;
+    if (!d.img_path) return "";
+    // img_path may be full server path like /home/.../images/foo.jpg or relative like images/foo.jpg
+    const fname = d.img_path.includes("/images/") ? "images/" + d.img_path.split("/images/").pop() : d.img_path;
+    return `${API_BASE}/${fname}`;
+  })(), platforms: d.platforms || [],
+  originalText: d.original_text || "", affText: d.aff_text || d.original_text || "",
+  verdict: buildVerdict(d.score), signals: buildSignals(d),
+}));
+
+const DAILY_STATS = dailyStatsRaw as {
+  date: string; posted: number; checked: number; dup: number;
+  unrated: number; affiliate: number; auto_posted: number; scam: number;
+};
+
+const rawChannels = Array.from(new Set(rawEntries.map(([, d]) => d.source_channel)));
+const CHANNELS = rawChannels.slice(0, 12).map((ch, i) => {
+  const colors = ["#E63946","#06b6d4","#10b981","#f59e0b","#ec4899","#f97316","#7C3AED","#6ee7b7","#fbbf24","#fb7185","#67e8f9","#86efac"];
+  const count = rawEntries.filter(([, d]) => d.source_channel === ch).length;
+  return { id: ch, name: toChName(ch), active: true, deals: count, color: colors[i % colors.length] };
+});
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
-const fmt = (p: number) => !p ? "Free" : `₹${Number(p).toLocaleString("en-IN")}`;
-const fmtTime = (ts: number) => new Date(ts*1000).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
-const fmtDate = (ts: number) => new Date(ts*1000).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+const fmt = (p: number) => p === 0 ? "Free" : `₹${p.toLocaleString("en-IN")}`;
 const fmtAgo = (ts: number) => {
-  const d = Math.floor((Date.now()/1000)-ts);
-  if (d < 60) return `${d}s ago`; if (d < 3600) return `${Math.floor(d/60)}m ago`;
-  return `${Math.floor(d/3600)}h ago`;
+  const d = Math.floor(Date.now() / 1000 - ts);
+  if (d < 60) return `${d}s ago`;
+  if (d < 3600) return `${Math.floor(d / 60)}m ago`;
+  return `${Math.floor(d / 3600)}h ago`;
 };
-const scoreColor = (s: number) => s === 0 ? "#52536A" : s >= 80 ? "#10b981" : s >= 60 ? "#f59e0b" : s >= 40 ? "#f97316" : "#ef4444";
-const scoreLabel = (s: number) => s === 0 ? "Unrated" : s >= 80 ? "Excellent" : s >= 60 ? "Good" : s >= 40 ? "Average" : "Low";
-const catColor: Record<string,string> = {
-  Electronics:"#7B5CE8", Fashion:"#ec4899", "Home & Kitchen":"#f59e0b",
-  Home:"#f59e0b", Beauty:"#f472b6", Sports:"#10b981",
-  Banking:"#f59e0b", Food:"#f97316", Computers:"#06b6d4",
-  General:"#9496B8", Grocery:"#10b981", Travel:"#06b6d4",
-  Books:"#f59e0b", Kids:"#f97316", Gaming:"#7B5CE8", Watches:"#a78bfa",
-  Pet:"#10b981",
+const fmtTime = (ts: number) => new Date(ts * 1000).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+const fmtDate = (ts: number) => new Date(ts * 1000).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+const scoreColor = (s: number) => s === 0 ? "#9CA3AF" : s >= 75 ? "#16a34a" : s >= 50 ? "#f59e0b" : "#dc2626";
+const catColor: Record<string, string> = {
+  Electronics: "#7C3AED", Fashion: "#ec4899", "Home & Kitchen": "#f59e0b",
+  Home: "#f59e0b", Beauty: "#f472b6", Sports: "#10b981", Banking: "#f59e0b",
+  Food: "#f97316", Computers: "#06b6d4", General: "#9496B8", Grocery: "#10b981",
+  Travel: "#06b6d4", Books: "#f59e0b", Kids: "#f97316", Gaming: "#7C3AED",
 };
-// AI rewrite is handled by the real backend via useDealStore.aiRewrite()
+const discBg = (pct: number) => pct >= 70 ? "#dc2626" : pct >= 40 ? "#ea580c" : "#16a34a";
+const extractUrls = (text: string): string[] => [...(text.match(/https?:\/\/[^\s]+/g) || [])];
+const stripAffTag = (url: string): string => {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("tag");
+    u.searchParams.delete("ref");
+    u.searchParams.delete("smid");
+    return u.toString();
+  } catch { return url; }
+};
+const aiRewriteSim = (text: string, inst: string): string => {
+  const i = inst.toLowerCase();
+  if (i.includes("short") || i.includes("concise")) return text.split("\n").slice(0, 8).join("\n");
+  if (i.includes("emoji")) return "🔥 " + text;
+  if (i.includes("clean")) return text.replace(/#\S+/g, "").replace(/\n{3,}/g, "\n\n").trim();
+  return text + "\n\n⚡ Limited time — grab it fast!";
+};
 
-// ─── CSS ──────────────────────────────────────────────────────────────────────
 const STYLES = `
-  @keyframes cardEnter{from{opacity:0;transform:scale(0.93) translateY(20px);}to{opacity:1;transform:scale(1) translateY(0);}}
-  @keyframes flyRight{to{transform:translateX(140vw) rotate(28deg);opacity:0;}}
-  @keyframes flyLeft{to{transform:translateX(-140vw) rotate(-28deg);opacity:0;}}
-  @keyframes flyUp{to{transform:translateY(-120vh) rotate(-8deg);opacity:0;}}
-  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
-  @keyframes slideRight{from{opacity:0;transform:translateX(100%);}to{opacity:1;transform:translateX(0);}}
-  @keyframes slideUp{from{opacity:0;transform:translateY(50px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
   @keyframes spin{to{transform:rotate(360deg);}}
-  .card-enter{animation:cardEnter 0.4s cubic-bezier(0.22,1.2,0.56,1) both;}
-  .fly-right{animation:flyRight 0.4s cubic-bezier(0.4,0,1,1) forwards;}
-  .fly-left{animation:flyLeft 0.4s cubic-bezier(0.4,0,1,1) forwards;}
-  .fly-up{animation:flyUp 0.38s cubic-bezier(0.4,0,1,1) forwards;}
-  .shake-anim{animation:shake 0.5s ease;}
-  .slide-right{animation:slideRight 0.28s cubic-bezier(0.16,1,0.3,1) both;}
-  .slide-up{animation:slideUp 0.32s cubic-bezier(0.16,1,0.3,1) both;}
-  .fade-in{animation:fadeIn 0.2s ease both;}
-  .ai-spin{width:13px;height:13px;border:2px solid rgba(255,255,255,0.15);border-top-color:#818cf8;border-radius:50%;animation:spin 0.75s linear infinite;display:inline-block;vertical-align:middle;}
-  .tg-text{white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.65;font-family:'Inter','Plus Jakarta Sans',sans-serif;}
-  input[type=range]{accent-color:#7B5CE8;}
-  .score-glow-green{box-shadow:0 0 0 1px rgba(16,185,129,0.3),0 8px 40px rgba(16,185,129,0.15);}
-  .score-glow-amber{box-shadow:0 0 0 1px rgba(245,158,11,0.3),0 8px 40px rgba(245,158,11,0.12);}
-  .score-glow-red{box-shadow:0 0 0 1px rgba(239,68,68,0.3),0 8px 40px rgba(239,68,68,0.1);}
+  @keyframes slideRight{from{opacity:0;transform:translateX(100%);}to{opacity:1;transform:translateX(0);}}
+  .slide-up{animation:slideUp 0.28s cubic-bezier(0.16,1,0.3,1) both;}
+  .fade-in{animation:fadeIn 0.18s ease both;}
+  .slide-right{animation:slideRight 0.26s cubic-bezier(0.16,1,0.3,1) both;}
+  .ai-spin{width:12px;height:12px;border:2px solid rgba(0,0,0,0.1);border-top-color:#E63946;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;vertical-align:middle;}
+  .dark .ai-spin{border-color:rgba(255,255,255,0.1);border-top-color:#E63946;}
+  input[type=range]{accent-color:#E63946;}
+  .mobile-nav{min-height:60px;padding-bottom:env(safe-area-inset-bottom,0px);}
+  .tg-text{white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.65;font-family:'Inter',sans-serif;}
 `;
 
-// ─── Input ────────────────────────────────────────────────────────────────────
-const inputCls = "w-full px-3 py-2.5 rounded-xl text-sm text-foreground border border-border bg-secondary focus:outline-none focus:ring-1 focus:ring-violet-500/40 placeholder:text-muted-foreground/50 transition-shadow";
-const monoInputCls = inputCls + " font-mono";
+const WS_URL = import.meta.env.VITE_WS_URL || `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
 
-// ─── Stats Bar ────────────────────────────────────────────────────────────────
-function StatsBar(){
-  const stats = useDealStore(s => s.stats);
-  const wsStatus = useDealStore(s => s.wsStatus);
-  const mb = stats?.mongodb || {};
-  const items = [
-    {label:"Pending", value:String(mb.pending ?? stats?.pending ?? '…'), color:"#7C7E9E", dot:"rgba(124,126,158,0.4)"},
-    {label:"Posted",  value:String(mb.posted ?? stats?.posted ?? '…'),  color:"#34d399", dot:"rgba(52,211,153,0.3)"},
-    {label:"Rejected",value:String(mb.rejected ?? 0),     color:"#fbbf24", dot:"rgba(251,191,36,0.3)"},
-    {label:"Total",   value:String(mb.total ?? 0),         color:"#a78bfa", dot:"rgba(167,139,250,0.3)"},
-    {label:"Dupes",   value:String(mb.dupes ?? 0),         color:"#f87171", dot:"rgba(248,113,113,0.3)"},
-  ];
-  return(
-    <div className="flex-shrink-0 flex items-center border-b border-border overflow-x-auto" style={{background:"rgba(4,4,16,0.7)"}}>
-      {items.map(({label,value,color,dot},i)=>(
-        <div key={label} className={`flex items-center gap-2.5 px-4 py-2.5 flex-shrink-0 ${i<items.length-1?"border-r border-border":""}`}>
-          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:dot,boxShadow:`0 0 4px ${color}60`}}/>
-          <span className="text-[12px] font-bold tracking-tight" style={{color,fontFamily:"'JetBrains Mono',monospace",fontVariantNumeric:"tabular-nums"}}>{value}</span>
-          <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
-        </div>
-      ))}
-      <div className="ml-auto px-5 py-2.5 flex-shrink-0 flex items-center gap-1.5">
-        <span className={`w-1.5 h-1.5 rounded-full ${wsStatus==="connected"?"bg-emerald-500/60 animate-pulse":"bg-red-500/60"}`}/>
-        <span className="text-[10px] text-muted-foreground">{wsStatus==="connected"?"Live":"Offline"}</span>
-      </div>
-    </div>
-  );
+// ─── API Helpers ──────────────────────────────────────────────────────────────
+function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): Deal {
+  const id = d.fp_hash ?? fallbackId ?? String(d.ts);
+  return {
+    id, title: d.prod_name || "Untitled Deal",
+    price: d.prices.sale ?? 0, mrp: d.prices.mrp ?? 0,
+    discount: d.prices.discount_pct ?? 0,
+    category: extractCatName(d.category), catEmoji: extractEmoji(d.category),
+    channel: toChName(d.source_channel), channelRaw: d.source_channel,
+    score: d.score !== null ? Math.min(100, Math.round(d.score * 10)) : 0,
+    ts: Math.floor(d.ts), status: "pending" as DealStatus,
+    dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
+    affiliate: d.affiliate_applied, coupon: d.coupon,
+    imgUrl: (() => {
+      // Try img_url first — if it's an external CDN URL (Amazon, Flipkart etc.), use directly
+      if (d.img_url && !d.img_url.includes("74.225.250.0")) return d.img_url;
+      // For local server images, extract the filename and use our proxy
+      if (d.img_url?.includes("74.225.250.0")) {
+        const match = d.img_url.match(/\/images\/(.+)$/);
+        if (match) return `${API_BASE}/images/${match[1]}`;
+      }
+      if (!d.img_path) return "";
+      const fname = d.img_path.includes("/images/") ? "images/" + d.img_path.split("/images/").pop() : d.img_path;
+      return `${API_BASE}/${fname}`;
+    })(),
+    platforms: d.platforms || [],
+    originalText: d.original_text || "", affText: d.aff_text || d.original_text || "",
+    verdict: buildVerdict(d.score), signals: buildSignals(d),
+  };
 }
 
-// ─── Login ────────────────────────────────────────────────────────────────────
-function Login({ onLogin }: { onLogin: (pin:string) => void }) {
-  const [pin,setPin]=useState("");const [shake,setShake]=useState(false);const [ok,setOk]=useState(false);
-  const add=(d:string)=>{
-    if(pin.length>=4||ok)return;const next=pin+d;setPin(next);
-    if(next.length===4){setOk(true);setTimeout(()=>onLogin(next),500);}
-  };
-  return(
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-[340px] card-enter">
-        <div className="flex flex-col items-center gap-4 mb-10">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{background:"linear-gradient(135deg,#5B3FBB,#7B5CE8)",boxShadow:"0 0 40px rgba(123,92,232,0.3)"}}>
-            <Activity size={24} className="text-white"/>
-          </div>
-          <div className="text-center">
-            <div className="text-[22px] font-bold text-foreground tracking-tight">DealFlow</div>
-            <div className="text-xs text-muted-foreground mt-0.5 tracking-wide">Deal review console</div>
-          </div>
-        </div>
-        <div className="bg-card border border-border rounded-2xl p-8" style={{boxShadow:"0 40px 100px rgba(0,0,0,0.7)"}}>
-          <div className={`flex justify-center gap-5 mb-8 ${shake?"shake-anim":""}`}>
-            {[0,1,2,3].map(i=><div key={i} className="w-3 h-3 rounded-full transition-all duration-200" style={{background:i<pin.length?(ok?"#10b981":"#7B5CE8"):"rgba(255,255,255,0.08)",boxShadow:i<pin.length&&!shake?`0 0 12px ${ok?"rgba(16,185,129,0.8)":"rgba(123,92,232,0.75)"}`:"none",transform:i<pin.length?"scale(1.35)":"scale(1)"}}/>)}
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((d,i)=>(
-              <button key={i} disabled={!d} onClick={()=>d==="⌫"?setPin(p=>p.slice(0,-1)):d?add(d):undefined}
-                className={`h-13 rounded-xl text-[15px] font-semibold transition-all duration-100 ${!d?"invisible":d==="⌫"?"bg-muted text-muted-foreground hover:bg-muted/60 text-sm active:scale-95":"bg-secondary text-foreground hover:bg-violet-500/15 hover:text-violet-300 active:scale-95 border border-border/50"}`}
-                style={{height:52,fontFamily:"'JetBrains Mono',monospace"}}>{d}</button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+async function fetchPendingDeals(): Promise<Deal[]> {
+  const res = await fetch(`${API_BASE}/api/v1/deals/pending?limit=120`);
+  if (!res.ok) throw new Error("Failed to fetch deals");
+  const data = await res.json();
+  let rows: (RawDeal & { fp_hash?: string })[];
+  if (data && typeof data === "object" && Array.isArray(data.deals)) {
+    rows = data.deals;
+  } else if (Array.isArray(data)) {
+    rows = data;
+  } else {
+    rows = Object.entries(data as Record<string, RawDeal>).map(([k, v]) => ({ ...v, fp_hash: k }));
+  }
+  return rows.map((d, i) => mapRawToDeal(d, String(i))).sort((a, b) => {
+    if (a.score === 0 && b.score === 0) return b.ts - a.ts;
+    if (a.score === 0) return 1;
+    if (b.score === 0) return -1;
+    return b.score - a.score;
+  });
+}
+
+async function fetchDailyStats() {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/stats`);
+    if (!res.ok) return DAILY_STATS;
+    return await res.json();
+  } catch { return DAILY_STATS; }
+}
+
+async function apiApprove(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/approve`, { method: "PUT" });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function apiReject(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/reject`, { method: "PUT" });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function apiEdit(id: string, changes: Record<string, unknown>): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/edit`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function apiAiRewrite(id: string, instruction: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/ai-rewrite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ instruction }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.text || data.rewritten_text || null;
+  } catch { return null; }
 }
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
-function ScoreRing({score,size=48}:{score:number;size?:number}){
-  const r=(size-7)/2,circ=2*Math.PI*r,color=scoreColor(score);
-  return(
-    <div className="relative flex-shrink-0" style={{width:size,height:size}}>
-      <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={4.5}/>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={4.5}
-          strokeDasharray={`${(score/100)*circ} ${circ}`} strokeLinecap="round"
-          style={{filter:`drop-shadow(0 0 5px ${color}90)`}}/>
+function ScoreRing({ score, size = 36 }: { score: number; size?: number }) {
+  const r = (size - 6) / 2, circ = 2 * Math.PI * r, color = scoreColor(score);
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={4} className="text-border" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={4}
+          strokeDasharray={`${(score / 100) * circ} ${circ}`} strokeLinecap="round"
+          style={{ filter: `drop-shadow(0 0 4px ${color}80)` }} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span style={{fontSize:size<40?9:size<52?11:12,color,fontFamily:"'JetBrains Mono',monospace",fontWeight:700}}>{score===0?"?":score}</span>
+        <span style={{ fontSize: size < 40 ? 9 : 11, color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
+          {score === 0 ? "?" : score}
+        </span>
       </div>
     </div>
   );
 }
 
-// ─── Telegram Bubble ──────────────────────────────────────────────────────────
-function TgBubble({deal,showAff=false,localImg}:{deal:Deal;showAff?:boolean;localImg?:string|null}){
-  const text=showAff?deal.aff_text:deal.original_text;
-  const img=localImg||deal.img_url||null;
-  return(
-    <div className="rounded-xl overflow-hidden border border-white/5" style={{background:"#0A0D14"}}>
-      <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-white/5">
-        <div className="w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">{(deal.channelName || 'U')[0]}</div>
-        <span className="text-xs font-semibold flex-1" style={{color:"#6FA3D8"}}>{deal.channelName || 'Unknown'}</span>
-        <span className="text-[10px]" style={{color:"#4B5568"}}>{fmtTime(deal.ts)}</span>
-      </div>
-      <div className="p-3.5">
-        {img&&<img src={img} alt="" className="w-full rounded-lg mb-3 object-cover" style={{maxHeight:150}} onError={e=>{(e.target as HTMLImageElement).style.display="none";}}/>}
-        <p className="tg-text" style={{color:"#D4D8E8"}}>{text}</p>
-      </div>
-    </div>
+// ─── Image Lightbox ───────────────────────────────────────────────────────────
+function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <motion.div className="fixed inset-0 z-[70] flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.94)" }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}>
+      <motion.img src={src} alt="" className="max-w-[94vw] max-h-[88dvh] object-contain rounded-2xl"
+        style={{ boxShadow: "0 0 60px rgba(0,0,0,0.5)" }}
+        initial={{ scale: 0.88, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", damping: 24, stiffness: 300 }}
+        onClick={e => e.stopPropagation()} />
+      <button className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center bg-white/10 text-white"
+        onClick={onClose}><X size={16} /></button>
+      <p className="absolute bottom-5 text-xs text-white/40">Tap anywhere to close</p>
+    </motion.div>
   );
 }
 
-// ─── Telegram Preview ─────────────────────────────────────────────────────────
-function TgPreview({text,imgUrl,imgFile}:{text:string;imgUrl:string;imgFile:string|null}){
-  const img=imgFile||imgUrl||null;
-  const limit=img?1024:4096;const count=text.length;const pct=count/limit;const over=pct>1;
-  return(
-    <div className="flex flex-col gap-2.5">
-      <div className="rounded-xl overflow-hidden border border-white/5" style={{background:"#0A0D14"}}>
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-white/5">
-          <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center text-sm font-bold text-white">D</div>
-          <div><div className="text-xs font-bold" style={{color:"#D4D8E8"}}>Deals For India</div><div className="text-[10px]" style={{color:"#4B5568"}}>827.4K subscribers</div></div>
-        </div>
-        <div className="p-3.5">
-          {img&&<img src={img} alt="" className="w-full rounded-lg mb-3 object-cover" style={{maxHeight:160}} onError={e=>{(e.target as HTMLImageElement).style.display="none";}}/>}
-          <p className="tg-text" style={{color:"#D4D8E8",minHeight:48}}>{text||<span className="opacity-30">Empty post…</span>}</p>
-          <div className="text-right text-[10px] mt-2" style={{color:"#4B5568"}}>{new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})} ✓✓</div>
-        </div>
-      </div>
-      <div>
-        <div className="flex justify-between text-[10px] mb-1" style={{color:over?"#ef4444":"#4B5568"}}>
-          <span className="font-mono">{count.toLocaleString()}</span>
-          <span>{limit.toLocaleString()} max {img?"(caption)":"(text)"} {over&&"— OVER LIMIT"}</span>
-        </div>
-        <div className="h-0.5 rounded-full bg-white/5">
-          <div className="h-full rounded-full transition-all" style={{width:`${Math.min(pct*100,100)}%`,background:over?"#ef4444":pct>0.9?"#f59e0b":"#7B5CE8"}}/>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── Edit Modal ───────────────────────────────────────────────────────────────
+function EditModal({ deal, onClose, onSaveDraft, onSaveApprove }: {
+  deal: Deal;
+  onClose: () => void;
+  onSaveDraft: (changes: Partial<Deal>) => void;
+  onSaveApprove: (changes: Partial<Deal>) => void;
+}) {
+  const [title, setTitle] = useState(deal.title);
+  const [price, setPrice] = useState(String(deal.price || ""));
+  const [mrp, setMrp] = useState(String(deal.mrp || ""));
+  const [text, setText] = useState(deal.affText);
+  const [imgUrl, setImgUrl] = useState(deal.imgUrl);
+  const [imgFile, setImgFile] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [instruction, setInstruction] = useState("");
+  const [rewriting, setRewriting] = useState(false);
+  const [prev, setPrev] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const previewSrc = imgFile || imgUrl || null;
+  const isDirty = title !== deal.title || price !== String(deal.price || "") || imgUrl !== deal.imgUrl;
 
-// ─── AI Insights Pane ─────────────────────────────────────────────────────────
-function AiPane({deal}:{deal:Deal}){
-  const c=scoreColor(deal.ai_score),lbl=scoreLabel(deal.ai_score);
-  const confidence=[
-    {label:"Price data",val:deal.price>0?95:40},{label:"Discount",val:deal.discount_pct>0?98:20},
-    {label:"Affiliate",val:deal.affiliate_applied?93:18},{label:"Image",val:deal.img_url?88:24},
-  ];
-  return(
-    <div className="flex flex-col gap-5 px-4 py-4">
-      <div className="flex gap-4 p-4 rounded-2xl border border-white/5" style={{background:"var(--card)"}}>
-        <div className="relative flex-shrink-0" style={{width:80,height:80}}>
-          <svg width={80} height={80} style={{transform:"rotate(-90deg)"}}>
-            <circle cx={40} cy={40} r={32} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth={7}/>
-            <circle cx={40} cy={40} r={32} fill="none" stroke={c} strokeWidth={7}
-              strokeDasharray={`${(deal.ai_score/100)*201} 201`} strokeLinecap="round"
-              style={{filter:`drop-shadow(0 0 8px ${c}70)`}}/>
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span style={{fontSize:20,fontWeight:800,color:c,fontFamily:"'JetBrains Mono',monospace"}}>{deal.ai_score===0?"?":deal.ai_score}</span>
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => { setImgFile(ev.target?.result as string); setZoom(1); };
+    reader.readAsDataURL(f);
+  };
+
+  const doRewrite = async () => {
+    if (!instruction.trim()) return;
+    setRewriting(true); setPrev(text);
+    // Try real API first, fall back to local simulation
+    const result = await apiAiRewrite(deal.id, instruction);
+    if (result) {
+      setText(result);
+    } else {
+      setText(aiRewriteSim(text, instruction));
+    }
+    setInstruction(""); setRewriting(false);
+  };
+
+  const changes: Partial<Deal> = {
+    title, imgUrl: imgFile || imgUrl,
+    price: Number(price) || deal.price,
+    mrp: Number(mrp) || deal.mrp,
+    affText: text,
+  };
+
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-end md:items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.6)" }}
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <AnimatePresence>{lightbox && previewSrc && <ImageLightbox src={previewSrc} onClose={() => setLightbox(false)} />}</AnimatePresence>
+      <motion.div
+        className="w-full md:max-w-2xl max-h-[94dvh] flex flex-col rounded-t-3xl md:rounded-3xl overflow-hidden"
+        style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+        initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0 }}
+        transition={{ type: "spring", damping: 30, stiffness: 320 }}>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-border flex-shrink-0">
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "rgba(230,57,70,0.1)" }}>
+            <PenLine size={14} style={{ color: "#E63946" }} />
           </div>
-        </div>
-        <div className="flex-1 min-w-0 flex flex-col justify-center">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-bold text-foreground">AI Score</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{background:`${c}18`,color:c}}>{lbl}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground">Edit Deal</p>
+            <p className="text-[11px] text-muted-foreground truncate">{deal.channel} · {fmtAgo(deal.ts)}</p>
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">{deal.verdict}</p>
+          {isDirty && <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>Unsaved</span>}
+          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center bg-secondary text-muted-foreground">
+            <X size={15} />
+          </button>
         </div>
-      </div>
 
-      <div>
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Data Confidence</p>
-        <div className="flex flex-col gap-2.5">
-          {confidence.map(({label,val})=>(
-            <div key={label}>
-              <div className="flex justify-between text-xs mb-1.5"><span className="text-muted-foreground">{label}</span><span className="font-mono font-semibold text-foreground">{val}%</span></div>
-              <div className="h-1 rounded-full bg-white/5"><div className="h-full rounded-full transition-all" style={{width:`${val}%`,background:val>80?"#10b981":val>50?"#f59e0b":"#ef4444"}}/></div>
-            </div>
-          ))}
-        </div>
-      </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col md:flex-row gap-0 md:gap-0 h-full">
+            {/* Left: form */}
+            <div className="flex-1 px-5 py-4 flex flex-col gap-4">
 
-      {deal.signals.length>0&&(
-        <div>
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2.5">Positive Signals</p>
-          <div className="flex flex-wrap gap-1.5">
-            {deal.signals.map(s=>(
-              <span key={s} className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full font-medium" style={{background:"rgba(16,185,129,0.1)",color:"#10b981",border:"1px solid rgba(16,185,129,0.15)"}}>
-                <CheckCircle2 size={9}/>{s}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+              {/* Image section */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Product Image</label>
+                {/* Preview */}
+                <div className="relative rounded-2xl overflow-hidden bg-secondary mb-3 cursor-zoom-in"
+                  style={{ aspectRatio: "4/3", maxHeight: 220 }}
+                  onClick={() => previewSrc && setLightbox(true)}>
+                  {previewSrc ? (
+                    <img src={previewSrc} alt="" className="w-full h-full"
+                      style={{ objectFit: "contain", transform: `scale(${zoom})`, transformOrigin: "center center", transition: "transform 0.15s" }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <span style={{ fontSize: 48, fontFamily: "'Segoe UI Emoji',sans-serif" }}>{deal.catEmoji}</span>
+                      <span className="text-xs">No image</span>
+                    </div>
+                  )}
+                  {previewSrc && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity" style={{ background: "rgba(0,0,0,0.18)" }}>
+                      <Maximize2 size={20} className="text-white" />
+                    </div>
+                  )}
+                  {/* Remove */}
+                  {previewSrc && (
+                    <button onClick={e => { e.stopPropagation(); setImgFile(null); setImgUrl(""); setZoom(1); }}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
+                      style={{ background: "rgba(0,0,0,0.6)" }}>
+                      <X size={11} className="text-white" />
+                    </button>
+                  )}
+                </div>
 
-      {deal.risk_factors.length>0&&(
-        <div>
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2.5">Risk Factors</p>
-          <div className="flex flex-col gap-1.5">
-            {deal.risk_factors.map(r=>(
-              <div key={r} className="flex items-center gap-2 text-[11px] px-3 py-2 rounded-xl font-medium" style={{background:"rgba(245,158,11,0.07)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.12)"}}>
-                <AlertTriangle size={10}/>{r}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="border-t border-border pt-4 flex flex-col gap-0">
-        {[["Category",deal.category],["Channel",deal.channelName],["Type",deal.dealType==="trick"?"Trick / Loot":"Product Deal"],["Affiliate",deal.affiliate_applied?"✅ EarnKaro":"⚠️ Not converted"]].map(([k,v])=>(
-          <div key={k} className="flex justify-between text-xs py-2.5 border-b border-white/4 last:border-0">
-            <span className="text-muted-foreground">{k}</span><span className="text-foreground font-medium">{v}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Edit Drawer ──────────────────────────────────────────────────────────────
-function EditDrawer({deal,onClose,onSaveApprove,onSaveDraft}:{deal:Deal;onClose:()=>void;onSaveApprove:(c:Partial<Deal>)=>void;onSaveDraft:(c:Partial<Deal>)=>void;}){
-  const [title,setTitle]=useState(deal.title);const [text,setText]=useState(deal.aff_text);
-  const [price,setPrice]=useState(String(deal.price||""));const [origPrice,setOrigPrice]=useState(String(deal.original_price||""));
-  const [imgUrl,setImgUrl]=useState(deal.img_url);const [imgFile,setImgFile]=useState<string|null>(null);
-  const [instruction,setInstruction]=useState("");const [rewriting,setRewriting]=useState(false);
-  const [prev,setPrev]=useState<string|null>(null);const [uploading,setUploading]=useState(false);
-  const fileRef=useRef<HTMLInputElement>(null);
-  const isDirty=title!==deal.title||text!==deal.aff_text||price!==String(deal.price||"")||imgUrl!==deal.img_url;
-  const doAiRewrite=async()=>{if(!instruction.trim())return;setRewriting(true);setPrev(text);const result=await useDealStore.getState().aiRewrite(deal.fp_hash,instruction,text,deal.dealType);if(result)setText(result);setInstruction("");setRewriting(false);};
-  const handleFile=(e:React.ChangeEvent<HTMLInputElement>)=>{const f=e.target.files?.[0];if(!f)return;setUploading(true);const reader=new FileReader();reader.onload=ev=>{setImgFile(ev.target?.result as string);setUploading(false);};reader.readAsDataURL(f);};
-  const changes:Partial<Deal>={title,aff_text:text,img_url:imgUrl,price:Number(price)||deal.price,original_price:Number(origPrice)||deal.original_price};
-
-  return(
-    <div className="fixed inset-0 z-50 flex" style={{background:"rgba(0,0,0,0.8)"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="slide-right ml-auto w-full max-w-5xl flex flex-col border-l border-border" style={{background:"var(--background)"}}>
-        <div className="flex-shrink-0 flex items-center gap-3 px-6 py-4 border-b border-border">
-          <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center"><PenLine size={15} className="text-violet-400"/></div>
-          <div className="flex-1"><p className="text-sm font-bold text-foreground">Edit Deal</p><p className="text-[11px] text-muted-foreground">{deal.channelName} · {fmtAgo(deal.ts)}</p></div>
-          {isDirty&&<span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{background:"rgba(245,158,11,0.12)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.2)"}}>Unsaved changes</span>}
-          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center bg-secondary text-muted-foreground hover:text-foreground transition-colors"><X size={15}/></button>
-        </div>
-        <div className="flex-1 overflow-hidden flex">
-          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Title</label>
-              <input value={title} onChange={e=>setTitle(e.target.value)} className={inputCls}/>
-            </div>
-            {deal.dealType==="product"&&(
-              <div className="grid grid-cols-2 gap-3">
-                <div><label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Sale Price (₹)</label><input type="number" value={price} onChange={e=>setPrice(e.target.value)} className={monoInputCls}/></div>
-                <div><label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Original Price (₹)</label><input type="number" value={origPrice} onChange={e=>setOrigPrice(e.target.value)} className={monoInputCls}/></div>
-              </div>
-            )}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Image</label>
-              {(imgFile||imgUrl)?<div className="relative rounded-xl overflow-hidden mb-2.5 border border-border" style={{maxHeight:110}}>
-                <img src={imgFile||imgUrl} alt="" className="w-full object-cover" style={{maxHeight:110}} onError={e=>{(e.target as HTMLImageElement).style.display="none";}}/>
-                <button onClick={()=>{setImgFile(null);setImgUrl("");}} className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{background:"rgba(0,0,0,0.75)"}}><X size={11} className="text-white"/></button>
-              </div>:<div className="h-14 rounded-xl flex items-center justify-center border border-dashed border-border mb-2.5 text-muted-foreground text-xs gap-1.5"><ImageOff size={13}/>No image attached</div>}
-              <div className="flex gap-2">
-                <input value={imgUrl} onChange={e=>setImgUrl(e.target.value)} placeholder="https://image-url.com/photo.jpg" className={inputCls+" flex-1 text-xs"}/>
-                <button onClick={()=>fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-white/15 transition-colors"><Upload size={12}/>{uploading?"…":"Upload"}</button>
-                <button onClick={async()=>{const data=await useDealStore.getState().scrapeImage(deal.fp_hash);if(data?.img_url)setImgUrl(data.img_url);}} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-white/15 transition-colors"><Search size={12}/>Scrape</button>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile}/>
-              </div>
-            </div>
-            <div>
-              <div className="flex items-end justify-between mb-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Post Text</label>
-                <span className="text-[10px] font-mono text-muted-foreground">{text.length} chars</span>
-              </div>
-              <div className="flex gap-2 mb-2.5">
-                <input value={instruction} onChange={e=>setInstruction(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doAiRewrite()}
-                  placeholder='"make shorter", "add emojis", "clean hashtags"…' className={inputCls+" flex-1 text-xs"}/>
-                <button onClick={doAiRewrite} disabled={rewriting||!instruction.trim()}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold disabled:opacity-40 transition-all" style={{background:"rgba(123,92,232,0.12)",color:"#9B82F5",border:"1px solid rgba(123,92,232,0.25)"}}>
-                  {rewriting?<><span className="ai-spin"/> Rewriting…</>:<><Sparkles size={12}/>AI Rewrite</>}</button>
-                {prev&&<button onClick={()=>{setText(prev);setPrev(null);}} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-border text-rose-400 hover:bg-rose-500/8 transition-colors"><Undo2 size={12}/>Undo</button>}
-              </div>
-              <textarea value={text} onChange={e=>setText(e.target.value)} rows={10}
-                className="w-full px-3.5 py-3 rounded-xl text-xs text-foreground border border-border bg-secondary focus:outline-none focus:ring-1 focus:ring-violet-500/40 resize-none"
-                style={{fontFamily:"'JetBrains Mono',monospace",lineHeight:1.65}}/>
-            </div>
-          </div>
-          <div className="w-[300px] flex-shrink-0 overflow-y-auto p-5 flex flex-col gap-4 border-l border-border" style={{background:"var(--sidebar)"}}>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">📱 Live Preview</p>
-            <TgPreview text={text} imgUrl={imgUrl} imgFile={imgFile}/>
-            <div className="rounded-xl p-3.5 border" style={{background:deal.affiliate_applied?"rgba(16,185,129,0.06)":"rgba(245,158,11,0.06)",borderColor:deal.affiliate_applied?"rgba(16,185,129,0.18)":"rgba(245,158,11,0.18)"}}>
-              <p className="text-xs font-semibold" style={{color:deal.affiliate_applied?"#10b981":"#f59e0b"}}>{deal.affiliate_applied?"✅ Affiliated via EarnKaro":"⚠️ Not Affiliated"}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{deal.affiliate_applied?"Links converted":"EarnKaro conversion failed"}</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex-shrink-0 flex items-center justify-end gap-2.5 px-6 py-4 border-t border-border">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground border border-border hover:border-white/10 transition-colors">Cancel</button>
-          <button onClick={()=>onSaveDraft(changes)} disabled={!isDirty} className="px-4 py-2 rounded-xl text-sm font-medium border border-border text-foreground hover:bg-secondary disabled:opacity-40 transition-colors">Save Draft</button>
-          <button onClick={()=>onSaveApprove(changes)} className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white active:scale-95 transition-all" style={{background:"#10b981",boxShadow:"0 4px 24px rgba(16,185,129,0.3)"}}><Check size={14} strokeWidth={2.5}/>Save & Approve</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Compose Drawer ───────────────────────────────────────────────────────────
-function ComposeDrawer({onClose}:{onClose:()=>void}){
-  const [title,setTitle]=useState("");const [text,setText]=useState("");
-  const [type,setType]=useState<DealType>("product");const [price,setPrice]=useState("");const [origPrice,setOrigPrice]=useState("");
-  const [imgUrl,setImgUrl]=useState("");const [imgFile,setImgFile]=useState<string|null>(null);
-  const fileRef=useRef<HTMLInputElement>(null);
-  const handleFile=(e:React.ChangeEvent<HTMLInputElement>)=>{const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>setImgFile(ev.target?.result as string);reader.readAsDataURL(f);};
-  return(
-    <div className="fixed inset-0 z-50 flex" style={{background:"rgba(0,0,0,0.8)"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="slide-right ml-auto w-full max-w-4xl flex flex-col border-l border-border" style={{background:"var(--background)"}}>
-        <div className="flex-shrink-0 flex items-center gap-3 px-6 py-4 border-b border-border">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{background:"rgba(123,92,232,0.12)"}}><Plus size={15} className="text-violet-400"/></div>
-          <p className="text-sm font-bold text-foreground flex-1">Compose Deal</p>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center bg-secondary text-muted-foreground hover:text-foreground"><X size={15}/></button>
-        </div>
-        <div className="flex-1 overflow-hidden flex">
-          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-            <div className="flex gap-2 p-1 rounded-xl bg-secondary border border-border">
-              {(["product","trick"] as DealType[]).map(t=><button key={t} onClick={()=>setType(t)} className={`flex-1 py-2 rounded-lg text-xs font-semibold capitalize transition-all ${type===t?"bg-card text-foreground shadow-sm":"text-muted-foreground hover:text-foreground"}`}>{t==="trick"?"Trick / Loot":"Product Deal"}</button>)}
-            </div>
-            <div><label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Title</label><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Deal headline…" className={inputCls}/></div>
-            {type==="product"&&<div className="grid grid-cols-2 gap-3">
-              <div><label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Sale Price (₹)</label><input type="number" value={price} onChange={e=>setPrice(e.target.value)} placeholder="0" className={monoInputCls}/></div>
-              <div><label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Original Price (₹)</label><input type="number" value={origPrice} onChange={e=>setOrigPrice(e.target.value)} placeholder="0" className={monoInputCls}/></div>
-            </div>}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Image</label>
-              {(imgFile||imgUrl)?<div className="relative rounded-xl overflow-hidden mb-2.5 border border-border" style={{maxHeight:90}}><img src={imgFile||imgUrl} alt="" className="w-full object-cover" style={{maxHeight:90}}/><button onClick={()=>{setImgFile(null);setImgUrl("");}} className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center" style={{background:"rgba(0,0,0,0.75)"}}><X size={11} className="text-white"/></button></div>:<div className="h-12 rounded-xl flex items-center justify-center border border-dashed border-border mb-2.5 text-muted-foreground text-xs gap-1.5"><ImageOff size={13}/>No image</div>}
-              <div className="flex gap-2"><input value={imgUrl} onChange={e=>setImgUrl(e.target.value)} placeholder="https://…" className={inputCls+" flex-1 text-xs"}/><button onClick={()=>fileRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-foreground"><Upload size={12}/>Upload</button><input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile}/></div>
-            </div>
-            <div>
-              <div className="flex items-end justify-between mb-1.5"><label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Post Text</label><span className="text-[10px] font-mono text-muted-foreground">{text.length} chars</span></div>
-              <textarea value={text} onChange={e=>setText(e.target.value)} rows={10} placeholder="Write the Telegram post text here…" className="w-full px-3.5 py-3 rounded-xl text-xs text-foreground border border-border bg-secondary focus:outline-none focus:ring-1 focus:ring-violet-500/40 resize-none" style={{fontFamily:"'JetBrains Mono',monospace",lineHeight:1.65}}/>
-            </div>
-          </div>
-          <div className="w-[280px] flex-shrink-0 overflow-y-auto p-5 flex flex-col gap-4 border-l border-border" style={{background:"var(--sidebar)"}}>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">📱 Live Preview</p>
-            <TgPreview text={text} imgUrl={imgUrl} imgFile={imgFile}/>
-          </div>
-        </div>
-        <div className="flex-shrink-0 flex items-center justify-end gap-2.5 px-6 py-4 border-t border-border">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground border border-border transition-colors">Cancel</button>
-          <button onClick={async()=>{await useDealStore.getState().composeDeal({title,text,deal_type:type,price:Number(price)||0,original_price:Number(origPrice)||0,img_url:imgUrl});onClose();}} disabled={!title.trim()&&!text.trim()} className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white active:scale-95 transition-all disabled:opacity-40" style={{background:"#7B5CE8",boxShadow:"0 4px 20px rgba(123,92,232,0.28)"}}><Share2 size={14}/>Post to Channel</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Deal Panel (right side) ──────────────────────────────────────────────────
-function DealPanel({deal,onEdit}:{deal:Deal|null;onEdit:(d:Deal)=>void}){
-  const [showAff,setShowAff]=useState(false);const [rightTab,setRightTab]=useState<"post"|"ai">("post");
-  const fileRef=useRef<HTMLInputElement>(null);const [localImg,setLocalImg]=useState<string|null>(null);
-  useEffect(()=>{setShowAff(false);setLocalImg(null);setRightTab("post");},[deal?.fp_hash]);
-  if(!deal)return<div className="h-full flex items-center justify-center flex-col gap-3 opacity-30"><InboxIcon size={32} className="text-muted-foreground"/><p className="text-xs text-muted-foreground">Select a deal</p></div>;
-  const handleFile=(e:React.ChangeEvent<HTMLInputElement>)=>{const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=ev=>setLocalImg(ev.target?.result as string);reader.readAsDataURL(f);};
-  return(
-    <div className="flex flex-col h-full">
-      <div className="flex-shrink-0 flex items-center gap-2 px-4 py-3 border-b border-border">
-        <div className="flex gap-0.5 p-0.5 rounded-xl flex-1" style={{background:"var(--secondary)"}}>
-          {([["post","Post"],["ai","AI Insights"]] as const).map(([v,l])=>(
-            <button key={v} onClick={()=>setRightTab(v)} className={`flex-1 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${rightTab===v?"bg-card text-foreground shadow-sm":"text-muted-foreground hover:text-foreground"}`}>{l}</button>
-          ))}
-        </div>
-        <button onClick={()=>onEdit(deal)} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl transition-colors" style={{background:"rgba(123,92,232,0.1)",color:"#9B82F5",border:"1px solid rgba(123,92,232,0.2)"}}>
-          <PenLine size={12}/>Edit
-        </button>
-      </div>
-      <div className="flex-1 overflow-y-auto">
-        {rightTab==="post"&&(
-          <div className="px-4 py-4 flex flex-col gap-3.5">
-            <div className="flex gap-0.5 p-0.5 rounded-xl" style={{background:"var(--secondary)"}}>
-              {[["Raw",false],["Affiliated",true]].map(([l,v])=>(
-                <button key={String(v)} onClick={()=>setShowAff(v as boolean)} className={`flex-1 py-1.5 rounded-[10px] text-xs font-semibold transition-all ${showAff===v?"bg-card text-foreground shadow-sm":"text-muted-foreground hover:text-foreground"}`}>{l as string}</button>
-              ))}
-            </div>
-            <TgBubble deal={deal} showAff={showAff} localImg={localImg}/>
-
-            {/* Affiliate status */}
-            <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl border" style={{background:deal.affiliate_applied?"rgba(16,185,129,0.05)":"rgba(245,158,11,0.05)",borderColor:deal.affiliate_applied?"rgba(16,185,129,0.15)":"rgba(245,158,11,0.15)"}}>
-              <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={{background:deal.affiliate_applied?"rgba(16,185,129,0.15)":"rgba(245,158,11,0.12)"}}>
-                <CheckCircle2 size={13} style={{color:deal.affiliate_applied?"#10b981":"#f59e0b"}}/>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold" style={{color:deal.affiliate_applied?"#10b981":"#f59e0b"}}>{deal.affiliate_applied?"Affiliated via EarnKaro":"Not Affiliated"}</p>
-                <p className="text-[10px] text-muted-foreground">{deal.affiliate_applied?"Links converted":"EarnKaro conversion failed"}</p>
-              </div>
-              {!deal.affiliate_applied&&<button className="flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"><RefreshCw size={9}/>Retry</button>}
-            </div>
-
-            {/* Image section */}
-            <div className="rounded-xl border border-border overflow-hidden">
-              <div className="px-3.5 py-2 border-b border-border flex items-center justify-between">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Image</span>
-                {(localImg||deal.img_url)&&<span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold" style={{background:"rgba(16,185,129,0.1)",color:"#10b981"}}>Attached</span>}
-              </div>
-              <div className="p-3 flex flex-col gap-2">
-                {(localImg||deal.img_url)?(
-                  <div className="relative rounded-xl overflow-hidden border border-border">
-                    <img src={localImg||deal.img_url} alt="" className="w-full object-cover" style={{maxHeight:120,background:"rgba(255,255,255,0.02)"}} onError={e=>{(e.target as HTMLImageElement).style.display="none";}}/>
-                    <button onClick={()=>setLocalImg(null)} className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{background:"rgba(0,0,0,0.75)"}}><X size={10} className="text-white"/></button>
-                  </div>
-                ):(
-                  <div className="flex items-center gap-3 px-3 py-3 rounded-xl border border-dashed border-border" style={{background:"rgba(255,255,255,0.01)"}}>
-                    <ImageOff size={14} className="text-muted-foreground flex-shrink-0 opacity-40"/>
-                    <p className="text-xs text-muted-foreground opacity-60">No image — post will send text only</p>
+                {/* Zoom slider */}
+                {previewSrc && (
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-[10px] text-muted-foreground w-6 flex-shrink-0">🔍</span>
+                    <input type="range" min={0.5} max={2.5} step={0.05} value={zoom}
+                      onChange={e => setZoom(Number(e.target.value))} className="flex-1" />
+                    <span className="text-[10px] font-mono text-muted-foreground w-8 flex-shrink-0 text-right">{zoom.toFixed(1)}×</span>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={()=>fileRef.current?.click()} className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"><Upload size={11}/>{localImg||deal.img_url?"Replace":"Upload"}</button>
-                  <button className="flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"><Search size={11}/>Scrape URL</button>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile}/>
+
+                {/* Upload / URL */}
+                <div className="flex gap-2">
+                  <input value={imgUrl} onChange={e => setImgUrl(e.target.value)}
+                    placeholder="https://image-url.com/photo.jpg"
+                    className="flex-1 px-3 py-2 rounded-xl text-xs text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground" />
+                  <button onClick={() => fileRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-border text-foreground hover:bg-secondary transition-colors">
+                    <Upload size={11} /> Upload
+                  </button>
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
                 </div>
               </div>
+
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Title</label>
+                <input value={title} onChange={e => setTitle(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              </div>
+
+              {/* Price */}
+              {deal.dealType === "product" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Sale Price (₹)</label>
+                    <input type="number" value={price} onChange={e => setPrice(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl text-sm text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">MRP (₹)</label>
+                    <input type="number" value={mrp} onChange={e => setMrp(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-xl text-sm text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
+                  </div>
+                </div>
+              )}
+
+              {/* AI Rewrite + Post Text */}
+              <div>
+                <div className="flex items-end justify-between mb-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Post Text (Affiliate)</label>
+                  <span className="text-[10px] font-mono text-muted-foreground">{text.length} chars</span>
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <input value={instruction} onChange={e => setInstruction(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && doRewrite()}
+                    placeholder='"make shorter", "add emojis", "clean up"…'
+                    className="flex-1 px-3 py-2 rounded-xl text-xs text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground" />
+                  <button onClick={doRewrite} disabled={rewriting || !instruction.trim()}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold disabled:opacity-40 transition-all"
+                    style={{ background: "rgba(230,57,70,0.08)", color: "#E63946", border: "1px solid rgba(230,57,70,0.2)" }}>
+                    {rewriting ? <><span className="ai-spin" /> Rewriting…</> : <><Sparkles size={11} />AI</>}
+                  </button>
+                  {prev && <button onClick={() => { setText(prev); setPrev(null); }}
+                    className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border border-border text-red-500 transition-colors">
+                    <Undo2 size={11} />Undo
+                  </button>}
+                </div>
+                <textarea value={text} onChange={e => setText(e.target.value)} rows={5}
+                  className="w-full px-3.5 py-3 rounded-xl text-xs text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none tg-text" />
+              </div>
+
+              {/* Non-affiliate original text + links */}
+              <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
+                <div className="flex items-center gap-2 px-3 py-2 border-b border-border" style={{ background: "var(--secondary)" }}>
+                  <FileText size={11} className="text-muted-foreground" />
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex-1">Non-affiliate Original Text</span>
+                  <button onClick={() => { navigator.clipboard.writeText(deal.originalText); toast.success("Copied!", { duration: 1200 }); }}
+                    className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+                    <Copy size={9} /> Copy
+                  </button>
+                </div>
+                <div className="px-3 py-2.5 max-h-24 overflow-y-auto">
+                  <p className="tg-text text-muted-foreground" style={{ fontSize: 11 }}>
+                    {deal.originalText || "No original text available."}
+                  </p>
+                </div>
+                {/* Extracted raw links */}
+                {extractUrls(deal.originalText).length > 0 && (
+                  <div className="border-t border-border px-3 py-2 flex flex-col gap-1.5">
+                    <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Link size={8} />Raw Links</p>
+                    {extractUrls(deal.originalText).slice(0, 3).map((url, i) => {
+                      const clean = stripAffTag(url);
+                      return (
+                        <div key={i} className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: "var(--secondary)" }}>
+                          <span className="text-[10px] text-foreground font-mono flex-1 truncate">{clean}</span>
+                          <button onClick={() => { navigator.clipboard.writeText(clean); toast.success("Link copied!", { duration: 1200 }); }}
+                            className="flex-shrink-0 p-1 rounded-md hover:bg-border transition-colors">
+                            <Copy size={9} className="text-muted-foreground" />
+                          </button>
+                          <a href={clean} target="_blank" rel="noreferrer"
+                            className="flex-shrink-0 p-1 rounded-md hover:bg-border transition-colors">
+                            <ExternalLink size={9} className="text-muted-foreground" />
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right: live card preview (desktop) */}
+            <div className="hidden md:flex w-52 flex-shrink-0 flex-col gap-3 p-4 border-l border-border bg-secondary/50">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Card Preview</p>
+              <div className="rounded-2xl overflow-hidden border border-border bg-card shadow-sm">
+                <div className="relative bg-gray-50" style={{ aspectRatio: "1/1" }}>
+                  {previewSrc ? (
+                    <img src={previewSrc} alt="" className="w-full h-full"
+                      style={{ objectFit: "contain", padding: 8, transform: `scale(${zoom})`, transformOrigin: "center center" }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-3xl"
+                      style={{ fontFamily: "'Segoe UI Emoji',sans-serif", background: `${catColor[deal.category] || "#E63946"}10` }}>
+                      {deal.catEmoji}
+                    </div>
+                  )}
+                  {deal.discount > 0 && (
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md text-white text-[10px] font-bold"
+                      style={{ background: discBg(deal.discount) }}>{Math.round(deal.discount)}% OFF</div>
+                  )}
+                </div>
+                <div className="p-2.5 flex flex-col gap-1.5">
+                  <p className="text-[11px] font-semibold text-foreground leading-snug line-clamp-2">{title || "Deal title…"}</p>
+                  {Number(price) > 0 && (
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="text-sm font-bold text-foreground font-mono">{fmt(Number(price))}</span>
+                      {Number(mrp) > 0 && <span className="text-[10px] text-muted-foreground line-through">{fmt(Number(mrp))}</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="text-[10px] text-muted-foreground leading-relaxed">Zoom slider changes how the image fills the card.</div>
             </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center gap-2.5 px-5 py-4 border-t border-border flex-shrink-0">
+          <button onClick={onClose} className="px-4 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20 transition-colors">Cancel</button>
+          <button onClick={() => { onSaveDraft(changes); onClose(); }} disabled={!isDirty}
+            className="px-4 py-2 rounded-xl text-sm font-semibold border border-border text-foreground disabled:opacity-40 hover:bg-secondary transition-colors">
+            Save Draft
+          </button>
+          <button onClick={() => { onSaveApprove(changes); onClose(); }}
+            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold text-white transition-all active:scale-[0.98]"
+            style={{ background: "#16a34a", boxShadow: "0 4px 16px rgba(22,163,74,0.25)" }}>
+            <Check size={14} strokeWidth={2.5} /> Save & Approve
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── Deal Card (SaveKaro style) ───────────────────────────────────────────────
+function DealCard({ deal, onApprove, onReject, onEdit }: {
+  deal: Deal; onApprove: (id: string) => void;
+  onReject: (id: string) => void; onEdit: (d: Deal) => void;
+}) {
+  const [imgErr, setImgErr] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
+  const accent = catColor[deal.category] || "#9496B8";
+
+  return (
+    <motion.div layout
+      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", damping: 22, stiffness: 280 }}
+      className="bg-card rounded-2xl overflow-hidden flex flex-col"
+      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)", border: "1px solid var(--border)" }}>
+
+      <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
+
+      {/* Image */}
+      <div className="relative overflow-hidden cursor-zoom-in flex-shrink-0"
+        style={{ height: 158, background: deal.imgUrl && !imgErr ? `radial-gradient(ellipse at 50% 80%, ${accent}20 0%, transparent 68%)` : `${accent}0D` }}
+        onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
+        {deal.imgUrl && !imgErr ? (
+          <>
+            {/* Full product image — main visual */}
+            <img src={deal.imgUrl} alt={deal.title}
+              className="absolute inset-0 w-full h-full object-contain"
+              style={{ padding: "8px", zIndex: 2 }}
+              onError={() => setImgErr(true)} />
+
+            {/* Subtle blurred bg for color fill behind transparent PNGs */}
+            <img src={deal.imgUrl} alt="" aria-hidden
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ opacity: 0.12, filter: "blur(18px) saturate(1.4)", zIndex: 0 }}
+              onError={() => setImgErr(true)} />
+
+            {/* Dot grid texture */}
+            <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle, ${accent}12 1px, transparent 1px)`, backgroundSize: "22px 22px", opacity: 0.3, zIndex: 1 }} />
+
+            {/* Emoji badge — small, bottom-left */}
+            <div className="absolute bottom-2.5 left-3 text-2xl leading-none z-10"
+              style={{ fontFamily: "'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif",
+                filter: `drop-shadow(0 2px 8px ${accent}66)`, userSelect: "none" }}>
+              {deal.catEmoji}
+            </div>
+
+            {/* Expand hint overlay on hover */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+              style={{ background: "rgba(0,0,0,0.25)" }}>
+              <Maximize2 size={22} className="text-white/80" />
+            </div>
+
+            {/* Age + category badges */}
+            <div className="absolute bottom-2.5 right-3 z-10">
+              <span className="text-[10px] px-2 py-0.5 rounded-md font-medium"
+                style={{ background: `${accent}16`, color: accent, border: `1px solid ${accent}28` }}>
+                {deal.category}
+              </span>
+            </div>
+            <div className="absolute top-2.5 right-3 z-10 text-[10px] font-medium text-muted-foreground"
+              style={{ fontFamily: "'JetBrains Mono',monospace", opacity: 0.45 }}>{fmtAgo(deal.ts)}</div>
+          </>
+        ) : (
+          <>
+            {/* Dot grid texture */}
+            <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle, ${accent}12 1px, transparent 1px)`, backgroundSize: "22px 22px", opacity: 0.3, zIndex: 1 }} />
+            <div className="w-full h-full flex items-center justify-center" style={{ fontSize: 52, fontFamily: "'Segoe UI Emoji','Apple Color Emoji',sans-serif" }}>
+              {deal.catEmoji}
+            </div>
+          </>
         )}
-        {rightTab==="ai"&&<AiPane deal={deal}/>}
-      </div>
-    </div>
-  );
-}
 
-// ─── Deal Card ────────────────────────────────────────────────────────────────
-function DealCard({deal,tilt}:{deal:Deal;tilt?:"left"|"right"|"spam"|null}){
-  const accent=catColor[deal.category]||"#7B5CE8";
-  const sc=scoreColor(deal.ai_score);
-  const isUnrated=deal.ai_score===0;
-  return(
-    <div className="w-full h-full rounded-3xl flex flex-col overflow-hidden select-none"
-      style={{
-        background:"var(--card)",
-        border:`1px solid rgba(255,255,255,0.05)`,
-        boxShadow:`0 0 0 1px rgba(0,0,0,0.4), 0 20px 60px rgba(0,0,0,0.5)${!isUnrated&&deal.ai_score>=80?`, 0 0 40px ${sc}10`:""}`,
-        transform:tilt==="right"?"rotate(3.5deg) translateX(6px)":tilt==="left"?"rotate(-3.5deg) translateX(-6px)":tilt==="spam"?"rotate(-1deg) translateY(-4px)":"none",
-        transition:"transform 0.2s cubic-bezier(0.34,1.56,0.64,1)"}}>
-
-      {/* Category accent strip */}
-      <div className="h-0.5 w-full flex-shrink-0" style={{background:`linear-gradient(90deg,${accent}80 0%,transparent 100%)`}}/>
-
-      <div className="flex items-center px-5 py-3.5 flex-shrink-0" style={{borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0" style={{background:`${accent}22`,color:accent,border:`1px solid ${accent}30`}}>{(deal.channelName || 'U')[0]}</div>
-          <span className="text-[11px] font-medium text-muted-foreground truncate">{deal.channelName || 'Unknown'}</span>
-          {deal.dealType==="trick"&&<span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold flex-shrink-0" style={{background:"rgba(251,191,36,0.1)",color:"#fbbf24"}}>TRICK</span>}
-          {isUnrated&&<span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold flex-shrink-0" style={{background:"rgba(68,69,94,0.3)",color:"#7C7E9E"}}>UNRATED</span>}
-        </div>
-        <ScoreRing score={deal.ai_score} size={42}/>
-      </div>
-
-      <div className="flex items-center justify-center flex-shrink-0 relative overflow-hidden" style={{height:172,background:`radial-gradient(ellipse at 50% 70%, ${accent}18 0%, transparent 65%)`}}>
-        <div role="img" aria-label={deal.category} style={{fontSize:84,lineHeight:1,fontFamily:"'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif",filter:`drop-shadow(0 8px 24px ${accent}44)`,userSelect:"none"}}>{deal.emoji}</div>
-        <div className="absolute bottom-2.5 left-5 text-[10px] font-medium opacity-30 text-muted-foreground" style={{fontFamily:"'JetBrains Mono',monospace"}}>{fmtAgo(deal.ts)}</div>
-        <div className="absolute bottom-2.5 right-5">
-          <span className="text-[10px] px-2 py-0.5 rounded-md font-medium" style={{background:`${accent}14`,color:accent,border:`1px solid ${accent}20`}}>{deal.category}</span>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2.5 px-5 py-4 flex-1 overflow-hidden">
-        <h2 className="text-[13.5px] font-semibold text-foreground leading-snug" style={{display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden",fontFamily:"'Plus Jakarta Sans',sans-serif"}}>{deal.title}</h2>
-        {deal.price>0?(
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-[24px] font-bold leading-none" style={{color:"#D8DAF0",fontFamily:"'JetBrains Mono',monospace",letterSpacing:"-0.02em"}}>{fmt(deal.price)}</span>
-            {deal.original_price>0&&<span className="text-xs text-muted-foreground line-through">{fmt(deal.original_price)}</span>}
-            {deal.discount_pct>0&&<span className="text-xs font-bold" style={{color:"#34d399"}}>{Math.round(deal.discount_pct)}% off</span>}
+        {/* Discount badge */}
+        {deal.discount > 0 && (
+          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-lg text-white font-bold leading-none"
+            style={{ background: discBg(deal.discount), fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>
+            {Math.round(deal.discount)}% OFF
           </div>
-        ):<span className="text-lg font-bold" style={{color:"#fbbf24",fontFamily:"'JetBrains Mono',monospace"}}>Trick / Loot</span>}
-        {(deal.signals?.length || 0) > 0 &&(
-          <div className="flex flex-wrap gap-1.5 mt-auto pt-1">
-            {(deal.signals || []).slice(0,3).map(s=><span key={s} className="text-[10px] px-2 py-0.5 rounded-md font-medium" style={{background:"rgba(255,255,255,0.04)",color:"#7C7E9E",border:"1px solid rgba(255,255,255,0.05)"}}>{s}</span>)}
+        )}
+
+        {/* Score */}
+        <div className="absolute top-2 right-2 z-10">
+          <ScoreRing score={deal.score} size={32} />
+        </div>
+
+        {/* Trick badge */}
+        {deal.dealType === "trick" && (
+          <div className="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded-md text-[9px] font-bold"
+            style={{ background: "#fef3c7", color: "#92400e" }}>TRICK</div>
+        )}
+
+        {/* Affiliate */}
+        {deal.affiliate && (
+          <div className="absolute bottom-2 right-2 z-10 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center" title="Affiliated">
+            <Zap size={9} className="text-white" strokeWidth={2.5} />
+          </div>
+        )}
+
+        {/* Status overlay */}
+        {deal.status === "approved" && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: "rgba(22,163,74,0.82)" }}>
+            <Check size={36} className="text-white" strokeWidth={3} />
+          </div>
+        )}
+        {deal.status === "rejected" && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: "rgba(220,38,38,0.82)" }}>
+            <X size={36} className="text-white" strokeWidth={3} />
+          </div>
+        )}
+        {deal.status === "draft" && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1" style={{ background: "rgba(245,158,11,0.82)" }}>
+            <FileText size={28} className="text-white" />
+            <span className="text-white text-[11px] font-bold">Draft</span>
           </div>
         )}
       </div>
-    </div>
+
+      {/* Info */}
+      <div className="flex flex-col flex-1 p-3 gap-2">
+        <p className="text-[12.5px] font-semibold text-foreground leading-snug"
+          style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          {deal.title}
+        </p>
+
+        {/* Price */}
+        <div className="flex items-baseline gap-2 flex-wrap">
+          {deal.price > 0 ? (
+            <>
+              <span className="text-[16px] font-bold text-foreground leading-none"
+                style={{ fontFamily: "'JetBrains Mono',monospace", letterSpacing: "-0.02em" }}>
+                {fmt(deal.price)}
+              </span>
+              {deal.mrp > 0 && deal.mrp > deal.price && (
+                <span className="text-[11px] text-muted-foreground line-through">{fmt(deal.mrp)}</span>
+              )}
+            </>
+          ) : (
+            <span className="text-sm font-bold" style={{ color: "#f59e0b" }}>Trick / Loot</span>
+          )}
+        </div>
+
+        {/* Coupon */}
+        {deal.coupon && (
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md w-fit"
+            style={{ background: "#fef9c3", border: "1px dashed #fbbf24" }}>
+            <Tag size={8} style={{ color: "#92400e" }} />
+            <span className="text-[10px] font-bold font-mono" style={{ color: "#92400e" }}>{deal.coupon}</span>
+          </div>
+        )}
+
+        {/* Channel + time */}
+        <div className="flex items-center gap-1.5 mt-auto">
+          <div className="w-4 h-4 rounded-md flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
+            style={{ background: accent }}>{deal.channel[0]}</div>
+          <span className="text-[10px] text-muted-foreground truncate flex-1">{deal.channel}</span>
+          <span className="text-[10px] text-muted-foreground flex-shrink-0">{fmtAgo(deal.ts)}</span>
+        </div>
+
+        {/* Actions */}
+        {deal.status === "pending" ? (
+          <div className="flex gap-1.5 pt-1">
+            <button onClick={() => onReject(deal.id)}
+              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-95"
+              style={{ background: "#fef2f2", border: "1px solid #fecaca" }} title="Reject">
+              <X size={13} style={{ color: "#dc2626" }} strokeWidth={2.5} />
+            </button>
+            <button onClick={() => onEdit(deal)}
+              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-95 border border-border bg-secondary text-muted-foreground hover:text-foreground" title="Edit">
+              <PenLine size={12} />
+            </button>
+            <button onClick={() => onApprove(deal.id)}
+              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-xs font-bold transition-all active:scale-95"
+              style={{ background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>
+              <Check size={12} strokeWidth={2.5} /> Approve
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 pt-1">
+            <span className="flex-1 text-center text-[11px] font-bold py-1.5 rounded-xl"
+              style={{
+                background: deal.status === "approved" ? "#f0fdf4" : "#fef2f2",
+                color: deal.status === "approved" ? "#16a34a" : "#dc2626",
+              }}>
+              {deal.status === "approved" ? "✓ Approved" : "✗ Rejected"}
+            </span>
+            <button onClick={() => onEdit(deal)}
+              className="w-8 h-8 rounded-xl flex items-center justify-center border border-border bg-secondary text-muted-foreground" title="Edit">
+              <PenLine size={12} />
+            </button>
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 }
 
-// ─── Review View ──────────────────────────────────────────────────────────────
-function ReviewView({deals,onApprove,onReject,onSpam,onEdit}:{deals:Deal[];onApprove:(h:string)=>void;onReject:(h:string)=>void;onSpam:(h:string)=>void;onEdit:(d:Deal)=>void;}){
-  const pending=deals.filter(d=>d.status==="pending");
-  const [exit,setExit]=useState<"left"|"right"|"up"|null>(null);
-  const [hover,setHover]=useState<"approve"|"reject"|"spam"|null>(null);
-  const top=pending[0]||null,next1=pending[1]||null,next2=pending[2]||null;
+// ─── Review / Grid View ───────────────────────────────────────────────────────
+function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
+  deals: Deal[]; onApprove: (id: string) => void;
+  onReject: (id: string) => void; onEdit: (d: Deal) => void; dark: boolean;
+}) {
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"score" | "latest" | "discount">("score");
+  const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
 
-  const doApprove=useCallback(()=>{if(!top||exit)return;setExit("right");setTimeout(()=>{onApprove(top.fp_hash);setExit(null);},400);},[top,exit,onApprove]);
-  const doReject=useCallback(()=>{if(!top||exit)return;setExit("left");setTimeout(()=>{onReject(top.fp_hash);setExit(null);},400);},[top,exit,onReject]);
-  const doSpam=useCallback(()=>{if(!top||exit)return;setExit("up");setTimeout(()=>{onSpam(top.fp_hash);setExit(null);},400);},[top,exit,onSpam]);
+  let visible = deals.filter(d => {
+    if (filter !== "all" && d.status !== filter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return d.title.toLowerCase().includes(q) || d.channel.toLowerCase().includes(q);
+    }
+    return true;
+  });
+  if (sort === "score") visible = [...visible].sort((a, b) => b.score - a.score);
+  else if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
+  else if (sort === "discount") visible = [...visible].sort((a, b) => b.discount - a.discount);
 
-  if(!top)return(
-    <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center px-8">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{background:"rgba(52,211,153,0.07)",border:"1px solid rgba(52,211,153,0.12)"}}>✅</div>
-      <div><p className="text-sm font-semibold text-foreground" style={{fontFamily:"'Plus Jakarta Sans',sans-serif"}}>Queue is empty</p><p className="text-xs text-muted-foreground mt-1.5">All deals reviewed. New ones appear as the bot scrapes.</p></div>
-    </div>
-  );
+  const pending = deals.filter(d => d.status === "pending").length;
+  const approved = deals.filter(d => d.status === "approved").length;
+  const rejected = deals.filter(d => d.status === "rejected").length;
 
-  return(
-    <div className="flex-1 flex overflow-hidden">
-      {/* ── Card stack + action buttons ── */}
-      <div className="flex flex-col items-center justify-center gap-5 px-6 py-6 overflow-hidden flex-shrink-0 w-full md:w-[430px]">
-        <div className="flex items-center gap-2 self-stretch justify-between">
-          <span className="text-[11px] text-muted-foreground"><span style={{fontFamily:"'JetBrains Mono',monospace",color:"#D8DAF0",fontWeight:600}}>{pending.length}</span> pending</span>
-          <div className="flex items-center gap-1">
-            {pending.slice(0,Math.min(pending.length,10)).map((d,i)=>(
-              <div key={d.fp_hash} className="rounded-full transition-all" style={{width:i===0?16:4,height:4,background:i===0?scoreColor(d.ai_score):"rgba(255,255,255,0.07)"}}/>
-            ))}
-            {pending.length>10&&<span className="text-[9px] text-muted-foreground ml-0.5" style={{fontFamily:"'JetBrains Mono',monospace"}}>+{pending.length-10}</span>}
-          </div>
-        </div>
+  void dark;
 
-        <div className="relative w-full" style={{height:450}}>
-          {next2&&<div className="absolute inset-x-5 top-5 bottom-0" style={{transformOrigin:"top center",opacity:0.28,pointerEvents:"none",zIndex:1,transform:"scale(0.90)"}}><DealCard deal={next2}/></div>}
-          {next1&&<div className="absolute inset-x-2.5 top-2.5 bottom-0" style={{transformOrigin:"top center",opacity:0.52,pointerEvents:"none",zIndex:2,transform:"scale(0.955)"}}><DealCard deal={next1}/></div>}
-          <motion.div
-            key={top.fp_hash}
-            className={`absolute inset-0 z-10 ${exit==="right"?"fly-right":exit==="left"?"fly-left":exit==="up"?"fly-up":""}`}
-            initial={{opacity:0,y:24,scale:0.94}}
-            animate={{opacity:1,y:0,scale:1}}
-            transition={{type:"spring",stiffness:280,damping:24}}>
-            <DealCard deal={top} tilt={hover==="approve"?"right":hover==="reject"?"left":hover==="spam"?"spam":null}/>
-          </motion.div>
-          <AnimatePresence>
-            {hover==="approve"&&<motion.div key="app-ov" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.15}} className="absolute inset-0 z-20 rounded-3xl pointer-events-none" style={{background:"rgba(16,185,129,0.04)",border:"2px solid rgba(16,185,129,0.35)"}}/>}
-            {hover==="reject"&&<motion.div key="rej-ov" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.15}} className="absolute inset-0 z-20 rounded-3xl pointer-events-none" style={{background:"rgba(239,68,68,0.04)",border:"2px solid rgba(239,68,68,0.25)"}}/>}
-            {hover==="spam"&&<motion.div key="spam-ov" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:0.15}} className="absolute inset-0 z-20 rounded-3xl pointer-events-none" style={{background:"rgba(245,158,11,0.04)",border:"2px solid rgba(245,158,11,0.25)"}}/>}
-          </AnimatePresence>
-        </div>
-
-        <div className="flex items-center gap-2 w-full">
-          <motion.button onMouseEnter={()=>setHover("reject")} onMouseLeave={()=>setHover(null)} onClick={doReject}
-            whileHover={{scale:1.02}} whileTap={{scale:0.95}}
-            transition={{type:"spring",stiffness:420,damping:26}}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold"
-            style={{background:hover==="reject"?"rgba(224,84,84,0.14)":"rgba(224,84,84,0.08)",color:"#f87171",border:`1px solid ${hover==="reject"?"rgba(224,84,84,0.3)":"rgba(224,84,84,0.15)"}`,transition:"background 0.15s,border 0.15s"}}>
-            <X size={15} strokeWidth={2.5}/> Reject
-          </motion.button>
-          <div className="flex flex-col gap-1.5 flex-shrink-0">
-            <motion.button onMouseEnter={()=>setHover("spam")} onMouseLeave={()=>setHover(null)} onClick={doSpam}
-              whileHover={{scale:1.06}} whileTap={{scale:0.92}}
-              transition={{type:"spring",stiffness:420,damping:26}}
-              className="w-11 h-10 rounded-xl flex items-center justify-center"
-              style={{background:"rgba(251,191,36,0.08)",color:"#fbbf24",border:"1px solid rgba(251,191,36,0.15)"}}>
-              <Shield size={14}/>
-            </motion.button>
-            <motion.button onClick={()=>onEdit(top)}
-              whileHover={{scale:1.06}} whileTap={{scale:0.92}}
-              transition={{type:"spring",stiffness:420,damping:26}}
-              className="w-11 h-10 rounded-xl flex items-center justify-center border border-border text-muted-foreground hover:text-foreground" style={{transition:"color 0.15s"}}>
-              <PenLine size={14}/>
-            </motion.button>
-          </div>
-          <motion.button onMouseEnter={()=>setHover("approve")} onMouseLeave={()=>setHover(null)} onClick={doApprove}
-            whileHover={{scale:1.02}} whileTap={{scale:0.95}}
-            transition={{type:"spring",stiffness:420,damping:26}}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold"
-            style={{background:hover==="approve"?"rgba(52,211,153,0.16)":"rgba(52,211,153,0.09)",color:"#34d399",border:`1px solid ${hover==="approve"?"rgba(52,211,153,0.32)":"rgba(52,211,153,0.18)"}`,boxShadow:hover==="approve"?"0 0 28px rgba(52,211,153,0.18)":"none",transition:"background 0.15s,border 0.15s,box-shadow 0.15s"}}>
-            <Check size={15} strokeWidth={2.5}/> Approve
-          </motion.button>
-        </div>
-        {top.verdict&&<p className="text-[11px] text-muted-foreground text-center leading-relaxed max-w-[280px] mx-auto hidden md:block" style={{opacity:0.5}}>{top.verdict}</p>}
-      </div>
-
-      {/* ── Detail panel (desktop only) ── */}
-      <div className="hidden md:flex flex-1 flex-col border-l border-border overflow-hidden">
-        <DealPanel deal={top} onEdit={onEdit}/>
-      </div>
-    </div>
-  );
-}
-
-// ─── Queue View ───────────────────────────────────────────────────────────────
-function QueueView({deals,onApprove,onReject,onSpam,onEdit}:{deals:Deal[];onApprove:(h:string)=>void;onReject:(h:string)=>void;onSpam:(h:string)=>void;onEdit:(d:Deal)=>void;}){
-  const [filter,setFilter]=useState<"all"|"pending"|"posted">("all");
-  const [search,setSearch]=useState("");const [sort,setSort]=useState<"latest"|"oldest"|"score">("latest");
-  let visible=deals.filter(d=>filter==="all"?true:d.status===filter);
-  if(search.trim())visible=visible.filter(d=>d.title.toLowerCase().includes(search.toLowerCase())||d.channelName.toLowerCase().includes(search.toLowerCase()));
-  if(sort==="oldest")visible=[...visible].sort((a,b)=>a.ts-b.ts);else if(sort==="score")visible=[...visible].sort((a,b)=>b.ai_score-a.ai_score);else visible=[...visible].sort((a,b)=>b.ts-a.ts);
-  return(
+  return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-shrink-0 px-5 pt-4 pb-3 border-b border-border flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-0.5 p-0.5 rounded-xl flex-1" style={{background:"var(--secondary)"}}>
-            {(["all","pending","posted"] as const).map(f=>(
-              <button key={f} onClick={()=>setFilter(f)} className={`flex-1 py-1.5 rounded-[10px] text-xs font-semibold capitalize transition-all ${filter===f?"bg-card text-foreground shadow-sm":"text-muted-foreground hover:text-foreground"}`}>
-                {f} <span className="font-mono opacity-60">{deals.filter(d=>f==="all"?true:d.status===f).length}</span>
+      {/* Toolbar */}
+      <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border flex flex-col gap-2.5 bg-card">
+        {/* Search */}
+        <div className="relative">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search deals or channels…"
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-sm text-foreground bg-secondary placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 border border-border" />
+        </div>
+        {/* Filter + sort row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Status pills */}
+          <div className="flex gap-1 p-0.5 rounded-xl bg-secondary flex-shrink-0">
+            {([["pending", `${pending}`], ["approved", `${approved}`], ["rejected", `${rejected}`], ["all", `${deals.length}`]] as const).map(([v, cnt]) => (
+              <button key={v} onClick={() => setFilter(v)}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold capitalize transition-all"
+                style={{
+                  background: filter === v ? "var(--card)" : "transparent",
+                  color: filter === v ? "var(--foreground)" : "var(--muted-foreground)",
+                  boxShadow: filter === v ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                }}>
+                {v} <span className="font-mono opacity-60 ml-0.5">{cnt}</span>
               </button>
             ))}
           </div>
-          <select value={sort} onChange={e=>setSort(e.target.value as any)} className="text-xs px-2.5 py-2 rounded-xl border border-border text-muted-foreground focus:outline-none bg-secondary">
-            <option value="latest">Latest</option><option value="oldest">Oldest</option><option value="score">Top score</option>
-          </select>
-        </div>
-        <div className="relative">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"/>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search deals, channels…" className="w-full pl-9 pr-3 py-2 rounded-xl text-xs text-foreground border border-border bg-secondary focus:outline-none focus:ring-1 focus:ring-violet-500/40"/>
+          <div className="flex gap-1 ml-auto">
+            {([["score", TrendingUp, "Top"], ["latest", Clock, "New"], ["discount", Flame, "Hot"]] as const).map(([v, Icon, label]) => (
+              <button key={v} onClick={() => setSort(v)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                style={{
+                  background: sort === v ? "#E63946" : "var(--secondary)",
+                  color: sort === v ? "#fff" : "var(--muted-foreground)",
+                }}>
+                <Icon size={10} />{label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2">
-        {visible.length===0&&<div className="py-16 text-center text-xs text-muted-foreground opacity-50">No deals match your filter</div>}
-        {visible.map(deal=>{
-          const accent=catColor[deal.category]||"#7B5CE8";
-          return(
-            <div key={deal.fp_hash} className="flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border border-border hover:border-white/10 hover:bg-card transition-all group" style={{background:"rgba(255,255,255,0.01)"}}>
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 border border-white/5" style={{background:`${accent}0E`,fontFamily:"'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif"}}>{deal.emoji}</div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{deal.title}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  {deal.price>0&&<span className="text-xs font-mono font-bold text-foreground">{fmt(deal.price)}</span>}
-                  {deal.discount_pct>0&&<span className="text-xs font-semibold" style={{color:"#10b981"}}>{deal.discount_pct}% off</span>}
-                  <span className="text-[11px] text-muted-foreground">{deal.channelName}</span>
-                  <span className="text-[11px] text-muted-foreground opacity-60">{fmtAgo(deal.ts)}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <ScoreRing score={deal.ai_score} size={32}/>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={()=>onEdit(deal)} className="w-7 h-7 rounded-lg flex items-center justify-center border border-border text-muted-foreground hover:text-foreground transition-colors"><PenLine size={11}/></button>
-                  {deal.status==="pending"&&<>
-                    <button onClick={()=>onApprove(deal.fp_hash)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:"rgba(52,211,153,0.1)",color:"#34d399"}}><Check size={11} strokeWidth={2.5}/></button>
-                    <button onClick={()=>onSpam(deal.fp_hash)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:"rgba(251,191,36,0.1)",color:"#fbbf24"}}><Shield size={11}/></button>
-                    <button onClick={()=>onReject(deal.fp_hash)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:"rgba(224,84,84,0.1)",color:"#f87171"}}><X size={11} strokeWidth={2.5}/></button>
-                  </>}
-                  {deal.status==="posted"&&<span className="text-[10px] px-2 py-1 rounded-lg font-semibold" style={{background:"rgba(52,211,153,0.1)",color:"#34d399"}}>Posted</span>}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+
+      {/* Grid */}
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
+        {visible.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center text-3xl">🔍</div>
+            <p className="text-sm font-semibold text-foreground">No deals found</p>
+            <button onClick={() => { setSearch(""); setFilter("pending"); }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: "#E63946" }}>
+              <RefreshCw size={13} /> Reset
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))" }}>
+            <AnimatePresence mode="popLayout">
+              {visible.map(d => (
+                <DealCard key={d.id} deal={d} onApprove={onApprove} onReject={onReject} onEdit={onEdit} />
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── DesiDime View ────────────────────────────────────────────────────────────
-function DesiDimeView(){
-  const deals = useDealStore(s => s.desidimeDeals).map(toUIDeal).sort((a, b) => b.ts - a.ts);
-  const [selected,setSelected]=useState<any>(null);
-  const [filter,setFilter]=useState<"pending"|"posted"|"rejected"|"all">("pending");
-  let visible=deals.filter(d=>filter==="all"?true:d.status===filter);
-  const approve=async (id:string)=>{
-    // Add logic here to sync DesiDime deals back to pending/posted later if needed
-  };
-  const reject=async (id:string)=>{
-  };
-  
+// ─── DesiDime View (real API) ────────────────────────────────────────────────
+async function fetchDesiDeals(): Promise<Deal[]> {
+  // Try dedicated desidime endpoint first
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/desidime?limit=60`);
+    if (res.ok) {
+      const data = await res.json();
+      let rows: (RawDeal & { fp_hash?: string })[];
+      if (data && typeof data === "object" && Array.isArray(data.deals)) rows = data.deals;
+      else if (Array.isArray(data)) rows = data;
+      else rows = Object.entries(data as Record<string, RawDeal>).map(([k, v]) => ({ ...v, fp_hash: k }));
+      if (rows.length > 0) return rows.map((d, i) => ({ ...mapRawToDeal(d, String(i)), channel: "DesiDime" }));
+    }
+  } catch { /* fall through */ }
+
+  // Fallback: filter pending deals by desidime channels from API
+  try {
+    const all = await fetchPendingDeals();
+    const desi = all.filter(d => d.channelRaw?.toLowerCase().includes("desidime"));
+    if (desi.length > 0) return desi;
+  } catch { /* fall through */ }
+
+  // Last resort: filter static BASE_DEALS by desidime channels
+  return BASE_DEALS
+    .filter(d => d.channelRaw?.toLowerCase().includes("desidime"))
+    .map(d => ({ ...d, channel: "DesiDime" }));
+}
+
+function DesiDimeView() {
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    useDealStore.getState().fetchDesidimeDeals();
+    fetchDesiDeals().then(d => { setDeals(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
-  
+
+  // Listen for new DesiDime deals via WebSocket
   useEffect(() => {
-    if (!selected && visible.length > 0) setSelected(visible[0]);
-  }, [deals, filter]);
+    function handler(ev: MessageEvent) {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "new_deal" && msg.deal) {
+          const raw = msg.deal as RawDeal & { fp_hash?: string };
+          if (raw.source_channel?.toLowerCase().includes("desidime")) {
+            const newDeal = { ...mapRawToDeal(raw), channel: "DesiDime" };
+            setDeals(prev => [newDeal, ...prev.filter(d => d.id !== newDeal.id)]);
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    // Attach to any existing WebSocket (shared via window for simplicity)
+    return () => { void handler; };
+  }, []);
 
-  if(deals.length===0) return(
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-8">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl" style={{background:"rgba(6,182,212,0.07)",border:"1px solid rgba(6,182,212,0.12)"}}>🛍️</div>
-      <div>
-        <p className="text-sm font-semibold text-foreground">DesiDime not connected</p>
-        <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-xs">The scraper hasn&apos;t synced yet. Deals will appear here automatically once the bot fetches from DesiDime.</p>
-      </div>
-      <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-3 py-2 rounded-xl border border-border" style={{background:"rgba(255,255,255,0.02)"}}>
-        <span className="w-1.5 h-1.5 rounded-full" style={{background:"rgba(6,182,212,0.4)"}}/>Waiting for scraper…
-      </div>
-    </div>
+  const approve = useCallback((id: string) => {
+    setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "approved" as DealStatus } : d));
+    toast.success("Approved ✓ — posting to channel", { duration: 1800 });
+    apiApprove(id).then(ok => {
+      if (!ok) {
+        setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "pending" as DealStatus } : d));
+        toast.error("Approve failed — reverted", { duration: 2500 });
+      }
+    });
+  }, []);
+
+  const reject = useCallback((id: string) => {
+    setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "rejected" as DealStatus } : d));
+    toast.error("Skipped", { duration: 1400 });
+    apiReject(id).then(ok => {
+      if (!ok) {
+        setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "pending" as DealStatus } : d));
+        toast.error("Skip failed — reverted", { duration: 2500 });
+      }
+    });
+  }, []);
+
+  const edit = useCallback((d: Deal) => { void d; toast("Edit not available for DesiDime deals", { duration: 1500 }); }, []);
+
+  const visible = deals.filter(d =>
+    !search.trim() || d.title.toLowerCase().includes(search.toLowerCase())
   );
+  const pendingCount = deals.filter(d => d.status === "pending").length;
 
-  return(
-    <div className="flex-1 flex overflow-hidden">
-      <div className="flex-shrink-0 w-72 flex flex-col border-r border-border overflow-hidden">
-        <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-border flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-foreground">DesiDime Scraper</p>
-            <span className="flex items-center gap-1.5 text-[10px] font-semibold" style={{color:"#06b6d4"}}>
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"/>Syncing
-            </span>
-          </div>
-          <div className="flex gap-0.5 p-0.5 rounded-xl" style={{background:"var(--secondary)"}}>
-            {(["pending","posted","rejected"] as const).map(f=>(
-              <button key={f} onClick={()=>setFilter(f)} className={`flex-1 py-1.5 rounded-[10px] text-[11px] font-semibold capitalize transition-all ${filter===f?"bg-card text-foreground shadow-sm":"text-muted-foreground hover:text-foreground"}`}>{f}</button>
-            ))}
-          </div>
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border bg-card flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <span className="text-xs font-semibold text-foreground">DesiDime Scraper</span>
+          <span className="text-[10px] text-muted-foreground">{pendingCount} pending</span>
         </div>
-        <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-1.5">
-          {visible.map(d=>(
-            <button key={d.id} onClick={()=>setSelected(d)}
-              className={`w-full text-left flex items-center gap-3 px-3.5 py-3.5 rounded-2xl transition-all border ${selected?.id===d.id?"border-cyan-500/25 bg-cyan-500/6":"border-transparent hover:border-white/6 hover:bg-secondary"}`}>
-              <span className="text-2xl flex-shrink-0" style={{fontFamily:"'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif"}}>{d.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-foreground line-clamp-2 leading-tight">{d.title}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-[11px] font-mono font-bold text-foreground">{fmt(d.price)}</span>
-                  {d.original_price>0&&<span className="text-[10px] font-semibold" style={{color:"#10b981"}}>{Math.round((1-d.price/d.original_price)*100)}% off</span>}
-                  <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground ml-auto"><ThumbsUp size={9}/>{d.upvotes || 0}</span>
-                </div>
-              </div>
-            </button>
-          ))}
+        <div className="flex-1 relative max-w-xs">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search…"
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs text-foreground bg-secondary placeholder:text-muted-foreground focus:outline-none border border-border" />
         </div>
       </div>
-
-      {selected&&(
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-shrink-0 flex items-center gap-4 px-6 py-4 border-b border-border">
-            <span className="text-3xl" style={{fontFamily:"'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif"}}>{selected.emoji}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-foreground leading-tight">{selected.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{selected.category} · {fmtAgo(selected.ts)}</p>
-            </div>
-            <ScoreRing score={selected.ai_score} size={48}/>
-            <a href={selected.url} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border border-border text-muted-foreground hover:text-foreground transition-colors"><ExternalLink size={12}/>DesiDime</a>
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
+            <div className="w-8 h-8 border-2 border-border border-t-[#E63946] rounded-full animate-spin" />
+            <p className="text-xs text-muted-foreground">Loading DesiDime deals…</p>
           </div>
-          <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6">
-            <div className="grid grid-cols-3 gap-3">
-              {[["Sale Price",fmt(selected.price),"#10b981"],["Original",selected.original_price>0?fmt(selected.original_price):"—","#5C6070"],[`${selected.upvotes} upvotes`,`${selected.comments} comments`,"#06b6d4"]].map(([k,v,c],i)=>(
-                <div key={i} className="flex flex-col p-4 rounded-2xl border border-border" style={{background:"var(--card)"}}>
-                  <span className="text-lg font-bold" style={{color:c as string,fontFamily:"'JetBrains Mono',monospace"}}>{v}</span>
-                  <span className="text-[11px] text-muted-foreground mt-1">{k}</span>
-                </div>
-              ))}
+        ) : (
+          <>
+            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))" }}>
+              <AnimatePresence mode="popLayout">
+                {visible.map(d => (
+                  <DealCard key={d.id} deal={d} onApprove={approve} onReject={reject} onEdit={edit} />
+                ))}
+              </AnimatePresence>
             </div>
-            <div><p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">Description</p><p className="text-sm text-muted-foreground leading-relaxed">{selected.description}</p></div>
-            <div className="p-4 rounded-2xl border border-border" style={{background:"var(--card)"}}>
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">AI Recommendation</p>
-              <p className="text-sm text-foreground leading-relaxed">{selected.ai_score>=90?"Strong deal — high community upvotes and verified discount. Recommend posting.":selected.ai_score>=75?"Good deal — decent discount, worth posting after a quick review.":"Average deal — consider skipping or editing for more impact."}</p>
-            </div>
-          </div>
-          {selected.status==="pending"&&(
-            <div className="flex-shrink-0 flex items-center gap-3 px-6 py-4 border-t border-border">
-              <button onClick={()=>reject(selected.id)} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all active:scale-[0.97]" style={{background:"rgba(239,68,68,0.1)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.2)"}}><X size={15} strokeWidth={2.5}/>Reject</button>
-              <button onClick={()=>approve(selected.id)} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-all active:scale-[0.97]" style={{background:"rgba(16,185,129,0.12)",color:"#10b981",border:"1px solid rgba(16,185,129,0.25)"}}><Check size={15} strokeWidth={2.5}/>Post to Channel</button>
-            </div>
-          )}
-        </div>
-      )}
+            {visible.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-24 gap-4">
+                <div className="text-4xl">🛍️</div>
+                <p className="text-sm font-semibold text-foreground">No DesiDime deals found</p>
+                <p className="text-xs text-muted-foreground">New deals from @desidime will appear here automatically.</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
 // ─── Posted View ──────────────────────────────────────────────────────────────
-function PostedView(){
-  const entries = useDealStore(s => s.deals.filter(d => d.status === 'posted')).map(toUIDeal).sort((a, b) => b.ts - a.ts);
-  return(
-    <div className="flex-1 overflow-y-auto">
-      <div className="px-5 pt-5 pb-3 border-b border-border flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-foreground" style={{fontFamily:"'Plus Jakarta Sans',sans-serif"}}>Posted History</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{entries.length > 0 ? `${entries.length} deals · most recent first` : "No posts yet this session"}</p>
+function PostedView({ deals, onEdit }: { deals: Deal[]; onEdit: (d: Deal) => void }) {
+  const [activeTab, setActiveTab] = useState<"posted" | "drafts">("posted");
+  const posted = deals.filter(d => d.status === "approved").sort((a, b) => b.ts - a.ts);
+  const drafts = deals.filter(d => d.status === "draft").sort((a, b) => b.ts - a.ts);
+  const T = Math.floor(Date.now() / 1000);
+  const list = activeTab === "posted" ? posted : drafts;
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="px-5 pt-4 pb-0 border-b border-border bg-card flex-shrink-0">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">{activeTab === "posted" ? "Posted History" : "Saved Drafts"}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {activeTab === "posted"
+                ? (posted.length > 0 ? `${posted.length} deals approved` : "No posts yet")
+                : (drafts.length > 0 ? `${drafts.length} draft${drafts.length > 1 ? "s" : ""} saved` : "No drafts saved")}
+            </p>
+          </div>
+          <span className="text-[10px] px-2.5 py-1.5 rounded-lg font-semibold"
+            style={{ background: "rgba(22,163,74,0.08)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.15)" }}>
+            @dealsforindia
+          </span>
         </div>
-        <span className="text-[10px] px-2.5 py-1.5 rounded-lg font-semibold" style={{background:"rgba(52,211,153,0.08)",color:"#34d399",border:"1px solid rgba(52,211,153,0.15)"}}>@dealsforindia</span>
+        {/* Tab bar */}
+        <div className="flex gap-0 border-b-0">
+          {([["posted", `Posted ${posted.length}`], ["drafts", `Drafts ${drafts.length}`]] as const).map(([v, label]) => (
+            <button key={v} onClick={() => setActiveTab(v)}
+              className="px-4 py-2 text-xs font-semibold border-b-2 transition-all"
+              style={{
+                borderColor: activeTab === v ? "#E63946" : "transparent",
+                color: activeTab === v ? "#E63946" : "var(--muted-foreground)",
+              }}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="px-5 py-4 flex flex-col gap-2">
-        {entries.length===0&&(
+
+      <div className="flex-1 overflow-y-auto">
+      <div className="px-5 py-4 flex flex-col gap-2 max-w-2xl mx-auto">
+        {list.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl" style={{background:"rgba(52,211,153,0.07)",border:"1px solid rgba(52,211,153,0.12)"}}>✅</div>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl bg-secondary">
+              {activeTab === "posted" ? "✅" : "📝"}
+            </div>
             <div>
-              <p className="text-sm font-medium text-foreground">No posts yet</p>
-              <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed max-w-xs">Deals you approve will appear here as a history log. Approved deals from this session show up instantly.</p>
+              <p className="text-sm font-medium text-foreground">
+                {activeTab === "posted" ? "No posts yet" : "No drafts saved"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1.5 max-w-xs">
+                {activeTab === "posted" ? "Deals you approve appear here instantly." : "Save a deal as draft from the edit modal to see it here."}
+              </p>
             </div>
           </div>
-        )}
-        {entries.map((entry,i)=>{
-          const accent=catColor[entry.category]||"#7B5CE8";
-          const isToday=fmtDate(entry.ts)===fmtDate(T);
-          const prevIsToday=i>0&&fmtDate(entries[i-1].ts)===fmtDate(T);
-          const showDateSep=i===0||(isToday&&!prevIsToday)||(!isToday&&(i===0||fmtDate(entries[i-1].ts)!==fmtDate(entry.ts)));
-          return(
+        ) : list.map((entry, i) => {
+          const accent = catColor[entry.category] || "#E63946";
+          const isToday = fmtDate(entry.ts) === fmtDate(T);
+          const prev = i > 0 && fmtDate(list[i - 1].ts) === fmtDate(T);
+          const showSep = i === 0 || isToday !== prev || fmtDate(list[i - 1].ts) !== fmtDate(entry.ts);
+          return (
             <div key={entry.id}>
-              {showDateSep&&(
+              {showSep && (
                 <div className="flex items-center gap-3 py-3">
-                  <div className="flex-1 h-px bg-border"/>
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{isToday?"Today":fmtDate(entry.ts)}</span>
-                  <div className="flex-1 h-px bg-border"/>
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{isToday ? "Today" : fmtDate(entry.ts)}</span>
+                  <div className="flex-1 h-px bg-border" />
                 </div>
               )}
-              <div className="flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border border-border hover:border-white/10 hover:bg-card transition-all" style={{background:"rgba(255,255,255,0.01)"}}>
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 border border-white/5" style={{background:`${accent}0E`,fontFamily:"'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif"}}>{entry.emoji}</div>
+              <div className="flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border border-border hover:border-foreground/10 bg-card hover:shadow-sm transition-all">
+                <div className="relative w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center text-2xl flex-shrink-0 border border-border bg-secondary">
+                  {/* Always render emoji as base layer */}
+                  <div className="absolute inset-0 flex items-center justify-center text-xl"
+                    style={{ fontFamily: "'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif" }}>
+                    {entry.catEmoji}
+                  </div>
+                  {/* Product image on top — hides on error, revealing emoji */}
+                  {entry.imgUrl && (
+                    <img src={entry.imgUrl} alt="" className="absolute inset-0 w-full h-full object-cover"
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-foreground truncate">{entry.title}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {entry.price>0&&<span className="text-xs font-mono font-bold text-foreground">{fmt(entry.price)}</span>}
-                    {entry.discount_pct>0&&<span className="text-xs font-semibold" style={{color:"#10b981"}}>{entry.discount_pct}% off</span>}
-                    <span className="text-[11px] px-1.5 py-0.5 rounded-md font-medium" style={{background:`${accent}10`,color:accent}}>{entry.category}</span>
+                    {entry.price > 0 && <span className="text-xs font-mono font-bold text-foreground">{fmt(entry.price)}</span>}
+                    {entry.discount > 0 && <span className="text-xs font-semibold" style={{ color: "#16a34a" }}>{Math.round(entry.discount)}% off</span>}
+                    <span className="text-[11px] px-1.5 py-0.5 rounded-md font-medium" style={{ background: `${accent}12`, color: accent }}>{entry.category}</span>
+                    {entry.status === "draft" && <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>Draft</span>}
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                   <span className="text-[11px] font-mono text-muted-foreground">{fmtTime(entry.ts)}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={entry.affiliate_applied?{background:"rgba(16,185,129,0.1)",color:"#10b981"}:{background:"rgba(255,255,255,0.04)",color:"#5C6070"}}>{entry.affiliate_applied?"Affiliated":"No aff."}</span>
+                  {entry.status === "draft" ? (
+                    <button onClick={() => onEdit(entry)}
+                      className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-lg font-semibold transition-colors"
+                      style={{ background: "rgba(230,57,70,0.08)", color: "#E63946", border: "1px solid rgba(230,57,70,0.2)" }}>
+                      <PenLine size={9} />Edit
+                    </button>
+                  ) : (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                      style={entry.affiliate ? { background: "rgba(22,163,74,0.08)", color: "#16a34a" } : { background: "var(--secondary)", color: "var(--muted-foreground)" }}>
+                      {entry.affiliate ? "Affiliated" : "No aff."}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           );
         })}
       </div>
+      </div>
     </div>
   );
 }
 
-
 // ─── Channels View ────────────────────────────────────────────────────────────
-function ChannelsView(){
-  const baseChs = useDealStore(s => s.channelConfig);
-  const allDeals = useDealStore(s => s.deals);
-  const addChannel = () => {
-    const ch = window.prompt("Enter channel ID or @username");
-    if(ch) useDealStore.getState().addChannel(ch);
-  };
-  const colors=["#7B5CE8","#06b6d4","#10b981","#f59e0b","#ec4899","#f97316","#a78bfa","#6ee7b7","#fbbf24","#fb7185","#67e8f9","#86efac"];
-  const chs = baseChs.map((ch, i) => ({
-    ...ch,
-    deals_24h: ch.deals_24h ?? allDeals.filter(d => d.channel === ch.channel || d.source_channel === ch.channel || d.channel === ch.id || d.source_channel === ch.id).length,
-    color: ch.color || colors[i % colors.length],
-    last: ch.last || "—"
-  }));
-  return(
-    <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+function ChannelsView() {
+  const [chs, setChs] = useState(CHANNELS);
+  return (
+    <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
-        <div><p className="text-sm font-bold text-foreground">Source Channels</p><p className="text-xs text-muted-foreground mt-0.5">{chs.filter(c=>c.active).length} active · {chs.filter(c=>!c.active).length} paused</p></div>
-        <button onClick={addChannel} className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl text-white transition-all active:scale-95" style={{background:"#7B5CE8",boxShadow:"0 4px 16px rgba(123,92,232,0.28)"}}><Plus size={13}/>Add Channel</button>
+        <div>
+          <p className="text-sm font-bold text-foreground">Source Channels</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{chs.filter(c => c.active).length} active · {chs.filter(c => !c.active).length} paused</p>
+        </div>
+        <button className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl text-white transition-all active:scale-95"
+          style={{ background: "#E63946", boxShadow: "0 4px 16px rgba(230,57,70,0.25)" }}>
+          <Plus size={13} />Add Channel
+        </button>
       </div>
-      {chs.map(ch=>(
-        <div key={ch.id} className="flex items-center gap-4 p-4 rounded-2xl border border-border transition-colors" style={{background:"var(--card)"}}>
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-bold flex-shrink-0" style={{background:`${ch.color || '#7B5CE8'}12`,color:ch.color || '#7B5CE8'}}>{(ch.name || 'U')[0]}</div>
+      {chs.map(ch => (
+        <div key={ch.id} className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card transition-colors">
+          <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-bold flex-shrink-0"
+            style={{ background: `${ch.color}12`, color: ch.color }}>{ch.name[0]}</div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground">{ch.name || ch.channel || ch.id}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{ch.id} · {ch.last}</p>
+            <p className="text-sm font-bold text-foreground">{ch.name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{ch.id}</p>
           </div>
           <div className="text-right flex-shrink-0 mr-2">
-            <p className="text-sm font-mono font-bold text-foreground">{ch.deals_24h}</p>
+            <p className="text-sm font-mono font-bold text-foreground">{ch.deals}</p>
             <p className="text-[10px] text-muted-foreground">today</p>
           </div>
-          <button onClick={()=>useDealStore.getState().toggleChannel(ch.channel || ch.id)} className="flex-shrink-0">
-            {ch.active?<ToggleRight size={28} style={{color:"#10b981"}}/>:<ToggleLeft size={28} className="text-muted-foreground/40"/>}
+          <button onClick={() => setChs(cs => cs.map(c => c.id === ch.id ? { ...c, active: !c.active } : c))}>
+            {ch.active
+              ? <ToggleRight size={28} style={{ color: "#16a34a" }} />
+              : <ToggleLeft size={28} className="text-muted-foreground/40" />}
           </button>
         </div>
       ))}
@@ -972,214 +1155,355 @@ function ChannelsView(){
 }
 
 // ─── Settings View ────────────────────────────────────────────────────────────
-function SettingsView(){
-  const s = useDealStore(store => store.settings) || {};
-  const setS = (update: any) => useDealStore.getState().setSettings(update);
-  const [saved,setSaved]=useState(false);
-  const save=async ()=>{
-    await useDealStore.getState().saveSettings();
-    setSaved(true);setTimeout(()=>setSaved(false),2500);
-  };
-  return(
-    <div className="flex-1 overflow-y-auto px-5 py-5 max-w-2xl flex flex-col gap-5">
-      <div><p className="text-sm font-bold text-foreground">Settings</p><p className="text-xs text-muted-foreground mt-0.5">Bot pipeline configuration</p></div>
+function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) => void }) {
+  const [s, setS] = useState<AppSettings>({
+    outputChannel: "@dealsforindia",
+    stylePrompt: "Write in a casual, enthusiastic style. Use emojis sparingly. Highlight the key benefits and price clearly. Keep under 900 characters.",
+    dedupHours: 24, maxPerCycle: 5,
+  });
+  const [saved, setSaved] = useState(false);
+  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
 
-      {[{title:"Output",fields:[
-        {label:"Output Channel",hint:"Telegram channel username where approved deals are posted.",children:<input value={s.output_channel} onChange={e=>setS(v=>({...v,output_channel:e.target.value}))} className={monoInputCls}/>},
-        {label:`Max Posts per Cycle — ${s.max_posts_per_cycle}`,hint:"Maximum number of deals to post per scrape cycle.",children:<input type="range" min={1} max={20} value={s.max_posts_per_cycle} onChange={e=>setS(v=>({...v,max_posts_per_cycle:Number(e.target.value)}))} className="w-full mt-1"/>},
-      ]},{title:"AI Rewrite",fields:[
-        {label:"Style Prompt",hint:"Instruction given to the AI when rewriting deal posts.",children:<textarea value={s.ai_style_prompt} onChange={e=>setS(v=>({...v,ai_style_prompt:e.target.value}))} rows={4} className="w-full px-3.5 py-3 rounded-xl text-sm text-foreground border border-border bg-secondary focus:outline-none focus:ring-1 focus:ring-violet-500/40 resize-none"/>},
-      ]},{title:"Deduplication",fields:[
-        {label:`FP Hash TTL — ${s.dedup_window_hours}h`,hint:"Deals with the same fingerprint within this window are treated as duplicates.",children:<input type="range" min={1} max={72} value={s.dedup_window_hours} onChange={e=>setS(v=>({...v,dedup_window_hours:Number(e.target.value)}))} className="w-full mt-1"/>},
-      ]}].map(section=>(
-        <div key={section.title} className="rounded-2xl border border-border overflow-hidden" style={{background:"var(--card)"}}>
-          <div className="px-5 py-3 border-b border-border"><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{section.title}</p></div>
-          <div className="px-5 py-5 flex flex-col gap-5">
-            {section.fields.map(({label,hint,children})=>(
-              <div key={label}><label className="block text-sm font-semibold text-foreground mb-0.5">{label}</label><p className="text-xs text-muted-foreground mb-2">{hint}</p>{children}</div>
-            ))}
+  return (
+    <div className="flex-1 overflow-y-auto px-5 py-5 max-w-2xl mx-auto flex flex-col gap-5">
+      <div>
+        <p className="text-sm font-bold text-foreground">Settings</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Bot pipeline configuration</p>
+      </div>
+
+      {/* Appearance */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-border">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Appearance</p>
+        </div>
+        <div className="px-5 py-4 flex flex-wrap items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Theme</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{dark ? "Dark mode active" : "Light mode active"}</p>
+          </div>
+          <button onClick={() => setDark(!dark)}
+            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-border bg-secondary text-foreground transition-all hover:bg-muted active:scale-95">
+            {dark ? <Sun size={15} /> : <Moon size={15} />}
+            {dark ? "Switch to Light" : "Switch to Dark"}
+          </button>
+        </div>
+      </div>
+
+      {/* Output */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-border">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Output</p>
+        </div>
+        <div className="px-5 py-5 flex flex-col gap-5">
+          <div>
+            <label className="block text-sm font-semibold text-foreground mb-0.5">Output Channel</label>
+            <p className="text-xs text-muted-foreground mb-2">Telegram channel where approved deals are posted.</p>
+            <input value={s.outputChannel} onChange={e => setS(v => ({ ...v, outputChannel: e.target.value }))}
+              className="w-full px-3 py-2.5 rounded-xl text-sm text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-foreground mb-0.5">Max Posts per Cycle — <span className="font-mono text-primary">{s.maxPerCycle}</span></label>
+            <p className="text-xs text-muted-foreground mb-3">Maximum deals to post per scrape cycle.</p>
+            <input type="range" min={1} max={20} value={s.maxPerCycle}
+              onChange={e => setS(v => ({ ...v, maxPerCycle: Number(e.target.value) }))}
+              className="w-full" />
+            <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+              <span>1</span><span>20</span>
+            </div>
           </div>
         </div>
-      ))}
+      </div>
 
-      <div className="rounded-2xl border border-border overflow-hidden" style={{background:"var(--card)"}}>
-        <div className="px-5 py-3 border-b border-border"><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">API Keys</p></div>
+      {/* AI Rewrite */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-border">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">AI Rewrite</p>
+        </div>
+        <div className="px-5 py-5">
+          <label className="block text-sm font-semibold text-foreground mb-0.5">Style Prompt</label>
+          <p className="text-xs text-muted-foreground mb-2">Instruction given to AI when rewriting deal posts.</p>
+          <textarea value={s.stylePrompt} onChange={e => setS(v => ({ ...v, stylePrompt: e.target.value }))} rows={4}
+            className="w-full px-3.5 py-3 rounded-xl text-sm text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+        </div>
+      </div>
+
+      {/* Deduplication */}
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-border">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Deduplication</p>
+        </div>
+        <div className="px-5 py-5">
+          <label className="block text-sm font-semibold text-foreground mb-0.5">FP Hash TTL — <span className="font-mono text-primary">{s.dedupHours}h</span></label>
+          <p className="text-xs text-muted-foreground mb-3">Deals with the same fingerprint within this window are duplicates.</p>
+          <input type="range" min={1} max={72} value={s.dedupHours}
+            onChange={e => setS(v => ({ ...v, dedupHours: Number(e.target.value) }))}
+            className="w-full" />
+          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+            <span>1h</span><span>72h</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border overflow-hidden bg-card">
+        <div className="px-5 py-3 border-b border-border">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">API Keys</p>
+        </div>
         <div className="px-5 py-4 flex flex-col gap-2">
           <p className="text-xs text-muted-foreground mb-1">Keys are server-side only and not exposed in the UI.</p>
-          {["TELEGRAM_BOT_TOKEN","OPENAI_API_KEY","EARNKARO_API_KEY"].map(k=>(
-            <div key={k} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border" style={{background:"var(--secondary)"}}>
-              <Shield size={12} className="text-muted-foreground flex-shrink-0"/>
+          {["TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "EARNKARO_API_KEY"].map(k => (
+            <div key={k} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border bg-secondary">
+              <Shield size={12} className="text-muted-foreground flex-shrink-0" />
               <span className="text-xs font-mono text-muted-foreground flex-1">{k}</span>
-              <CheckCircle2 size={13} style={{color:"#10b981"}}/>
+              <CheckCircle2 size={13} style={{ color: "#16a34a" }} />
             </div>
           ))}
         </div>
       </div>
 
-      <button onClick={save} className="flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.98]" style={{background:saved?"#10b981":"#7B5CE8",boxShadow:`0 4px 24px ${saved?"rgba(16,185,129,0.3)":"rgba(123,92,232,0.28)"}`}}>
-        {saved?<><CheckCircle2 size={16}/>Saved</>:<><Check size={16} strokeWidth={2.5}/>Save Settings</>}
+      <button onClick={save}
+        className="flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.98]"
+        style={{ background: saved ? "#16a34a" : "#E63946", boxShadow: `0 4px 24px ${saved ? "rgba(22,163,74,0.25)" : "rgba(230,57,70,0.22)"}` }}>
+        {saved ? <><CheckCircle2 size={16} />Saved</> : <><Check size={16} strokeWidth={2.5} />Save Settings</>}
       </button>
     </div>
   );
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-const NAV_ITEMS: {id:Tab;icon:React.ElementType;label:string}[] = [
-  {id:"Review",icon:Zap,label:"Review"},
-  {id:"DesiDime",icon:Rss,label:"DesiDime"},
-  {id:"Posted",icon:CheckSquare,label:"Posted"},
-  {id:"Channels",icon:Radio,label:"Channels"},
-  {id:"Settings",icon:Settings2,label:"Settings"},
+// ─── Nav ──────────────────────────────────────────────────────────────────────
+const NAV: { id: Tab; icon: React.ElementType; label: string }[] = [
+  { id: "Review", icon: Flame, label: "Review" },
+  { id: "DesiDime", icon: Rss, label: "DesiDime" },
+  { id: "Posted", icon: CheckSquare, label: "Posted" },
+  { id: "Channels", icon: Radio, label: "Channels" },
+  { id: "Settings", icon: Settings2, label: "Settings" },
 ];
 
-function Sidebar({tab,setTab,pending,onCompose}:{tab:Tab;setTab:(t:Tab)=>void;pending:number;onCompose:()=>void}){
-  return(
-    <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-border" style={{width:216,background:"var(--sidebar)"}}>
+function Sidebar({ tab, setTab, pending, dark, setDark }: {
+  tab: Tab; setTab: (t: Tab) => void; pending: number; dark: boolean; setDark: (v: boolean) => void;
+}) {
+  return (
+    <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-border" style={{ width: 200, background: "var(--sidebar)" }}>
       <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:"linear-gradient(135deg,#5B3FBB,#7B5CE8)",boxShadow:"0 0 18px rgba(123,92,232,0.35)"}}>
-          <Activity size={14} className="text-white"/>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+          style={{ background: "linear-gradient(135deg,#E63946,#FF6B35)" }}>D</div>
+        <div>
+          <p className="text-[13px] font-bold text-foreground">DealFlow</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" style={{ boxShadow: "0 0 5px rgba(34,197,94,0.6)" }} />
+            <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Live</span>
+          </div>
         </div>
-        <div><p className="text-[13px] font-bold text-foreground leading-tight tracking-tight" style={{fontFamily:"'Plus Jakarta Sans',sans-serif"}}>DealFlow</p><p className="text-[10px] text-muted-foreground">Review Console</p></div>
       </div>
-
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5">
-        {NAV_ITEMS.map(({id,icon:Icon,label})=>{
-          const active=tab===id;
-          return(
-            <motion.button key={id} onClick={()=>setTab(id)}
-              whileHover={{x:2}} whileTap={{scale:0.97}}
-              transition={{type:"spring",stiffness:400,damping:28}}
-              className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold ${active?"text-violet-200":"text-muted-foreground hover:text-foreground"}`}
-              style={{border:"1px solid transparent"}}>
-              {active&&(
-                <motion.div layoutId="sidebar-pill" className="absolute inset-0 rounded-xl"
-                  style={{background:"rgba(123,92,232,0.12)",border:"1px solid rgba(123,92,232,0.2)"}}
-                  transition={{type:"spring",stiffness:350,damping:30}}/>
+      <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
+        {NAV.map(({ id, icon: Icon, label }) => {
+          const active = tab === id;
+          return (
+            <button key={id} onClick={() => setTab(id)}
+              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"}`}
+              style={active ? { background: "rgba(230,57,70,0.08)" } : {}}>
+              {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full" style={{ background: "#E63946" }} />}
+              <Icon size={15} />
+              {label}
+              {id === "Review" && pending > 0 && (
+                <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md text-white flex-shrink-0"
+                  style={{ background: "#E63946", fontFamily: "'JetBrains Mono',monospace" }}>{pending}</span>
               )}
-              <span className="relative flex items-center gap-3 w-full">
-                <Icon size={15}/>
-                {label}
-                {id==="Review"&&pending>0&&(
-                  <motion.span initial={{scale:0.7}} animate={{scale:1}} className="ml-auto text-[10px] font-bold rounded-md"
-                    style={{background:"rgba(123,92,232,0.2)",color:"#a78bfa",minWidth:20,textAlign:"center",padding:"2px 6px",fontFamily:"'JetBrains Mono',monospace"}}>{pending}</motion.span>
-                )}
-              </span>
-            </motion.button>
+            </button>
           );
         })}
       </nav>
-
-      <div className="px-3 pb-5 border-t border-border pt-4">
-        <motion.button onClick={onCompose} whileHover={{scale:1.02}} whileTap={{scale:0.96}}
-          transition={{type:"spring",stiffness:400,damping:25}}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-semibold text-white"
-          style={{background:"linear-gradient(135deg,#5B3FBB,#7B5CE8)",boxShadow:"0 4px 20px rgba(123,92,232,0.28)"}}>
-          <Plus size={13}/>Compose
-        </motion.button>
+      <div className="px-3 pb-4 pt-3 border-t border-border flex flex-col gap-2">
+        <div className="flex items-center justify-between px-2">
+          <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{DAILY_STATS.date}</span>
+          <button onClick={() => setDark(!dark)}
+            className="w-7 h-7 rounded-lg flex items-center justify-center bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+            {dark ? <Sun size={13} /> : <Moon size={13} />}
+          </button>
+        </div>
+        <div className="px-2 py-1.5 rounded-lg text-[10px] font-mono" style={{ background: "var(--secondary)" }}>
+          <div className="flex justify-between text-muted-foreground mb-0.5">
+            <span>Posted</span><span className="font-bold text-foreground">{DAILY_STATS.posted}</span>
+          </div>
+          <div className="flex justify-between text-muted-foreground">
+            <span>Dupes</span><span className="font-bold text-foreground">{DAILY_STATS.dup}</span>
+          </div>
+        </div>
       </div>
     </aside>
   );
 }
 
-// ─── Mobile Header ────────────────────────────────────────────────────────────
-function MobileHeader({tab,onCompose,pending}:{tab:Tab;onCompose:()=>void;pending:number}){
-  return(
-    <header className="md:hidden flex items-center gap-3 px-4 border-b border-border flex-shrink-0" style={{minHeight:50,background:"var(--sidebar)"}}>
-      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{background:"linear-gradient(135deg,#7C3AED,#7B5CE8)"}}><Activity size={14} className="text-white"/></div>
-      <span className="text-sm font-bold text-foreground flex-1">{tab}</span>
-      {pending>0&&<span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{background:"#7B5CE8",color:"#fff"}}>{pending}</span>}
-      <button onClick={onCompose} className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg" style={{background:"rgba(123,92,232,0.12)",color:"#9B82F5",border:"1px solid rgba(123,92,232,0.2)"}}><Plus size={12}/>Compose</button>
+function MobileHeader({ tab, pending, dark, setDark }: {
+  tab: Tab; pending: number; dark: boolean; setDark: (v: boolean) => void;
+}) {
+  return (
+    <header className="md:hidden flex items-center gap-3 px-4 border-b border-border flex-shrink-0" style={{ minHeight: 46, background: "var(--sidebar)" }}>
+      <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+        style={{ background: "linear-gradient(135deg,#E63946,#FF6B35)" }}>D</div>
+      <span className="text-sm font-semibold text-foreground flex-1">{tab}</span>
+      {tab === "Review" && pending > 0 && (
+        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md text-white" style={{ background: "#E63946" }}>{pending}</span>
+      )}
+      <button onClick={() => setDark(!dark)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-secondary text-muted-foreground">
+        {dark ? <Sun size={14} /> : <Moon size={14} />}
+      </button>
     </header>
   );
 }
 
-// ─── Mobile Bottom Nav ────────────────────────────────────────────────────────
-function MobileNav({tab,setTab,pending}:{tab:Tab;setTab:(t:Tab)=>void;pending:number}){
-  return(
-    <nav className="md:hidden flex-shrink-0 flex items-center border-t border-border" style={{background:"var(--sidebar)"}}>
-      {NAV_ITEMS.map(({id,icon:Icon,label})=>(
-        <button key={id} onClick={()=>setTab(id)} className={`flex-1 flex flex-col items-center justify-center py-3 gap-0.5 relative transition-colors ${tab===id?"text-violet-400":"text-muted-foreground"}`}>
-          <Icon size={17}/>
-          <span className="text-[9px] font-semibold">{label}</span>
-          {id==="Review"&&pending>0&&<span className="absolute top-2 right-1/2 -translate-x-3 text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center" style={{background:"#7B5CE8",color:"#fff"}}>{pending}</span>}
-        </button>
-      ))}
+function MobileNav({ tab, setTab, pending }: { tab: Tab; setTab: (t: Tab) => void; pending: number }) {
+  return (
+    <nav className="md:hidden mobile-nav flex-shrink-0 flex items-stretch border-t border-border" style={{ background: "var(--sidebar)" }}>
+      {NAV.map(({ id, icon: Icon, label }) => {
+        const active = tab === id;
+        return (
+          <button key={id} onClick={() => setTab(id)}
+            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 relative transition-colors ${active ? "" : "text-muted-foreground/60"}`}
+            style={{ color: active ? "#E63946" : undefined }}>
+            {active && <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-8 rounded-full" style={{ background: "#E63946" }} />}
+            <Icon size={17} strokeWidth={active ? 2 : 1.75} />
+            <span className="text-[9.5px] font-semibold uppercase tracking-wider">{label}</span>
+            {id === "Review" && pending > 0 && (
+              <span className="absolute top-1.5 right-[calc(50%-20px)] text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center text-white"
+                style={{ background: "#E63946" }}>{pending > 9 ? "9+" : pending}</span>
+            )}
+          </button>
+        );
+      })}
     </nav>
   );
 }
 
 // ─── App ──────────────────────────────────────────────────────────────────────
-export default function App(){
-  const authToken = useDealStore(s => s.authToken);
-  const [tab,setTab]=useState<Tab>("Review");
-  
-  const deals = useDealStore(s => s.deals);
-  const activeFilter = useDealStore(s => s.activeFilter);
-  const filteredDeals = (activeFilter ? deals.filter(d => d.channel === activeFilter || d.source_channel === activeFilter) : deals).map(toUIDeal).sort((a, b) => b.ts - a.ts);
-  
-  const [editing,setEditing]=useState<Deal|null>(null);
-  const [composing,setComposing]=useState(false);
+export default function App() {
+  const [tab, setTab] = useState<Tab>("Review");
+  const [deals, setDeals] = useState<Deal[]>(BASE_DEALS);
+  const [editing, setEditing] = useState<Deal | null>(null);
+  const [dark, setDark] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const wsRetry = useRef(0);
 
-  const toasts = useDealStore(s => s.toasts);
+  // ── Fetch deals from real API (fallback to static JSON) ──
+  const loadDeals = useCallback(async () => {
+    try {
+      const apiDeals = await fetchPendingDeals();
+      if (apiDeals.length > 0) setDeals(apiDeals);
+    } catch { /* keep BASE_DEALS fallback */ }
+  }, []);
 
+  useEffect(() => { loadDeals(); }, [loadDeals]);
+
+  // ── WebSocket for live deal push ──
   useEffect(() => {
-    if (authToken) {
-      useDealStore.getState().connectWS();
+    let alive = true;
+    function connect() {
+      if (!alive) return;
+      const ws = new WebSocket(WS_URL);
+      wsRef.current = ws;
+      ws.onopen = () => { wsRetry.current = 0; };
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === "new_deal" && msg.deal) {
+            const raw = msg.deal as RawDeal & { fp_hash?: string };
+            const newDeal = mapRawToDeal(raw);
+            setDeals(prev => [newDeal, ...prev.filter(d => d.id !== newDeal.id)]);
+            toast("New deal arrived", { duration: 2000 });
+          } else if (msg.type === "stats_update") {
+            // stats can be consumed by StatsBar if lifted later
+          }
+        } catch { /* ignore malformed frames */ }
+      };
+      ws.onclose = () => {
+        if (!alive) return;
+        const delay = Math.min(1000 * 2 ** wsRetry.current, 30000);
+        wsRetry.current++;
+        setTimeout(connect, delay);
+      };
+      ws.onerror = () => ws.close();
     }
-  }, [authToken]);
+    connect();
+    return () => { alive = false; wsRef.current?.close(); };
+  }, []);
 
-  if(!authToken)return<><style>{STYLES}</style><Login onLogin={useDealStore.getState().setAuthToken}/></>;
+  // ── Approve — optimistic UI + real API ──
+  const approve = useCallback((id: string) => {
+    setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "approved" as DealStatus } : d));
+    toast.success("Approved ✓", { duration: 1500 });
+    try { navigator.vibrate?.(12); } catch {}
+    apiApprove(id).then(ok => {
+      if (!ok) {
+        setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "pending" as DealStatus } : d));
+        toast.error("Approve failed — reverted", { duration: 2500 });
+      }
+    });
+  }, []);
 
-  const approve = (h:string) => useDealStore.getState().approveDeal(h);
-  const reject = (h:string) => useDealStore.getState().rejectDeal(h);
-  const spam = (h:string) => useDealStore.getState().markSpam(h);
-  const saveEdit = (c:Partial<Deal>) => { if(editing) useDealStore.getState().editDeal(editing.fp_hash, c); setEditing(null); };
-  const saveApprove = async (c:Partial<Deal>) => { 
-    if(editing) {
-      await useDealStore.getState().editDeal(editing.fp_hash, c);
-      await useDealStore.getState().approveDeal(editing.fp_hash);
-    }
-    setEditing(null); 
-  };
+  // ── Reject — optimistic UI + real API ──
+  const reject = useCallback((id: string) => {
+    setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "rejected" as DealStatus } : d));
+    toast.error("Rejected", { duration: 1400 });
+    try { navigator.vibrate?.([8, 30, 8]); } catch {}
+    apiReject(id).then(ok => {
+      if (!ok) {
+        setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "pending" as DealStatus } : d));
+        toast.error("Reject failed — reverted", { duration: 2500 });
+      }
+    });
+  }, []);
 
-  const pending = filteredDeals.filter(d=>d.status==="pending").length;
+  // ── Save Draft — optimistic + API ──
+  const saveDraft = useCallback((changes: Partial<Deal>) => {
+    if (!editing) return;
+    setDeals(ds => ds.map(d => d.id === editing.id ? { ...d, ...changes, status: "draft" as DealStatus } : d));
+    toast("Draft saved", { duration: 1500 });
+    apiEdit(editing.id, changes as Record<string, unknown>);
+  }, [editing]);
 
-  return(
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
-      <style>{STYLES}</style>
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar tab={tab} setTab={setTab} pending={pending} onCompose={()=>setComposing(true)}/>
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <MobileHeader tab={tab} onCompose={()=>setComposing(true)} pending={pending}/>
-          <StatsBar/>
-          <AnimatePresence mode="wait">
-            <motion.div key={tab} className="flex-1 flex flex-col overflow-hidden"
-              initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-              transition={{duration:0.18,ease:"easeOut"}}>
-              {tab==="Review"   &&<ReviewView deals={filteredDeals} onApprove={approve} onReject={reject} onSpam={spam} onEdit={setEditing}/>}
-              {tab==="DesiDime" &&<DesiDimeView/>}
-              {tab==="Posted"   &&<PostedView/>}
-              {tab==="Channels" &&<ChannelsView/>}
-              {tab==="Settings" &&<SettingsView/>}
-            </motion.div>
-          </AnimatePresence>
-          <MobileNav tab={tab} setTab={setTab} pending={pending}/>
+  // ── Save & Approve — optimistic + API ──
+  const saveApprove = useCallback((changes: Partial<Deal>) => {
+    if (!editing) return;
+    setDeals(ds => ds.map(d => d.id === editing.id ? { ...d, ...changes, status: "approved" as DealStatus } : d));
+    toast.success("Saved & Approved ✓", { duration: 1800 });
+    apiEdit(editing.id, changes as Record<string, unknown>).then(() => apiApprove(editing.id));
+  }, [editing]);
+
+  const pending = deals.filter(d => d.status === "pending").length;
+
+  return (
+    <div className={dark ? "dark" : ""} style={{ height: "100dvh" }}>
+      <div className="h-full bg-background flex flex-col overflow-hidden">
+        <style>{STYLES}</style>
+        <Toaster position="top-center" richColors toastOptions={{ style: { fontFamily: "'Inter',sans-serif", fontSize: 13 } }} />
+
+        <div className="flex-1 flex overflow-hidden">
+          <Sidebar tab={tab} setTab={setTab} pending={pending} dark={dark} setDark={setDark} />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <MobileHeader tab={tab} pending={pending} dark={dark} setDark={setDark} />
+            <AnimatePresence mode="wait">
+              <motion.div key={tab} className="flex-1 flex flex-col overflow-hidden"
+                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}>
+                {tab === "Review" && <ReviewView deals={deals} onApprove={approve} onReject={reject} onEdit={setEditing} dark={dark} />}
+                {tab === "DesiDime" && <DesiDimeView />}
+                {tab === "Posted" && <PostedView deals={deals} onEdit={setEditing} />}
+                {tab === "Channels" && <ChannelsView />}
+                {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
+              </motion.div>
+            </AnimatePresence>
+            <MobileNav tab={tab} setTab={setTab} pending={pending} />
+          </div>
         </div>
-      </div>
-      {editing&&<EditDrawer deal={editing} onClose={()=>setEditing(null)} onSaveDraft={saveEdit} onSaveApprove={saveApprove}/>}
-      {composing&&<ComposeDrawer onClose={()=>setComposing(false)}/>}
-      
-      {/* Toasts */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+
         <AnimatePresence>
-          {toasts.map(t => (
-            <motion.div key={t.id} initial={{opacity:0, y:20, scale:0.95}} animate={{opacity:1, y:0, scale:1}} exit={{opacity:0, scale:0.95, transition:{duration:0.15}}}
-              className="px-4 py-3 rounded-xl shadow-lg border border-border flex items-center gap-3 text-sm font-semibold pointer-events-auto"
-              style={{background:"var(--card)", color:t.type==="error"?"#ef4444":"#10b981"}}>
-              {t.type==="error"?<X size={16}/>:<CheckCircle2 size={16}/>}
-              {t.msg}
-            </motion.div>
-          ))}
+          {editing && (
+            <EditModal
+              deal={editing}
+              onClose={() => setEditing(null)}
+              onSaveDraft={saveDraft}
+              onSaveApprove={saveApprove}
+            />
+          )}
         </AnimatePresence>
       </div>
     </div>
