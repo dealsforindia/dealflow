@@ -1398,7 +1398,13 @@ export default function App() {
     let alive = true;
     function connect() {
       if (!alive) return;
-      const ws = new WebSocket(WS_URL);
+      let ws: WebSocket;
+      try {
+        ws = new WebSocket(WS_URL);
+      } catch (e) {
+        console.warn("WebSocket failed:", e);
+        return;
+      }
       wsRef.current = ws;
       ws.onopen = () => { wsRetry.current = 0; };
       ws.onmessage = (ev) => {
