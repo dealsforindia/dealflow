@@ -783,6 +783,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"score" | "latest" | "discount">("score");
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 100;
 
   let visible = deals.filter(d => {
     if (filter !== "all" && d.status !== filter) return false;
@@ -795,6 +797,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   if (sort === "score") visible = [...visible].sort((a, b) => b.score - a.score);
   else if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
   else if (sort === "discount") visible = [...visible].sort((a, b) => b.discount - a.discount);
+
+  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedVisible = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const pending = deals.filter(d => d.status === "pending").length;
   const approved = deals.filter(d => d.status === "approved").length;
@@ -809,7 +815,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
         {/* Search */}
         <div className="relative">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
+          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search deals or channels…"
             className="w-full pl-9 pr-4 py-2 rounded-xl text-sm text-foreground bg-secondary placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 border border-border" />
         </div>
@@ -818,7 +824,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           {/* Status pills */}
           <div className="flex gap-1 p-0.5 rounded-xl bg-secondary flex-shrink-0">
             {([["pending", `${pending}`], ["approved", `${approved}`], ["rejected", `${rejected}`], ["all", `${deals.length}`]] as const).map(([v, cnt]) => (
-              <button key={v} onClick={() => setFilter(v)}
+              <button key={v} onClick={() => { setFilter(v); setPage(1); }}
                 className="px-2.5 py-1 rounded-lg text-[11px] font-semibold capitalize transition-all"
                 style={{
                   background: filter === v ? "var(--card)" : "transparent",
@@ -831,7 +837,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </div>
           <div className="flex gap-1 ml-auto">
             {([["score", TrendingUp, "Top"], ["latest", Clock, "New"], ["discount", Flame, "Hot"]] as const).map(([v, Icon, label]) => (
-              <button key={v} onClick={() => setSort(v)}
+              <button key={v} onClick={() => { setSort(v); setPage(1); }}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
                 style={{
                   background: sort === v ? "#E63946" : "var(--secondary)",
@@ -850,20 +856,44 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
             <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center text-3xl">🔍</div>
             <p className="text-sm font-semibold text-foreground">No deals found</p>
-            <button onClick={() => { setSearch(""); setFilter("pending"); }}
+            <button onClick={() => { setSearch(""); setFilter("pending"); setPage(1); }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
               style={{ background: "#E63946" }}>
               <RefreshCw size={13} /> Reset
             </button>
           </div>
         ) : (
-          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))" }}>
-            <AnimatePresence mode="popLayout">
-              {visible.map(d => (
-                <DealCard key={d.id} deal={d} onApprove={onApprove} onReject={onReject} onEdit={onEdit} />
-              ))}
-            </AnimatePresence>
-          </div>
+          <>
+            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))" }}>
+              <AnimatePresence mode="popLayout">
+                {pagedVisible.map(d => (
+                  <DealCard key={d.id} deal={d} onApprove={onApprove} onReject={onReject} onEdit={onEdit} />
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-4 mt-6 pt-4 border-t border-border">
+                <div className="text-xs font-semibold text-muted-foreground">
+                  Showing <span className="font-mono font-bold text-foreground">{(currentPage - 1) * PAGE_SIZE + 1}</span> - <span className="font-mono font-bold text-foreground">{Math.min(currentPage * PAGE_SIZE, visible.length)}</span> of <span className="font-mono font-bold text-foreground">{visible.length}</span> deals
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold border border-border bg-card text-foreground disabled:opacity-40 hover:bg-secondary transition-colors">
+                    Previous
+                  </button>
+                  <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-secondary text-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold border border-border bg-card text-foreground disabled:opacity-40 hover:bg-secondary transition-colors">
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
