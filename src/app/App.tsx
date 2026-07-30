@@ -8,8 +8,8 @@ import {
   Clock, TrendingUp, Flame, RefreshCw, CheckCircle2,
   ToggleLeft, ToggleRight, Maximize2, Copy, Link, FileText,
 } from "lucide-react";
-import pendingDealsRaw from "../imports/pending_deals.json";
-import dailyStatsRaw from "../imports/daily_stats.json";
+const pendingDealsRaw: any = {};
+const dailyStatsRaw: any = { date: new Date().toISOString().split('T')[0], posted: 0, checked: 0, dup: 0, unrated: 0, affiliate: 0, auto_posted: 0, scam: 0 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DealStatus = "pending" | "approved" | "rejected" | "draft";
