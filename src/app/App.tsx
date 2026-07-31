@@ -876,26 +876,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
               <span>✈️</span> Telegram
               {sendTG && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />}
             </button>
-            <button
-              onClick={() => setSendWA(!sendWA)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm ${
-                sendWA
-                  ? "bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white shadow-[#25D366]/20 scale-[1.02]"
-                  : "bg-background/80 text-muted-foreground hover:text-foreground border border-border opacity-75"
-              }`}>
-              <span>💬</span> WhatsApp
-              {sendWA && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />}
-            </button>
-            <button
-              onClick={() => setSendX(!sendX)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm ${
-                sendX
-                  ? "bg-gradient-to-r from-[#1DA1F2] to-[#0d8bd9] text-white shadow-[#1DA1F2]/20 scale-[1.02]"
-                  : "bg-background/80 text-muted-foreground hover:text-foreground border border-border opacity-75"
-              }`}>
-              <span>🐦</span> X (Twitter)
-              {sendX && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />}
-            </button>
           </div>
         </div>
       </div>
