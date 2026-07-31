@@ -2160,9 +2160,38 @@ async def process_message(scraper, poster, msg, channel, entity, seen_ch, deal_c
 # ═══════════════════════════════════════════════════════════════════
 #  CORE SCRAPE LOOP
 # ═══════════════════════════════════════════════════════════════════
+def get_active_source_channels() -> list[str]:
+    """Get active channels from MongoDB SystemSettings (channels_config) fallback to .env"""
+    try:
+        if _mdb is not None:
+            doc = _mdb["SystemSettings"].find_one({"_id": "channels_config"})
+            if doc and "channels" in doc:
+                active = [ch for ch, is_active in doc["channels"].items() if is_active and ch != "desidime"]
+                if active:
+                    return active
+    except Exception as e:
+        log.warning(f"Failed to read channels_config from Mongo: {e}")
+    return SOURCE_CHANNELS
+
+def refresh_system_settings():
+    """Dynamically refresh system settings from MongoDB SystemSettings (config)"""
+    global MAX_POSTS_CYCLE, AUTO_POST_SCORE, PRICE_DROP_PCT, CHANNEL_ID
+    try:
+        if _mdb is not None:
+            doc = _mdb["SystemSettings"].find_one({"_id": "config"})
+            if doc:
+                if "MAX_POSTS_CYCLE" in doc: MAX_POSTS_CYCLE = int(doc["MAX_POSTS_CYCLE"])
+                if "AUTO_POST_SCORE" in doc: AUTO_POST_SCORE = int(doc["AUTO_POST_SCORE"])
+                if "PRICE_DROP_PCT" in doc: PRICE_DROP_PCT = float(doc["PRICE_DROP_PCT"])
+                if "CURATED_CHANNEL" in doc and doc["CURATED_CHANNEL"]: CHANNEL_ID = doc["CURATED_CHANNEL"]
+    except Exception as e:
+        log.warning(f"Failed to read config from Mongo: {e}")
+
 async def scrape_and_post(scraper, poster, seen, deal_cache, stats):
     log.info("─" * 60)
     log.info(f"🔍 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    refresh_system_settings()
+    active_channels = get_active_source_channels()
     cutoff  = datetime.now(timezone.utc) - timedelta(hours=LOOKBACK_HOURS)
     ist_now = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)
     last_cycle = load_last_cycle()
@@ -2177,7 +2206,7 @@ async def scrape_and_post(scraper, poster, seen, deal_cache, stats):
         await post_weekly_trending(poster); last_cycle["trending_week"] = ist_week; save_last_cycle(last_cycle)
 
     cycle_posted = 0
-    for channel in SOURCE_CHANNELS:
+    for channel in active_channels:
         if cycle_posted >= MAX_POSTS_CYCLE: log.info(f"🛑 Cycle cap {MAX_POSTS_CYCLE} reached"); break
         try:
             entity       = await scraper.get_entity(channel)
@@ -2311,7 +2340,7 @@ async def bot_main():
 
     log.info("═" * 60)
     log.info("🚀  Telegram Deal Bot v8 — Indian Edition (Professional)")
-    log.info(f"    Channels     : {len(SOURCE_CHANNELS)}")
+    log.info(f"    Channels     : {len(get_active_source_channels())} active ({len(SOURCE_CHANNELS)} in env)")
     log.info(f"    Interval     : {SCRAPE_INTERVAL}s | Timeout: {MSG_TIMEOUT}s")
     log.info(f"    AI chain     : {' → '.join(ai)}")
     log.info(f"    Amazon tag   : ✅ {AMAZON_AFFL_TAG}")

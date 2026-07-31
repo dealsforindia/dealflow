@@ -450,13 +450,25 @@ async def get_channels():
         raise HTTPException(503, "MongoDB not configured")
         
     doc = await db.SystemSettings.find_one({"_id": "channels_config"})
-    if not doc:
-        # Fallback to .env if not found in Mongo
-        source_channels = [ch.strip() for ch in os.getenv("SOURCE_CHANNELS", "").split(",") if ch.strip()]
-        doc = {"channels": {ch: True for ch in source_channels}}
-        await db.SystemSettings.update_one({"_id": "channels_config"}, {"$set": doc}, upsert=True)
+    active_map = doc.get("channels", {}) if doc else {}
+
+    # Extract all channels from .env and from MongoDB UniqueDeals
+    env_channels = [ch.strip() for ch in os.getenv("SOURCE_CHANNELS", "").split(",") if ch.strip()]
+    db_channels = await db.UniqueDeals.distinct("source_channel")
+    db_sources = await db.UniqueDeals.distinct("source")
     
-    active_map = doc.get("channels", {})
+    all_channels = set(active_map.keys()) | set(env_channels) | set([c for c in db_channels if c]) | set([s for s in db_sources if s])
+    all_channels.add("desidime")
+    all_channels.discard(None)
+    all_channels.discard("")
+
+    updated = False
+    for ch in all_channels:
+        if ch not in active_map:
+            active_map[ch] = True
+            updated = True
+    if updated or not doc:
+        await db.SystemSettings.update_one({"_id": "channels_config"}, {"$set": {"channels": active_map}}, upsert=True)
 
     # Get recent activity per channel from MongoDB
     channel_stats = {}
@@ -470,17 +482,26 @@ async def get_channels():
         }}
     ]
     async for d in db.UniqueDeals.aggregate(pipeline):
-        channel_stats[d["_id"]] = {
-            "deals_24h": d["count"],
-            "avg_score": round(d["avg_score"] or 0, 1),
-            "last_ts":   d["last_ts"],
-        }
+        if d["_id"]:
+            channel_stats[d["_id"]] = {
+                "deals_24h": d["count"],
+                "avg_score": round(d["avg_score"] or 0, 1),
+                "last_ts":   d["last_ts"],
+            }
 
+    palette = ["#E63946", "#F4A261", "#2A9D8F", "#E76F51", "#457B9D", "#1D3557", "#8AB17D", "#E07A5F", "#3D405B", "#F2CC8F"]
     channels = []
-    for ch, is_active in active_map.items():
+    for ch, is_active in sorted(active_map.items()):
         stats = channel_stats.get(ch, {"deals_24h": 0, "avg_score": 0, "last_ts": None})
+        friendly_name = ch.lstrip("@")
+        if friendly_name.startswith("https://t.me/"):
+            friendly_name = friendly_name.split("/")[-1]
+        color_idx = abs(hash(ch)) % len(palette)
         channels.append({
+            "id": ch,
             "channel": ch,
+            "name": friendly_name or ch,
+            "color": palette[color_idx],
             "active":  is_active,
             **stats,
         })
@@ -762,18 +783,30 @@ async def compose_deal(body: dict[str, Any]):
 
 # ───────────────────────────────────────────────────────────────────
 #  V2 — DESIDIME DEALS
+#  Fixes applied (2026-07-28):
+#    1. Filter by `status` (default: pending_approval) — only show
+#       actionable deals in the review tab, not all scraped history.
+#    2. Sort by `processed_ts` (consistent with /pending + /recent)
+#       instead of the raw `ts` field.
+#    3. Proper skip/limit pagination + accurate `total` count.
 # ───────────────────────────────────────────────────────────────────
 @app.get("/api/v1/deals/desidime")
-async def get_desidime_deals(limit: int = 100):
+async def get_desidime_deals(
+    status: str = "pending_approval",
+    limit: int = 50,
+    skip: int = 0,
+):
     db = get_db()
     if db is None:
         raise HTTPException(503, "MongoDB not configured")
+    query = {"source": "desidime", "status": status}
     cursor = db.UniqueDeals.find(
-        {"source": "desidime"},
+        query,
         {"_id": 0}
-    ).sort("ts", -1).limit(limit)
+    ).sort("processed_ts", -1).skip(skip).limit(limit)
     deals = await cursor.to_list(length=limit)
-    return {"deals": deals, "total": len(deals)}
+    total = await db.UniqueDeals.count_documents(query)
+    return {"deals": deals, "total": total, "skip": skip, "limit": limit}
 
 # ───────────────────────────────────────────────────────────────────
 #  HEALTH CHECK

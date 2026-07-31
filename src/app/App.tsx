@@ -781,7 +781,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   onReject: (id: string) => void; onEdit: (d: Deal) => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"score" | "latest" | "discount">("score");
+  const [sort, setSort] = useState<"score" | "latest" | "discount">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 100;
@@ -1148,38 +1148,120 @@ function PostedView({ deals, onEdit }: { deals: Deal[]; onEdit: (d: Deal) => voi
 
 // ─── Channels View ────────────────────────────────────────────────────────────
 function ChannelsView() {
-  const [chs, setChs] = useState(CHANNELS);
+  const [chs, setChs] = useState<any[]>(CHANNELS);
+  const [loading, setLoading] = useState(true);
+  const [newChannelInput, setNewChannelInput] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
+
+  const fetchChannels = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/channels`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.channels && Array.isArray(data.channels)) {
+          setChs(data.channels);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch channels:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchChannels();
+  }, [fetchChannels]);
+
+  const toggleChannel = async (id: string, current: boolean) => {
+    setChs(cs => cs.map(c => (c.id === id ? { ...c, active: !current } : c)));
+    try {
+      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, {
+        method: "PUT"
+      });
+    } catch (err) {
+      console.error("Failed to toggle channel:", err);
+      toast.error("Failed to toggle channel");
+    }
+  };
+
+  const addChannel = async () => {
+    if (!newChannelInput.trim()) return;
+    const ch = newChannelInput.trim();
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/channels/config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: ch })
+      });
+      if (res.ok) {
+        setNewChannelInput("");
+        setShowAdd(false);
+        fetchChannels();
+        toast.success("Channel added successfully!");
+      } else {
+        toast.error("Failed to add channel");
+      }
+    } catch (err) {
+      toast.error("Error adding channel");
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4 max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-bold text-foreground">Source Channels</p>
+          <p className="text-sm font-bold text-foreground">Source Channels ({chs.length})</p>
           <p className="text-xs text-muted-foreground mt-0.5">{chs.filter(c => c.active).length} active · {chs.filter(c => !c.active).length} paused</p>
         </div>
-        <button className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl text-white transition-all active:scale-95"
+        <button onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl text-white transition-all active:scale-95"
           style={{ background: "#E63946", boxShadow: "0 4px 16px rgba(230,57,70,0.25)" }}>
-          <Plus size={13} />Add Channel
+          <Plus size={13} />{showAdd ? "Close" : "Add Channel"}
         </button>
       </div>
-      {chs.map(ch => (
-        <div key={ch.id} className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card transition-colors">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-bold flex-shrink-0"
-            style={{ background: `${ch.color}12`, color: ch.color }}>{ch.name[0]}</div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground">{ch.name}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{ch.id}</p>
-          </div>
-          <div className="text-right flex-shrink-0 mr-2">
-            <p className="text-sm font-mono font-bold text-foreground">{ch.deals}</p>
-            <p className="text-[10px] text-muted-foreground">today</p>
-          </div>
-          <button onClick={() => setChs(cs => cs.map(c => c.id === ch.id ? { ...c, active: !c.active } : c))}>
-            {ch.active
-              ? <ToggleRight size={28} style={{ color: "#16a34a" }} />
-              : <ToggleLeft size={28} className="text-muted-foreground/40" />}
+
+      {showAdd && (
+        <div className="flex items-center gap-2 p-3 rounded-2xl border border-border bg-card">
+          <input
+            value={newChannelInput}
+            onChange={e => setNewChannelInput(e.target.value)}
+            placeholder="e.g. @my_telegram_channel or https://t.me/..."
+            className="flex-1 px-3 py-2 rounded-xl text-sm text-foreground bg-input border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
+            onKeyDown={e => e.key === "Enter" && addChannel()}
+          />
+          <button onClick={addChannel}
+            className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:opacity-90 active:scale-95">
+            Add
           </button>
         </div>
-      ))}
+      )}
+
+      {loading && chs.length === 0 ? (
+        <div className="text-center py-12 text-sm text-muted-foreground">Loading channels...</div>
+      ) : (
+        chs.map(ch => (
+          <div key={ch.id} className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card transition-colors">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-bold flex-shrink-0"
+              style={{ background: `${ch.color || "#E63946"}12`, color: ch.color || "#E63946" }}>
+              {(ch.name || ch.id || "C")[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-foreground">{ch.name || ch.id}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{ch.id}</p>
+            </div>
+            <div className="text-right flex-shrink-0 mr-2">
+              <p className="text-sm font-mono font-bold text-foreground">{ch.deals_24h ?? ch.deals ?? 0}</p>
+              <p className="text-[10px] text-muted-foreground">24h deals</p>
+            </div>
+            <button onClick={() => toggleChannel(ch.id, ch.active)}>
+              {ch.active
+                ? <ToggleRight size={28} style={{ color: "#16a34a" }} />
+                : <ToggleLeft size={28} className="text-muted-foreground/40" />}
+            </button>
+          </div>
+        ))
+      )}
     </div>
   );
 }
@@ -1189,10 +1271,58 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
   const [s, setS] = useState<AppSettings>({
     outputChannel: "@dealsforindia",
     stylePrompt: "Write in a casual, enthusiastic style. Use emojis sparingly. Highlight the key benefits and price clearly. Keep under 900 characters.",
-    dedupHours: 24, maxPerCycle: 5,
+    dedupHours: 24, maxPerCycle: 40,
   });
   const [saved, setSaved] = useState(false);
-  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/settings`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.settings) {
+            setS(prev => ({
+              ...prev,
+              outputChannel: data.settings.CURATED_CHANNEL || prev.outputChannel,
+              stylePrompt: data.settings.AI_STYLE_PROMPT || prev.stylePrompt,
+              dedupHours: data.settings.FP_TTL_HOURS || prev.dedupHours,
+              maxPerCycle: data.settings.MAX_POSTS_CYCLE || prev.maxPerCycle,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const save = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          CURATED_CHANNEL: s.outputChannel,
+          AI_STYLE_PROMPT: s.stylePrompt,
+          FP_TTL_HOURS: s.dedupHours,
+          MAX_POSTS_CYCLE: s.maxPerCycle,
+        }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        toast.success("Settings saved to server!");
+        setTimeout(() => setSaved(false), 2500);
+      } else {
+        toast.error("Failed to save settings");
+      }
+    } catch (err) {
+      toast.error("Error saving settings");
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto px-5 py-5 max-w-2xl mx-auto flex flex-col gap-5">
@@ -1234,11 +1364,11 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
           <div>
             <label className="block text-sm font-semibold text-foreground mb-0.5">Max Posts per Cycle — <span className="font-mono text-primary">{s.maxPerCycle}</span></label>
             <p className="text-xs text-muted-foreground mb-3">Maximum deals to post per scrape cycle.</p>
-            <input type="range" min={1} max={20} value={s.maxPerCycle}
+            <input type="range" min={1} max={50} value={s.maxPerCycle}
               onChange={e => setS(v => ({ ...v, maxPerCycle: Number(e.target.value) }))}
               className="w-full" />
             <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-              <span>1</span><span>20</span>
+              <span>1</span><span>50</span>
             </div>
           </div>
         </div>

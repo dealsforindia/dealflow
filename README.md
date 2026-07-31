@@ -1,7 +1,7 @@
 
-  # Access GitHub Repository
+  # Access GitHub Repository (Copy)
 
-  This is a code bundle for Access GitHub Repository. The original project is available at https://www.figma.com/design/x60mbOibP5vUDElnZpi2cR/Access-GitHub-Repository.
+  This is a code bundle for Access GitHub Repository (Copy). The original project is available at https://www.figma.com/design/0MNWGYzrRKmqjgtJAy39cR/Access-GitHub-Repository--Copy-.
 
   ## Running the code
 

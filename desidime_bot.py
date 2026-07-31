@@ -1,12 +1,66 @@
 #!/usr/bin/env python3
 import sys, os
+
+# ── Stale-lock-aware single-instance guard ───────────────────────────────────
+# Stores the current PID inside the lock file so a future restart can check
+# whether the locking process is actually alive before refusing to start.
+# This prevents the "75+ PM2 restarts, zero work done" failure mode caused
+# by a crashed process that never released its lock.
+LOCK_FILE = "dealbot_desi.lock"
 try:
     import fcntl
-    _lf = open("/tmp/dealbot_desi.lock","w")
-    try: fcntl.flock(_lf, fcntl.LOCK_EX|fcntl.LOCK_NB)
-    except IOError: print("desidime_bot.py already running!"); sys.exit(1)
+
+    def _pid_alive(pid: int) -> bool:
+        """Return True if a process with *pid* is currently running on Linux."""
+        try:
+            return os.path.exists(f"/proc/{pid}")
+        except Exception:
+            # Fallback: try os.kill with signal 0 (no-op probe)
+            try:
+                os.kill(pid, 0)
+                return True
+            except (ProcessLookupError, PermissionError):
+                return False
+            except Exception:
+                return True  # unknown — assume alive, be conservative
+
+    def _acquire_lock():
+        # Read existing lock to check for staleness
+        if os.path.exists(LOCK_FILE):
+            try:
+                stored_pid = int(open(LOCK_FILE).read().strip())
+                if _pid_alive(stored_pid):
+                    print(f"desidime_bot.py already running! (PID {stored_pid})")
+                    sys.exit(1)
+                else:
+                    print(f"[lock] Stale lock detected (PID {stored_pid} is dead). Clearing and continuing.")
+                    os.remove(LOCK_FILE)
+            except (ValueError, OSError):
+                # Corrupt / unreadable lock — remove it
+                try:
+                    os.remove(LOCK_FILE)
+                except OSError:
+                    pass
+
+        # Acquire the lock and write our PID
+        lf = open(LOCK_FILE, "w")
+        try:
+            fcntl.flock(lf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except IOError:
+            # Another process grabbed it in the narrow race window
+            print("desidime_bot.py already running! (race condition)")
+            sys.exit(1)
+        lf.write(str(os.getpid()))
+        lf.flush()
+        # Keep file descriptor open for the lifetime of the process
+        # so the OS lock is held
+        return lf
+
+    _lock_fh = _acquire_lock()
+
 except ImportError:
-    pass # Ignore lock on Windows
+    _lock_fh = None  # Windows — no fcntl, skip locking
+# ─────────────────────────────────────────────────────────────────────────────
 
 """
 DesiDime Deal Bot — v13  (Professional Grade)
@@ -34,6 +88,8 @@ from dotenv import load_dotenv
 import redis as _redis_lib
 from pymongo import MongoClient
 
+from pathlib import Path
+load_dotenv(Path(__file__).resolve().parent / ".env")
 load_dotenv()
 
 BOT_TOKEN      = os.getenv("TG_BOT_TOKEN","")
@@ -74,8 +130,11 @@ try:
     _mongo = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000)
     _mdb = _mongo[os.getenv("MONGO_DB", "dealbot")]
     _deals_col = _mdb["UniqueDeals"]
-    _deals_col.create_index("fp_hash", unique=True, background=True)
-    _deals_col.create_index("source", background=True)
+    try:
+        _deals_col.create_index("fp_hash", unique=True, background=True, sparse=True)
+        _deals_col.create_index("source", background=True)
+    except Exception as _ie:
+        pass
 except Exception as _me:
     _deals_col = None
 
@@ -88,6 +147,11 @@ except Exception:
 def _save_deal_to_db(deal_doc):
     """Save DesiDime deal to MongoDB and publish to Redis (best-effort)."""
     try:
+        import time
+        deal_doc["ts"] = deal_doc.get("ts", time.time())
+        deal_doc["processed_ts"] = deal_doc.get("processed_ts", time.time())
+        deal_doc["status"] = deal_doc.get("status", "pending_approval")
+        
         if _deals_col is not None:
             _deals_col.update_one({"fp_hash": deal_doc["fp_hash"]}, {"$set": deal_doc}, upsert=True)
     except Exception as e:
@@ -102,6 +166,18 @@ def _save_deal_to_db(deal_doc):
             }, ensure_ascii=False))
     except Exception:
         pass
+
+def _update_db_status(deal_id, new_status):
+    """Update deal status in MongoDB when posted/rejected via Telegram button."""
+    try:
+        import time
+        if _deals_col is not None:
+            _deals_col.update_one(
+                {"fp_hash": deal_id},
+                {"$set": {"status": new_status, "processed_ts": time.time()}}
+            )
+    except Exception as e:
+        log.warning(f"MongoDB status update failed: {e}")
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -1291,6 +1367,7 @@ def poll_callbacks():
                         answer_callback(cb_id, "✅ Posted!")
                         edit_message(chat_id, msg_id, f"✅ Posted!\n\n{deal['post_text'][:300]}")
                         log.info(f"✅ Posted: {deal['title']}")
+                        _update_db_status(deal_id, "posted")
                     else:
                         answer_callback(cb_id, "❌ Failed to post")
                         log.warning(f"❌ Post failed: {result}")
@@ -1303,6 +1380,7 @@ def poll_callbacks():
                     answer_callback(cb_id, "🗑️ Skipped")
                     edit_message(chat_id, msg_id, f"🗑️ Skipped: {title}")
                     log.info(f"🗑️ Skipped: {title}")
+                    _update_db_status(deal_id, "rejected")
         except requests.exceptions.ReadTimeout:
             continue
         except Exception as e:
