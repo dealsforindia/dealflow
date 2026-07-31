@@ -790,6 +790,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   const [sort, setSort] = useState<"score" | "latest" | "discount">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [page, setPage] = useState(1);
+  const [sendTG, setSendTG] = useState(true);
+  const [sendWA, setSendWA] = useState(false);
+  const [sendX, setSendX] = useState(false);
   const PAGE_SIZE = 100;
 
   let visible = deals.filter(d => {
@@ -853,6 +856,43 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Broadcast targets toolbar */}
+        <div className="flex items-center gap-2 pt-2 border-t border-border/50 text-xs flex-wrap">
+          <span className="font-semibold text-muted-foreground flex items-center gap-1 text-[11px]">
+            <span>📡</span> Broadcast Targets:
+          </span>
+          <button
+            onClick={() => setSendTG(!sendTG)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all border text-[11px]"
+            style={{
+              background: sendTG ? "rgba(42,157,143,0.15)" : "var(--secondary)",
+              color: sendTG ? "#2A9D8F" : "var(--muted-foreground)",
+              borderColor: sendTG ? "#2A9D8F" : "transparent",
+            }}>
+            <span>✈️</span> Telegram {sendTG ? "• ON" : "• OFF"}
+          </button>
+          <button
+            onClick={() => setSendWA(!sendWA)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all border text-[11px]"
+            style={{
+              background: sendWA ? "rgba(37,211,102,0.15)" : "var(--secondary)",
+              color: sendWA ? "#25D366" : "var(--muted-foreground)",
+              borderColor: sendWA ? "#25D366" : "transparent",
+            }}>
+            <span>💬</span> WhatsApp {sendWA ? "• ON" : "• OFF"}
+          </button>
+          <button
+            onClick={() => setSendX(!sendX)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all border text-[11px]"
+            style={{
+              background: sendX ? "rgba(29,161,242,0.15)" : "var(--secondary)",
+              color: sendX ? "#1DA1F2" : "var(--muted-foreground)",
+              borderColor: sendX ? "#1DA1F2" : "transparent",
+            }}>
+            <span>🐦</span> X / Twitter {sendX ? "• ON" : "• OFF"}
+          </button>
         </div>
       </div>
 
