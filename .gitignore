@@ -23,3 +23,8 @@ extract_frames/
 *.njsproj
 *.sln
 *.sw?
+
+# Backend scripts and environment variables
+*.py
+.env
+.env.*
