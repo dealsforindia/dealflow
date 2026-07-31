@@ -1606,7 +1606,13 @@ export default function App() {
     } catch { /* keep BASE_DEALS fallback */ }
   }, []);
 
-  useEffect(() => { loadDeals(); }, [loadDeals]);
+  useEffect(() => {
+    loadDeals();
+    const timer = setInterval(() => {
+      loadDeals();
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [loadDeals]);
 
   // ── WebSocket for live deal push ──
   useEffect(() => {
