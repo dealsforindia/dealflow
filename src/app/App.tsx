@@ -46,8 +46,9 @@ interface AppSettings {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const extractEmoji = (cat: string) => cat.split(" ")[0] || "🛍️";
 const extractCatName = (cat: string) => cat.split(" ").slice(1).join(" ") || cat;
-const toChName = (ch: string) => {
+const toChName = (ch?: string): string => {
   if (!ch) return "";
+  if (ch.includes("bblbblp") || ch === "-1003871814319") return "redditcontent";
   const clean = ch.replace(/^@/, "");
   if (/^-?\d+$/.test(clean)) return clean;
   return clean.split(/[_-]/).map(w => w[0]?.toUpperCase() + w.slice(1)).join(" ");
