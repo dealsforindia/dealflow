@@ -197,23 +197,28 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
 }
 
 async function fetchPendingDeals(): Promise<Deal[]> {
-  const res = await fetch(`${API_BASE}/api/v1/deals/pending?limit=1000`);
-  if (!res.ok) throw new Error("Failed to fetch deals");
-  const data = await res.json();
-  let rows: (RawDeal & { fp_hash?: string })[];
-  if (data && typeof data === "object" && Array.isArray(data.deals)) {
-    rows = data.deals;
-  } else if (Array.isArray(data)) {
-    rows = data;
-  } else {
-    rows = Object.entries(data as Record<string, RawDeal>).map(([k, v]) => ({ ...v, fp_hash: k }));
+  const [pendingRes, recentRes] = await Promise.all([
+    fetch(`${API_BASE}/api/v1/deals/pending?limit=1000`).catch(() => null),
+    fetch(`${API_BASE}/api/v1/deals/recent?limit=300`).catch(() => null),
+  ]);
+
+  let rows: (RawDeal & { fp_hash?: string; _forceStatus?: DealStatus })[] = [];
+  if (pendingRes?.ok) {
+    const data = await pendingRes.json();
+    const list = Array.isArray(data?.deals) ? data.deals : Array.isArray(data) ? data : [];
+    rows = rows.concat(list.map((d: any) => ({ ...d, _forceStatus: "pending" as DealStatus })));
   }
-  return rows.map((d, i) => mapRawToDeal(d, String(i))).sort((a, b) => {
-    if (a.score === 0 && b.score === 0) return b.ts - a.ts;
-    if (a.score === 0) return 1;
-    if (b.score === 0) return -1;
-    return b.score - a.score;
-  });
+  if (recentRes?.ok) {
+    const data = await recentRes.json();
+    const list = Array.isArray(data?.deals) ? data.deals : Array.isArray(data) ? data : [];
+    rows = rows.concat(list.map((d: any) => ({ ...d, _forceStatus: "approved" as DealStatus })));
+  }
+
+  return rows.map((d, i) => {
+    const deal = mapRawToDeal(d, String(i));
+    if (d._forceStatus) deal.status = d._forceStatus;
+    return deal;
+  }).sort((a, b) => b.ts - a.ts);
 }
 
 async function fetchDailyStats() {
@@ -1483,7 +1488,6 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
 const NAV: { id: Tab; icon: React.ElementType; label: string }[] = [
   { id: "Review", icon: Flame, label: "Review" },
-  { id: "DesiDime", icon: Rss, label: "DesiDime" },
   { id: "Posted", icon: CheckSquare, label: "Posted" },
   { id: "Channels", icon: Radio, label: "Channels" },
   { id: "Settings", icon: Settings2, label: "Settings" },
