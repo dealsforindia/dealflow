@@ -858,41 +858,45 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </div>
         </div>
 
-        {/* Broadcast targets toolbar */}
-        <div className="flex items-center gap-2 pt-2 border-t border-border/50 text-xs flex-wrap">
-          <span className="font-semibold text-muted-foreground flex items-center gap-1 text-[11px]">
-            <span>📡</span> Broadcast Targets:
-          </span>
-          <button
-            onClick={() => setSendTG(!sendTG)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all border text-[11px]"
-            style={{
-              background: sendTG ? "rgba(42,157,143,0.15)" : "var(--secondary)",
-              color: sendTG ? "#2A9D8F" : "var(--muted-foreground)",
-              borderColor: sendTG ? "#2A9D8F" : "transparent",
-            }}>
-            <span>✈️</span> Telegram {sendTG ? "• ON" : "• OFF"}
-          </button>
-          <button
-            onClick={() => setSendWA(!sendWA)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all border text-[11px]"
-            style={{
-              background: sendWA ? "rgba(37,211,102,0.15)" : "var(--secondary)",
-              color: sendWA ? "#25D366" : "var(--muted-foreground)",
-              borderColor: sendWA ? "#25D366" : "transparent",
-            }}>
-            <span>💬</span> WhatsApp {sendWA ? "• ON" : "• OFF"}
-          </button>
-          <button
-            onClick={() => setSendX(!sendX)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all border text-[11px]"
-            style={{
-              background: sendX ? "rgba(29,161,242,0.15)" : "var(--secondary)",
-              color: sendX ? "#1DA1F2" : "var(--muted-foreground)",
-              borderColor: sendX ? "#1DA1F2" : "transparent",
-            }}>
-            <span>🐦</span> X / Twitter {sendX ? "• ON" : "• OFF"}
-          </button>
+        {/* Premium Multi-Platform Broadcast Control Deck */}
+        <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-secondary/50 border border-border/80 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-semibold text-foreground">Active Broadcast Channels</span>
+            <span className="text-[10px] text-muted-foreground hidden sm:inline">(Deals will publish to selected platforms on Approve)</span>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              onClick={() => setSendTG(!sendTG)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm ${
+                sendTG
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/20 scale-[1.02]"
+                  : "bg-background/80 text-muted-foreground hover:text-foreground border border-border opacity-75"
+              }`}>
+              <span>✈️</span> Telegram
+              {sendTG && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />}
+            </button>
+            <button
+              onClick={() => setSendWA(!sendWA)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm ${
+                sendWA
+                  ? "bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white shadow-[#25D366]/20 scale-[1.02]"
+                  : "bg-background/80 text-muted-foreground hover:text-foreground border border-border opacity-75"
+              }`}>
+              <span>💬</span> WhatsApp
+              {sendWA && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />}
+            </button>
+            <button
+              onClick={() => setSendX(!sendX)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm ${
+                sendX
+                  ? "bg-gradient-to-r from-[#1DA1F2] to-[#0d8bd9] text-white shadow-[#1DA1F2]/20 scale-[1.02]"
+                  : "bg-background/80 text-muted-foreground hover:text-foreground border border-border opacity-75"
+              }`}>
+              <span>🐦</span> X (Twitter)
+              {sendX && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />}
+            </button>
+          </div>
         </div>
       </div>
 
