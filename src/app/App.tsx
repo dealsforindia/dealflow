@@ -1406,14 +1406,14 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-5 max-w-2xl mx-auto flex flex-col gap-5">
-      <div>
+    <div className="flex-1 overflow-y-auto px-5 py-6 pb-20 max-w-2xl mx-auto flex flex-col gap-6">
+      <div className="flex-shrink-0">
         <p className="text-sm font-bold text-foreground">Settings</p>
         <p className="text-xs text-muted-foreground mt-0.5">Bot pipeline configuration</p>
       </div>
 
       {/* Appearance */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="flex-shrink-0 rounded-2xl border border-border bg-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Appearance</p>
         </div>
@@ -1431,7 +1431,7 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
       </div>
 
       {/* Output */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="flex-shrink-0 rounded-2xl border border-border bg-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Output</p>
         </div>
@@ -1456,7 +1456,7 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
       </div>
 
       {/* AI Rewrite */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="flex-shrink-0 rounded-2xl border border-border bg-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">AI Rewrite</p>
         </div>
@@ -1469,7 +1469,7 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
       </div>
 
       {/* Deduplication */}
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="flex-shrink-0 rounded-2xl border border-border bg-card overflow-hidden">
         <div className="px-5 py-3 border-b border-border">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Deduplication</p>
         </div>
@@ -1485,7 +1485,7 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border overflow-hidden bg-card">
+      <div className="flex-shrink-0 rounded-2xl border border-border overflow-hidden bg-card">
         <div className="px-5 py-3 border-b border-border">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">API Keys</p>
         </div>
@@ -1502,7 +1502,7 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
       </div>
 
       <button onClick={save}
-        className="flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.98]"
+        className="flex-shrink-0 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.98]"
         style={{ background: saved ? "#16a34a" : "#E63946", boxShadow: `0 4px 24px ${saved ? "rgba(22,163,74,0.25)" : "rgba(230,57,70,0.22)"}` }}>
         {saved ? <><CheckCircle2 size={16} />Saved</> : <><Check size={16} strokeWidth={2.5} />Save Settings</>}
       </button>
