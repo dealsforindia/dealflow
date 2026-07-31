@@ -1152,6 +1152,28 @@ function ChannelsView() {
   const [loading, setLoading] = useState(true);
   const [newChannelInput, setNewChannelInput] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+
+  const saveAlias = async (id: string, name: string) => {
+    if (!name.trim()) {
+      setEditingId(null);
+      return;
+    }
+    const newName = name.trim();
+    setChs(cs => cs.map(c => (c.id === id ? { ...c, name: newName } : c)));
+    setEditingId(null);
+    try {
+      await fetch(`${API_BASE}/api/v1/channels/alias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: newName })
+      });
+      toast.success("Saved channel name!");
+    } catch {
+      toast.error("Failed to save name");
+    }
+  };
 
   const fetchChannels = useCallback(async () => {
     try {
@@ -1246,9 +1268,38 @@ function ChannelsView() {
               style={{ background: `${ch.color || "#E63946"}12`, color: ch.color || "#E63946" }}>
               {(ch.name || ch.id || "C")[0].toUpperCase()}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-foreground">{ch.name || ch.id}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{ch.id}</p>
+            <div className="flex-1 min-w-0"
+              onDoubleClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}
+              title="Double-click to edit channel name">
+              {editingId === ch.id ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") saveAlias(ch.id, editName);
+                      if (e.key === "Escape") setEditingId(null);
+                    }}
+                    onBlur={() => saveAlias(ch.id, editName)}
+                    className="w-full px-2 py-1 rounded-lg text-sm font-bold text-foreground bg-input border border-primary/40 focus:outline-none"
+                  />
+                  <button onClick={() => saveAlias(ch.id, editName)} className="text-green-500 hover:text-green-600">
+                    <Check size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="group cursor-pointer flex items-center gap-1.5"
+                  onClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}>
+                  <div>
+                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
+                      {ch.name || ch.id}
+                      <PenLine size={12} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity" />
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{ch.id}</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="text-right flex-shrink-0 mr-2">
               <p className="text-sm font-mono font-bold text-foreground">{ch.deals_24h ?? ch.deals ?? 0}</p>

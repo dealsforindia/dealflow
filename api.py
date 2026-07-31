@@ -451,6 +451,7 @@ async def get_channels():
         
     doc = await db.SystemSettings.find_one({"_id": "channels_config"})
     active_map = doc.get("channels", {}) if doc else {}
+    aliases_map = doc.get("aliases", {}) if doc else {}
 
     # Extract all channels from .env and from MongoDB UniqueDeals
     env_channels = [ch.strip() for ch in os.getenv("SOURCE_CHANNELS", "").split(",") if ch.strip()]
@@ -493,7 +494,7 @@ async def get_channels():
     channels = []
     for ch, is_active in sorted(active_map.items()):
         stats = channel_stats.get(ch, {"deals_24h": 0, "avg_score": 0, "last_ts": None})
-        friendly_name = ch.lstrip("@")
+        friendly_name = aliases_map.get(ch) or ch.lstrip("@")
         if friendly_name.startswith("https://t.me/"):
             friendly_name = friendly_name.split("/")[-1]
         color_idx = abs(hash(ch)) % len(palette)
@@ -507,6 +508,32 @@ async def get_channels():
         })
 
     return {"channels": channels, "total": len(channels)}
+
+@app.put("/api/v1/channels/alias")
+@app.post("/api/v1/channels/alias")
+async def set_channel_alias(body: dict[str, Any]):
+    ch_id = body.get("id", "").strip()
+    name = body.get("name", "").strip()
+    if not ch_id or not name:
+        raise HTTPException(400, "Missing id or name")
+    db = get_db()
+    if db is None:
+        raise HTTPException(503, "MongoDB not configured")
+    
+    await db.SystemSettings.update_one(
+        {"_id": "channels_config"},
+        {"$set": {f"aliases.{ch_id}": name}},
+        upsert=True
+    )
+    try:
+        await db.UniqueDeals.update_many(
+            {"source_channel": ch_id},
+            {"$set": {"source_channel": name}}
+        )
+    except Exception as e:
+        log.warning(f"Failed to update past deal source_channel: {e}")
+    _redis.publish("system:channels_changed", "alias_updated")
+    return {"status": "ok", "id": ch_id, "name": name}
 
 @app.post("/api/v1/channels/config")
 async def add_channel(body: dict[str, Any]):
