@@ -1619,7 +1619,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("Review");
   const [deals, setDeals] = useState<Deal[]>(BASE_DEALS);
   const [editing, setEditing] = useState<Deal | null>(null);
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
   const wsRetry = useRef(0);
 
