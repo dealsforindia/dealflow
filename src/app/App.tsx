@@ -230,9 +230,14 @@ async function fetchDailyStats() {
   } catch { return DAILY_STATS; }
 }
 
-async function apiApprove(id: string): Promise<boolean> {
+async function apiApprove(id: string, changes?: Record<string, unknown>): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/approve`, { method: "PUT" });
+    const payload = changes ? mapChangesToBackend(changes) : {};
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/approve`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
     return res.ok;
   } catch { return false; }
 }
@@ -244,12 +249,34 @@ async function apiReject(id: string): Promise<boolean> {
   } catch { return false; }
 }
 
+// Map frontend Deal field names → backend MongoDB field names
+function mapChangesToBackend(changes: Record<string, unknown>): Record<string, unknown> {
+  const mapped: Record<string, unknown> = {};
+  if ("title" in changes) mapped.prod_name = changes.title;
+  if ("affText" in changes) mapped.aff_text = changes.affText;
+  if ("imgUrl" in changes) mapped.img_url = changes.imgUrl;
+  if ("price" in changes || "mrp" in changes) {
+    mapped.prices = {
+      sale: changes.price != null ? Number(changes.price) : undefined,
+      mrp: changes.mrp != null ? Number(changes.mrp) : undefined,
+    };
+  }
+  if ("coupon" in changes) mapped.coupon = changes.coupon;
+  if ("category" in changes) mapped.category = changes.category;
+  // Pass through any already-backend-named fields
+  for (const k of ["prod_name", "aff_text", "img_url", "prices", "message"]) {
+    if (k in changes && !(k in mapped)) mapped[k] = changes[k];
+  }
+  return mapped;
+}
+
 async function apiEdit(id: string, changes: Record<string, unknown>): Promise<boolean> {
   try {
+    const payload = mapChangesToBackend(changes);
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/edit`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(changes),
+      body: JSON.stringify(payload),
     });
     return res.ok;
   } catch { return false; }
@@ -1717,7 +1744,11 @@ export default function App() {
     if (!editing) return;
     setDeals(ds => ds.map(d => d.id === editing.id ? { ...d, ...changes, status: "approved" as DealStatus } : d));
     toast.success("Saved & Approved ✓", { duration: 1800 });
-    apiEdit(editing.id, changes as Record<string, unknown>).then(() => apiApprove(editing.id));
+    // Edit first, then approve — pass changes to approve too so the deal
+    // gets posted with the edited content even if edit races with approve
+    apiEdit(editing.id, changes as Record<string, unknown>).then(() =>
+      apiApprove(editing.id, changes as Record<string, unknown>)
+    );
   }, [editing]);
 
   const pending = deals.filter(d => d.status === "pending").length;
