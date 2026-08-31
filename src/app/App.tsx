@@ -296,8 +296,33 @@ async function apiAiRewrite(id: string, instruction: string): Promise<string | n
   } catch { return null; }
 }
 
+async function apiRetryAffiliate(id: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/retry-affiliate`, { method: "POST" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.text || data.affiliate_text || null;
+  } catch { return null; }
+}
+
+async function apiScrapeImage(id: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/scrape-image`, { method: "POST" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.url || data.image_url || null;
+  } catch { return null; }
+}
+
+async function apiSpam(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/spam`, { method: "POST" });
+    return res.ok;
+  } catch { return false; }
+}
+
 // ─── Score Ring ───────────────────────────────────────────────────────────────
-function ScoreRing({ score, size = 36 }: { score: number; size?: number }) {
+function ScoreRing({ score, size = 36 }: { score: number; size?: number; verdict?: string }) {
   const r = (size - 6) / 2, circ = 2 * Math.PI * r, color = scoreColor(score);
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
@@ -1994,6 +2019,8 @@ export default function App() {
               onClose={() => setEditing(null)}
               onSaveDraft={saveDraft}
               onSaveApprove={saveApprove}
+              onRemove={(id) => { setDeals(ds => ds.filter(d => d.id !== id)); setEditing(null); }}
+              onToast={(msg, type) => { if (type === "error") toast.error(msg); else if (type === "info") toast.info(msg); else toast.success(msg); }}
             />
           )}
         </AnimatePresence>
