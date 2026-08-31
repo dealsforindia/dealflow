@@ -1013,11 +1013,15 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
             style={{ background: accent }}>{deal.channel[0]}</div>
           <div className="flex-1 min-w-0">
             <span className="text-[10px] font-semibold text-muted-foreground truncate block">{deal.channel}</span>
-            {ID_TO_URL[deal.channelRaw] && (
-              <a href={ID_TO_URL[deal.channelRaw]} target="_blank" rel="noreferrer" className="text-[9px] text-primary/70 hover:text-primary transition-colors truncate block">
+            {ID_TO_URL[deal.channelRaw] ? (
+              <a href={ID_TO_URL[deal.channelRaw]} target="_blank" rel="noreferrer" className="text-[9px] text-primary/70 hover:text-primary transition-colors truncate block mt-0.5">
                 {ID_TO_URL[deal.channelRaw]}
               </a>
-            )}
+            ) : deal.channelRaw?.startsWith("-100") ? (
+              <a href={`https://web.telegram.org/k/#${deal.channelRaw.replace('-100', '-')}`} target="_blank" rel="noreferrer" className="text-[9px] text-primary/70 hover:text-primary transition-colors truncate block mt-0.5">
+                https://web.telegram.org/k/#{deal.channelRaw.replace('-100', '-')}
+              </a>
+            ) : null}
           </div>
           <span className="text-[10px] text-muted-foreground flex-shrink-0">{fmtAgo(deal.ts)}</span>
         </div>
@@ -1621,6 +1625,10 @@ function ChannelsView() {
                       {ID_TO_URL[ch.id] ? (
                         <a href={ID_TO_URL[ch.id]} target="_blank" rel="noreferrer" className="hover:underline hover:text-primary transition-colors">
                           {ID_TO_URL[ch.id]}
+                        </a>
+                      ) : ch.id.startsWith("-100") ? (
+                        <a href={`https://web.telegram.org/k/#${ch.id.replace('-100', '-')}`} target="_blank" rel="noreferrer" className="hover:underline hover:text-primary transition-colors">
+                          https://web.telegram.org/k/#{ch.id.replace('-100', '-')}
                         </a>
                       ) : (
                         ch.id
