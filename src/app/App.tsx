@@ -176,7 +176,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     discount: d.prices.discount_pct ?? 0,
     category: extractCatName(d.category), catEmoji: extractEmoji(d.category),
     channel: d.source_channel_name || toChName(d.source_channel), channelRaw: d.source_channel,
-    score: d.score !== null ? Math.min(100, Math.round(d.score * 10)) : 0,
+    score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
     ts: Math.floor(d.ts), status: "pending" as DealStatus,
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
     affiliate: d.affiliate_applied, coupon: d.coupon,
@@ -334,6 +334,7 @@ async function apiCompose(changes: Record<string, unknown>): Promise<boolean> {
 
 // ─── Score Ring ───────────────────────────────────────────────────────────────
 function ScoreRing({ score = 0, size = 36 }: { score?: number; size?: number; verdict?: string }) {
+  if (!score || isNaN(score) || score === 0) return null;
   const r = (size - 6) / 2, circ = 2 * Math.PI * r, color = scoreColor(score);
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
@@ -539,7 +540,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onRemove, onToas
                       <span className="text-[9px] font-mono" style={{ color: "var(--text-muted)", fontFamily: "'JetBrains Mono',monospace" }}>{zoom.toFixed(1)}×</span>
                     </div>
                   )}
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <input
                       value={imgUrl}
                       onChange={(e) => setImgUrl(e.target.value)}
@@ -614,8 +615,8 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onRemove, onToas
                     <button
                       onClick={doRewrite}
                       disabled={rewriting || !instruction.trim()}
-                      className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-fast disabled:opacity-40"
-                      style={{ background: "rgba(255,45,85,0.08)", color: "#FF2D55", border: "1px solid rgba(255,45,85,0.2)" }}
+                      className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-fast disabled:opacity-40 shadow-sm hover:opacity-90"
+                      style={{ background: "linear-gradient(135deg, rgba(255,45,85,0.15) 0%, rgba(255,45,85,0.05) 100%)", color: "#FF2D55", border: "1px solid rgba(255,45,85,0.3)" }}
                     >
                       {rewriting
                         ? <span className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" />
@@ -736,7 +737,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onRemove, onToas
           {/* Footer */}
           <div className="border-t flex-shrink-0" style={{ borderColor: "var(--border)" }}>
             {/* Tertiary actions */}
-            <div className="flex items-center gap-2 px-5 py-2.5 border-b" style={{ borderColor: "var(--border)" }}>
+            <div className="flex items-center gap-3 px-5 py-2.5 border-b" style={{ borderColor: "var(--border)" }}>
               <button
                 onClick={doRetryAffiliate}
                 disabled={retryingAffiliate}
@@ -878,13 +879,7 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
               <Maximize2 size={22} className="text-white/80" />
             </div>
 
-            {/* Age + category badges */}
-            <div className="absolute bottom-2.5 right-3 z-10">
-              <span className="text-[10px] px-2 py-0.5 rounded-md font-medium"
-                style={{ background: `${accent}16`, color: accent, border: `1px solid ${accent}28` }}>
-                {deal.category}
-              </span>
-            </div>
+            {/* Age badge */}
             <div className="absolute top-2.5 right-3 z-10 text-[10px] font-medium text-muted-foreground"
               style={{ fontFamily: "'JetBrains Mono',monospace", opacity: 0.45 }}>{fmtAgo(deal.ts)}</div>
           </>
@@ -917,12 +912,18 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
             style={{ background: "#fef3c7", color: "#92400e" }}>TRICK</div>
         )}
 
-        {/* Affiliate */}
-        {deal.affiliate && (
-          <div className="absolute bottom-2 right-2 z-10 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center" title="Affiliated">
-            <Zap size={9} className="text-white" strokeWidth={2.5} />
-          </div>
-        )}
+        {/* Category & Affiliate */}
+        <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5">
+          <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/50 text-white/90 backdrop-blur-md border border-white/10 shadow-sm font-medium"
+            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
+            {deal.category}
+          </span>
+          {deal.affiliate && (
+            <div className="w-5 h-5 rounded-full bg-emerald-500 flex flex-shrink-0 items-center justify-center shadow-md" title="Affiliated">
+              <Zap size={9} className="text-white" strokeWidth={2.5} />
+            </div>
+          )}
+        </div>
 
         {/* Status overlay */}
         {deal.status === "approved" && (
@@ -980,7 +981,9 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
         <div className="flex items-center gap-1.5 mt-auto">
           <div className="w-4 h-4 rounded-md flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
             style={{ background: accent }}>{deal.channel[0]}</div>
-          <span className="text-[10px] text-muted-foreground truncate flex-1">{deal.channel}</span>
+          <div className="flex-1 min-w-0">
+            <span className="text-[10px] text-muted-foreground truncate block">{deal.channel}</span>
+          </div>
           <span className="text-[10px] text-muted-foreground flex-shrink-0">{fmtAgo(deal.ts)}</span>
         </div>
 
