@@ -1474,7 +1474,7 @@ function PostedView({ deals, onEdit }: { deals: Deal[]; onEdit: (d: Deal) => voi
 
 // ─── Channels View ────────────────────────────────────────────────────────────
 function ChannelsView() {
-  const [chs, setChs] = useState<any[]>(CHANNELS);
+  const [chs, setChs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newChannelInput, setNewChannelInput] = useState("");
   const [showAdd, setShowAdd] = useState(false);
