@@ -48,34 +48,38 @@ interface AppSettings {
 const extractEmoji = (cat: string) => cat.split(" ")[0] || "🛍️";
 const extractCatName = (cat: string) => cat.split(" ").slice(1).join(" ") || cat;
 const ID_TO_URL: Record<string, string> = {
-  "-1001837130426": "https://web.telegram.org/k/#-1837130426", // Crazy Deals
-  "-1001346861267": "https://t.me/+OylJYrIZZHBzZjRi", // DealzTrendz
-  "-1001782814661": "https://t.me/+fJX-MfWphoNiZDU6", // DealzTrendz 2.0
-  "-1001480964161": "https://web.telegram.org/k/#@realearnkaro", // EarnKaro
-  "-1001389782464": "https://web.telegram.org/k/#@extrape", // ExtraPe
-  "-1001921484161": "https://t.me/+tcoZTg6IJWl4ZDRI", // FET
-  "-1001423395942": "https://t.me/+VNdMZqz_NhKNNXvsG", // Free Earning Tech
-  "-1002617619168": "https://t.me/+VNdMZqz_NhKNNXvsG", // Free Earning Tech (Alt)
-  "-1001955834193": "https://t.me/+JpTJUwE9J9A1NDE1", // Genie All Deals
-  "-1001268661047": "https://web.telegram.org/k/#-1268661047", // Genie Loot
-  "-1001667757195": "https://web.telegram.org/k/#-1667757195", // Genie Tricks
-  "-1002365543574": "https://t.me/glamhauldiaries", // Glam Haul Diaries
-  "-1001589506039": "https://web.telegram.org/k/#@lootdealsapp", // Loot Deals App
-  "-1003871814319": "https://t.me/bblbblp", // Private Deals From All
-  "-1001927095270": "https://t.me/addlist/RBY/rxc0-T03MjE1", // Shoppers Quest 2.0
-  "-1001786042652": "https://t.me/+958_Lu4ZoUxM2E9", // Shopping Genie
-  "-1001450755585": "https://t.me/Loot_DealsX", // Trending Loot Deals
-  "-1002260825044": "https://web.telegram.org/k/#-2260825044", // DealDrops
-  "-1002072521956": "https://web.telegram.org/k/#@dealspoint", // Dealspoint Premium
-  "-1001218727546": "https://web.telegram.org/k/#@DesidimeHot", // DesiDime
-  "-1002152564226": "https://web.telegram.org/k/#-2152564226", // Fitness Finds by SQ
-  "-1001315464303": "https://web.telegram.org/k/#-1315464303", // Offerzone 2.0
-  "-1001707571730": "https://web.telegram.org/k/#-1707571730", // Offerzone 3.0
-  "-1002393042058": "https://web.telegram.org/k/#-2393042058", // Offerzone 4.0
-  "-1001702197669": "https://web.telegram.org/k/#-1702197669", // Offerzone Tricks
-  "-1003866659228": "https://web.telegram.org/k/#-3866659228", // OZ Loot Bazaar
-  "-1003516611384": "https://web.telegram.org/k/#-3516611384", // OZ Loot Deals
+  "-1001837130426": "https://t.me/+emveIa6ZQxoxYjAx",       // Crazy Deals
+  "-1002260825044": "https://t.me/c/2260825044",             // DealDrops
+  "-1002072521956": "https://t.me/dealspoint",               // Dealspoint Premium
+  "-1001346861267": "https://t.me/+OylJYrIZZHBzZjRi",       // DealzTrendz
+  "-1001782814661": "https://t.me/+fJX-MfWphoNiZDU6",       // DealzTrendz 2.0
+  "-1001218727546": "https://t.me/DesidimeHot",              // DesiDime - Handpicked Deals
+  "-1001480964161": "https://t.me/realearnkaro",             // EarnKaro
+  "-1001389782464": "https://t.me/extrape",                  // ExtraPe
+  "-1001921484161": "https://t.me/+tcoZTg6IJWl4ZDRI",       // FET (Deals & Tricks)
+  "-1002152564226": "https://t.me/addlist/RBY7rxcO-T03MjE1",// Fitness Finds by SQ
+  "-1001423395942": "https://t.me/+VNdMZqz_NhKNNXvsG",      // Free Earning Tech
+  "-1002617619168": "https://t.me/+VNdMZqz_NhKNNXvsG",      // Free Earning Tech (Alt)
+  "-1001955834193": "https://t.me/+JpTJUwE9J9A1NDE1",       // Genie All Deals
+  "-1001268661047": "https://t.me/c/1944516766",             // Genie Loot
+  "-1001667757195": "https://t.me/+Io8OVRMkSVs5YzI1",       // Genie Tricks
+  "-1002365543574": "https://t.me/glamhauldiaries",          // Glam Haul Diaries
+  "-1001589506039": "https://t.me/LootDealsApp",             // Loot Deals App
+  "-1001315464303": "https://t.me/+LQ3FigpMfmAyZGJl",       // Offerzone 2.0
+  "-1001707571730": "https://t.me/+kTvbwlaPbH1mM2E1",       // Offerzone 3.0
+  "-1002393042058": "https://t.me/+FpXKV70NYNY0NzQ1",       // Offerzone 4.0
+  "-1001702197669": "https://t.me/+uV5wcTkUWJEwM2Y1",       // Offerzone Tricks
+  "-1003866659228": "https://t.me/+4DwYqc6QfXhiMTI1",       // OZ Loot Bazaar
+  "-1003516611384": "https://t.me/c/2157774706",             // OZ Loot Deals
+  "-1003871814319": "https://t.me/bblbblp",                  // Private Deals From All
+  "-1001927095270": "https://t.me/addlist/RBY7rxcO-T03MjE1",// Shoppers Quest 2.0
+  "-1001786042652": "https://t.me/+958_Lu4ZoUxM2E9",        // Shopping Genie
+  "-1001450755585": "https://t.me/Loot_DealsX",             // Trending Loot Deals
+  "-1001357275556": "https://t.me/Technicalsheikh",          // Technical Sheikh
+  "-1001900048971": "https://t.me/realearnkaro",             // EarnKaro Official
+  "-1001447952139": "https://t.me/ShoppersQuest",            // Shoppers Quest
 };
+
 
 const toChName = (ch?: string): string => {
   if (!ch) return "";
