@@ -437,12 +437,30 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onRemove, onToas
   const accent = catColor[deal.category] || "#9496B8";
   const isDirty = title !== deal.title || price !== String(deal.price || "") || imgUrl !== deal.imgUrl || text !== deal.affText;
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     const reader = new FileReader();
     reader.onload = (ev) => { setImgFile(ev.target?.result as string); setZoom(1); };
     reader.readAsDataURL(f);
+
+    const fd = new FormData();
+    fd.append("file", f);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, {
+        method: "POST",
+        body: fd
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setImgUrl(data.img_url);
+        onToast("Image uploaded!", "success");
+      } else {
+        onToast("Image upload failed", "error");
+      }
+    } catch {
+      onToast("Image upload failed", "error");
+    }
   };
 
   const doRewrite = async () => {
@@ -1501,6 +1519,8 @@ function ChannelsView() {
 
   useEffect(() => {
     fetchChannels();
+    const int = setInterval(fetchChannels, 30000);
+    return () => clearInterval(int);
   }, [fetchChannels]);
 
   const toggleChannel = async (id: string, current: boolean) => {
