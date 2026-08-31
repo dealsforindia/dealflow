@@ -175,7 +175,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     price: d.prices.sale ?? 0, mrp: d.prices.mrp ?? 0,
     discount: d.prices.discount_pct ?? 0,
     category: extractCatName(d.category), catEmoji: extractEmoji(d.category),
-    channel: toChName(d.source_channel), channelRaw: d.source_channel,
+    channel: d.source_channel_name || toChName(d.source_channel), channelRaw: d.source_channel,
     score: d.score !== null ? Math.min(100, Math.round(d.score * 10)) : 0,
     ts: Math.floor(d.ts), status: "pending" as DealStatus,
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
