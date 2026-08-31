@@ -47,6 +47,36 @@ interface AppSettings {
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const extractEmoji = (cat: string) => cat.split(" ")[0] || "🛍️";
 const extractCatName = (cat: string) => cat.split(" ").slice(1).join(" ") || cat;
+const ID_TO_URL: Record<string, string> = {
+  "-1001837130426": "https://web.telegram.org/k/#-1837130426", // Crazy Deals
+  "-1001346861267": "https://t.me/+OylJYrIZZHBzZjRi", // DealzTrendz
+  "-1001782814661": "https://t.me/+fJX-MfWphoNiZDU6", // DealzTrendz 2.0
+  "-1001480964161": "https://web.telegram.org/k/#@realearnkaro", // EarnKaro
+  "-1001389782464": "https://web.telegram.org/k/#@extrape", // ExtraPe
+  "-1001921484161": "https://t.me/+tcoZTg6IJWl4ZDRI", // FET
+  "-1001423395942": "https://t.me/+VNdMZqz_NhKNNXvsG", // Free Earning Tech
+  "-1002617619168": "https://t.me/+VNdMZqz_NhKNNXvsG", // Free Earning Tech (Alt)
+  "-1001955834193": "https://t.me/+JpTJUwE9J9A1NDE1", // Genie All Deals
+  "-1001268661047": "https://web.telegram.org/k/#-1268661047", // Genie Loot
+  "-1001667757195": "https://web.telegram.org/k/#-1667757195", // Genie Tricks
+  "-1002365543574": "https://t.me/glamhauldiaries", // Glam Haul Diaries
+  "-1001589506039": "https://web.telegram.org/k/#@lootdealsapp", // Loot Deals App
+  "-1003871814319": "https://t.me/bblbblp", // Private Deals From All
+  "-1001927095270": "https://t.me/addlist/RBY/rxc0-T03MjE1", // Shoppers Quest 2.0
+  "-1001786042652": "https://t.me/+958_Lu4ZoUxM2E9", // Shopping Genie
+  "-1001450755585": "https://t.me/Loot_DealsX", // Trending Loot Deals
+  "-1002260825044": "https://web.telegram.org/k/#-2260825044", // DealDrops
+  "-1002072521956": "https://web.telegram.org/k/#@dealspoint", // Dealspoint Premium
+  "-1001218727546": "https://web.telegram.org/k/#@DesidimeHot", // DesiDime
+  "-1002152564226": "https://web.telegram.org/k/#-2152564226", // Fitness Finds by SQ
+  "-1001315464303": "https://web.telegram.org/k/#-1315464303", // Offerzone 2.0
+  "-1001707571730": "https://web.telegram.org/k/#-1707571730", // Offerzone 3.0
+  "-1002393042058": "https://web.telegram.org/k/#-2393042058", // Offerzone 4.0
+  "-1001702197669": "https://web.telegram.org/k/#-1702197669", // Offerzone Tricks
+  "-1003866659228": "https://web.telegram.org/k/#-3866659228", // OZ Loot Bazaar
+  "-1003516611384": "https://web.telegram.org/k/#-3516611384", // OZ Loot Deals
+};
+
 const toChName = (ch?: string): string => {
   if (!ch) return "";
   if (ch.includes("bblbblp") || ch === "-1003871814319") return "redditcontent";
@@ -982,7 +1012,12 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
           <div className="w-4 h-4 rounded-md flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
             style={{ background: accent }}>{deal.channel[0]}</div>
           <div className="flex-1 min-w-0">
-            <span className="text-[10px] text-muted-foreground truncate block">{deal.channel}</span>
+            <span className="text-[10px] font-semibold text-muted-foreground truncate block">{deal.channel}</span>
+            {ID_TO_URL[deal.channelRaw] && (
+              <a href={ID_TO_URL[deal.channelRaw]} target="_blank" rel="noreferrer" className="text-[9px] text-primary/70 hover:text-primary transition-colors truncate block">
+                {ID_TO_URL[deal.channelRaw]}
+              </a>
+            )}
           </div>
           <span className="text-[10px] text-muted-foreground flex-shrink-0">{fmtAgo(deal.ts)}</span>
         </div>
@@ -1582,7 +1617,15 @@ function ChannelsView() {
                       {ch.name || ch.id}
                       <PenLine size={12} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity" />
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{ch.id}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {ID_TO_URL[ch.id] ? (
+                        <a href={ID_TO_URL[ch.id]} target="_blank" rel="noreferrer" className="hover:underline hover:text-primary transition-colors">
+                          {ID_TO_URL[ch.id]}
+                        </a>
+                      ) : (
+                        ch.id
+                      )}
+                    </p>
                   </div>
                 </div>
               )}
