@@ -39,6 +39,14 @@
   --sidebar-accent-foreground: #111118;
   --sidebar-border: #E0E0E8;
   --sidebar-ring: rgba(230,57,70,0.25);
+  
+  /* Edit Modal Mappings */
+  --bg-card: var(--card);
+  --bg-secondary: var(--secondary);
+  --bg-input: var(--input);
+  --text: var(--foreground);
+  --text-muted: var(--muted-foreground);
+  --text-dim: var(--muted-foreground);
 }
 
 .dark {
