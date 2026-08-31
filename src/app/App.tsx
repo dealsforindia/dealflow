@@ -321,8 +321,19 @@ async function apiSpam(id: string): Promise<boolean> {
   } catch { return false; }
 }
 
+async function apiCompose(changes: Record<string, unknown>): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/compose`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes)
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
 // ─── Score Ring ───────────────────────────────────────────────────────────────
-function ScoreRing({ score, size = 36 }: { score: number; size?: number; verdict?: string }) {
+function ScoreRing({ score = 0, size = 36 }: { score?: number; size?: number; verdict?: string }) {
   const r = (size - 6) / 2, circ = 2 * Math.PI * r, color = scoreColor(score);
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
@@ -1779,8 +1790,8 @@ const NAV: { id: Tab; icon: React.ElementType; label: string }[] = [
   { id: "Settings", icon: Settings2, label: "Settings" },
 ];
 
-function Sidebar({ tab, setTab, pending, dark, setDark }: {
-  tab: Tab; setTab: (t: Tab) => void; pending: number; dark: boolean; setDark: (v: boolean) => void;
+function Sidebar({ tab, setTab, pending, dark, setDark, onCompose }: {
+  tab: Tab; setTab: (t: Tab) => void; pending: number; dark: boolean; setDark: (v: boolean) => void; onCompose: () => void;
 }) {
   return (
     <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-border" style={{ width: 200, background: "var(--sidebar)" }}>
@@ -1795,7 +1806,14 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
           </div>
         </div>
       </div>
-      <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
+      <div className="p-3">
+        <button onClick={onCompose} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-white text-[13px] font-bold transition-all hover:opacity-90 active:scale-95"
+          style={{ background: "#E63946", boxShadow: "0 4px 12px rgba(230,57,70,0.3)" }}>
+          <PenLine size={14} />
+          Compose Deal
+        </button>
+      </div>
+      <nav className="flex-1 px-2 py-1 flex flex-col gap-0.5">
         {NAV.map(({ id, icon: Icon, label }) => {
           const active = tab === id;
           return (
@@ -1834,8 +1852,8 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
   );
 }
 
-function MobileHeader({ tab, pending, dark, setDark }: {
-  tab: Tab; pending: number; dark: boolean; setDark: (v: boolean) => void;
+function MobileHeader({ tab, pending, dark, setDark, onCompose }: {
+  tab: Tab; pending: number; dark: boolean; setDark: (v: boolean) => void; onCompose: () => void;
 }) {
   return (
     <header className="md:hidden flex items-center gap-3 px-4 border-b border-border flex-shrink-0" style={{ minHeight: 46, background: "var(--sidebar)" }}>
@@ -1845,6 +1863,9 @@ function MobileHeader({ tab, pending, dark, setDark }: {
       {tab === "Review" && pending > 0 && (
         <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md text-white" style={{ background: "#E63946" }}>{pending}</span>
       )}
+      <button onClick={onCompose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ background: "#E63946" }}>
+        <PenLine size={14} />
+      </button>
       <button onClick={() => setDark(!dark)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-secondary text-muted-foreground">
         {dark ? <Sun size={14} /> : <Moon size={14} />}
       </button>
@@ -1965,9 +1986,37 @@ export default function App() {
     });
   }, []);
 
+  // ── Compose ──
+  const compose = useCallback(() => {
+    setEditing({
+      id: "compose",
+      title: "",
+      price: 0,
+      mrp: 0,
+      category: "General",
+      imgUrl: "",
+      affText: "",
+      originalText: "Manually composed deal",
+      originalUrl: "",
+      originalImages: [],
+      sourceText: "",
+      sourceImages: [],
+      score: 0,
+      verdict: "",
+      ts: Date.now() / 1000,
+      channel: "Manual",
+      discount: 0,
+      status: "pending"
+    });
+  }, []);
+
   // ── Save Draft — optimistic + API ──
   const saveDraft = useCallback((changes: Partial<Deal>) => {
     if (!editing) return;
+    if (editing.id === "compose") {
+      toast("Drafts not supported for composed deals", { duration: 1500 });
+      return;
+    }
     setDeals(ds => ds.map(d => d.id === editing.id ? { ...d, ...changes, status: "draft" as DealStatus } : d));
     toast("Draft saved", { duration: 1500 });
     apiEdit(editing.id, changes as Record<string, unknown>);
@@ -1976,6 +2025,19 @@ export default function App() {
   // ── Save & Approve — optimistic + API ──
   const saveApprove = useCallback((changes: Partial<Deal>) => {
     if (!editing) return;
+    
+    if (editing.id === "compose") {
+      toast.success("Composed & Approved ✓", { duration: 1800 });
+      apiCompose(changes as Record<string, unknown>).then(ok => {
+        if (ok) {
+          setTimeout(loadDeals, 500); // refresh recent
+        } else {
+          toast.error("Failed to compose deal");
+        }
+      });
+      return;
+    }
+    
     setDeals(ds => ds.map(d => d.id === editing.id ? { ...d, ...changes, status: "approved" as DealStatus } : d));
     toast.success("Saved & Approved ✓", { duration: 1800 });
     // Edit first, then approve — pass changes to approve too so the deal
@@ -1983,7 +2045,7 @@ export default function App() {
     apiEdit(editing.id, changes as Record<string, unknown>).then(() =>
       apiApprove(editing.id, changes as Record<string, unknown>)
     );
-  }, [editing]);
+  }, [editing, loadDeals]);
 
   const pending = deals.filter(d => d.status === "pending").length;
 
@@ -1994,9 +2056,9 @@ export default function App() {
         <Toaster position="top-center" richColors toastOptions={{ style: { fontFamily: "'Inter',sans-serif", fontSize: 13 } }} />
 
         <div className="flex-1 flex overflow-hidden">
-          <Sidebar tab={tab} setTab={setTab} pending={pending} dark={dark} setDark={setDark} />
+          <Sidebar tab={tab} setTab={setTab} pending={pending} dark={dark} setDark={setDark} onCompose={compose} />
           <div className="flex-1 flex flex-col overflow-hidden">
-            <MobileHeader tab={tab} pending={pending} dark={dark} setDark={setDark} />
+            <MobileHeader tab={tab} pending={pending} dark={dark} setDark={setDark} onCompose={compose} />
             <AnimatePresence mode="wait">
               <motion.div key={tab} className="flex-1 flex flex-col overflow-hidden"
                 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
