@@ -755,13 +755,6 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onRemove, onToas
                 {scrapingImage ? <span className="w-2.5 h-2.5 border border-cyan-400 border-t-transparent rounded-full animate-spin" /> : <Globe size={9} />}
                 Scrape Image
               </button>
-              <button
-                onClick={doSpam}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-fast ml-auto"
-                style={{ background: "rgba(220,38,38,0.08)", color: "#f87171", border: "1px solid rgba(220,38,38,0.15)" }}
-              >
-                <AlertTriangle size={9} /> Mark Spam
-              </button>
             </div>
             {/* Primary actions */}
             <div className="flex items-center gap-2.5 px-5 py-3.5">
