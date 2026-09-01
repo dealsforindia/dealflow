@@ -14,7 +14,7 @@ import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
 } from "./components/LottieAnimations";
 import {
-  Store3DBadge, FloatingCart3D, Satellite3D, SavingsPill3D
+  Category3DIcon, Store3DBadge, Nav3DIcon, Stat3DPill, FloatingCart3D, Satellite3D, SavingsPill3D
 } from "./components/Iconscout3DAssets";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -877,15 +877,16 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
         {/* Row 2: Status tabs + Filter Dropdowns + Sorting */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           {/* Status Tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-white/8">
-            {([["pending", `${pending}`, "🔥"], ["approved", `${approved}`, "✅"], ["rejected", `${rejected}`, "🗑️"], ["all", `${deals.length}`, "📁"]] as const).map(([v, cnt, icon]) => (
-              <button key={v} onClick={() => { setFilter(v); setPage(1); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${filter === v ? "bg-gradient-to-r from-rose-500 to-primary text-white shadow-md shadow-rose-500/20" : "text-slate-400 hover:text-white"}`}>
-                <span>{icon}</span>
-                <span>{v}</span>
-                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${filter === v ? "bg-black/30 text-white" : "bg-white/5 text-slate-400"}`}>{cnt}</span>
-              </button>
-            ))}
+          {/* 3D Filter Pills */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-900/90 border border-white/8">
+            <Stat3DPill label="Pending" count={pending} icon="🔥" color="bg-gradient-to-r from-rose-500 to-primary text-white"
+              active={filter === "pending"} onClick={() => { setFilter("pending"); setPage(1); }} />
+            <Stat3DPill label="Approved" count={approved} icon="✅" color="bg-gradient-to-r from-emerald-600 to-teal-500 text-white"
+              active={filter === "approved"} onClick={() => { setFilter("approved"); setPage(1); }} />
+            <Stat3DPill label="Rejected" count={rejected} icon="🗑️" color="bg-gradient-to-r from-rose-600 to-pink-600 text-white"
+              active={filter === "rejected"} onClick={() => { setFilter("rejected"); setPage(1); }} />
+            <Stat3DPill label="All Deals" count={deals.length} icon="📦" color="bg-gradient-to-r from-slate-700 to-slate-800 text-white"
+              active={filter === "all"} onClick={() => { setFilter("all"); setPage(1); }} />
           </div>
 
           {/* Controls: Store, Channel, Sort, Page Size */}
@@ -1376,17 +1377,18 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
-        {NAV.map(({ id, icon: Icon, label }) => {
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-1.5">
+        {NAV.map(({ id, label }) => {
           const active = tab === id;
+          const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : "settings";
           return (
             <button key={id} onClick={() => setTab(id)}
-              className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${active ? "bg-gradient-to-r from-rose-500/20 to-primary/10 text-white border border-primary/30 shadow-md shadow-primary/5" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
-              {active && <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-primary shadow-lg shadow-primary" />}
-              <Icon size={16} className={active ? "text-primary" : "text-slate-400"} />
-              <span>{label}</span>
+              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${active ? "bg-gradient-to-r from-rose-500/20 via-primary/15 to-transparent text-white border border-primary/30 shadow-md shadow-primary/10" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
+              {active && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-full bg-primary shadow-lg shadow-primary" />}
+              <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "settings"} active={active} />
+              <span className="tracking-tight">{label}</span>
               {id === "Review" && pending > 0 && (
-                <span className="ml-auto text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-sm">
+                <span className="ml-auto text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-sm shadow-rose-500/30">
                   {pending}
                 </span>
               )}
