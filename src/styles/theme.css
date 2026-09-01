@@ -155,68 +155,39 @@
 }
 
 /* Glassmorphism & Neon Glow Utilities */
+/* Clean Modern SaaS Card & Panel Utilities */
 .glass-panel {
-  background: rgba(16, 18, 30, 0.72);
-  backdrop-filter: blur(20px);
-  background: var(--bg-glass);
+  background: rgba(14, 16, 24, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glass);
-}
-
-/* ─── 3D Perspective & Holographic Tokens ─── */
-.perspective-1000 {
-  perspective: 1000px;
-}
-
-.preserve-3d {
-  transform-style: preserve-3d;
-}
-
-.translate-z-12 {
-  transform: translateZ(12px);
-}
-
-.translate-z-20 {
-  transform: translateZ(20px);
-}
-
-.card-3d-tilt {
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-
-.card-3d-tilt:hover {
-  box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.7), 0 0 20px -2px rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-glass);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #11131E;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(20, 24, 40, 0.85);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.5);
 }
 
 .glow-pill-primary {
-  background: linear-gradient(135deg, #FF2D55 0%, #FF6B35 100%);
-  box-shadow: 0 4px 18px rgba(255, 45, 85, 0.35);
+  background: #E11D48;
+  color: white;
 }
 
 .glow-pill-success {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.3);
+  background: #059669;
+  color: white;
 }
 
 .glow-pill-accent {
-  background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.3);
+  background: #4F46E5;
+  color: white;
 }
 
 .tg-text {

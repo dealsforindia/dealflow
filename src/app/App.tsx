@@ -355,78 +355,64 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
 }
 
 // ─── 3D Tilt Card Wrapper ─────────────────────────────────────────────────────
-function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect, bulkMode }: {
-  deal: Deal; onApprove: (id: string) => void;
-  onReject: (id: string) => void; onEdit: (d: Deal) => void;
-  selected?: boolean; onToggleSelect?: (id: string) => void; bulkMode?: boolean;
+function DealCard({
+  deal, onApprove, onReject, onEdit,
+  selected = false, onToggleSelect, bulkMode = false,
+}: {
+  deal: Deal;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onEdit: (deal: Deal) => void;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
+  bulkMode?: boolean;
 }) {
-  const [imgErr, setImgErr] = useState(false);
   const [lightbox, setLightbox] = useState(false);
-  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
-  const accent = catColor[deal.category] || "#64748B";
+  const [imgErr, setImgErr] = useState(false);
+
   const store = getStoreBadge(deal.platforms, deal.affText);
-  const savings = deal.mrp && deal.price && deal.mrp > deal.price ? deal.mrp - deal.price : 0;
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    setTilt({
-      rx: ((y - centerY) / centerY) * -5,
-      ry: ((x - centerX) / centerX) * 5,
-    });
-  };
-
-  const handleMouseLeave = () => setTilt({ rx: 0, ry: 0 });
+  const savings = deal.mrp > deal.price ? deal.mrp - deal.price : 0;
 
   return (
     <motion.div layout
-      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ type: "spring", damping: 24, stiffness: 300 }}
-      onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
-      className={`glass-card card-3d-tilt rounded-2xl overflow-hidden flex flex-col group relative preserve-3d transition-all ${
-        selected ? "ring-2 ring-primary bg-primary/10 shadow-[0_0_25px_rgba(244,63,94,0.3)]" : ""
-      }`}
-      style={{
-        borderTop: `2px solid ${accent}`,
-        transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
-      }}>
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className={`bg-[#10121C] border border-white/8 hover:border-white/18 rounded-2xl overflow-hidden flex flex-col group relative transition-all shadow-md hover:shadow-xl ${
+        selected ? "ring-2 ring-blue-500 bg-blue-500/5 border-blue-500/40" : ""
+      }`}>
 
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
       {/* Image Showcase */}
-      <div className="relative w-full h-44 sm:h-52 bg-[#090C15] flex items-center justify-center p-3 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0"
+      <div className="relative w-full h-48 sm:h-56 bg-[#080911] flex items-center justify-center p-3.5 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0 border-b border-white/5"
         onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
         
         {deal.imgUrl && !imgErr ? (
           <>
             <img src={deal.imgUrl} alt={deal.title}
-              className="max-h-full max-w-full w-auto h-auto object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300 ease-out z-10"
+              className="max-h-full max-w-full w-auto h-auto object-contain filter drop-shadow-sm group-hover:scale-[1.03] transition-transform duration-200 ease-out z-10"
               loading="lazy"
               onError={() => setImgErr(true)} />
 
-            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-[2px]">
-              <div className="p-2.5 rounded-xl bg-black/70 text-white/90 border border-white/15 shadow-xl">
+            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[1px]">
+              <div className="p-2 rounded-xl bg-zinc-900/90 text-white/90 border border-white/15 shadow-md">
                 <Maximize2 size={16} />
               </div>
             </div>
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-slate-500">
-            <span className="text-4xl sm:text-5xl filter drop-shadow-md">{deal.catEmoji}</span>
-            <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase opacity-60">No Media</span>
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-zinc-500">
+            <span className="text-4xl sm:text-5xl">{deal.catEmoji}</span>
+            <span className="text-xs font-medium tracking-wider uppercase opacity-60">No Media</span>
           </div>
         )}
 
-        {/* Top Badges: Store + 3D Animated Discount Flame */}
-        <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 flex-wrap">
+        {/* Top Badges: Store + Clean Discount Badge */}
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 flex-wrap">
           <Store3DBadge store={store.tag} />
 
           {deal.discount > 0 && (
-            <span className="px-2.5 py-0.5 rounded-lg text-white font-extrabold text-[11px] flex items-center gap-1 glow-pill-primary font-mono tracking-tight shadow-md">
-              {deal.discount >= 40 ? <FireFlame3D size={14} /> : <Flame size={11} className="fill-white" />}
+            <span className="px-2.5 py-0.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold text-xs font-mono tracking-normal shadow-sm">
               {Math.round(deal.discount)}% OFF
             </span>
           )}
@@ -440,24 +426,24 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
               e.stopPropagation();
               onToggleSelect?.(deal.id);
             }}
-            className={`absolute top-2.5 right-2.5 z-30 w-7 h-7 rounded-xl flex items-center justify-center transition-all shadow-lg ${
+            className={`absolute top-3 right-3 z-30 w-7 h-7 rounded-xl flex items-center justify-center transition-all shadow-md ${
               selected
-                ? "bg-primary text-white ring-2 ring-white/50"
-                : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/50"
+                ? "bg-blue-600 text-white ring-2 ring-white/40"
+                : "bg-zinc-900/90 text-white/40 border border-white/20 hover:border-white/40"
             }`}
           >
-            {selected ? <Check size={15} className="stroke-[3]" /> : null}
+            {selected ? <Check size={14} className="stroke-[3]" /> : null}
           </button>
         )}
 
-        {/* Bottom Bar: Category & Affiliate */}
-        <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
-          <span className="text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-lg bg-slate-950/85 text-slate-300 backdrop-blur-md border border-white/10 font-semibold shadow-sm">
+        {/* Bottom Bar: Category Badge */}
+        <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
+          <span className="text-xs px-2.5 py-1 rounded-lg bg-zinc-900/90 text-zinc-300 backdrop-blur-md border border-white/10 font-medium shadow-sm">
             {deal.catEmoji} {deal.category}
           </span>
 
           {deal.affiliate && (
-            <span className="w-5 h-5 rounded-full bg-emerald-500/90 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 border border-emerald-300/40" title="Affiliate Monetized">
+            <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md border border-emerald-400/40" title="Affiliate Monetized">
               <Zap size={11} className="fill-white" />
             </span>
           )}
@@ -465,47 +451,49 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
 
         {/* Status Overlays */}
         {deal.status === "approved" && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-emerald-950/85 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-1 text-emerald-400 font-bold text-xs sm:text-sm">
-              <CheckCircle2 size={36} className="text-emerald-400 drop-shadow-lg" />
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-zinc-950/90 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-1.5 text-emerald-400 font-bold text-sm">
+              <CheckCircle2 size={36} className="text-emerald-400" />
               <span>Broadcasted</span>
             </div>
           </div>
         )}
         {deal.status === "rejected" && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-rose-950/85 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-1 text-rose-400 font-bold text-xs sm:text-sm">
-              <X size={36} className="text-rose-400 drop-shadow-lg" />
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-zinc-950/90 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-1.5 text-rose-400 font-bold text-sm">
+              <X size={36} className="text-rose-400" />
               <span>Skipped</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Deal Details & Content */}
-      <div className="flex flex-col flex-1 p-3.5 sm:p-4 gap-2.5">
-        <h4 className="text-xs sm:text-sm font-bold text-white/95 leading-snug line-clamp-2 min-h-[38px] sm:min-h-[42px]" title={deal.title}>
+      {/* Deal Details & Content (Spacious & Non-Congested) */}
+      <div className="flex flex-col flex-1 p-4 sm:p-5 gap-3">
+        <h4 className="text-sm sm:text-[15px] font-semibold text-zinc-100 leading-relaxed line-clamp-2 min-h-[46px]" title={deal.title}>
           {deal.title}
         </h4>
 
-        {/* Price & Savings Delta */}
-        <div className="flex items-baseline gap-2 flex-wrap">
+        {/* Price & Savings */}
+        <div className="flex items-baseline gap-2.5 flex-wrap">
           {deal.price > 0 ? (
             <>
-              <span className="text-lg sm:text-xl font-extrabold text-emerald-400 font-mono tracking-tight leading-none">
+              <span className="text-xl sm:text-2xl font-bold text-emerald-400 font-mono tracking-normal leading-none">
                 {fmt(deal.price)}
               </span>
               {deal.mrp > 0 && deal.mrp > deal.price && (
-                <span className="text-xs text-slate-400 line-through font-mono">
+                <span className="text-xs text-zinc-400 line-through font-mono">
                   {fmt(deal.mrp)}
                 </span>
               )}
               {savings > 0 && (
-                <SavingsPill3D amount={savings} />
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
+                  Save {fmt(savings)}
+                </span>
               )}
             </>
           ) : (
-            <span className="text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+            <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
               ⚡ Trick / Freebie
             </span>
           )}
@@ -513,38 +501,37 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
 
         {/* Coupon Code Pill */}
         {deal.coupon && (
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
-            <Tag size={10} className="text-amber-400" />
-            <span className="text-[11px] font-bold font-mono text-amber-300">{deal.coupon}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
+            <Tag size={11} className="text-amber-400" />
+            <span className="text-xs font-bold font-mono text-amber-300">{deal.coupon}</span>
           </div>
         )}
 
         {/* Channel & Timestamp */}
-        <div className="flex items-center gap-2 mt-auto pt-2.5 border-t border-white/5 text-slate-400">
-          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-extrabold text-white flex-shrink-0"
-            style={{ background: accent }}>
+        <div className="flex items-center gap-2 mt-auto pt-3 border-t border-white/6 text-zinc-400">
+          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-zinc-800 border border-white/10 flex-shrink-0">
             {deal.channel[0]}
           </div>
-          <span className="text-xs font-medium truncate flex-1 text-slate-300">{deal.channel}</span>
-          <span className="text-[11px] text-slate-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
+          <span className="text-xs font-medium truncate flex-1 text-zinc-300">{deal.channel}</span>
+          <span className="text-xs text-zinc-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
         </div>
 
         {/* Action Buttons */}
         {deal.status === "pending" ? (
           <div className="flex items-center gap-2 pt-1">
             <button onClick={() => onReject(deal.id)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-rose-500/10 border border-rose-500/25 text-rose-400 hover:bg-rose-500 hover:text-white transition-all active:scale-95 shadow-sm cursor-pointer"
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-zinc-800/80 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/8 transition-colors active:scale-95 cursor-pointer"
               title="Skip Deal">
               <X size={16} strokeWidth={2.5} />
             </button>
             <button onClick={() => onEdit(deal)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/10 text-slate-300 hover:bg-white/15 hover:text-white transition-all active:scale-95 shadow-sm cursor-pointer"
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-white/8 transition-colors active:scale-95 cursor-pointer"
               title="Edit & Tune">
               <PenLine size={14} />
             </button>
             <button onClick={() => onApprove(deal.id)}
-              className="flex-1 h-10 rounded-xl text-xs sm:text-sm font-bold text-white flex items-center justify-center gap-1.5 glow-pill-success hover:opacity-95 transition-all active:scale-95 shadow-md cursor-pointer">
-              <Check size={16} strokeWidth={3} /> Approve
+              className="flex-1 h-10 rounded-xl text-xs sm:text-sm font-semibold text-white flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 transition-colors active:scale-95 shadow-sm cursor-pointer">
+              <Check size={16} strokeWidth={2.5} /> Approve
             </button>
           </div>
         ) : (
@@ -942,73 +929,73 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
       {/* Sleek Minimalist Toolbar */}
       <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-b border-white/8 glass-panel flex flex-col gap-2.5 relative z-40 overflow-visible">
         {/* Tier 1: Search + Quick Tools */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <div className="relative flex-1">
-            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search deals by title, brand, store, or channel…"
-              className="w-full pl-9 pr-8 py-2 rounded-xl text-xs text-white bg-slate-950/70 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-primary/50 transition-all shadow-inner" />
+              className="w-full pl-10 pr-8 py-2.5 rounded-xl text-sm text-zinc-100 bg-[#0B0D16] border border-white/10 placeholder:text-zinc-500 focus:outline-none focus:border-zinc-500 transition-colors" />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
-                <X size={12} />
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-200">
+                <X size={14} />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${bulkMode ? "glow-pill-primary text-white border-primary/50" : "bg-white/5 border-white/10 text-slate-400 hover:text-white"}`}>
-              <CheckSquare size={12} /> <span className="hidden sm:inline">{bulkMode ? "Cancel" : "Select Mode"}</span>
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors border ${bulkMode ? "bg-rose-600 text-white border-rose-500 shadow-sm" : "bg-zinc-900 border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800"}`}>
+              <CheckSquare size={13} /> <span className="hidden sm:inline">{bulkMode ? "Cancel" : "Select Mode"}</span>
             </button>
             <button onClick={() => setSendTG(!sendTG)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${sendTG ? "glow-pill-success text-white border-emerald-400/40" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
-              <Send size={11} /> <span className="hidden sm:inline">Telegram</span>
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors border ${sendTG ? "bg-emerald-600 text-white border-emerald-500 shadow-sm" : "bg-zinc-900 border-white/10 text-zinc-400 opacity-60 hover:opacity-100"}`}>
+              <Send size={12} /> <span className="hidden sm:inline">Telegram</span>
             </button>
             <button onClick={() => setSendX(!sendX)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${sendX ? "glow-pill-accent text-white border-indigo-400/40" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors border ${sendX ? "bg-indigo-600 text-white border-indigo-500 shadow-sm" : "bg-zinc-900 border-white/10 text-zinc-400 opacity-60 hover:opacity-100"}`}>
               <span>𝕏</span> <span className="hidden sm:inline">Twitter</span>
             </button>
           </div>
         </div>
 
-        {/* Tier 2: Clean 2-Way Responsive Filter Bar (Desktop: Pending 1st on Left | Mobile: Dropdowns 1st on Top) */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 overflow-visible">
-          {/* Status Tabs: Pending 1st on Left for PC */}
-          <div className="order-2 md:order-1 flex items-center gap-1 p-1 rounded-xl bg-slate-950/80 border border-white/10 overflow-x-auto no-scrollbar flex-shrink-0">
+        {/* Tier 2: Clean 2-Way Responsive Filter Bar */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 overflow-visible">
+          {/* Status Tabs */}
+          <div className="order-2 md:order-1 flex items-center gap-1 p-1 rounded-xl bg-[#0B0D16] border border-white/10 overflow-x-auto no-scrollbar flex-shrink-0">
             <button onClick={() => { setFilter("pending"); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 filter === "pending"
-                  ? "bg-gradient-to-r from-rose-500 to-primary text-white shadow-md shadow-rose-500/30 font-extrabold"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-rose-600 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`}>
-              <span>🔥</span> Pending <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{pending}</span>
+              <span>🔥</span> Pending <span className="px-1.5 py-0.5 rounded-md text-[11px] bg-black/40 text-white font-mono">{pending}</span>
             </button>
 
             <button onClick={() => { setFilter("approved"); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 filter === "approved"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-500/30 font-extrabold"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`}>
-              <span>✅</span> Approved <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{approved}</span>
+              <span>✅</span> Approved <span className="px-1.5 py-0.5 rounded-md text-[11px] bg-black/40 text-white font-mono">{approved}</span>
             </button>
 
             <button onClick={() => { setFilter("rejected"); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 filter === "rejected"
-                  ? "bg-gradient-to-r from-rose-700 to-pink-600 text-white shadow-md shadow-rose-600/30 font-extrabold"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-zinc-800 text-rose-300 shadow-sm border border-white/10"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`}>
-              <span>🗑️</span> Rejected <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{rejected}</span>
+              <span>🗑️</span> Rejected <span className="px-1.5 py-0.5 rounded-md text-[11px] bg-black/40 text-white font-mono">{rejected}</span>
             </button>
 
             <button onClick={() => { setFilter("all"); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors ${
                 filter === "all"
-                  ? "bg-gradient-to-r from-slate-700 to-slate-800 text-white shadow-md font-extrabold"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-zinc-800 text-white shadow-sm border border-white/10"
+                  : "text-zinc-400 hover:text-zinc-200"
               }`}>
-              <span>📦</span> All <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{deals.length}</span>
+              <span>📦</span> All <span className="px-1.5 py-0.5 rounded-md text-[11px] bg-black/40 text-white font-mono">{deals.length}</span>
             </button>
           </div>
 
