@@ -1516,7 +1516,11 @@ function ChannelsView() {
       if (res.ok) {
         const data = await res.json();
         if (data.channels && Array.isArray(data.channels)) {
-          setChs(data.channels);
+          const mapped = data.channels.map((c: any) => ({
+            ...c,
+            name: c.name === c.id ? (toChName(c.id) !== "?" ? toChName(c.id) : c.name) : c.name
+          }));
+          setChs(mapped);
         }
       }
     } catch (err) {
