@@ -15,6 +15,7 @@ export function GlassDropdown({
   options,
   placeholder,
   searchable = false,
+  align = "left",
   className = "",
 }: {
   value: string;
@@ -22,27 +23,32 @@ export function GlassDropdown({
   options: DropdownOption[];
   placeholder?: string;
   searchable?: boolean;
+  align?: "left" | "right";
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find((o) => o.value === value) || {
-    value,
-    label: placeholder || value,
+  const selectedOption = options.find((o) => o.value.toLowerCase() === String(value).toLowerCase()) || {
+    value: String(value),
+    label: placeholder || String(value),
   };
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, [open]);
 
   const filteredOptions = searchable && searchTerm.trim()
@@ -83,10 +89,10 @@ export function GlassDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute left-0 top-full mt-1.5 z-[70] min-w-[190px] max-w-[280px] max-h-72 overflow-hidden flex flex-col rounded-2xl bg-[#090D18]/95 backdrop-blur-2xl border border-white/15 shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-1.5"
+            className={`absolute ${align === "right" ? "right-0" : "left-0"} top-full mt-1.5 z-[100] min-w-[190px] max-w-[280px] max-h-72 overflow-hidden flex flex-col rounded-2xl bg-[#090D18]/98 backdrop-blur-2xl border border-white/15 shadow-[0_16px_40px_rgba(0,0,0,0.9)] p-1.5`}
           >
             {searchable && (
-              <div className="p-1.5 mb-1 border-b border-white/10 relative">
+              <div className="p-1.5 mb-1 border-b border-white/10 relative" onClick={e => e.stopPropagation()}>
                 <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
@@ -104,7 +110,7 @@ export function GlassDropdown({
                 <div className="px-3 py-2 text-[11px] text-slate-500 text-center">No options found</div>
               ) : (
                 filteredOptions.map((opt) => {
-                  const isSelected = opt.value === value;
+                  const isSelected = opt.value.toLowerCase() === String(value).toLowerCase();
                   return (
                     <button
                       key={opt.value}

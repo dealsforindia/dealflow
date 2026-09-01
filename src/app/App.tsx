@@ -970,42 +970,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </div>
         </div>
 
-        {/* Tier 2: Custom Dropdowns Row (First on Mobile) */}
-        <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar py-0.5 flex-nowrap">
-          {/* Custom Glass Dropdowns */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <GlassDropdown
-              value={selectedStore}
-              onChange={val => { setSelectedStore(val); setPage(1); }}
-              options={storeOptions}
-              placeholder="All Stores"
-            />
-
-            <GlassDropdown
-              value={selectedChannel}
-              onChange={val => { setSelectedChannel(val); setPage(1); }}
-              options={channelOptions}
-              placeholder="All Channels"
-              searchable={true}
-            />
-
-            <GlassDropdown
-              value={sort}
-              onChange={val => { setSort(val as any); setPage(1); }}
-              options={sortOptions}
-              placeholder="Sort Order"
-            />
-
-            <GlassDropdown
-              value={String(pageSize)}
-              onChange={val => { setPageSize(Number(val)); setPage(1); }}
-              options={pageSizeOptions}
-              placeholder="Page Size"
-            />
-          </div>
-
-          {/* Status Tabs: Segmented Control */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950/80 border border-white/10 flex-shrink-0">
+        {/* Tier 2: Clean 2-Way Responsive Filter Bar (Desktop: Pending 1st on Left | Mobile: Dropdowns 1st on Top) */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 overflow-visible">
+          {/* Status Tabs: Pending 1st on Left for PC */}
+          <div className="order-2 md:order-1 flex items-center gap-1 p-1 rounded-xl bg-slate-950/80 border border-white/10 overflow-x-auto no-scrollbar flex-shrink-0">
             <button onClick={() => { setFilter("pending"); setPage(1); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 filter === "pending"
@@ -1041,6 +1009,40 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
               }`}>
               <span>📦</span> All <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{deals.length}</span>
             </button>
+          </div>
+
+          {/* Custom Glass Dropdowns: Dropdowns 1st on Mobile, Right side on PC */}
+          <div className="order-1 md:order-2 flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 flex-shrink-0">
+            <GlassDropdown
+              value={selectedStore}
+              onChange={val => { setSelectedStore(val); setPage(1); }}
+              options={storeOptions}
+              placeholder="All Stores"
+            />
+
+            <GlassDropdown
+              value={selectedChannel}
+              onChange={val => { setSelectedChannel(val); setPage(1); }}
+              options={channelOptions}
+              placeholder="All Channels"
+              searchable={true}
+            />
+
+            <GlassDropdown
+              value={sort}
+              onChange={val => { setSort(val as any); setPage(1); }}
+              options={sortOptions}
+              placeholder="Sort Order"
+              align="right"
+            />
+
+            <GlassDropdown
+              value={String(pageSize)}
+              onChange={val => { setPageSize(Number(val)); setPage(1); }}
+              options={pageSizeOptions}
+              placeholder="Page Size"
+              align="right"
+            />
           </div>
         </div>
       </div>
