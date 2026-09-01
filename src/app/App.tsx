@@ -1026,6 +1026,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
             </button>
           </div>
         ) : (
+          <>
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
               <AnimatePresence mode="popLayout">
                 {pagedVisible.map(d => (
