@@ -351,6 +351,7 @@ interface ScrapedProductData {
   category?: string | null;
   price?: number | null;
   mrp?: number | null;
+  affText?: string | null;
 }
 
 async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
@@ -364,6 +365,7 @@ async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
       category: data.category || null,
       price: data.prices?.sale || data.price || null,
       mrp: data.prices?.mrp || data.mrp || null,
+      affText: data.aff_text || data.ai_formatted_text || null,
     };
   } catch { return null; }
 }
@@ -656,7 +658,16 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
       if (result.title) setTitle(result.title);
       if (result.price) setPrice(String(result.price));
       if (result.mrp) setMrp(String(result.mrp));
-      onToast("✨ Product details updated from store!", "success");
+      if (result.affText) {
+        setText(result.affText);
+      } else if (result.title) {
+        const urls = text.match(/https?:\/\/\S+/g) || [];
+        const link = urls.length > 0 ? urls[0] : "";
+        const p = result.price || price || "";
+        const pStr = p ? ` @ ₹${p}` : "";
+        setText(`${result.title}${pStr}\n\n${link}`.trim());
+      }
+      onToast("✨ Product details & post text updated from store!", "success");
     } else {
       onToast("Failed to fetch product details", "error");
     }

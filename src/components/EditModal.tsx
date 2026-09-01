@@ -74,8 +74,29 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
   const doScrapeImage = async () => {
     setScrapingImage(true);
     const result = await apiScrapeImage(deal.id);
-    if (result) { setImgUrl(result); setImgFile(null); onToast("Image scraped", "success"); }
-    else onToast("Image scrape failed", "error");
+    if (result) {
+      if (typeof result === "string") {
+        setImgUrl(result);
+        setImgFile(null);
+      } else {
+        if (result.imgUrl) { setImgUrl(result.imgUrl); setImgFile(null); }
+        if (result.title) setTitle(result.title);
+        if (result.price) setPrice(String(result.price));
+        if (result.mrp) setMrp(String(result.mrp));
+        if (result.affText) {
+          setText(result.affText);
+        } else if (result.title) {
+          const urls = text.match(/https?:\/\/\S+/g) || [];
+          const link = urls.length > 0 ? urls[0] : "";
+          const p = result.price || price || "";
+          const pStr = p ? ` @ ₹${p}` : "";
+          setText(`${result.title}${pStr}\n\n${link}`.trim());
+        }
+      }
+      onToast("✨ Product details & post text updated from store!", "success");
+    } else {
+      onToast("Image scrape failed", "error");
+    }
     setScrapingImage(false);
   };
 
