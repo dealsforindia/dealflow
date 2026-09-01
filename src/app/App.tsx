@@ -10,6 +10,9 @@ import {
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye
 } from "lucide-react";
+import {
+  LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
+} from "./components/LottieAnimations";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DealStatus = "pending" | "approved" | "rejected" | "draft";
@@ -119,8 +122,6 @@ const getStoreBadge = (platforms: string[] = [], url: string = "") => {
   }
   return { name: platforms[0] || "Store", bg: "from-slate-500/20 to-slate-600/20", border: "border-slate-500/30", text: "text-slate-300", tag: "other" };
 };
-
-const extractUrls = (text: string): string[] => [...(text.match(/https?:\/\/[^\s]+/g) || [])];
 
 const aiRewriteSim = (text: string, inst: string): string => {
   const i = inst.toLowerCase();
@@ -271,23 +272,42 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
-// ─── Modern Deal Card ─────────────────────────────────────────────────────────
+// ─── 3D Tilt Card Wrapper ─────────────────────────────────────────────────────
 function DealCard({ deal, onApprove, onReject, onEdit }: {
   deal: Deal; onApprove: (id: string) => void;
   onReject: (id: string) => void; onEdit: (d: Deal) => void;
 }) {
   const [imgErr, setImgErr] = useState(false);
   const [lightbox, setLightbox] = useState(false);
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const accent = catColor[deal.category] || "#64748B";
   const store = getStoreBadge(deal.platforms, deal.affText);
   const savings = deal.mrp && deal.price && deal.mrp > deal.price ? deal.mrp - deal.price : 0;
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    setTilt({
+      rx: ((y - centerY) / centerY) * -5,
+      ry: ((x - centerX) / centerX) * 5,
+    });
+  };
+
+  const handleMouseLeave = () => setTilt({ rx: 0, ry: 0 });
 
   return (
     <motion.div layout
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
       transition={{ type: "spring", damping: 24, stiffness: 300 }}
-      className="glass-card rounded-2xl overflow-hidden flex flex-col group relative"
-      style={{ borderTop: `2px solid ${accent}` }}>
+      onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+      className="glass-card card-3d-tilt rounded-2xl overflow-hidden flex flex-col group relative preserve-3d"
+      style={{
+        borderTop: `2px solid ${accent}`,
+        transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
+      }}>
 
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
@@ -319,15 +339,15 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
           </div>
         )}
 
-        {/* Top Badges: Store + Discount */}
+        {/* Top Badges: Store + 3D Animated Discount Flame */}
         <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 flex-wrap">
           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold bg-gradient-to-r ${store.bg} border ${store.border} ${store.text} backdrop-blur-md shadow-sm`}>
             {store.name}
           </span>
 
           {deal.discount > 0 && (
-            <span className="px-2 py-0.5 rounded-lg text-white font-extrabold text-[10px] flex items-center gap-0.5 glow-pill-primary font-mono tracking-tight shadow-md">
-              <Flame size={10} className="fill-white" />
+            <span className="px-2 py-0.5 rounded-lg text-white font-extrabold text-[10px] flex items-center gap-1 glow-pill-primary font-mono tracking-tight shadow-md">
+              {deal.discount >= 40 ? <FireFlame3D size={13} /> : <Flame size={10} className="fill-white" />}
               {Math.round(deal.discount)}% OFF
             </span>
           )}
@@ -665,7 +685,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* Footer Actions with 3D Rocket */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-slate-950/80">
           <button onClick={onClose}
             className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors">
@@ -677,8 +697,8 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               Save Draft
             </button>
             <button onClick={() => { onSaveApprove(changes); onClose(); }}
-              className="px-6 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-1.5">
-              <Check size={14} strokeWidth={3} /> Save & Broadcast
+              className="px-6 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-2">
+              <RocketBroadcast3D size={16} /> Save & Broadcast
             </button>
           </div>
         </div>
@@ -696,7 +716,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   const [sort, setSort] = useState<"latest" | "discount" | "price_asc" | "price_desc">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedStore, setSelectedStore] = useState<string>("All");
   const [pageSize, setPageSize] = useState<number>(40);
   const [page, setPage] = useState(1);
@@ -707,11 +726,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
     .filter(ch => Boolean(ch) && ch.toLowerCase() !== "unknown" && ch.toLowerCase() !== "dh")
     .sort();
 
-  const uniqueCategories = Array.from(new Set(deals.map(d => d.category))).filter(Boolean).sort();
-
   let visible = deals.filter(d => {
     if (selectedChannel !== "All" && d.channel !== selectedChannel) return false;
-    if (selectedCategory !== "All" && d.category !== selectedCategory) return false;
     if (selectedStore !== "All") {
       const store = getStoreBadge(d.platforms, d.affText);
       if (store.tag !== selectedStore) return false;
@@ -740,7 +756,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   void dark;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden perspective-1000">
       {/* Top Glass Filter Toolbar */}
       <div className="flex-shrink-0 px-6 py-4 border-b border-white/8 glass-panel flex flex-col gap-3">
         {/* Row 1: Search + Broadcast toggles */}
@@ -783,7 +799,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
             ))}
           </div>
 
-          {/* Controls: Channel Dropdown, Store Filter, Sort, Page Size */}
+          {/* Controls: Store, Channel, Sort, Page Size */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Store filter */}
             <div className="relative">
@@ -841,13 +857,12 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
       {/* Deals Card Grid */}
       <div className="flex-1 overflow-y-auto px-6 py-5">
         {visible.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-28 gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl">
-              🔍
-            </div>
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
+            {/* 3D Animated Empty State */}
+            <EmptySearch3D />
             <div>
               <p className="text-sm font-bold text-white">No matching deals found</p>
-              <p className="text-xs text-slate-400 mt-1">Try switching channel or store filters.</p>
+              <p className="text-xs text-slate-400 mt-1">Try switching your channel or store filters.</p>
             </div>
             <button onClick={() => { setSearch(""); setFilter("pending"); setSelectedChannel("All"); setSelectedStore("All"); setPage(1); }}
               className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all">
@@ -1263,7 +1278,7 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
             DealFlow <span className="text-[10px] px-1.5 py-0.2 rounded bg-primary/20 text-primary border border-primary/30 font-mono">2.0</span>
           </h1>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <LiveRadar3D size={14} />
             <span className="text-[9px] text-slate-400 font-semibold tracking-wider uppercase">Live Engine</span>
           </div>
         </div>
@@ -1352,6 +1367,7 @@ export default function App() {
   }, [loadDeals]);
 
   const handleApprove = async (id: string) => {
+    triggerApproveConfetti();
     setDeals(prev => prev.map(d => d.id === id ? { ...d, status: "approved" } : d));
     toast.success("Deal approved & broadcasted!");
     await apiApprove(id);

@@ -158,24 +158,50 @@
 .glass-panel {
   background: rgba(16, 18, 30, 0.72);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+}
+
+/* ─── 3D Perspective & Holographic Tokens ─── */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.translate-z-12 {
+  transform: translateZ(12px);
+}
+
+.translate-z-20 {
+  transform: translateZ(20px);
+}
+
+.card-3d-tilt {
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.card-3d-tilt:hover {
+  box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.7), 0 0 20px -2px rgba(244, 63, 94, 0.15);
 }
 
 .glass-card {
-  background: linear-gradient(180deg, rgba(22, 25, 42, 0.75) 0%, rgba(14, 16, 28, 0.85) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 6px 24px -2px rgba(0, 0, 0, 0.45);
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.6), 0 0 20px -2px rgba(255, 45, 85, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(20, 24, 40, 0.85);
 }
 
 .glow-pill-primary {
