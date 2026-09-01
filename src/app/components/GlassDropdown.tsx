@@ -36,16 +36,18 @@ export function GlassDropdown({
   };
 
   useEffect(() => {
+    if (!open) return;
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    if (open) {
+    const timer = setTimeout(() => {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
-    }
+    }, 20);
     return () => {
+      clearTimeout(timer);
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
@@ -61,10 +63,13 @@ export function GlassDropdown({
       <motion.button
         type="button"
         whileTap={{ scale: 0.96 }}
-        onClick={() => setOpen(!open)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(prev => !prev);
+        }}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
           open
-            ? "bg-slate-900 border-primary/50 text-white shadow-[0_0_15px_rgba(244,63,94,0.2)] ring-1 ring-primary/30"
+            ? "bg-slate-900 border-primary/50 text-white shadow-[0_0_15px_rgba(244,63,94,0.25)] ring-1 ring-primary/40"
             : "bg-slate-950/80 border-white/10 text-slate-200 hover:border-white/20 hover:bg-slate-900/90"
         }`}
       >
@@ -115,7 +120,8 @@ export function GlassDropdown({
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         onChange(opt.value);
                         setOpen(false);
                         setSearchTerm("");

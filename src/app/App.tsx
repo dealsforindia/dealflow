@@ -939,7 +939,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   return (
     <div className="flex-1 flex flex-col overflow-hidden perspective-1000 relative">
       {/* Sleek Minimalist Toolbar */}
-      <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-b border-white/8 glass-panel flex flex-col gap-2.5">
+      <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-b border-white/8 glass-panel flex flex-col gap-2.5 relative z-40 overflow-visible">
         {/* Tier 1: Search + Quick Tools */}
         <div className="flex items-center gap-2.5">
           <div className="relative flex-1">
@@ -1012,7 +1012,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </div>
 
           {/* Custom Glass Dropdowns: Dropdowns 1st on Mobile, Right side on PC */}
-          <div className="order-1 md:order-2 flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 flex-shrink-0">
+          <div className="order-1 md:order-2 flex items-center gap-2 flex-wrap sm:flex-nowrap overflow-visible flex-shrink-0 relative z-50">
             <GlassDropdown
               value={selectedStore}
               onChange={val => { setSelectedStore(val); setPage(1); }}
