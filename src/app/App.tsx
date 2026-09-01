@@ -334,17 +334,17 @@ async function apiScrapeImage(id: string): Promise<string | null> {
 // ─── Image Lightbox ───────────────────────────────────────────────────────────
 function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   return (
-    <motion.div className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-2xl"
-      style={{ background: "rgba(3, 4, 8, 0.92)" }}
+    <motion.div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 backdrop-blur-2xl bg-black/90 cursor-zoom-out"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}>
-      <motion.img src={src} alt="" className="max-w-[92vw] max-h-[86dvh] object-contain rounded-2xl border border-white/10"
-        style={{ boxShadow: "0 0 80px rgba(0,0,0,0.8)" }}
-        initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", damping: 25, stiffness: 320 }}
-        onClick={e => e.stopPropagation()} />
-      <button className="absolute top-5 right-5 w-11 h-11 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/15"
-        onClick={onClose}><X size={18} /></button>
+      <div className="relative max-w-full max-h-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
+        <motion.img src={src} alt=""
+          className="max-w-[88vw] max-h-[78vh] w-auto h-auto object-contain rounded-2xl border border-white/20 shadow-[0_0_80px_rgba(0,0,0,0.9)] bg-slate-950/80"
+          initial={{ scale: 0.88, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", damping: 25, stiffness: 320 }} />
+        <button className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center bg-slate-900/90 text-white hover:bg-white/20 transition-all border border-white/20 shadow-xl"
+          onClick={onClose}><X size={16} /></button>
+      </div>
     </motion.div>
   );
 }
@@ -389,13 +389,13 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
       {/* Image Showcase */}
-      <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-slate-900/90 to-slate-950/95 flex items-center justify-center p-3 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0"
+      <div className="relative w-full h-44 bg-[#090C15] flex items-center justify-center p-2.5 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0"
         onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
         
         {deal.imgUrl && !imgErr ? (
           <>
             <img src={deal.imgUrl} alt={deal.title}
-              className="w-full h-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300 ease-out z-10"
+              className="max-h-full max-w-full w-auto h-auto object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300 ease-out z-10"
               loading="lazy"
               onError={() => setImgErr(true)} />
 
