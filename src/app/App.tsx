@@ -905,106 +905,129 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden perspective-1000 relative">
-      {/* Top Glass Filter Toolbar */}
-      <div className="flex-shrink-0 px-6 py-4 border-b border-white/8 glass-panel flex flex-col gap-3">
-        {/* Row 1: Search + Broadcast toggles + Bulk Mode */}
-        <div className="flex items-center gap-3">
+      {/* Sleek Minimalist Toolbar */}
+      <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-b border-white/8 glass-panel flex flex-col gap-2.5">
+        {/* Tier 1: Search + Quick Tools */}
+        <div className="flex items-center gap-2.5">
           <div className="relative flex-1">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
               placeholder="Search deals by title, brand, store, or channel…"
-              className="w-full pl-10 pr-10 py-2.5 rounded-2xl text-xs font-medium text-white bg-slate-900/80 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-primary/50 transition-all shadow-inner" />
+              className="w-full pl-9 pr-8 py-2 rounded-xl text-xs text-white bg-slate-950/70 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-primary/50 transition-all shadow-inner" />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
-                <X size={13} />
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
+                <X size={12} />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={() => {
-              setBulkMode(!bulkMode);
-              if (bulkMode) setSelectedIds(new Set());
-            }}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border shadow-sm ${bulkMode ? "glow-pill-primary text-white border-primary/40 scale-[1.02]" : "bg-white/5 border-white/10 text-slate-400 hover:text-white"}`}>
-              <CheckSquare size={13} /> {bulkMode ? "Exit Select" : "Select Mode"}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${bulkMode ? "glow-pill-primary text-white border-primary/50" : "bg-white/5 border-white/10 text-slate-400 hover:text-white"}`}>
+              <CheckSquare size={12} /> <span className="hidden sm:inline">{bulkMode ? "Cancel" : "Select Mode"}</span>
             </button>
             <button onClick={() => setSendTG(!sendTG)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border shadow-sm ${sendTG ? "glow-pill-success text-white border-emerald-400/40 scale-[1.02]" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
-              <Send size={12} /> Telegram
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${sendTG ? "glow-pill-success text-white border-emerald-400/40" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
+              <Send size={11} /> <span className="hidden sm:inline">Telegram</span>
             </button>
             <button onClick={() => setSendX(!sendX)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border shadow-sm ${sendX ? "glow-pill-accent text-white border-indigo-400/40 scale-[1.02]" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
-              <span>𝕏</span> Twitter
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${sendX ? "glow-pill-accent text-white border-indigo-400/40" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
+              <span>𝕏</span> <span className="hidden sm:inline">Twitter</span>
             </button>
           </div>
         </div>
 
-        {/* Row 2: Status tabs + Filter Dropdowns + Sorting */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          {/* Status Tabs */}
-          {/* 3D Filter Pills */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-900/90 border border-white/8">
-            <Stat3DPill label="Pending" count={pending} icon="🔥" color="bg-gradient-to-r from-rose-500 to-primary text-white"
-              active={filter === "pending"} onClick={() => { setFilter("pending"); setPage(1); }} />
-            <Stat3DPill label="Approved" count={approved} icon="✅" color="bg-gradient-to-r from-emerald-600 to-teal-500 text-white"
-              active={filter === "approved"} onClick={() => { setFilter("approved"); setPage(1); }} />
-            <Stat3DPill label="Rejected" count={rejected} icon="🗑️" color="bg-gradient-to-r from-rose-600 to-pink-600 text-white"
-              active={filter === "rejected"} onClick={() => { setFilter("rejected"); setPage(1); }} />
-            <Stat3DPill label="All Deals" count={deals.length} icon="📦" color="bg-gradient-to-r from-slate-700 to-slate-800 text-white"
-              active={filter === "all"} onClick={() => { setFilter("all"); setPage(1); }} />
+        {/* Tier 2: Sleek Horizontal Filter Bar */}
+        <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar py-0.5 flex-nowrap">
+          {/* Status Tabs: Segmented Control */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950/80 border border-white/10 flex-shrink-0">
+            <button onClick={() => { setFilter("pending"); setPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filter === "pending"
+                  ? "bg-gradient-to-r from-rose-500 to-primary text-white shadow-md shadow-rose-500/30 font-extrabold"
+                  : "text-slate-400 hover:text-white"
+              }`}>
+              <span>🔥</span> Pending <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{pending}</span>
+            </button>
+
+            <button onClick={() => { setFilter("approved"); setPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filter === "approved"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-500/30 font-extrabold"
+                  : "text-slate-400 hover:text-white"
+              }`}>
+              <span>✅</span> Approved <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{approved}</span>
+            </button>
+
+            <button onClick={() => { setFilter("rejected"); setPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filter === "rejected"
+                  ? "bg-gradient-to-r from-rose-700 to-pink-600 text-white shadow-md shadow-rose-600/30 font-extrabold"
+                  : "text-slate-400 hover:text-white"
+              }`}>
+              <span>🗑️</span> Rejected <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{rejected}</span>
+            </button>
+
+            <button onClick={() => { setFilter("all"); setPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                filter === "all"
+                  ? "bg-gradient-to-r from-slate-700 to-slate-800 text-white shadow-md font-extrabold"
+                  : "text-slate-400 hover:text-white"
+              }`}>
+              <span>📦</span> All <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{deals.length}</span>
+            </button>
           </div>
 
-          {/* Controls: Store, Channel, Sort, Page Size */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Store filter */}
+          {/* Unified Compact Filters */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Store */}
             <div className="relative">
               <select value={selectedStore} onChange={e => { setSelectedStore(e.target.value); setPage(1); }}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-white border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-7">
-                <option value="All">🛍️ All Stores</option>
+                className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-950/80 text-slate-200 border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-6">
+                <option value="All">🛍️ Stores</option>
                 <option value="amazon">Amazon</option>
                 <option value="flipkart">Flipkart</option>
                 <option value="myntra">Myntra</option>
                 <option value="desidime">DesiDime</option>
                 <option value="ajio">AJIO</option>
               </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[9px]">▼</div>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
             </div>
 
-            {/* Channel filter */}
+            {/* Channels */}
             <div className="relative">
               <select value={selectedChannel} onChange={e => { setSelectedChannel(e.target.value); setPage(1); }}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-white border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-7">
-                <option value="All">⚡ All Channels</option>
+                className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-950/80 text-slate-200 border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-6 max-w-[140px] truncate">
+                <option value="All">⚡ Channels</option>
                 {uniqueChannels.map(ch => (
                   <option key={ch} value={ch}>{ch}</option>
                 ))}
               </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[9px]">▼</div>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
             </div>
 
-            {/* Sort Dropdown */}
+            {/* Sort */}
             <div className="relative">
               <select value={sort} onChange={e => { setSort(e.target.value as any); setPage(1); }}
-                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-white border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-7">
-                <option value="latest">⏰ Newest Deals</option>
-                <option value="discount">🔥 Highest % Off</option>
-                <option value="price_asc">🏷️ Price: Low to High</option>
-                <option value="price_desc">💎 Price: High to Low</option>
-              </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[9px]">▼</div>
-            </div>
-
-            {/* Page Size Selector */}
-            <div className="relative">
-              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-slate-900/90 text-slate-300 border border-white/10 focus:outline-none cursor-pointer appearance-none pr-6">
-                <option value={40}>40 / pg</option>
-                <option value={80}>80 / pg</option>
-                <option value={120}>120 / pg</option>
-                <option value={9999}>All</option>
+                className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-950/80 text-slate-200 border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-6">
+                <option value="latest">⏰ Newest</option>
+                <option value="discount">🔥 % Off</option>
+                <option value="price_asc">🏷️ Price: Low</option>
+                <option value="price_desc">💎 Price: High</option>
               </select>
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
+            </div>
+
+            {/* Page size */}
+            <div className="relative">
+              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                className="px-2 py-1.5 rounded-xl text-xs font-mono font-semibold bg-slate-950/80 text-slate-300 border border-white/10 focus:outline-none cursor-pointer appearance-none pr-5">
+                <option value={40}>40</option>
+                <option value={80}>80</option>
+                <option value={120}>120</option>
+                <option value={9999}>All</option>
+              </select>
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
             </div>
           </div>
         </div>
