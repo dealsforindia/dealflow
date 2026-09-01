@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { toast, Toaster } from "sonner";
 import {
@@ -331,21 +332,23 @@ async function apiScrapeImage(id: string): Promise<string | null> {
   } catch { return null; }
 }
 
-// ─── Image Lightbox ───────────────────────────────────────────────────────────
+// ─── Image Lightbox (Mounted via Portal outside 3D Card CSS Transforms) ─────
 function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
-  return (
-    <motion.div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8 backdrop-blur-2xl bg-black/90 cursor-zoom-out"
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <motion.div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-8 backdrop-blur-2xl bg-black/90 cursor-zoom-out"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}>
       <div className="relative max-w-full max-h-full flex items-center justify-center" onClick={e => e.stopPropagation()}>
         <motion.img src={src} alt=""
-          className="max-w-[88vw] max-h-[78vh] w-auto h-auto object-contain rounded-2xl border border-white/20 shadow-[0_0_80px_rgba(0,0,0,0.9)] bg-slate-950/80"
-          initial={{ scale: 0.88, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          className="max-w-[90vw] max-h-[82vh] w-auto h-auto object-contain rounded-2xl border border-white/20 shadow-[0_0_100px_rgba(0,0,0,0.95)] bg-slate-950/90"
+          initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", damping: 25, stiffness: 320 }} />
-        <button className="absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center bg-slate-900/90 text-white hover:bg-white/20 transition-all border border-white/20 shadow-xl"
-          onClick={onClose}><X size={16} /></button>
+        <button className="absolute -top-3 -right-3 sm:top-3 sm:right-3 w-10 h-10 rounded-full flex items-center justify-center bg-slate-900/95 text-white hover:bg-rose-500 transition-all border border-white/20 shadow-2xl z-50 cursor-pointer"
+          onClick={onClose}><X size={18} /></button>
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }
 
