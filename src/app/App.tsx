@@ -234,7 +234,8 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
       return `${API_BASE}/${fname}`;
     })(),
     platforms: d.platforms || [],
-    originalText: d.original_text || "", affText: d.aff_text || d.original_text || "",
+    originalText: d.original_text || "",
+    affText: (d as any).ai_formatted_text || d.aff_text || d.original_text || "",
     verdict: "", signals: [],
   };
 }
