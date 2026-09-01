@@ -342,12 +342,26 @@ async function apiRetryAffiliate(id: string): Promise<string | null> {
   } catch { return null; }
 }
 
-async function apiScrapeImage(id: string): Promise<string | null> {
+interface ScrapedProductData {
+  imgUrl?: string | null;
+  title?: string | null;
+  category?: string | null;
+  price?: number | null;
+  mrp?: number | null;
+}
+
+async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/scrape-image`, { method: "POST" });
     if (!res.ok) return null;
     const data = await res.json();
-    return data.url || data.image_url || null;
+    return {
+      imgUrl: data.img_url || data.url || data.image_url || null,
+      title: data.title || data.prod_name || null,
+      category: data.category || null,
+      price: data.prices?.sale || data.price || null,
+      mrp: data.prices?.mrp || data.mrp || null,
+    };
   } catch { return null; }
 }
 
@@ -634,8 +648,15 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const doScrapeImage = async () => {
     setScrapingImage(true);
     const result = await apiScrapeImage(deal.id);
-    if (result) { setImgUrl(result); setImgFile(null); onToast("Image scraped", "success"); }
-    else onToast("Image scrape failed", "error");
+    if (result) {
+      if (result.imgUrl) { setImgUrl(result.imgUrl); setImgFile(null); }
+      if (result.title) setTitle(result.title);
+      if (result.price) setPrice(String(result.price));
+      if (result.mrp) setMrp(String(result.mrp));
+      onToast("✨ Product details updated from store!", "success");
+    } else {
+      onToast("Failed to fetch product details", "error");
+    }
     setScrapingImage(false);
   };
 
@@ -648,75 +669,77 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl"
-      style={{ background: "rgba(4, 5, 10, 0.85)" }}
+      style={{ background: "rgba(3, 7, 18, 0.85)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       
-      <div className="w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-3xl overflow-hidden glass-panel border border-white/10 shadow-2xl animate-slide-up">
+      <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl shadow-black/80 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center glow-pill-primary">
-              <PenLine size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-primary/30">
+              <PenLine size={15} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Edit & Review Deal</h3>
-              <p className="text-[11px] text-slate-400">{deal.channel} · Source: {deal.channelRaw}</p>
+              <h2 className="text-sm font-bold text-white tracking-wide">Edit &amp; Review Deal</h2>
+              <p className="text-[11px] text-slate-400">
+                {deal.channel ? `${deal.channel} · ` : ""}Source: {deal.channelRaw || "Direct"}
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors border border-white/10">
-            <X size={15} />
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+            <X size={16} />
           </button>
         </div>
 
-        {/* Body Split View */}
-        <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-0">
-          {/* Left Form Controls */}
-          <div className="md:col-span-7 p-5 flex flex-col gap-4 border-r border-white/10">
+        {/* Body Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 flex-1">
+          {/* Left Form */}
+          <div className="md:col-span-7 p-6 flex flex-col gap-4 border-r border-white/10">
+            {/* Title */}
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Product Title</label>
-              <input value={title} onChange={e => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm font-medium bg-slate-900/90 border border-white/10 text-white focus:outline-none focus:border-primary/50 transition-colors" />
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Product Title</label>
+              <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium bg-slate-950/80 border border-white/10 text-white focus:outline-none focus:border-primary/50" />
             </div>
 
+            {/* Price Inputs */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Sale Price (₹)</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Sale Price (₹)</label>
                 <input type="number" value={price} onChange={e => setPrice(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm font-mono font-bold bg-slate-900/90 border border-white/10 text-emerald-400 focus:outline-none focus:border-emerald-500/50" />
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-950/80 border border-white/10 text-emerald-400 focus:outline-none focus:border-emerald-500/50" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">MRP Price (₹)</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">MRP Price (₹)</label>
                 <input type="number" value={mrp} onChange={e => setMrp(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-sm font-mono bg-slate-900/90 border border-white/10 text-slate-400 focus:outline-none focus:border-white/20" />
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium bg-slate-950/80 border border-white/10 text-slate-400 focus:outline-none focus:border-white/20" />
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Affiliate Post Text</label>
-                <span className="text-[10px] font-mono text-slate-500">{text.length} chars</span>
+            {/* Affiliate Text */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Affiliate Post Text</label>
+                <span className="text-[10px] text-slate-400 font-mono">{text.length} chars</span>
               </div>
-              <div className="flex gap-2 mb-2">
-                <input value={instruction} onChange={e => setInstruction(e.target.value)}
+
+              {/* AI Prompt Input */}
+              <div className="relative">
+                <input type="text" placeholder='AI command: "make concise", "add emojis", "highlight 60% discount"...'
+                  value={instruction} onChange={e => setInstruction(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && doRewrite()}
-                  placeholder='AI command: "make concise", "add emojis", "highlight 60% discount"…'
-                  className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-900/90 border border-white/10 text-white focus:outline-none focus:border-primary/50" />
+                  className="w-full pl-3.5 pr-20 py-2 rounded-xl text-xs bg-slate-950/80 border border-white/10 text-slate-300 placeholder:text-slate-400 focus:outline-none focus:border-primary/50" />
                 <button onClick={doRewrite} disabled={rewriting || !instruction.trim()}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold glow-pill-primary text-white disabled:opacity-40">
-                  {rewriting ? <span className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" /> : <Sparkles size={12} />}
-                  Tune
+                  className="absolute right-1 top-1 bottom-1 px-2.5 rounded-lg text-[10px] font-bold bg-primary text-slate-950 hover:bg-primary-hover disabled:opacity-40 transition-colors flex items-center gap-1">
+                  <Sparkles size={10} /> {rewriting ? "..." : "Tune"}
                 </button>
-                {prev && (
-                  <button onClick={() => { setText(prev); setPrev(null); }}
-                    className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-400">
-                    <Undo2 size={12} /> Undo
-                  </button>
-                )}
               </div>
-              <div className="flex flex-wrap gap-1.5 mb-2">
+
+              {/* Quick AI Presets */}
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {[
-                  { label: "🔥 Add Urgency", prompt: "add urgency and countdown emojis" },
-                  { label: "✂️ Make Concise", prompt: "make it very concise and clean under 4 lines" },
+                  { label: "🔥 Add Urgency", prompt: "make it punchy with limited time urgency" },
+                  { label: "✂️ Make Concise", prompt: "make it short, clean and highly readable" },
                   { label: "💰 Highlight Discount", prompt: "highlight the highest discount and price drop" },
                   { label: "✨ Add Clean Formatting", prompt: "clean emojis and format bullet points" }
                 ].map(chip => (
@@ -728,7 +751,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </div>
 
               <textarea value={text} onChange={e => setText(e.target.value)} rows={6}
-                className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-900/90 border border-white/10 text-slate-200 focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
+                className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-950/80 border border-white/10 text-slate-200 focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
             </div>
 
             <div className="flex items-center gap-2 pt-1">
@@ -738,7 +761,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </button>
               <button onClick={doScrapeImage} disabled={scrapingImage}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors">
-                <Globe size={12} /> Scrape Media
+                <Globe size={12} /> {scrapingImage ? "Fetching..." : "Fetch Store Details"}
               </button>
               <button onClick={doRetryAffiliate} disabled={retryingAffiliate}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors">
