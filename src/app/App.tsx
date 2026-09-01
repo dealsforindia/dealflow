@@ -397,7 +397,7 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
       {/* Image Showcase */}
-      <div className="relative w-full h-44 bg-[#090C15] flex items-center justify-center p-2.5 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0"
+      <div className="relative w-full h-44 sm:h-52 bg-[#090C15] flex items-center justify-center p-3 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0"
         onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
         
         {deal.imgUrl && !imgErr ? (
@@ -408,15 +408,15 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
               onError={() => setImgErr(true)} />
 
             <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-[2px]">
-              <div className="p-2 rounded-xl bg-black/60 text-white/90 border border-white/10 shadow-lg">
-                <Maximize2 size={15} />
+              <div className="p-2.5 rounded-xl bg-black/70 text-white/90 border border-white/15 shadow-xl">
+                <Maximize2 size={16} />
               </div>
             </div>
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-500">
-            <span className="text-4xl filter drop-shadow-md">{deal.catEmoji}</span>
-            <span className="text-[10px] font-medium tracking-wider uppercase opacity-60">No Media</span>
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-slate-500">
+            <span className="text-4xl sm:text-5xl filter drop-shadow-md">{deal.catEmoji}</span>
+            <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase opacity-60">No Media</span>
           </div>
         )}
 
@@ -425,8 +425,8 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
           <Store3DBadge store={store.tag} />
 
           {deal.discount > 0 && (
-            <span className="px-2 py-0.5 rounded-lg text-white font-extrabold text-[10px] flex items-center gap-1 glow-pill-primary font-mono tracking-tight shadow-md">
-              {deal.discount >= 40 ? <FireFlame3D size={13} /> : <Flame size={10} className="fill-white" />}
+            <span className="px-2.5 py-0.5 rounded-lg text-white font-extrabold text-[11px] flex items-center gap-1 glow-pill-primary font-mono tracking-tight shadow-md">
+              {deal.discount >= 40 ? <FireFlame3D size={14} /> : <Flame size={11} className="fill-white" />}
               {Math.round(deal.discount)}% OFF
             </span>
           )}
@@ -440,25 +440,25 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
               e.stopPropagation();
               onToggleSelect?.(deal.id);
             }}
-            className={`absolute top-2.5 right-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${
+            className={`absolute top-2.5 right-2.5 z-30 w-7 h-7 rounded-xl flex items-center justify-center transition-all shadow-lg ${
               selected
                 ? "bg-primary text-white ring-2 ring-white/50"
-                : "bg-slate-900/80 text-white/40 border border-white/20 hover:border-white/50"
+                : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/50"
             }`}
           >
-            {selected ? <Check size={14} className="stroke-[3]" /> : null}
+            {selected ? <Check size={15} className="stroke-[3]" /> : null}
           </button>
         )}
 
         {/* Bottom Bar: Category & Affiliate */}
         <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
-          <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-950/80 text-slate-300 backdrop-blur-md border border-white/10 font-semibold shadow-sm">
+          <span className="text-[10px] sm:text-[11px] px-2.5 py-0.5 rounded-lg bg-slate-950/85 text-slate-300 backdrop-blur-md border border-white/10 font-semibold shadow-sm">
             {deal.catEmoji} {deal.category}
           </span>
 
           {deal.affiliate && (
             <span className="w-5 h-5 rounded-full bg-emerald-500/90 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 border border-emerald-300/40" title="Affiliate Monetized">
-              <Zap size={10} className="fill-white" />
+              <Zap size={11} className="fill-white" />
             </span>
           )}
         </div>
@@ -466,16 +466,16 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
         {/* Status Overlays */}
         {deal.status === "approved" && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-emerald-950/85 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-1 text-emerald-400 font-bold text-xs">
-              <CheckCircle2 size={32} className="text-emerald-400 drop-shadow-lg" />
+            <div className="flex flex-col items-center gap-1 text-emerald-400 font-bold text-xs sm:text-sm">
+              <CheckCircle2 size={36} className="text-emerald-400 drop-shadow-lg" />
               <span>Broadcasted</span>
             </div>
           </div>
         )}
         {deal.status === "rejected" && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-rose-950/85 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-1 text-rose-400 font-bold text-xs">
-              <X size={32} className="text-rose-400 drop-shadow-lg" />
+            <div className="flex flex-col items-center gap-1 text-rose-400 font-bold text-xs sm:text-sm">
+              <X size={36} className="text-rose-400 drop-shadow-lg" />
               <span>Skipped</span>
             </div>
           </div>
@@ -483,8 +483,8 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
       </div>
 
       {/* Deal Details & Content */}
-      <div className="flex flex-col flex-1 p-3.5 gap-2">
-        <h4 className="text-[13px] font-semibold text-white/95 leading-snug line-clamp-2 min-h-[36px]" title={deal.title}>
+      <div className="flex flex-col flex-1 p-3.5 sm:p-4 gap-2.5">
+        <h4 className="text-xs sm:text-sm font-bold text-white/95 leading-snug line-clamp-2 min-h-[38px] sm:min-h-[42px]" title={deal.title}>
           {deal.title}
         </h4>
 
@@ -492,11 +492,11 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
         <div className="flex items-baseline gap-2 flex-wrap">
           {deal.price > 0 ? (
             <>
-              <span className="text-[18px] font-extrabold text-emerald-400 font-mono tracking-tight leading-none">
+              <span className="text-lg sm:text-xl font-extrabold text-emerald-400 font-mono tracking-tight leading-none">
                 {fmt(deal.price)}
               </span>
               {deal.mrp > 0 && deal.mrp > deal.price && (
-                <span className="text-[11px] text-slate-400 line-through font-mono">
+                <span className="text-xs text-slate-400 line-through font-mono">
                   {fmt(deal.mrp)}
                 </span>
               )}
@@ -513,38 +513,38 @@ function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect,
 
         {/* Coupon Code Pill */}
         {deal.coupon && (
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
-            <Tag size={9} className="text-amber-400" />
-            <span className="text-[10px] font-bold font-mono text-amber-300">{deal.coupon}</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
+            <Tag size={10} className="text-amber-400" />
+            <span className="text-[11px] font-bold font-mono text-amber-300">{deal.coupon}</span>
           </div>
         )}
 
         {/* Channel & Timestamp */}
-        <div className="flex items-center gap-2 mt-auto pt-2 border-t border-white/5 text-slate-400">
-          <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold text-white flex-shrink-0"
+        <div className="flex items-center gap-2 mt-auto pt-2.5 border-t border-white/5 text-slate-400">
+          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-extrabold text-white flex-shrink-0"
             style={{ background: accent }}>
             {deal.channel[0]}
           </div>
-          <span className="text-[11px] font-medium truncate flex-1 text-slate-300">{deal.channel}</span>
-          <span className="text-[10px] text-slate-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
+          <span className="text-xs font-medium truncate flex-1 text-slate-300">{deal.channel}</span>
+          <span className="text-[11px] text-slate-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
         </div>
 
         {/* Action Buttons */}
         {deal.status === "pending" ? (
-          <div className="flex items-center gap-1.5 pt-1">
+          <div className="flex items-center gap-2 pt-1">
             <button onClick={() => onReject(deal.id)}
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-rose-500/10 border border-rose-500/25 text-rose-400 hover:bg-rose-500 hover:text-white transition-all active:scale-95 shadow-sm"
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-rose-500/10 border border-rose-500/25 text-rose-400 hover:bg-rose-500 hover:text-white transition-all active:scale-95 shadow-sm cursor-pointer"
               title="Skip Deal">
-              <X size={15} strokeWidth={2.5} />
+              <X size={16} strokeWidth={2.5} />
             </button>
             <button onClick={() => onEdit(deal)}
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/10 text-slate-300 hover:bg-white/15 hover:text-white transition-all active:scale-95 shadow-sm"
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/10 text-slate-300 hover:bg-white/15 hover:text-white transition-all active:scale-95 shadow-sm cursor-pointer"
               title="Edit & Tune">
-              <PenLine size={13} />
+              <PenLine size={14} />
             </button>
             <button onClick={() => onApprove(deal.id)}
-              className="flex-1 h-9 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 glow-pill-success hover:opacity-95 transition-all active:scale-95 shadow-md">
-              <Check size={14} strokeWidth={3} /> Approve
+              className="flex-1 h-10 rounded-xl text-xs sm:text-sm font-bold text-white flex items-center justify-center gap-1.5 glow-pill-success hover:opacity-95 transition-all active:scale-95 shadow-md cursor-pointer">
+              <Check size={16} strokeWidth={3} /> Approve
             </button>
           </div>
         ) : (
@@ -1065,7 +1065,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </div>
         ) : (
           <>
-            <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
               <AnimatePresence mode="popLayout">
                 {pagedVisible.map(d => (
                   <DealCard
