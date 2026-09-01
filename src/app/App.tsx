@@ -334,18 +334,14 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
       {/* Image Showcase */}
-      <div className="relative overflow-hidden cursor-zoom-in flex-shrink-0 bg-slate-950/70"
-        style={{ height: 168 }}
+      <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-slate-900/90 to-slate-950/95 flex items-center justify-center p-3 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0"
         onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
         
         {deal.imgUrl && !imgErr ? (
           <>
             <img src={deal.imgUrl} alt={deal.title}
-              className="absolute inset-0 w-full h-full object-contain p-3 z-10 group-hover:scale-105 transition-transform duration-300 ease-out"
-              onError={() => setImgErr(true)} />
-
-            <img src={deal.imgUrl} alt="" aria-hidden
-              className="absolute inset-0 w-full h-full object-cover opacity-15 filter blur-xl saturate-200 z-0"
+              className="w-full h-full object-contain filter drop-shadow-md group-hover:scale-105 transition-transform duration-300 ease-out z-10"
+              loading="lazy"
               onError={() => setImgErr(true)} />
 
             <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-[2px]">
@@ -676,8 +672,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 
                 <div className="tg-bubble">
                   {previewSrc && (
-                    <img src={previewSrc} alt="" className="w-full rounded-lg mb-2.5 max-h-44 object-cover border border-white/10"
-                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    <div className="w-full rounded-lg mb-2.5 max-h-52 overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center">
+                      <img src={previewSrc} alt="" className="max-h-52 w-full object-contain p-1"
+                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    </div>
                   )}
                   <div className="tg-bubble-text">
                     {text.split("\n").slice(0, 14).join("\n")
