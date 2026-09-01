@@ -1279,6 +1279,38 @@ function ChannelsView() {
     }
   };
 
+  const [updatingChannel, setUpdatingChannel] = useState<{ id: string; name: string; link: string } | null>(null);
+  const [newLinkInput, setNewLinkInput] = useState("");
+  const [isUpdatingLink, setIsUpdatingLink] = useState(false);
+
+  const handleUpdateLink = async () => {
+    if (!updatingChannel || !newLinkInput.trim()) return;
+    setIsUpdatingLink(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/channels/update-link`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          old_channel: updatingChannel.id,
+          new_channel: newLinkInput.trim(),
+          name: updatingChannel.name,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Invite link updated for ${updatingChannel.name}!`);
+        setUpdatingChannel(null);
+        setNewLinkInput("");
+        fetchChannels();
+      } else {
+        toast.error("Failed to update channel link");
+      }
+    } catch {
+      toast.error("Network error updating channel link");
+    } finally {
+      setIsUpdatingLink(false);
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 max-w-5xl mx-auto flex flex-col gap-5">
       {/* Live Worker Telemetry & Engine Health Deck */}
@@ -1402,6 +1434,21 @@ function ChannelsView() {
                         <PenLine size={10} className="opacity-0 group-hover:opacity-100 text-slate-400" />
                       </p>
                       <p className="text-[10px] text-slate-500 font-mono truncate mt-0.5">{ch.id}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {ch.health === "dead_link" || ch.health === "dead_link_warning" ? (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1">
+                            <AlertTriangle size={10} /> Link Inactive / Dead
+                          </span>
+                        ) : (ch.deals_24h ?? 0) > 0 ? (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Stream
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-medium px-2 py-0.5 rounded-md bg-white/5 text-slate-400 border border-white/10">
+                            0 deals in 24h
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1422,6 +1469,16 @@ function ChannelsView() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* Update Invite Link */}
+                  <button onClick={() => {
+                    setUpdatingChannel({ id: ch.id, name: ch.name || ch.id, link: ch.invite_link || ch.id });
+                    setNewLinkInput("");
+                  }}
+                    className="w-7 h-7 rounded-xl flex items-center justify-center bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all shadow-sm"
+                    title="Update Invite Link / Reconnect">
+                    <LinkIcon size={12} />
+                  </button>
+
                   {/* Auto-Post Toggle */}
                   <button onClick={() => toggleAutoApprove(ch.id, ch.auto_approve)}
                     className={`text-[10px] font-bold px-3 py-1 rounded-lg border transition-all flex items-center gap-1.5 ${ch.auto_approve ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm" : "bg-white/5 text-slate-500 border-white/10"}`}>
@@ -1442,6 +1499,69 @@ function ChannelsView() {
           ))
         )}
       </div>
+
+      {/* Update Channel Invite Link Modal */}
+      {updatingChannel && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md p-6 rounded-3xl glass-panel border border-cyan-500/30 shadow-2xl flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                  <LinkIcon size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Update Invite Link</h3>
+                  <p className="text-[11px] text-slate-400">{updatingChannel.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setUpdatingChannel(null)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center">
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1.5 text-xs">
+              <label className="text-[11px] font-semibold text-slate-400">Current Channel / ID</label>
+              <div className="px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-white/10 font-mono text-[11px] text-slate-400 truncate">
+                {updatingChannel.id}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 text-xs">
+              <label className="text-[11px] font-semibold text-cyan-300">New Invite Link or Username</label>
+              <input
+                autoFocus
+                value={newLinkInput}
+                onChange={e => setNewLinkInput(e.target.value)}
+                placeholder="https://t.me/+... or @username"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-cyan-500/40 text-white placeholder:text-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-400"
+                onKeyDown={e => e.key === "Enter" && handleUpdateLink()}
+              />
+              <p className="text-[10px] text-slate-500">
+                Paste the new active Telegram invite link if the old link expired or was revoked.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setUpdatingChannel(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleUpdateLink}
+                disabled={isUpdatingLink || !newLinkInput.trim()}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-lg shadow-cyan-500/20"
+              >
+                <RefreshCw size={12} className={isUpdatingLink ? "animate-spin" : ""} />
+                {isUpdatingLink ? "Updating..." : "Update & Reconnect"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
