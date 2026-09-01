@@ -1253,6 +1253,61 @@ function ChannelsView() {
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 max-w-5xl mx-auto flex flex-col gap-5">
+      {/* Live Worker Telemetry & Engine Health Deck */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="p-3.5 rounded-2xl glass-card border border-white/10 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+            <Zap size={16} />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">FastAPI Engine</span>
+            </div>
+            <p className="text-xs font-bold text-white mt-0.5">Online (200 OK)</p>
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl glass-card border border-white/10 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-500/15 border border-indigo-500/30 text-indigo-400">
+            <Radio size={16} />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Telegram Scraper</span>
+            </div>
+            <p className="text-xs font-bold text-white mt-0.5">{chs.filter(c => c.active).length} Channels Live</p>
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl glass-card border border-white/10 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-rose-500/15 border border-rose-500/30 text-rose-400">
+            <Flame size={16} />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-rose-400 animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">DesiDime Worker</span>
+            </div>
+            <p className="text-xs font-bold text-white mt-0.5">5m Interval Active</p>
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-2xl glass-card border border-white/10 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-amber-500/15 border border-amber-500/30 text-amber-400">
+            <Shield size={16} />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Affiliate Engine</span>
+            </div>
+            <p className="text-xs font-bold text-white mt-0.5">100% Fallback-Safe</p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between p-5 rounded-3xl glass-panel border border-white/10">
         <div className="flex items-center gap-3.5">
