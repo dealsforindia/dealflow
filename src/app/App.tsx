@@ -9,7 +9,6 @@ import {
   ToggleLeft, ToggleRight, Maximize2, Copy, Link, FileText,
   AlertTriangle, Globe,
 } from "lucide-react";
-const pendingDealsRaw: any = {};
 const dailyStatsRaw: any = { date: new Date().toISOString().split('T')[0], posted: 0, checked: 0, dup: 0, unrated: 0, affiliate: 0, auto_posted: 0, scam: 0 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -82,11 +81,40 @@ const ID_TO_URL: Record<string, string> = {
 
 
 const toChName = (ch?: string): string => {
-  if (!ch) return "";
-  if (ch.includes("bblbblp") || ch === "-1003871814319") return "redditcontent";
-  const clean = ch.replace(/^@/, "");
-  if (/^-?\d+$/.test(clean)) return clean;
-  return clean.split(/[_-]/).map(w => w[0]?.toUpperCase() + w.slice(1)).join(" ");
+  if (!ch) return "Unknown";
+  // Hardcoded mappings based on Invite Links and Usernames
+  if (ch.includes("emveIa6ZQxoxYjAx")) return "Crazy Deals";
+  if (ch.includes("2260825044")) return "DealDrops";
+  if (ch.includes("@dealspoint") || ch.includes("dealspoint")) return "Dealspoint Premium";
+  if (ch.includes("OylJYrIZZHBzZjRi")) return "DealzTrendz";
+  if (ch.includes("fJX-MfWphoNiZDU6")) return "DealzTrendz 2.0";
+  if (ch.includes("@DesidimeHot") || ch.includes("DesidimeHot")) return "DesiDime Handpicked Deals";
+  if (ch.includes("@realearnkaro") || ch.includes("realearnkaro")) return "EarnKaro";
+  if (ch.includes("@extrape") || ch.includes("extrape")) return "ExtraPe";
+  if (ch.includes("tcoZTg6IJWl4ZDRI")) return "FET (Deals & Tricks)";
+  if (ch.includes("RBY7rxcO-T03MjE1")) return "Fitness Finds & Shoppers Quest";
+  if (ch.includes("VNdMZqz_NhKNNXvsG")) return "Free Earning Tech";
+  if (ch.includes("JpTJUwE9J9A1NDE1")) return "Genie All Deals";
+  if (ch.includes("1268661047")) return "Genie Loot";
+  if (ch.includes("Io8OVRMkSVs5YzI1")) return "Genie Tricks";
+  if (ch.includes("@glamhauldiaries") || ch.includes("glamhauldiaries")) return "Glam Haul Diaries";
+  if (ch.includes("@lootdealsapp") || ch.includes("lootdealsapp")) return "Loot Deals App";
+  if (ch.includes("LQ3FigpMfmAyZGJl")) return "Offerzone 2.0";
+  if (ch.includes("kTvbwlaPbH1mM2E1")) return "Offerzone 3.0";
+  if (ch.includes("FpXKV70NYNY0NzQ1")) return "Offerzone 4.0";
+  if (ch.includes("uV5wcTkUWJEwM2Y1")) return "Offerzone Tricks";
+  if (ch.includes("4DwYqc6QfXhiMTI1")) return "OZ Loot Bazaar";
+  if (ch.includes("3516611384")) return "OZ Loot Deals";
+  if (ch.includes("@bblbblp") || ch.includes("bblbblp")) return "Private Deals From All";
+  if (ch.includes("958_Lu4ZoUxM2E9")) return "Shopping Genie";
+  if (ch.includes("@Technicalsheikh") || ch.includes("Technicalsheikh")) return "Technical Sheikh";
+  if (ch.includes("@Loot_DealsX") || ch.includes("Loot_DealsX")) return "Trending Loot Deals";
+  if (ch.includes("offerzone")) return "Offerzone";
+  if (ch.includes("desidime")) return "Desidime";
+  if (ch.includes("shopquest")) return "Shoppers Quest";
+  
+  if (ch.startsWith("@")) return ch.substring(1);
+  return ch;
 };
 const buildVerdict = (s: number | null) =>
   s === null ? "Unrated — review manually." :
@@ -104,49 +132,14 @@ const buildSignals = (d: RawDeal): string[] => {
   return s.slice(0, 4);
 };
 
-const rawEntries = Object.entries(pendingDealsRaw as Record<string, RawDeal>)
-  .sort(([, a], [, b]) => {
-    if (a.score === null && b.score === null) return b.ts - a.ts;
-    if (a.score === null) return 1;
-    if (b.score === null) return -1;
-    return b.score - a.score;
-  }).slice(0, 120);
-
 const API_BASE = import.meta.env.PROD ? "https://api.rudranil.me" : (import.meta.env.VITE_API_URL || "");
 
-const BASE_DEALS: Deal[] = rawEntries.map(([id, d]) => ({
-  id, title: d.prod_name || "Untitled Deal",
-  price: d.prices.sale ?? 0, mrp: d.prices.mrp ?? 0,
-  discount: d.prices.discount_pct ?? 0,
-  category: extractCatName(d.category), catEmoji: extractEmoji(d.category),
-  channel: toChName(d.source_channel), channelRaw: d.source_channel,
-  score: d.score !== null ? Math.min(100, Math.round(d.score * 10)) : 0,
-  ts: Math.floor(d.ts), status: "pending",
-  dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
-  affiliate: d.affiliate_applied, coupon: d.coupon,
-  imgUrl: (() => {
-    // Prefer img_url if it's a full http URL
-    if ((d as RawDeal & { img_url?: string }).img_url?.startsWith("http")) return (d as RawDeal & { img_url?: string }).img_url!;
-    if (!d.img_path) return "";
-    // img_path may be full server path like /home/.../images/foo.jpg or relative like images/foo.jpg
-    const fname = d.img_path.includes("/images/") ? "images/" + d.img_path.split("/images/").pop() : d.img_path;
-    return `${API_BASE}/${fname}`;
-  })(), platforms: d.platforms || [],
-  originalText: d.original_text || "", affText: d.aff_text || d.original_text || "",
-  verdict: buildVerdict(d.score), signals: buildSignals(d),
-}));
+const BASE_DEALS: Deal[] = [];
 
 const DAILY_STATS = dailyStatsRaw as {
   date: string; posted: number; checked: number; dup: number;
   unrated: number; affiliate: number; auto_posted: number; scam: number;
 };
-
-const rawChannels = Array.from(new Set(rawEntries.map(([, d]) => d.source_channel)));
-const CHANNELS = rawChannels.slice(0, 12).map((ch, i) => {
-  const colors = ["#E63946","#06b6d4","#10b981","#f59e0b","#ec4899","#f97316","#7C3AED","#6ee7b7","#fbbf24","#fb7185","#67e8f9","#86efac"];
-  const count = rawEntries.filter(([, d]) => d.source_channel === ch).length;
-  return { id: ch, name: toChName(ch), active: true, deals: count, color: colors[i % colors.length] };
-});
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 const fmt = (p: number) => p === 0 ? "Free" : `₹${p.toLocaleString("en-IN")}`;
@@ -1085,17 +1078,21 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"score" | "latest" | "discount">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
+  const [selectedChannel, setSelectedChannel] = useState<string>("All");
   const [page, setPage] = useState(1);
   const [sendTG, setSendTG] = useState(true);
   const [sendWA, setSendWA] = useState(false);
   const [sendX, setSendX] = useState(false);
   const PAGE_SIZE = 100;
+  
+  const uniqueChannels = Array.from(new Set(deals.map(d => d.channel))).filter(Boolean).sort();
 
   let visible = deals.filter(d => {
+    if (selectedChannel !== "All" && d.channel !== selectedChannel) return false;
     if (filter !== "all" && d.status !== filter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
-      return d.title.toLowerCase().includes(q) || d.channel.toLowerCase().includes(q);
+      return d.title.toLowerCase().includes(q) || (d.channel || "").toLowerCase().includes(q);
     }
     return true;
   });
@@ -1141,6 +1138,18 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
             ))}
           </div>
           <div className="flex gap-1 ml-auto">
+            {/* Channel filter dropdown */}
+            <select
+              value={selectedChannel}
+              onChange={(e) => { setSelectedChannel(e.target.value); setPage(1); }}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-secondary text-foreground border border-border focus:outline-none appearance-none cursor-pointer"
+              style={{ paddingRight: "1.5rem" }}
+            >
+              <option value="All">All Channels</option>
+              {uniqueChannels.map(ch => (
+                <option key={ch} value={ch}>{ch}</option>
+              ))}
+            </select>
             {([["score", TrendingUp, "Top"], ["latest", Clock, "New"], ["discount", Flame, "Hot"]] as const).map(([v, Icon, label]) => (
               <button key={v} onClick={() => { setSort(v); setPage(1); }}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
@@ -1971,8 +1980,10 @@ export default function App() {
   const loadDeals = useCallback(async () => {
     try {
       const apiDeals = await fetchPendingDeals();
-      if (apiDeals.length > 0) setDeals(apiDeals);
-    } catch { /* keep BASE_DEALS fallback */ }
+      setDeals(apiDeals);
+    } catch (e) { 
+      console.error("Failed to load deals", e);
+    }
   }, []);
 
   useEffect(() => {
