@@ -353,9 +353,10 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
 }
 
 // ─── 3D Tilt Card Wrapper ─────────────────────────────────────────────────────
-function DealCard({ deal, onApprove, onReject, onEdit }: {
+function DealCard({ deal, onApprove, onReject, onEdit, selected, onToggleSelect, bulkMode }: {
   deal: Deal; onApprove: (id: string) => void;
   onReject: (id: string) => void; onEdit: (d: Deal) => void;
+  selected?: boolean; onToggleSelect?: (id: string) => void; bulkMode?: boolean;
 }) {
   const [imgErr, setImgErr] = useState(false);
   const [lightbox, setLightbox] = useState(false);
@@ -383,7 +384,9 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
       transition={{ type: "spring", damping: 24, stiffness: 300 }}
       onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
-      className="glass-card card-3d-tilt rounded-2xl overflow-hidden flex flex-col group relative preserve-3d"
+      className={`glass-card card-3d-tilt rounded-2xl overflow-hidden flex flex-col group relative preserve-3d transition-all ${
+        selected ? "ring-2 ring-primary bg-primary/10 shadow-[0_0_25px_rgba(244,63,94,0.3)]" : ""
+      }`}
       style={{
         borderTop: `2px solid ${accent}`,
         transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
@@ -426,6 +429,24 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
             </span>
           )}
         </div>
+
+        {/* Top Right: Selection Checkbox */}
+        {(bulkMode || selected) && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect?.(deal.id);
+            }}
+            className={`absolute top-2.5 right-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${
+              selected
+                ? "bg-primary text-white ring-2 ring-white/50"
+                : "bg-slate-900/80 text-white/40 border border-white/20 hover:border-white/50"
+            }`}
+          >
+            {selected ? <Check size={14} className="stroke-[3]" /> : null}
+          </button>
+        )}
 
         {/* Bottom Bar: Category & Affiliate */}
         <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
@@ -837,6 +858,41 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   else if (sort === "price_asc") visible = [...visible].sort((a, b) => (a.price || 999999) - (b.price || 999999));
   else if (sort === "price_desc") visible = [...visible].sort((a, b) => (b.price || 0) - (a.price || 0));
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMode, setBulkMode] = useState(false);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkApprove = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    toast.success(`Approving & broadcasting ${ids.length} deals...`);
+    triggerApproveConfetti();
+    for (const id of ids) {
+      onApprove(id);
+    }
+    setSelectedIds(new Set());
+    setBulkMode(false);
+  };
+
+  const handleBulkReject = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    toast.info(`Skipping ${ids.length} deals...`);
+    for (const id of ids) {
+      onReject(id);
+    }
+    setSelectedIds(new Set());
+    setBulkMode(false);
+  };
+
   const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pagedVisible = pageSize === 9999 ? visible : visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -848,10 +904,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   void dark;
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden perspective-1000">
+    <div className="flex-1 flex flex-col overflow-hidden perspective-1000 relative">
       {/* Top Glass Filter Toolbar */}
       <div className="flex-shrink-0 px-6 py-4 border-b border-white/8 glass-panel flex flex-col gap-3">
-        {/* Row 1: Search + Broadcast toggles */}
+        {/* Row 1: Search + Broadcast toggles + Bulk Mode */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -865,7 +921,14 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => {
+              setBulkMode(!bulkMode);
+              if (bulkMode) setSelectedIds(new Set());
+            }}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border shadow-sm ${bulkMode ? "glow-pill-primary text-white border-primary/40 scale-[1.02]" : "bg-white/5 border-white/10 text-slate-400 hover:text-white"}`}>
+              <CheckSquare size={13} /> {bulkMode ? "Exit Select" : "Select Mode"}
+            </button>
             <button onClick={() => setSendTG(!sendTG)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border shadow-sm ${sendTG ? "glow-pill-success text-white border-emerald-400/40 scale-[1.02]" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
               <Send size={12} /> Telegram
@@ -963,11 +1026,19 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
             </button>
           </div>
         ) : (
-          <>
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
               <AnimatePresence mode="popLayout">
                 {pagedVisible.map(d => (
-                  <DealCard key={d.id} deal={d} onApprove={onApprove} onReject={onReject} onEdit={onEdit} />
+                  <DealCard
+                    key={d.id}
+                    deal={d}
+                    onApprove={onApprove}
+                    onReject={onReject}
+                    onEdit={onEdit}
+                    selected={selectedIds.has(d.id)}
+                    onToggleSelect={toggleSelect}
+                    bulkMode={bulkMode}
+                  />
                 ))}
               </AnimatePresence>
             </div>
@@ -996,6 +1067,34 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </>
         )}
       </div>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl glass-panel border border-primary/40 shadow-2xl bg-slate-950/95 animate-slide-up backdrop-blur-2xl">
+          <span className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            {selectedIds.size} Selected
+          </span>
+          <button
+            onClick={handleBulkApprove}
+            className="flex items-center gap-1.5 text-xs font-black px-4 py-2 rounded-xl text-white glow-pill-success hover:opacity-95 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer"
+          >
+            <CheckCircle2 size={14} /> Approve All ({selectedIds.size})
+          </button>
+          <button
+            onClick={handleBulkReject}
+            className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl text-rose-300 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 active:scale-95 cursor-pointer"
+          >
+            <Trash2 size={13} /> Skip All
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-xs text-slate-400 hover:text-white px-2 cursor-pointer font-medium"
+          >
+            Clear
+          </button>
+        </div>
+      )}
     </div>
   );
 }
