@@ -209,12 +209,29 @@ const aiRewriteSim = (text: string, inst: string): string => {
   return text + "\n\n⚡ Limited time — grab it fast!";
 };
 
+function cleanDealTitle(prodName?: string, originalText?: string): string {
+  let title = (prodName || "").trim();
+  if (!title || /^(?:👉|🔥|⚡|🛍️|🔗|▶️)?\s*https?:\/\//i.test(title) || /https?:\/\/|www\.|\.com|\.in|\.ltd|\.cc|\.co|\.it|\.club|t\.me\//i.test(title)) {
+    if (originalText) {
+      const lines = originalText.split("\n").map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        const clean = line.replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡*_\-•—\s"']+/g, "").trim();
+        if (clean.length > 3 && !/https?:\/\/|www\.|\.com|\.in|\.ltd|\.cc|\.co|\.it|\.club|t\.me\//i.test(clean) && !/^(?:loot|price|deal|buy|grab|offer|shop|mrp|rs\.?|inr|₹|use\s+code)[\s:@₹\d,/\-%]+$/i.test(clean)) {
+          return clean.slice(0, 120);
+        }
+      }
+    }
+    return "Loot Deal";
+  }
+  return title.replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡*_\-•—\s"']+/g, "").trim() || "Loot Deal";
+}
+
 // ─── API Helpers ──────────────────────────────────────────────────────────────
 function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): Deal {
   const id = d.fp_hash ?? fallbackId ?? String(d.ts);
   const { name: catName, emoji: catEmoji } = parseCategory(d.category);
   return {
-    id, title: d.prod_name || "Untitled Deal",
+    id, title: cleanDealTitle(d.prod_name, d.original_text),
     price: d.prices.sale ?? 0, mrp: d.prices.mrp ?? 0,
     discount: d.prices.discount_pct ?? 0,
     category: catName, catEmoji: catEmoji,
