@@ -123,7 +123,26 @@ const getStoreBadge = (platforms: string[] = [], url: string = "") => {
   if (platStr.includes("desidime")) {
     return { name: "DesiDime", bg: "from-red-500/20 to-orange-500/20", border: "border-red-500/30", text: "text-red-300", tag: "desidime" };
   }
-  return { name: platforms[0] || "Store", bg: "from-slate-500/20 to-slate-600/20", border: "border-slate-500/30", text: "text-slate-300", tag: "other" };
+  if (platStr.includes("zepto")) {
+    return { name: "Zepto", bg: "from-purple-500/20 to-pink-500/20", border: "border-purple-500/30", text: "text-purple-300", tag: "zepto" };
+  }
+  if (platStr.includes("blinkit") || platStr.includes("grofers")) {
+    return { name: "Blinkit", bg: "from-yellow-500/20 to-amber-500/20", border: "border-yellow-500/30", text: "text-yellow-300", tag: "blinkit" };
+  }
+  if (platStr.includes("swiggy") || platStr.includes("instamart")) {
+    return { name: "Swiggy", bg: "from-orange-500/20 to-amber-500/20", border: "border-orange-500/30", text: "text-orange-300", tag: "swiggy" };
+  }
+  if (platStr.includes("zomato")) {
+    return { name: "Zomato", bg: "from-red-500/20 to-rose-500/20", border: "border-red-500/30", text: "text-red-300", tag: "zomato" };
+  }
+  if (platStr.includes("nykaa")) {
+    return { name: "Nykaa", bg: "from-pink-500/20 to-rose-500/20", border: "border-pink-500/30", text: "text-pink-300", tag: "nykaa" };
+  }
+  if (platStr.includes("boat")) {
+    return { name: "boAt", bg: "from-red-500/20 to-slate-500/20", border: "border-red-500/30", text: "text-red-300", tag: "boat" };
+  }
+  const cleanName = (platforms[0] && platforms[0].toLowerCase() !== "other") ? platforms[0] : "Loot Deal";
+  return { name: cleanName, bg: "from-slate-500/20 to-slate-600/20", border: "border-slate-500/30", text: "text-slate-300", tag: cleanName };
 };
 
 const aiRewriteSim = (text: string, inst: string): string => {
