@@ -1516,10 +1516,15 @@ function ChannelsView() {
       if (res.ok) {
         const data = await res.json();
         if (data.channels && Array.isArray(data.channels)) {
-          const mapped = data.channels.map((c: any) => ({
-            ...c,
-            name: c.name === c.id ? (toChName(c.id) !== "?" ? toChName(c.id) : c.name) : c.name
-          }));
+          const mapped = data.channels.map((c: any) => {
+            const fallback = c.id.split('/').pop() || c.id;
+            const pretty = toChName(c.id);
+            // If pretty name is different from the raw fallback, it means we found a nice alias!
+            return {
+              ...c,
+              name: (pretty !== fallback && pretty !== "Unknown") ? pretty : c.name
+            };
+          });
           setChs(mapped);
         }
       }
