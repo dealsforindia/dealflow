@@ -29,7 +29,25 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
   const [title, setTitle] = useState(deal.title);
   const [price, setPrice] = useState(String(deal.price || ""));
   const [mrp, setMrp] = useState(String(deal.mrp || ""));
-  const [text, setText] = useState(deal.affText);
+  
+  const getInitialText = () => {
+    const raw = (deal.affText || "").trim();
+    const t = (deal.title || "").trim();
+    if (!raw) return t ? `${t} @ ₹${deal.price || ""}` : "";
+    
+    const isMissingTitle = t && t.length > 4 && !raw.toLowerCase().includes(t.toLowerCase().slice(0, 10));
+    const isOnlyPriceLink = /^\s*[*_]*₹?\d+[*_]*\s*(?:\|\s*[*_]*Regular[^\n]*\n*)?https?:\/\/\S+/i.test(raw) || /^\s*\d{2,6}\s+https?:\/\/\S+/i.test(raw);
+    
+    if (isMissingTitle || isOnlyPriceLink) {
+      const urls = raw.match(/https?:\/\/\S+/g) || [];
+      const link = urls.length > 0 ? urls[0] : "";
+      const p = deal.price ? ` @ ₹${deal.price}` : "";
+      return `${t}${p}\n\n${link}`.trim();
+    }
+    return raw;
+  };
+
+  const [text, setText] = useState(getInitialText());
   const [imgUrl, setImgUrl] = useState(deal.imgUrl);
   const [imgFile, setImgFile] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
