@@ -164,17 +164,20 @@ const catColor: Record<string, string> = {
 
 const getStoreBadge = (platforms: string[] = [], url: string = "") => {
   const platStr = (platforms.join(" ") + " " + url).toLowerCase();
-  if (platStr.includes("amazon") || platStr.includes("amzn")) {
+  if (platStr.includes("amazon") || platStr.includes("amzn") || platStr.includes("amazn")) {
     return { name: "Amazon", bg: "from-amber-500/20 to-orange-500/20", border: "border-amber-500/30", text: "text-amber-300", tag: "amazon" };
   }
-  if (platStr.includes("flipkart") || platStr.includes("fkrt")) {
+  if (platStr.includes("flipkart") || platStr.includes("fkrt") || platStr.includes("fpkrt") || platStr.includes("shopsy")) {
     return { name: "Flipkart", bg: "from-blue-500/20 to-cyan-500/20", border: "border-blue-500/30", text: "text-blue-300", tag: "flipkart" };
   }
-  if (platStr.includes("myntra")) {
+  if (platStr.includes("myntra") || platStr.includes("myntr")) {
     return { name: "Myntra", bg: "from-pink-500/20 to-rose-500/20", border: "border-pink-500/30", text: "text-pink-300", tag: "myntra" };
   }
-  if (platStr.includes("ajio")) {
+  if (platStr.includes("ajio") || platStr.includes("ajiio")) {
     return { name: "AJIO", bg: "from-purple-500/20 to-indigo-500/20", border: "border-purple-500/30", text: "text-purple-300", tag: "ajio" };
+  }
+  if (platStr.includes("udemy")) {
+    return { name: "Udemy", bg: "from-purple-500/20 to-indigo-500/20", border: "border-purple-500/30", text: "text-purple-300", tag: "udemy" };
   }
   if (platStr.includes("desidime")) {
     return { name: "DesiDime", bg: "from-red-500/20 to-orange-500/20", border: "border-red-500/30", text: "text-red-300", tag: "desidime" };
