@@ -44,9 +44,63 @@ interface AppSettings {
   outputChannel: string; stylePrompt: string; dedupHours: number; maxPerCycle: number;
 }
 
-// ─── Data & Channel Mappings ──────────────────────────────────────────────────
-const extractEmoji = (cat: string) => cat.split(" ")[0] || "🛍️";
-const extractCatName = (cat: string) => cat.split(" ").slice(1).join(" ") || cat;
+// ─── Data & Category Parsing (Zero-Duplication) ──────────────────────────────
+const EMOJI_REGEX = /^\p{Extended_Pictographic}/u;
+
+const CATEGORY_MAP: Record<string, { name: string; emoji: string }> = {
+  electronics: { name: "Electronics", emoji: "📱" },
+  phones: { name: "Electronics", emoji: "📱" },
+  audio: { name: "Audio & Accessories", emoji: "🎧" },
+  headphone: { name: "Audio & Accessories", emoji: "🎧" },
+  fashion: { name: "Fashion & Apparel", emoji: "👗" },
+  clothing: { name: "Fashion & Apparel", emoji: "👗" },
+  footwear: { name: "Footwear", emoji: "👟" },
+  shoes: { name: "Footwear", emoji: "👟" },
+  beauty: { name: "Beauty & Personal", emoji: "💄" },
+  grocery: { name: "Grocery & Essentials", emoji: "🛒" },
+  food: { name: "Food & Dining", emoji: "🍕" },
+  home: { name: "Home & Kitchen", emoji: "🏠" },
+  kitchen: { name: "Home & Kitchen", emoji: "🍳" },
+  gaming: { name: "Gaming", emoji: "🎮" },
+  books: { name: "Books", emoji: "📚" },
+  travel: { name: "Travel", emoji: "✈️" },
+  banking: { name: "Banking & Cards", emoji: "💳" },
+  credit: { name: "Banking & Cards", emoji: "💳" },
+  trick: { name: "Loot & Freebie", emoji: "⚡" },
+  freebie: { name: "Loot & Freebie", emoji: "🎁" },
+};
+
+function parseCategory(raw?: string): { name: string; emoji: string } {
+  if (!raw) return { name: "General", emoji: "🛍️" };
+  const str = raw.trim();
+  const lower = str.toLowerCase();
+
+  // If starts with emoji
+  if (EMOJI_REGEX.test(str)) {
+    const parts = str.split(/\s+/);
+    const emoji = parts[0];
+    const rest = parts.slice(1).join(" ").trim();
+    if (rest && !rest.toLowerCase().includes("flipkart") && !rest.toLowerCase().includes("amazon")) {
+      return { name: rest, emoji };
+    }
+  }
+
+  // Check known categories
+  for (const [k, v] of Object.entries(CATEGORY_MAP)) {
+    if (lower.includes(k)) return { name: v.name, emoji: v.emoji };
+  }
+
+  // If raw string is just repeated store names like 'Flipkart Flipkart' or 'Amazon Amazon'
+  if (lower.includes("flipkart") || lower.includes("amazon") || lower.includes("myntra") || lower.includes("desidime") || lower.includes("other")) {
+    return { name: "General", emoji: "🛍️" };
+  }
+
+  // De-duplicate words
+  const words = str.split(/\s+/).filter(Boolean);
+  const unique = Array.from(new Set(words));
+  const cleanName = unique.join(" ") || "General";
+  return { name: cleanName, emoji: "🛍️" };
+}
 
 const toChName = (ch?: string): string => {
   if (!ch) return "Unknown";
@@ -156,11 +210,12 @@ const aiRewriteSim = (text: string, inst: string): string => {
 // ─── API Helpers ──────────────────────────────────────────────────────────────
 function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): Deal {
   const id = d.fp_hash ?? fallbackId ?? String(d.ts);
+  const { name: catName, emoji: catEmoji } = parseCategory(d.category);
   return {
     id, title: d.prod_name || "Untitled Deal",
     price: d.prices.sale ?? 0, mrp: d.prices.mrp ?? 0,
     discount: d.prices.discount_pct ?? 0,
-    category: extractCatName(d.category), catEmoji: extractEmoji(d.category),
+    category: catName, catEmoji: catEmoji,
     channel: toChName(d.source_channel), channelRaw: d.source_channel,
     score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
     ts: Math.floor(d.ts), status: "pending" as DealStatus,
