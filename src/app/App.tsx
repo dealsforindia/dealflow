@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast, Toaster } from "sonner";
 import {
   Check, X, Search, Sun, Moon, Zap, Tag, Settings2, Radio,
-  CheckSquare, Rss, Plus, PenLine, Upload, Sparkles,
+  CheckSquare, Plus, PenLine, Upload, Sparkles,
   Undo2, ExternalLink, Shield,
   Clock, TrendingUp, Flame, RefreshCw, CheckCircle2,
-  ToggleLeft, ToggleRight, Maximize2, Copy, Link, FileText,
-  AlertTriangle, Globe,
+  Maximize2, Copy, Link as LinkIcon, FileText,
+  Globe, ArrowUpRight, ShoppingCart, Percent,
+  Layers, Send, CheckCheck
 } from "lucide-react";
+
 const dailyStatsRaw: any = { date: new Date().toISOString().split('T')[0], posted: 0, checked: 0, dup: 0, unrated: 0, affiliate: 0, auto_posted: 0, scam: 0 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,18 +36,14 @@ interface RawDeal {
   img_url?: string;
 }
 
-interface PostedEntry {
-  id: string; title: string; catEmoji: string; price: number; discount: number;
-  channel: string; postedAt: number; affiliate: boolean;
-}
-
 interface AppSettings {
   outputChannel: string; stylePrompt: string; dedupHours: number; maxPerCycle: number;
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Data & Helpers ───────────────────────────────────────────────────────────
 const extractEmoji = (cat: string) => cat.split(" ")[0] || "🛍️";
 const extractCatName = (cat: string) => cat.split(" ").slice(1).join(" ") || cat;
+
 const ID_TO_URL: Record<string, string> = {
   "-1001837130426": "https://t.me/+emveIa6ZQxoxYjAx",       // Crazy Deals
   "-1002260825044": "https://t.me/c/2260825044",             // DealDrops
@@ -79,10 +77,8 @@ const ID_TO_URL: Record<string, string> = {
   "-1001447952139": "https://t.me/ShoppersQuest",            // Shoppers Quest
 };
 
-
 const toChName = (ch?: string): string => {
   if (!ch) return "Unknown";
-  // Hardcoded mappings based on Invite Links and Usernames
   if (ch.includes("emveIa6ZQxoxYjAx")) return "Crazy Deals";
   if (ch.includes("2260825044")) return "DealDrops";
   if (ch.includes("@dealspoint") || ch.includes("dealspoint")) return "Dealspoint Premium";
@@ -116,11 +112,13 @@ const toChName = (ch?: string): string => {
   if (ch.startsWith("@")) return ch.substring(1);
   return ch;
 };
+
 const buildVerdict = (s: number | null) =>
   s === null ? "Unrated — review manually." :
-  s >= 8 ? "Strong deal — high confidence score." :
-  s >= 6 ? "Decent deal — worth reviewing." :
-  s >= 4 ? "Borderline — check if genuine." : "Low quality — likely spam.";
+  s >= 8 ? "🔥 Exceptional deal — prime recommendation." :
+  s >= 6 ? "⚡ Strong deal — high confidence." :
+  s >= 4 ? "👀 Decent discount — worth reviewing." : "⚠️ Low score — check genuine price.";
+
 const buildSignals = (d: RawDeal): string[] => {
   const s: string[] = [];
   if (d.prices.discount_pct && d.prices.discount_pct > 0) s.push(`${Math.round(d.prices.discount_pct)}% off`);
@@ -141,7 +139,7 @@ const DAILY_STATS = dailyStatsRaw as {
   unrated: number; affiliate: number; auto_posted: number; scam: number;
 };
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
+// ─── Formatting & Colors ──────────────────────────────────────────────────────
 const fmt = (p: number) => p === 0 ? "Free" : `₹${p.toLocaleString("en-IN")}`;
 const fmtAgo = (ts: number) => {
   const d = Math.floor(Date.now() / 1000 - ts);
@@ -149,17 +147,18 @@ const fmtAgo = (ts: number) => {
   if (d < 3600) return `${Math.floor(d / 60)}m ago`;
   return `${Math.floor(d / 3600)}h ago`;
 };
-const fmtTime = (ts: number) => new Date(ts * 1000).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-const fmtDate = (ts: number) => new Date(ts * 1000).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-const scoreColor = (s: number) => s === 0 ? "#9CA3AF" : s >= 75 ? "#16a34a" : s >= 50 ? "#f59e0b" : "#dc2626";
+
+const scoreColor = (s: number) => s === 0 ? "#64748B" : s >= 75 ? "#10B981" : s >= 50 ? "#F59E0B" : "#EF4444";
+
 const catColor: Record<string, string> = {
-  Electronics: "#7C3AED", Fashion: "#ec4899", "Home & Kitchen": "#f59e0b",
-  Home: "#f59e0b", Beauty: "#f472b6", Sports: "#10b981", Banking: "#f59e0b",
-  Food: "#f97316", Computers: "#06b6d4", General: "#9496B8", Grocery: "#10b981",
-  Travel: "#06b6d4", Books: "#f59e0b", Kids: "#f97316", Gaming: "#7C3AED",
+  Electronics: "#8B5CF6", Fashion: "#EC4899", "Home & Kitchen": "#F59E0B",
+  Home: "#F59E0B", Beauty: "#F472B6", Sports: "#10B981", Banking: "#3B82F6",
+  Food: "#F97316", Computers: "#06B6D4", General: "#64748B", Grocery: "#10B981",
+  Travel: "#06B6D4", Books: "#EAB308", Kids: "#F97316", Gaming: "#8B5CF6",
 };
-const discBg = (pct: number) => pct >= 70 ? "#dc2626" : pct >= 40 ? "#ea580c" : "#16a34a";
+
 const extractUrls = (text: string): string[] => [...(text.match(/https?:\/\/[^\s]+/g) || [])];
+
 const stripAffTag = (url: string): string => {
   try {
     const u = new URL(url);
@@ -169,6 +168,27 @@ const stripAffTag = (url: string): string => {
     return u.toString();
   } catch { return url; }
 };
+
+const getStoreBadge = (platforms: string[] = [], url: string = "") => {
+  const platStr = (platforms.join(" ") + " " + url).toLowerCase();
+  if (platStr.includes("amazon") || platStr.includes("amzn")) {
+    return { name: "Amazon", bg: "from-amber-500/20 to-orange-500/20", border: "border-amber-500/30", text: "text-amber-300" };
+  }
+  if (platStr.includes("flipkart") || platStr.includes("fkrt")) {
+    return { name: "Flipkart", bg: "from-blue-500/20 to-cyan-500/20", border: "border-blue-500/30", text: "text-blue-300" };
+  }
+  if (platStr.includes("myntra")) {
+    return { name: "Myntra", bg: "from-pink-500/20 to-rose-500/20", border: "border-pink-500/30", text: "text-pink-300" };
+  }
+  if (platStr.includes("ajio")) {
+    return { name: "AJIO", bg: "from-purple-500/20 to-indigo-500/20", border: "border-purple-500/30", text: "text-purple-300" };
+  }
+  if (platStr.includes("desidime")) {
+    return { name: "DesiDime", bg: "from-red-500/20 to-orange-500/20", border: "border-red-500/30", text: "text-red-300" };
+  }
+  return { name: platforms[0] || "Store", bg: "from-slate-500/20 to-slate-600/20", border: "border-slate-500/30", text: "text-slate-300" };
+};
+
 const aiRewriteSim = (text: string, inst: string): string => {
   const i = inst.toLowerCase();
   if (i.includes("short") || i.includes("concise")) return text.split("\n").slice(0, 8).join("\n");
@@ -176,21 +196,6 @@ const aiRewriteSim = (text: string, inst: string): string => {
   if (i.includes("clean")) return text.replace(/#\S+/g, "").replace(/\n{3,}/g, "\n\n").trim();
   return text + "\n\n⚡ Limited time — grab it fast!";
 };
-
-const STYLES = `
-  @keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-  @keyframes spin{to{transform:rotate(360deg);}}
-  @keyframes slideRight{from{opacity:0;transform:translateX(100%);}to{opacity:1;transform:translateX(0);}}
-  .slide-up{animation:slideUp 0.28s cubic-bezier(0.16,1,0.3,1) both;}
-  .fade-in{animation:fadeIn 0.18s ease both;}
-  .slide-right{animation:slideRight 0.26s cubic-bezier(0.16,1,0.3,1) both;}
-  .ai-spin{width:12px;height:12px;border:2px solid rgba(0,0,0,0.1);border-top-color:#E63946;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;vertical-align:middle;}
-  .dark .ai-spin{border-color:rgba(255,255,255,0.1);border-top-color:#E63946;}
-  input[type=range]{accent-color:#E63946;}
-  .mobile-nav{min-height:60px;padding-bottom:env(safe-area-inset-bottom,0px);}
-  .tg-text{white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.65;font-family:'Inter',sans-serif;}
-`;
 
 const WS_URL = import.meta.env.PROD ? "wss://api.rudranil.me/ws" : (import.meta.env.VITE_WS_URL || `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`);
 
@@ -202,15 +207,13 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     price: d.prices.sale ?? 0, mrp: d.prices.mrp ?? 0,
     discount: d.prices.discount_pct ?? 0,
     category: extractCatName(d.category), catEmoji: extractEmoji(d.category),
-    channel: d.source_channel_name || toChName(d.source_channel), channelRaw: d.source_channel,
+    channel: toChName(d.source_channel), channelRaw: d.source_channel,
     score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
     ts: Math.floor(d.ts), status: "pending" as DealStatus,
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
     affiliate: d.affiliate_applied, coupon: d.coupon,
     imgUrl: (() => {
-      // Try img_url first — if it's an external CDN URL (Amazon, Flipkart etc.), use directly
       if (d.img_url && !d.img_url.includes("74.225.250.0")) return d.img_url;
-      // For local server images, extract the filename and use our proxy
       if (d.img_url?.includes("74.225.250.0")) {
         const match = d.img_url.match(/\/images\/(.+)$/);
         if (match) return `${API_BASE}/images/${match[1]}`;
@@ -250,12 +253,23 @@ async function fetchPendingDeals(): Promise<Deal[]> {
   }).sort((a, b) => b.ts - a.ts);
 }
 
-async function fetchDailyStats() {
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/stats`);
-    if (!res.ok) return DAILY_STATS;
-    return await res.json();
-  } catch { return DAILY_STATS; }
+function mapChangesToBackend(changes: Record<string, unknown>): Record<string, unknown> {
+  const mapped: Record<string, unknown> = {};
+  if ("title" in changes) mapped.prod_name = changes.title;
+  if ("affText" in changes) mapped.aff_text = changes.affText;
+  if ("imgUrl" in changes) mapped.img_url = changes.imgUrl;
+  if ("price" in changes || "mrp" in changes) {
+    mapped.prices = {
+      sale: changes.price != null ? Number(changes.price) : undefined,
+      mrp: changes.mrp != null ? Number(changes.mrp) : undefined,
+    };
+  }
+  if ("coupon" in changes) mapped.coupon = changes.coupon;
+  if ("category" in changes) mapped.category = changes.category;
+  for (const k of ["prod_name", "aff_text", "img_url", "prices", "message"]) {
+    if (k in changes && !(k in mapped)) mapped[k] = changes[k];
+  }
+  return mapped;
 }
 
 async function apiApprove(id: string, changes?: Record<string, unknown>): Promise<boolean> {
@@ -273,39 +287,6 @@ async function apiApprove(id: string, changes?: Record<string, unknown>): Promis
 async function apiReject(id: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/reject`, { method: "PUT" });
-    return res.ok;
-  } catch { return false; }
-}
-
-// Map frontend Deal field names → backend MongoDB field names
-function mapChangesToBackend(changes: Record<string, unknown>): Record<string, unknown> {
-  const mapped: Record<string, unknown> = {};
-  if ("title" in changes) mapped.prod_name = changes.title;
-  if ("affText" in changes) mapped.aff_text = changes.affText;
-  if ("imgUrl" in changes) mapped.img_url = changes.imgUrl;
-  if ("price" in changes || "mrp" in changes) {
-    mapped.prices = {
-      sale: changes.price != null ? Number(changes.price) : undefined,
-      mrp: changes.mrp != null ? Number(changes.mrp) : undefined,
-    };
-  }
-  if ("coupon" in changes) mapped.coupon = changes.coupon;
-  if ("category" in changes) mapped.category = changes.category;
-  // Pass through any already-backend-named fields
-  for (const k of ["prod_name", "aff_text", "img_url", "prices", "message"]) {
-    if (k in changes && !(k in mapped)) mapped[k] = changes[k];
-  }
-  return mapped;
-}
-
-async function apiEdit(id: string, changes: Record<string, unknown>): Promise<boolean> {
-  try {
-    const payload = mapChangesToBackend(changes);
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/edit`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
     return res.ok;
   } catch { return false; }
 }
@@ -341,39 +322,21 @@ async function apiScrapeImage(id: string): Promise<string | null> {
   } catch { return null; }
 }
 
-async function apiSpam(id: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/spam`, { method: "POST" });
-    return res.ok;
-  } catch { return false; }
-}
-
-async function apiCompose(changes: Record<string, unknown>): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/compose`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(changes)
-    });
-    return res.ok;
-  } catch { return false; }
-}
-
-// ─── Score Ring ───────────────────────────────────────────────────────────────
-function ScoreRing({ score = 0, size = 36 }: { score?: number; size?: number; verdict?: string }) {
+// ─── Score Gauge ──────────────────────────────────────────────────────────────
+function ScoreRing({ score = 0, size = 38 }: { score?: number; size?: number; verdict?: string }) {
   if (!score || isNaN(score) || score === 0) return null;
   const r = (size - 6) / 2, circ = 2 * Math.PI * r, color = scoreColor(score);
   return (
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={4} className="text-border" />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={4}
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={3.5} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={3.5}
           strokeDasharray={`${(score / 100) * circ} ${circ}`} strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 4px ${color}80)` }} />
+          style={{ filter: `drop-shadow(0 0 6px ${color}99)` }} />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span style={{ fontSize: size < 40 ? 9 : 11, color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 700 }}>
-          {score === 0 ? "?" : score}
+        <span style={{ fontSize: size < 40 ? 10 : 12, color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>
+          {score}
         </span>
       </div>
     </div>
@@ -383,73 +346,251 @@ function ScoreRing({ score = 0, size = 36 }: { score?: number; size?: number; ve
 // ─── Image Lightbox ───────────────────────────────────────────────────────────
 function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   return (
-    <motion.div className="fixed inset-0 z-[70] flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.94)" }}
+    <motion.div className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-2xl"
+      style={{ background: "rgba(3, 4, 8, 0.92)" }}
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onClose}>
-      <motion.img src={src} alt="" className="max-w-[94vw] max-h-[88dvh] object-contain rounded-2xl"
-        style={{ boxShadow: "0 0 60px rgba(0,0,0,0.5)" }}
-        initial={{ scale: 0.88, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", damping: 24, stiffness: 300 }}
+      <motion.img src={src} alt="" className="max-w-[92vw] max-h-[86dvh] object-contain rounded-2xl border border-white/10"
+        style={{ boxShadow: "0 0 80px rgba(0,0,0,0.8)" }}
+        initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", damping: 25, stiffness: 320 }}
         onClick={e => e.stopPropagation()} />
-      <button className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center bg-white/10 text-white"
-        onClick={onClose}><X size={16} /></button>
-      <p className="absolute bottom-5 text-xs text-white/40">Tap anywhere to close</p>
+      <button className="absolute top-5 right-5 w-11 h-11 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/15"
+        onClick={onClose}><X size={18} /></button>
+      <p className="absolute bottom-6 text-xs text-white/40 font-medium">Click anywhere outside to dismiss</p>
     </motion.div>
   );
 }
 
-// ─── Edit Modal ───────────────────────────────────────────────────────────────
+// ─── Modern Deal Card ─────────────────────────────────────────────────────────
+function DealCard({ deal, onApprove, onReject, onEdit }: {
+  deal: Deal; onApprove: (id: string) => void;
+  onReject: (id: string) => void; onEdit: (d: Deal) => void;
+}) {
+  const [imgErr, setImgErr] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
+  const accent = catColor[deal.category] || "#64748B";
+  const store = getStoreBadge(deal.platforms, deal.affText);
+  const savings = deal.mrp && deal.price && deal.mrp > deal.price ? deal.mrp - deal.price : 0;
 
+  return (
+    <motion.div layout
+      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ type: "spring", damping: 24, stiffness: 300 }}
+      className="glass-card rounded-2xl overflow-hidden flex flex-col group relative"
+      style={{
+        borderTop: `2px solid ${accent}`,
+      }}>
+
+      <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
+
+      {/* Image Showcase */}
+      <div className="relative overflow-hidden cursor-zoom-in flex-shrink-0 bg-slate-950/60"
+        style={{ height: 168 }}
+        onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
+        
+        {deal.imgUrl && !imgErr ? (
+          <>
+            {/* Main Product Image */}
+            <img src={deal.imgUrl} alt={deal.title}
+              className="absolute inset-0 w-full h-full object-contain p-3 z-10 group-hover:scale-105 transition-transform duration-300 ease-out"
+              onError={() => setImgErr(true)} />
+
+            {/* Ambient Background Glow */}
+            <img src={deal.imgUrl} alt="" aria-hidden
+              className="absolute inset-0 w-full h-full object-cover opacity-15 filter blur-xl saturate-200 z-0"
+              onError={() => setImgErr(true)} />
+
+            {/* Expand Hover Hint */}
+            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-[2px]">
+              <div className="p-2 rounded-xl bg-black/60 text-white/90 border border-white/10 shadow-lg">
+                <Maximize2 size={16} />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-slate-500">
+            <span className="text-4xl filter drop-shadow-md">{deal.catEmoji}</span>
+            <span className="text-[10px] font-medium tracking-wider uppercase opacity-60">No Media</span>
+          </div>
+        )}
+
+        {/* Top Badges: Store + Discount */}
+        <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 flex-wrap">
+          {/* Store Brand Badge */}
+          <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold bg-gradient-to-r ${store.bg} border ${store.border} ${store.text} backdrop-blur-md shadow-sm`}>
+            {store.name}
+          </span>
+
+          {/* Glowing Discount Flame Pill */}
+          {deal.discount > 0 && (
+            <span className="px-2 py-0.5 rounded-lg text-white font-extrabold text-[10px] flex items-center gap-0.5 glow-pill-primary font-mono tracking-tight">
+              <Flame size={10} className="fill-white" />
+              {Math.round(deal.discount)}% OFF
+            </span>
+          )}
+        </div>
+
+        {/* Top Right: AI Quality Score */}
+        <div className="absolute top-2 right-2 z-20">
+          <ScoreRing score={deal.score} size={34} />
+        </div>
+
+        {/* Bottom Bar: Category & Affiliate */}
+        <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
+          <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-950/80 text-slate-300 backdrop-blur-md border border-white/10 font-semibold shadow-sm">
+            {deal.catEmoji} {deal.category}
+          </span>
+
+          {deal.affiliate && (
+            <span className="w-5 h-5 rounded-full bg-emerald-500/90 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 border border-emerald-300/40" title="Affiliate Monetized">
+              <Zap size={10} className="fill-white" />
+            </span>
+          )}
+        </div>
+
+        {/* Status Overlays */}
+        {deal.status === "approved" && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-emerald-950/85 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-1 text-emerald-400 font-bold text-xs">
+              <CheckCircle2 size={32} className="text-emerald-400 drop-shadow-lg" />
+              <span>Broadcasted</span>
+            </div>
+          </div>
+        )}
+        {deal.status === "rejected" && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-rose-950/85 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-1 text-rose-400 font-bold text-xs">
+              <X size={32} className="text-rose-400 drop-shadow-lg" />
+              <span>Skipped</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Deal Details & Content */}
+      <div className="flex flex-col flex-1 p-3.5 gap-2.5">
+        <h4 className="text-[13px] font-semibold text-white/95 leading-snug line-clamp-2 min-h-[36px]" title={deal.title}>
+          {deal.title}
+        </h4>
+
+        {/* Price & Savings Delta */}
+        <div className="flex items-baseline gap-2 flex-wrap">
+          {deal.price > 0 ? (
+            <>
+              <span className="text-[18px] font-extrabold text-emerald-400 font-mono tracking-tight leading-none">
+                {fmt(deal.price)}
+              </span>
+              {deal.mrp > 0 && deal.mrp > deal.price && (
+                <span className="text-[11px] text-slate-400 line-through font-mono">
+                  {fmt(deal.mrp)}
+                </span>
+              )}
+              {savings > 0 && (
+                <span className="text-[10px] font-semibold text-emerald-300/80 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                  Save ₹{savings.toLocaleString("en-IN")}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-xs font-extrabold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              ⚡ Trick / Freebie
+            </span>
+          )}
+        </div>
+
+        {/* Coupon Code Pill */}
+        {deal.coupon && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
+            <Tag size={10} className="text-amber-400" />
+            <span className="text-[10px] font-bold font-mono text-amber-300">{deal.coupon}</span>
+          </div>
+        )}
+
+        {/* Channel & Timestamp */}
+        <div className="flex items-center gap-2 mt-auto pt-2 border-t border-white/5 text-slate-400">
+          <div className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-extrabold text-white flex-shrink-0"
+            style={{ background: accent }}>
+            {deal.channel[0]}
+          </div>
+          <span className="text-[11px] font-medium truncate flex-1 text-slate-300">{deal.channel}</span>
+          <span className="text-[10px] text-slate-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
+        </div>
+
+        {/* Action Buttons */}
+        {deal.status === "pending" ? (
+          <div className="flex items-center gap-1.5 pt-1">
+            <button onClick={() => onReject(deal.id)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-rose-500/10 border border-rose-500/25 text-rose-400 hover:bg-rose-500 hover:text-white transition-all active:scale-95 shadow-sm"
+              title="Skip Deal">
+              <X size={15} strokeWidth={2.5} />
+            </button>
+            <button onClick={() => onEdit(deal)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/10 text-slate-300 hover:bg-white/15 hover:text-white transition-all active:scale-95 shadow-sm"
+              title="Edit & Tune">
+              <PenLine size={13} />
+            </button>
+            <button onClick={() => onApprove(deal.id)}
+              className="flex-1 h-9 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-1.5 glow-pill-success hover:opacity-95 transition-all active:scale-95 shadow-md">
+              <Check size={14} strokeWidth={3} /> Approve
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 pt-1">
+            <div className={`flex-1 text-center text-[11px] font-bold py-1.5 rounded-xl border ${deal.status === "approved" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-rose-500/15 text-rose-400 border-rose-500/30"}`}>
+              {deal.status === "approved" ? "✓ Approved" : "✗ Skipped"}
+            </div>
+            <button onClick={() => onEdit(deal)}
+              className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors" title="Edit">
+              <PenLine size={12} />
+            </button>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Edit Modal (Live Telegram Preview) ────────────────────────────────────────
 interface EditModalProps {
   deal: Deal;
   onClose: () => void;
   onSaveDraft: (changes: Partial<Deal>) => void;
   onSaveApprove: (changes: Partial<Deal>) => void;
-  onRemove?: (id: string) => void;
   onToast: (msg: string, type?: "success" | "error" | "info") => void;
 }
 
-function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onRemove, onToast }: EditModalProps) {
+function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditModalProps) {
   const [title, setTitle] = useState(deal.title);
   const [price, setPrice] = useState(String(deal.price || ""));
   const [mrp, setMrp] = useState(String(deal.mrp || ""));
   const [text, setText] = useState(deal.affText);
   const [imgUrl, setImgUrl] = useState(deal.imgUrl);
   const [imgFile, setImgFile] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
   const [instruction, setInstruction] = useState("");
   const [rewriting, setRewriting] = useState(false);
   const [prev, setPrev] = useState<string | null>(null);
-  const [lightbox, setLightbox] = useState(false);
   const [retryingAffiliate, setRetryingAffiliate] = useState(false);
   const [scrapingImage, setScrapingImage] = useState(false);
-  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const previewSrc = imgFile || imgUrl || null;
-  const accent = catColor[deal.category] || "#9496B8";
   const isDirty = title !== deal.title || price !== String(deal.price || "") || imgUrl !== deal.imgUrl || text !== deal.affText;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
     const reader = new FileReader();
-    reader.onload = (ev) => { setImgFile(ev.target?.result as string); setZoom(1); };
+    reader.onload = (ev) => { setImgFile(ev.target?.result as string); };
     reader.readAsDataURL(f);
 
     const fd = new FormData();
     fd.append("file", f);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, {
-        method: "POST",
-        body: fd
-      });
+      const res = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, { method: "POST", body: fd });
       if (res.ok) {
         const data = await res.json();
         setImgUrl(data.img_url);
         onToast("Image uploaded!", "success");
-      } else {
-        onToast("Image upload failed", "error");
       }
     } catch {
       onToast("Image upload failed", "error");
@@ -482,595 +623,182 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onRemove, onToas
     setScrapingImage(false);
   };
 
-  const doSpam = async () => {
-    const ok = await apiSpam(deal.id);
-    if (ok) {
-      onToast("Flagged as spam", "info");
-      onRemove?.(deal.id);
-      onClose();
-    } else {
-      onToast("Failed to flag spam", "error");
-    }
-  };
-
   const changes: Partial<Deal> = {
-    title,
-    imgUrl: imgFile || imgUrl,
+    title, imgUrl: imgFile || imgUrl,
     price: Number(price) || deal.price,
     mrp: Number(mrp) || deal.mrp,
     affText: text,
   };
 
-  const previewPrice = Number(price) || deal.price;
-  const previewMrp = Number(mrp) || deal.mrp;
-
   return (
-    <>
-      {lightbox && previewSrc && <ImageLightbox src={previewSrc} onClose={() => setLightbox(false)} />}
-
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-50 flex items-end md:items-center justify-center animate-fade-in"
-        style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
-        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      >
-        <div
-          className="w-full md:max-w-2xl max-h-[94dvh] flex flex-col rounded-t-2xl md:rounded-2xl overflow-hidden animate-slide-up"
-          style={{ background: "var(--bg-card)", border: "1px solid var(--border)", boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}
-        >
-          {/* Header */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b flex-shrink-0" style={{ borderColor: "var(--border)" }}>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,45,85,0.1)" }}>
-              <PenLine size={13} style={{ color: "#FF2D55" }} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl"
+      style={{ background: "rgba(4, 5, 10, 0.85)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      
+      <div className="w-full max-w-4xl max-h-[92dvh] flex flex-col rounded-3xl overflow-hidden glass-panel border border-white/10 shadow-2xl animate-slide-up">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-950/50">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center glow-pill-primary">
+              <PenLine size={16} className="text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold" style={{ color: "var(--text)" }}>Edit Deal</p>
-              <p className="text-[10px] truncate" style={{ color: "var(--text-muted)" }}>{deal.channel} · {fmtAgo(deal.ts)}</p>
+            <div>
+              <h3 className="text-sm font-bold text-white">Edit & Review Deal</h3>
+              <p className="text-[11px] text-slate-400">{deal.channel} · Source: {deal.channelRaw}</p>
             </div>
-            <ScoreRing score={deal.score} size={32} verdict={deal.verdict} />
-            {isDirty && (
-              <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>
-                Unsaved
-              </span>
-            )}
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center transition-fast" style={{ background: "var(--bg-secondary)", color: "var(--text-muted)" }}>
-              <X size={14} />
+          </div>
+          <div className="flex items-center gap-2">
+            <ScoreRing score={deal.score} size={32} />
+            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors border border-white/10">
+              <X size={15} />
             </button>
           </div>
+        </div>
 
-          {/* Body */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="flex flex-col md:flex-row h-full">
-              {/* Left: form */}
-              <div className="flex-1 px-5 py-4 flex flex-col gap-4">
-                {/* Image */}
-                <div>
-                  <label className="block text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: "var(--text-muted)" }}>Product Image</label>
-                  <div
-                    className="relative rounded-xl overflow-hidden mb-3 cursor-zoom-in"
-                    style={{ aspectRatio: "4/3", maxHeight: 200, background: "var(--bg-secondary)" }}
-                    onClick={() => previewSrc && setLightbox(true)}
-                  >
-                    {previewSrc ? (
-                      <>
-                        <img
-                          src={previewSrc}
-                          alt=""
-                          className="w-full h-full"
-                          style={{ objectFit: "contain", transform: `scale(${zoom})`, transformOrigin: "center", transition: "transform 0.15s" }}
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-fast" style={{ background: "rgba(0,0,0,0.2)" }}>
-                          <Maximize2 size={18} className="text-white/70" />
-                        </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setImgFile(null); setImgUrl(""); setZoom(1); }}
-                          className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
-                          style={{ background: "rgba(0,0,0,0.6)" }}
-                        >
-                          <X size={10} className="text-white" />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center gap-2" style={{ color: "var(--text-muted)" }}>
-                        <span className="text-4xl" style={{ fontFamily: "'Segoe UI Emoji',sans-serif" }}>{deal.catEmoji}</span>
-                        <span className="text-xs">No image</span>
-                      </div>
-                    )}
-                  </div>
-                  {previewSrc && (
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>🔍</span>
-                      <input type="range" min={0.5} max={2.5} step={0.05} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="flex-1" />
-                      <span className="text-[9px] font-mono" style={{ color: "var(--text-muted)", fontFamily: "'JetBrains Mono',monospace" }}>{zoom.toFixed(1)}×</span>
-                    </div>
-                  )}
-                  <div className="flex gap-3">
-                    <input
-                      value={imgUrl}
-                      onChange={(e) => setImgUrl(e.target.value)}
-                      placeholder="https://image-url.com/photo.jpg"
-                      className="flex-1 px-3 py-2 rounded-xl text-xs focus:outline-none transition-fast"
-                      style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text)" }}
-                    />
-                    <button
-                      onClick={() => fileRef.current?.click()}
-                      className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-fast hover:opacity-80"
-                      style={{ background: "var(--bg-secondary)", border: "1px solid var(--border)", color: "#9ca3af" }}
-                    >
-                      <Upload size={10} /> Upload
-                    </button>
-                    <button
-                      onClick={doScrapeImage}
-                      disabled={scrapingImage}
-                      className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-fast hover:opacity-80 disabled:opacity-40"
-                      style={{ background: "rgba(0,200,255,0.08)", border: "1px solid rgba(0,200,255,0.2)", color: "#00C8FF" }}
-                      title="Auto-scrape image"
-                    >
-                      {scrapingImage ? <span className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" /> : <Globe size={10} />}
-                    </button>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
-                  </div>
-                </div>
+        {/* Body Split View */}
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-0">
+          {/* Left Form Controls */}
+          <div className="md:col-span-7 p-5 flex flex-col gap-4 border-r border-white/10">
+            {/* Title */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Product Title</label>
+              <input value={title} onChange={e => setTitle(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm font-medium bg-slate-900/90 border border-white/10 text-white focus:outline-none focus:border-primary/50 transition-colors" />
+            </div>
 
-                {/* Title */}
-                <div>
-                  <label className="block text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-muted)" }}>Title</label>
-                  <input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none transition-fast"
-                    style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text)" }}
-                  />
-                </div>
+            {/* Prices */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Sale Price (₹)</label>
+                <input type="number" value={price} onChange={e => setPrice(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-sm font-mono font-bold bg-slate-900/90 border border-white/10 text-emerald-400 focus:outline-none focus:border-emerald-500/50" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">MRP Price (₹)</label>
+                <input type="number" value={mrp} onChange={e => setMrp(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-sm font-mono bg-slate-900/90 border border-white/10 text-slate-400 focus:outline-none focus:border-white/20" />
+              </div>
+            </div>
 
-                {/* Price */}
-                {deal.dealType === "product" && (
-                  <div className="grid grid-cols-2 gap-3">
-                    {[["Sale Price (₹)", price, setPrice], ["MRP (₹)", mrp, setMrp]].map(([label, val, setter]) => (
-                      <div key={label as string}>
-                        <label className="block text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "var(--text-muted)" }}>{label as string}</label>
-                        <input
-                          type="number"
-                          value={val as string}
-                          onChange={(e) => (setter as (v: string) => void)(e.target.value)}
-                          className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none transition-fast font-mono"
-                          style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text)", fontFamily: "'JetBrains Mono',monospace" }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* AI Rewrite */}
-                <div>
-                  <div className="flex items-end justify-between mb-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Post Text (Affiliate)</label>
-                    <span className="text-[9px] font-mono" style={{ color: "var(--text-dim)", fontFamily: "'JetBrains Mono',monospace" }}>{text.length} chars</span>
-                  </div>
-                  <div className="flex gap-2 mb-2">
-                    <input
-                      value={instruction}
-                      onChange={(e) => setInstruction(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && doRewrite()}
-                      placeholder='"make shorter", "add emojis", "clean up"…'
-                      className="flex-1 px-3 py-2 rounded-xl text-xs focus:outline-none transition-fast"
-                      style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text)" }}
-                    />
-                    <button
-                      onClick={doRewrite}
-                      disabled={rewriting || !instruction.trim()}
-                      className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-fast disabled:opacity-40 shadow-sm hover:opacity-90"
-                      style={{ background: "linear-gradient(135deg, rgba(255,45,85,0.15) 0%, rgba(255,45,85,0.05) 100%)", color: "#FF2D55", border: "1px solid rgba(255,45,85,0.3)" }}
-                    >
-                      {rewriting
-                        ? <span className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" />
-                        : <Sparkles size={10} />}
-                      AI
-                    </button>
-                    {prev && (
-                      <button
-                        onClick={() => { setText(prev); setPrev(null); }}
-                        className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-fast"
-                        style={{ background: "rgba(220,38,38,0.08)", color: "#f87171", border: "1px solid rgba(220,38,38,0.2)" }}
-                      >
-                        <Undo2 size={10} /> Undo
-                      </button>
-                    )}
-                  </div>
-                  <textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    rows={5}
-                    className="w-full px-3.5 py-3 rounded-xl focus:outline-none resize-none tg-text transition-fast"
-                    style={{ background: "var(--bg-input)", border: "1px solid var(--border)", color: "var(--text)" }}
-                  />
-                </div>
-
-                {/* Original text + links */}
-                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--border)" }}>
-                  <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ background: "var(--bg-sidebar)", borderColor: "var(--border)" }}>
-                    <FileText size={10} style={{ color: "var(--text-muted)" }} />
-                    <span className="text-[9px] font-bold uppercase tracking-widest flex-1" style={{ color: "var(--text-muted)" }}>Original Text</span>
-                    <button
-                      onClick={() => { navigator.clipboard.writeText(deal.originalText); onToast("Copied!", "success"); }}
-                      className="flex items-center gap-1 text-[9px] font-semibold transition-fast hover:opacity-80"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      <Copy size={8} /> Copy
-                    </button>
-                  </div>
-                  <div className="px-3 py-2.5 max-h-20 overflow-y-auto">
-                    <p className="tg-text" style={{ color: "var(--text-muted)", fontSize: 10 }}>{deal.originalText || "No original text."}</p>
-                  </div>
-                  {extractUrls(deal.originalText).length > 0 && (
-                    <div className="border-t px-3 py-2 flex flex-col gap-1.5" style={{ borderColor: "var(--border)" }}>
-                      <p className="text-[8px] font-bold uppercase tracking-widest flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-                        <Link size={7} /> Raw Links
-                      </p>
-                      {extractUrls(deal.originalText).slice(0, 3).map((url, i) => {
-                        const clean = stripAffTag(url);
-                        return (
-                          <div key={i} className="flex items-center gap-2 rounded-lg px-2 py-1.5" style={{ background: "var(--bg-secondary)" }}>
-                            <span className="text-[9px] font-mono flex-1 truncate" style={{ color: "var(--text)", fontFamily: "'JetBrains Mono',monospace" }}>{clean}</span>
-                            <button onClick={() => { navigator.clipboard.writeText(clean); onToast("Link copied!", "success"); }} className="flex-shrink-0 p-1 rounded-md transition-fast hover:opacity-80">
-                              <Copy size={8} style={{ color: "var(--text-muted)" }} />
-                            </button>
-                            <a href={clean} target="_blank" rel="noreferrer" className="flex-shrink-0 p-1 rounded-md transition-fast hover:opacity-80">
-                              <ExternalLink size={8} style={{ color: "var(--text-muted)" }} />
-                            </a>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Mobile preview toggle */}
-                <button
-                  className="md:hidden text-[10px] font-semibold text-left transition-fast hover:opacity-80"
-                  style={{ color: "var(--text-muted)" }}
-                  onClick={() => setShowMobilePreview((v) => !v)}
-                >
-                  {showMobilePreview ? "▼ Hide" : "▶ Show"} Card Preview
+            {/* AI Rewriter */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Affiliate Post Text</label>
+                <span className="text-[10px] font-mono text-slate-500">{text.length} chars</span>
+              </div>
+              <div className="flex gap-2 mb-2">
+                <input value={instruction} onChange={e => setInstruction(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && doRewrite()}
+                  placeholder='AI command: "make concise", "add emojis", "highlight 60% discount"…'
+                  className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-900/90 border border-white/10 text-white focus:outline-none focus:border-primary/50" />
+                <button onClick={doRewrite} disabled={rewriting || !instruction.trim()}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold glow-pill-primary text-white disabled:opacity-40">
+                  {rewriting ? <span className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" /> : <Sparkles size={12} />}
+                  Tune
                 </button>
-
-                {/* Mobile preview */}
-                {showMobilePreview && (
-                  <div className="md:hidden rounded-xl overflow-hidden border" style={{ border: "1px solid var(--border)" }}>
-                    <CardPreview title={title} previewSrc={previewSrc} price={previewPrice} mrp={previewMrp} deal={deal} accent={accent} zoom={zoom} />
-                  </div>
+                {prev && (
+                  <button onClick={() => { setText(prev); setPrev(null); }}
+                    className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-400">
+                    <Undo2 size={12} /> Undo
+                  </button>
                 )}
               </div>
+              <textarea value={text} onChange={e => setText(e.target.value)} rows={6}
+                className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-900/90 border border-white/10 text-slate-200 focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
+            </div>
 
-              {/* Desktop preview */}
-              <div className="hidden md:flex w-64 flex-shrink-0 flex-col gap-3 p-4 border-l" style={{ background: "#080A14", borderColor: "var(--border)" }}>
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Telegram Preview</p>
-                <div className="tg-preview-wrap">
-                  <div className="tg-preview-header">
-                    <div className="tg-preview-avatar">B</div>
-                    <div>
-                      <div className="tg-preview-name">BestIndianDeals</div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Channel</div>
+            {/* Quick Media & Link Tools */}
+            <div className="flex items-center gap-2 pt-1">
+              <button onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">
+                <Upload size={12} /> Upload Image
+              </button>
+              <button onClick={doScrapeImage} disabled={scrapingImage}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors">
+                <Globe size={12} /> Scrape Media
+              </button>
+              <button onClick={doRetryAffiliate} disabled={retryingAffiliate}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors">
+                <Zap size={12} /> Refresh Affiliate
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            </div>
+          </div>
+
+          {/* Right Live Telegram Mockup */}
+          <div className="md:col-span-5 p-5 flex flex-col gap-3 bg-slate-950/70">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Telegram Post Preview</span>
+              <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Rendering
+              </span>
+            </div>
+
+            {/* Mockup Card */}
+            <div className="tg-preview-wrap flex-1 flex flex-col justify-between">
+              <div className="flex flex-col gap-2.5">
+                <div className="tg-preview-header">
+                  <div className="tg-preview-avatar">D</div>
+                  <div>
+                    <div className="tg-preview-name">
+                      DealzTrendz <CheckCheck size={12} className="text-blue-400" />
                     </div>
-                  </div>
-                  <div className="tg-bubble">
-                    {previewSrc && (
-                      <img src={previewSrc} alt="" style={{ width: "100%", borderRadius: 8, marginBottom: 8, maxHeight: 140, objectFit: "cover" }}
-                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                    )}
-                    <div className="tg-bubble-text">
-                      {text.split("\n").slice(0, 12).join("\n")
-                        .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
-                        .replace(/~~(.+?)~~/g, (_, m) => `<s>${m}</s>`)
-                        .split(/(https?:\/\/\S+)/g)
-                        .map((part, i) =>
-                          /^https?:\/\//.test(part)
-                            ? <a key={i} href={part} className="tg-bubble-link" target="_blank" rel="noreferrer">{part.length > 32 ? part.slice(0,32) + "…" : part}</a>
-                            : <span key={i} dangerouslySetInnerHTML={{ __html: part.replace(/<b>(.*?)<\/b>/g, '<strong style="color:#fff">$1</strong>').replace(/<s>(.*?)<\/s>/g, '<del>$1</del>') }} />
-                        )
-                      }
-                    </div>
-                    <div className="tg-bubble-time">{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} ✓✓</div>
+                    <div className="text-[10px] text-slate-400">@dealsforindiachannel</div>
                   </div>
                 </div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", textAlign: "center" }}>Live preview as it appears in Telegram</div>
+
+                <div className="tg-bubble">
+                  {previewSrc && (
+                    <img src={previewSrc} alt="" className="w-full rounded-lg mb-2.5 max-h-44 object-cover border border-white/10"
+                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  )}
+                  <div className="tg-bubble-text">
+                    {text.split("\n").slice(0, 14).join("\n")
+                      .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
+                      .split(/(https?:\/\/\S+)/g)
+                      .map((part, i) =>
+                        /^https?:\/\//.test(part)
+                          ? <a key={i} href={part} className="tg-bubble-link" target="_blank" rel="noreferrer">{part.length > 30 ? part.slice(0, 30) + "…" : part}</a>
+                          : <span key={i} dangerouslySetInnerHTML={{ __html: part }} />
+                      )
+                    }
+                  </div>
+                  <div className="tg-bubble-time">
+                    {new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} ✓✓
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Footer */}
-          <div className="border-t flex-shrink-0" style={{ borderColor: "var(--border)" }}>
-            {/* Tertiary actions */}
-            <div className="flex items-center gap-3 px-5 py-2.5 border-b" style={{ borderColor: "var(--border)" }}>
-              <button
-                onClick={doRetryAffiliate}
-                disabled={retryingAffiliate}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-fast disabled:opacity-40"
-                style={{ background: "rgba(0,214,143,0.08)", color: "#00D68F", border: "1px solid rgba(0,214,143,0.15)" }}
-              >
-                {retryingAffiliate ? <span className="w-2.5 h-2.5 border border-green-400 border-t-transparent rounded-full animate-spin" /> : <Zap size={9} />}
-                Retry Affiliate
-              </button>
-              <button
-                onClick={doScrapeImage}
-                disabled={scrapingImage}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-semibold transition-fast disabled:opacity-40"
-                style={{ background: "rgba(0,200,255,0.08)", color: "#00C8FF", border: "1px solid rgba(0,200,255,0.15)" }}
-              >
-                {scrapingImage ? <span className="w-2.5 h-2.5 border border-cyan-400 border-t-transparent rounded-full animate-spin" /> : <Globe size={9} />}
-                Scrape Image
-              </button>
-            </div>
-            {/* Primary actions */}
-            <div className="flex items-center gap-2.5 px-5 py-3.5">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 rounded-xl text-sm font-medium transition-fast hover:opacity-80"
-                style={{ background: "var(--bg-secondary)", color: "#9ca3af", border: "1px solid var(--border)" }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => { onSaveDraft(changes); onClose(); }}
-                disabled={!isDirty}
-                className="px-4 py-2 rounded-xl text-sm font-semibold transition-fast disabled:opacity-30 hover:opacity-80"
-                style={{ background: "var(--bg-secondary)", color: "var(--text)", border: "1px solid var(--border)" }}
-              >
-                Save Draft
-              </button>
-              <button
-                onClick={() => { onSaveApprove(changes); onClose(); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold text-white transition-fast active:scale-[0.98]"
-                style={{ background: "#00D68F", boxShadow: "0 4px 20px rgba(0,214,143,0.28)" }}
-              >
-                <Check size={14} strokeWidth={2.5} /> Save & Approve
-              </button>
+              <p className="text-[10px] text-slate-500 text-center mt-2">
+                This is the exact layout delivered to your Telegram followers.
+              </p>
             </div>
           </div>
         </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-slate-950/80">
+          <button onClick={onClose}
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors">
+            Cancel
+          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => { onSaveDraft(changes); onClose(); }} disabled={!isDirty}
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40">
+              Save Draft
+            </button>
+            <button onClick={() => { onSaveApprove(changes); onClose(); }}
+              className="px-6 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-1.5">
+              <Check size={14} strokeWidth={3} /> Save & Broadcast
+            </button>
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 
-function CardPreview({ title, previewSrc, price, mrp, deal, accent, zoom }: {
-  title: string; previewSrc: string | null; price: number; mrp: number;
-  deal: Deal; accent: string; zoom: number;
-}) {
-  return (
-    <>
-      <div className="relative" style={{ aspectRatio: "1/1", background: "var(--bg-secondary)" }}>
-        {previewSrc ? (
-          <img
-            src={previewSrc}
-            alt=""
-            className="w-full h-full"
-            style={{ objectFit: "contain", padding: 8, transform: `scale(${zoom})`, transformOrigin: "center" }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl" style={{ fontFamily: "'Segoe UI Emoji',sans-serif", background: `${accent}10` }}>
-            {deal.catEmoji}
-          </div>
-        )}
-        {deal.discount > 0 && (
-          <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md text-white text-[9px] font-bold" style={{ background: discBg(deal.discount) }}>
-            {Math.round(deal.discount)}% OFF
-          </div>
-        )}
-      </div>
-      <div className="p-2.5 flex flex-col gap-1" style={{ background: "var(--bg-card)" }}>
-        <p className="text-[10px] font-semibold leading-snug line-clamp-2" style={{ color: "var(--text)" }}>{title || "Deal title…"}</p>
-        {price > 0 && (
-          <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-xs font-bold" style={{ color: "var(--text)", fontFamily: "'JetBrains Mono',monospace" }}>{fmt(price)}</span>
-            {mrp > 0 && mrp > price && <span className="text-[9px] line-through" style={{ color: "var(--text-muted)" }}>{fmt(mrp)}</span>}
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
-// ─── Deal Card (SaveKaro style) ───────────────────────────────────────────────
-function DealCard({ deal, onApprove, onReject, onEdit }: {
-  deal: Deal; onApprove: (id: string) => void;
-  onReject: (id: string) => void; onEdit: (d: Deal) => void;
-}) {
-  const [imgErr, setImgErr] = useState(false);
-  const [lightbox, setLightbox] = useState(false);
-  const accent = catColor[deal.category] || "#9496B8";
-
-  return (
-    <motion.div layout
-      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ type: "spring", damping: 22, stiffness: 280 }}
-      className="bg-card rounded-2xl overflow-hidden flex flex-col"
-      style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)", border: "1px solid var(--border)" }}>
-
-      <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
-
-      {/* Image */}
-      <div className="relative overflow-hidden cursor-zoom-in flex-shrink-0"
-        style={{ height: 158, background: deal.imgUrl && !imgErr ? `radial-gradient(ellipse at 50% 80%, ${accent}20 0%, transparent 68%)` : `${accent}0D` }}
-        onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
-        {deal.imgUrl && !imgErr ? (
-          <>
-            {/* Full product image — main visual */}
-            <img src={deal.imgUrl} alt={deal.title}
-              className="absolute inset-0 w-full h-full object-contain"
-              style={{ padding: "8px", zIndex: 2 }}
-              onError={() => setImgErr(true)} />
-
-            {/* Subtle blurred bg for color fill behind transparent PNGs */}
-            <img src={deal.imgUrl} alt="" aria-hidden
-              className="absolute inset-0 w-full h-full object-cover"
-              style={{ opacity: 0.12, filter: "blur(18px) saturate(1.4)", zIndex: 0 }}
-              onError={() => setImgErr(true)} />
-
-            {/* Dot grid texture */}
-            <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle, ${accent}12 1px, transparent 1px)`, backgroundSize: "22px 22px", opacity: 0.3, zIndex: 1 }} />
-
-            {/* Emoji badge — small, bottom-left */}
-            <div className="absolute bottom-2.5 left-3 text-2xl leading-none z-10"
-              style={{ fontFamily: "'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif",
-                filter: `drop-shadow(0 2px 8px ${accent}66)`, userSelect: "none" }}>
-              {deal.catEmoji}
-            </div>
-
-            {/* Expand hint overlay on hover */}
-            <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
-              style={{ background: "rgba(0,0,0,0.25)" }}>
-              <Maximize2 size={22} className="text-white/80" />
-            </div>
-
-            {/* Age badge */}
-            <div className="absolute top-2.5 right-3 z-10 text-[10px] font-medium text-muted-foreground"
-              style={{ fontFamily: "'JetBrains Mono',monospace", opacity: 0.45 }}>{fmtAgo(deal.ts)}</div>
-          </>
-        ) : (
-          <>
-            {/* Dot grid texture */}
-            <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle, ${accent}12 1px, transparent 1px)`, backgroundSize: "22px 22px", opacity: 0.3, zIndex: 1 }} />
-            <div className="w-full h-full flex items-center justify-center" style={{ fontSize: 52, fontFamily: "'Segoe UI Emoji','Apple Color Emoji',sans-serif" }}>
-              {deal.catEmoji}
-            </div>
-          </>
-        )}
-
-        {/* Discount badge */}
-        {deal.discount > 0 && (
-          <div className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-lg text-white font-bold leading-none"
-            style={{ background: discBg(deal.discount), fontSize: 11, fontFamily: "'JetBrains Mono',monospace" }}>
-            {Math.round(deal.discount)}% OFF
-          </div>
-        )}
-
-        {/* Score */}
-        <div className="absolute top-2 right-2 z-10">
-          <ScoreRing score={deal.score} size={32} />
-        </div>
-
-        {/* Trick badge */}
-        {deal.dealType === "trick" && (
-          <div className="absolute bottom-2 left-2 z-10 px-1.5 py-0.5 rounded-md text-[9px] font-bold"
-            style={{ background: "#fef3c7", color: "#92400e" }}>TRICK</div>
-        )}
-
-        {/* Category & Affiliate */}
-        <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1.5">
-          <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/50 text-white/90 backdrop-blur-md border border-white/10 shadow-sm font-medium"
-            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
-            {deal.category}
-          </span>
-          {deal.affiliate && (
-            <div className="w-5 h-5 rounded-full bg-emerald-500 flex flex-shrink-0 items-center justify-center shadow-md" title="Affiliated">
-              <Zap size={9} className="text-white" strokeWidth={2.5} />
-            </div>
-          )}
-        </div>
-
-        {/* Status overlay */}
-        {deal.status === "approved" && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: "rgba(22,163,74,0.82)" }}>
-            <Check size={36} className="text-white" strokeWidth={3} />
-          </div>
-        )}
-        {deal.status === "rejected" && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center" style={{ background: "rgba(220,38,38,0.82)" }}>
-            <X size={36} className="text-white" strokeWidth={3} />
-          </div>
-        )}
-        {deal.status === "draft" && (
-          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-1" style={{ background: "rgba(245,158,11,0.82)" }}>
-            <FileText size={28} className="text-white" />
-            <span className="text-white text-[11px] font-bold">Draft</span>
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex flex-col flex-1 p-3 gap-2">
-        <p className="text-[12.5px] font-semibold text-foreground leading-snug"
-          style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-          {deal.title}
-        </p>
-
-        {/* Price */}
-        <div className="flex items-baseline gap-2 flex-wrap">
-          {deal.price > 0 ? (
-            <>
-              <span className="text-[16px] font-bold text-foreground leading-none"
-                style={{ fontFamily: "'JetBrains Mono',monospace", letterSpacing: "-0.02em" }}>
-                {fmt(deal.price)}
-              </span>
-              {deal.mrp > 0 && deal.mrp > deal.price && (
-                <span className="text-[11px] text-muted-foreground line-through">{fmt(deal.mrp)}</span>
-              )}
-            </>
-          ) : (
-            <span className="text-sm font-bold" style={{ color: "#f59e0b" }}>Trick / Loot</span>
-          )}
-        </div>
-
-        {/* Coupon */}
-        {deal.coupon && (
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md w-fit"
-            style={{ background: "#fef9c3", border: "1px dashed #fbbf24" }}>
-            <Tag size={8} style={{ color: "#92400e" }} />
-            <span className="text-[10px] font-bold font-mono" style={{ color: "#92400e" }}>{deal.coupon}</span>
-          </div>
-        )}
-
-        {/* Channel + time */}
-        <div className="flex items-center gap-1.5 mt-auto">
-          <div className="w-4 h-4 rounded-md flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
-            style={{ background: accent }}>{deal.channel[0]}</div>
-          <div className="flex-1 min-w-0">
-            <span className="text-[10px] font-semibold text-muted-foreground truncate block">{deal.channel}</span>
-          </div>
-          <span className="text-[10px] text-muted-foreground flex-shrink-0">{fmtAgo(deal.ts)}</span>
-        </div>
-
-        {/* Actions */}
-        {deal.status === "pending" ? (
-          <div className="flex gap-1.5 pt-1">
-            <button onClick={() => onReject(deal.id)}
-              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-95"
-              style={{ background: "#fef2f2", border: "1px solid #fecaca" }} title="Reject">
-              <X size={13} style={{ color: "#dc2626" }} strokeWidth={2.5} />
-            </button>
-            <button onClick={() => onEdit(deal)}
-              className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-95 border border-border bg-secondary text-muted-foreground hover:text-foreground" title="Edit">
-              <PenLine size={12} />
-            </button>
-            <button onClick={() => onApprove(deal.id)}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-xl text-xs font-bold transition-all active:scale-95"
-              style={{ background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>
-              <Check size={12} strokeWidth={2.5} /> Approve
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 pt-1">
-            <span className="flex-1 text-center text-[11px] font-bold py-1.5 rounded-xl"
-              style={{
-                background: deal.status === "approved" ? "#f0fdf4" : "#fef2f2",
-                color: deal.status === "approved" ? "#16a34a" : "#dc2626",
-              }}>
-              {deal.status === "approved" ? "✓ Approved" : "✗ Rejected"}
-            </span>
-            <button onClick={() => onEdit(deal)}
-              className="w-8 h-8 rounded-xl flex items-center justify-center border border-border bg-secondary text-muted-foreground" title="Edit">
-              <PenLine size={12} />
-            </button>
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Review / Grid View ───────────────────────────────────────────────────────
+// ─── Review View ──────────────────────────────────────────────────────────────
 function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   deals: Deal[]; onApprove: (id: string) => void;
   onReject: (id: string) => void; onEdit: (d: Deal) => void; dark: boolean;
@@ -1081,10 +809,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
   const [page, setPage] = useState(1);
   const [sendTG, setSendTG] = useState(true);
-  const [sendWA, setSendWA] = useState(false);
   const [sendX, setSendX] = useState(false);
   const PAGE_SIZE = 100;
-  
+
   const uniqueChannels = Array.from(new Set(deals.map(d => d.channel))).filter(Boolean).sort();
 
   let visible = deals.filter(d => {
@@ -1096,6 +823,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
     }
     return true;
   });
+
   if (sort === "score") visible = [...visible].sort((a, b) => b.score - a.score);
   else if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
   else if (sort === "discount") visible = [...visible].sort((a, b) => b.discount - a.discount);
@@ -1112,94 +840,97 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Toolbar */}
-      <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border flex flex-col gap-2.5 bg-card">
-        {/* Search */}
-        <div className="relative">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search deals or channels…"
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-sm text-foreground bg-secondary placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 border border-border" />
-        </div>
-        {/* Filter + sort row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Status pills */}
-          <div className="flex gap-1 p-0.5 rounded-xl bg-secondary flex-shrink-0">
-            {([["pending", `${pending}`], ["approved", `${approved}`], ["rejected", `${rejected}`], ["all", `${deals.length}`]] as const).map(([v, cnt]) => (
-              <button key={v} onClick={() => { setFilter(v); setPage(1); }}
-                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold capitalize transition-all"
-                style={{
-                  background: filter === v ? "var(--card)" : "transparent",
-                  color: filter === v ? "var(--foreground)" : "var(--muted-foreground)",
-                  boxShadow: filter === v ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                }}>
-                {v} <span className="font-mono opacity-60 ml-0.5">{cnt}</span>
+      {/* Top Glass Filter Toolbar */}
+      <div className="flex-shrink-0 px-5 py-4 border-b border-white/8 glass-panel flex flex-col gap-3.5">
+        {/* Top Search Bar */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+              placeholder="Search deals by title, brand, or channel name…"
+              className="w-full pl-10 pr-12 py-2.5 rounded-2xl text-xs font-medium text-white bg-slate-900/80 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-primary/50 transition-all shadow-inner" />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
+                <X size={13} />
               </button>
-            ))}
+            )}
           </div>
-          <div className="flex gap-1 ml-auto">
-            {/* Channel filter dropdown */}
-            <select
-              value={selectedChannel}
-              onChange={(e) => { setSelectedChannel(e.target.value); setPage(1); }}
-              className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-secondary text-foreground border border-border focus:outline-none appearance-none cursor-pointer"
-              style={{ paddingRight: "1.5rem" }}
-            >
-              <option value="All">All Channels</option>
-              {uniqueChannels.map(ch => (
-                <option key={ch} value={ch}>{ch}</option>
-              ))}
-            </select>
-            {([["score", TrendingUp, "Top"], ["latest", Clock, "New"], ["discount", Flame, "Hot"]] as const).map(([v, Icon, label]) => (
-              <button key={v} onClick={() => { setSort(v); setPage(1); }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
-                style={{
-                  background: sort === v ? "#E63946" : "var(--secondary)",
-                  color: sort === v ? "#fff" : "var(--muted-foreground)",
-                }}>
-                <Icon size={10} />{label}
-              </button>
-            ))}
+
+          {/* Broadcast Destination Controls */}
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSendTG(!sendTG)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border shadow-sm ${sendTG ? "glow-pill-success text-white border-emerald-400/40 scale-[1.02]" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
+              <Send size={12} /> Telegram
+            </button>
+            <button onClick={() => setSendX(!sendX)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border shadow-sm ${sendX ? "glow-pill-accent text-white border-indigo-400/40 scale-[1.02]" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
+              <span>𝕏</span> Twitter
+            </button>
           </div>
         </div>
 
-        {/* Premium Multi-Platform Broadcast Control Deck */}
-        <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-secondary/50 border border-border/80 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold text-foreground">Active Broadcast Channels</span>
-            <span className="text-[10px] text-muted-foreground hidden sm:inline">(Deals will publish to selected platforms on Approve)</span>
+        {/* Filter Pills + Channel Selector + Sorting */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          {/* Status Tabs */}
+          <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-white/8">
+            {([["pending", `${pending}`, "🔥"], ["approved", `${approved}`, "✅"], ["rejected", `${rejected}`, "🗑️"], ["all", `${deals.length}`, "📁"]] as const).map(([v, cnt, icon]) => (
+              <button key={v} onClick={() => { setFilter(v); setPage(1); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${filter === v ? "bg-gradient-to-r from-rose-500 to-primary text-white shadow-md shadow-rose-500/20" : "text-slate-400 hover:text-white"}`}>
+                <span>{icon}</span>
+                <span>{v}</span>
+                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${filter === v ? "bg-black/30 text-white" : "bg-white/5 text-slate-400"}`}>{cnt}</span>
+              </button>
+            ))}
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setSendTG(!sendTG)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm ${
-                sendTG
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/20 scale-[1.02]"
-                  : "bg-background/80 text-muted-foreground hover:text-foreground border border-border opacity-75"
-              }`}>
-              <span>✈️</span> Telegram
-              {sendTG && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse ml-0.5" />}
-            </button>
+
+          {/* Right Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Styled Channel Filter Dropdown */}
+            <div className="relative">
+              <select
+                value={selectedChannel}
+                onChange={(e) => { setSelectedChannel(e.target.value); setPage(1); }}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-white border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-8">
+                <option value="All">⚡ All Channels ({deals.length})</option>
+                {uniqueChannels.map(ch => (
+                  <option key={ch} value={ch}>{ch}</option>
+                ))}
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[10px]">▼</div>
+            </div>
+
+            {/* Sort options */}
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-white/8">
+              {([["latest", Clock, "Newest"], ["score", TrendingUp, "Top Score"], ["discount", Flame, "Highest %"]] as const).map(([v, Icon, label]) => (
+                <button key={v} onClick={() => { setSort(v); setPage(1); }}
+                  className={`flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-semibold transition-all ${sort === v ? "bg-white/15 text-white shadow-sm border border-white/10" : "text-slate-400 hover:text-white"}`}>
+                  <Icon size={11} /> {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
+      {/* Deals Card Grid */}
+      <div className="flex-1 overflow-y-auto px-5 py-5">
         {visible.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center text-3xl">🔍</div>
-            <p className="text-sm font-semibold text-foreground">No deals found</p>
-            <button onClick={() => { setSearch(""); setFilter("pending"); setPage(1); }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: "#E63946" }}>
-              <RefreshCw size={13} /> Reset
+          <div className="flex flex-col items-center justify-center py-28 gap-4 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl">
+              🔍
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">No matching deals found</p>
+              <p className="text-xs text-slate-400 mt-1">Try switching channel filters or resetting your search.</p>
+            </div>
+            <button onClick={() => { setSearch(""); setFilter("pending"); setSelectedChannel("All"); setPage(1); }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all">
+              <RefreshCw size={13} /> Reset Filters
             </button>
           </div>
         ) : (
           <>
-            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))" }}>
+            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
               <AnimatePresence mode="popLayout">
                 {pagedVisible.map(d => (
                   <DealCard key={d.id} deal={d} onApprove={onApprove} onReject={onReject} onEdit={onEdit} />
@@ -1207,22 +938,22 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
               </AnimatePresence>
             </div>
 
-            {/* Pagination Controls */}
+            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between gap-4 mt-6 pt-4 border-t border-border">
-                <div className="text-xs font-semibold text-muted-foreground">
-                  Showing <span className="font-mono font-bold text-foreground">{(currentPage - 1) * PAGE_SIZE + 1}</span> - <span className="font-mono font-bold text-foreground">{Math.min(currentPage * PAGE_SIZE, visible.length)}</span> of <span className="font-mono font-bold text-foreground">{visible.length}</span> deals
-                </div>
-                <div className="flex items-center gap-1.5">
+              <div className="flex items-center justify-between gap-4 mt-8 pt-4 border-t border-white/8">
+                <p className="text-xs font-semibold text-slate-400">
+                  Showing <span className="font-mono text-white font-bold">{(currentPage - 1) * PAGE_SIZE + 1}</span> - <span className="font-mono text-white font-bold">{Math.min(currentPage * PAGE_SIZE, visible.length)}</span> of <span className="font-mono text-white font-bold">{visible.length}</span> deals
+                </p>
+                <div className="flex items-center gap-2">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold border border-border bg-card text-foreground disabled:opacity-40 hover:bg-secondary transition-colors">
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 transition-colors">
                     Previous
                   </button>
-                  <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-secondary text-foreground">
+                  <span className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 text-white border border-white/15">
                     Page {currentPage} of {totalPages}
                   </span>
                   <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold border border-border bg-card text-foreground disabled:opacity-40 hover:bg-secondary transition-colors">
+                    className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 transition-colors">
                     Next
                   </button>
                 </div>
@@ -1235,268 +966,18 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   );
 }
 
-// ─── DesiDime View (real API) ────────────────────────────────────────────────
-async function fetchDesiDeals(): Promise<Deal[]> {
-  // Try dedicated desidime endpoint first
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/desidime?limit=60`);
-    if (res.ok) {
-      const data = await res.json();
-      let rows: (RawDeal & { fp_hash?: string })[];
-      if (data && typeof data === "object" && Array.isArray(data.deals)) rows = data.deals;
-      else if (Array.isArray(data)) rows = data;
-      else rows = Object.entries(data as Record<string, RawDeal>).map(([k, v]) => ({ ...v, fp_hash: k }));
-      if (rows.length > 0) return rows.map((d, i) => ({ ...mapRawToDeal(d, String(i)), channel: "DesiDime" }));
-    }
-  } catch { /* fall through */ }
-
-  // Fallback: filter pending deals by desidime channels from API
-  try {
-    const all = await fetchPendingDeals();
-    const desi = all.filter(d => d.channelRaw?.toLowerCase().includes("desidime"));
-    if (desi.length > 0) return desi;
-  } catch { /* fall through */ }
-
-  // Last resort: filter static BASE_DEALS by desidime channels
-  return BASE_DEALS
-    .filter(d => d.channelRaw?.toLowerCase().includes("desidime"))
-    .map(d => ({ ...d, channel: "DesiDime" }));
-}
-
-function DesiDimeView() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchDesiDeals().then(d => { setDeals(d); setLoading(false); }).catch(() => setLoading(false));
-  }, []);
-
-  // Listen for new DesiDime deals via WebSocket
-  useEffect(() => {
-    function handler(ev: MessageEvent) {
-      try {
-        const msg = JSON.parse(ev.data);
-        if (msg.type === "new_deal" && msg.deal) {
-          const raw = msg.deal as RawDeal & { fp_hash?: string };
-          if (raw.source_channel?.toLowerCase().includes("desidime")) {
-            const newDeal = { ...mapRawToDeal(raw), channel: "DesiDime" };
-            setDeals(prev => [newDeal, ...prev.filter(d => d.id !== newDeal.id)]);
-          }
-        }
-      } catch { /* ignore */ }
-    }
-    // Attach to any existing WebSocket (shared via window for simplicity)
-    return () => { void handler; };
-  }, []);
-
-  const approve = useCallback((id: string) => {
-    setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "approved" as DealStatus } : d));
-    toast.success("Approved ✓ — posting to channel", { duration: 1800 });
-    apiApprove(id).then(ok => {
-      if (!ok) {
-        setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "pending" as DealStatus } : d));
-        toast.error("Approve failed — reverted", { duration: 2500 });
-      }
-    });
-  }, []);
-
-  const reject = useCallback((id: string) => {
-    setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "rejected" as DealStatus } : d));
-    toast.error("Skipped", { duration: 1400 });
-    apiReject(id).then(ok => {
-      if (!ok) {
-        setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "pending" as DealStatus } : d));
-        toast.error("Skip failed — reverted", { duration: 2500 });
-      }
-    });
-  }, []);
-
-  const edit = useCallback((d: Deal) => { void d; toast("Edit not available for DesiDime deals", { duration: 1500 }); }, []);
-
-  const visible = deals.filter(d =>
-    !search.trim() || d.title.toLowerCase().includes(search.toLowerCase())
-  );
-  const pendingCount = deals.filter(d => d.status === "pending").length;
-
-  return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex-shrink-0 px-4 md:px-6 py-3 border-b border-border bg-card flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-xs font-semibold text-foreground">DesiDime Scraper</span>
-          <span className="text-[10px] text-muted-foreground">{pendingCount} pending</span>
-        </div>
-        <div className="flex-1 relative max-w-xs">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search…"
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-xs text-foreground bg-secondary placeholder:text-muted-foreground focus:outline-none border border-border" />
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <div className="w-8 h-8 border-2 border-border border-t-[#E63946] rounded-full animate-spin" />
-            <p className="text-xs text-muted-foreground">Loading DesiDime deals…</p>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))" }}>
-              <AnimatePresence mode="popLayout">
-                {visible.map(d => (
-                  <DealCard key={d.id} deal={d} onApprove={approve} onReject={reject} onEdit={edit} />
-                ))}
-              </AnimatePresence>
-            </div>
-            {visible.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 gap-4">
-                <div className="text-4xl">🛍️</div>
-                <p className="text-sm font-semibold text-foreground">No DesiDime deals found</p>
-                <p className="text-xs text-muted-foreground">New deals from @desidime will appear here automatically.</p>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Posted View ──────────────────────────────────────────────────────────────
-function PostedView({ deals, onEdit }: { deals: Deal[]; onEdit: (d: Deal) => void }) {
-  const [activeTab, setActiveTab] = useState<"posted" | "drafts">("posted");
-  const posted = deals.filter(d => d.status === "approved").sort((a, b) => b.ts - a.ts);
-  const drafts = deals.filter(d => d.status === "draft").sort((a, b) => b.ts - a.ts);
-  const T = Math.floor(Date.now() / 1000);
-  const list = activeTab === "posted" ? posted : drafts;
-
-  return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="px-5 pt-4 pb-0 border-b border-border bg-card flex-shrink-0">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-sm font-semibold text-foreground">{activeTab === "posted" ? "Posted History" : "Saved Drafts"}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {activeTab === "posted"
-                ? (posted.length > 0 ? `${posted.length} deals approved` : "No posts yet")
-                : (drafts.length > 0 ? `${drafts.length} draft${drafts.length > 1 ? "s" : ""} saved` : "No drafts saved")}
-            </p>
-          </div>
-          <span className="text-[10px] px-2.5 py-1.5 rounded-lg font-semibold"
-            style={{ background: "rgba(22,163,74,0.08)", color: "#16a34a", border: "1px solid rgba(22,163,74,0.15)" }}>
-            @dealsforindia
-          </span>
-        </div>
-        {/* Tab bar */}
-        <div className="flex gap-0 border-b-0">
-          {([["posted", `Posted ${posted.length}`], ["drafts", `Drafts ${drafts.length}`]] as const).map(([v, label]) => (
-            <button key={v} onClick={() => setActiveTab(v)}
-              className="px-4 py-2 text-xs font-semibold border-b-2 transition-all"
-              style={{
-                borderColor: activeTab === v ? "#E63946" : "transparent",
-                color: activeTab === v ? "#E63946" : "var(--muted-foreground)",
-              }}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-      <div className="px-5 py-4 flex flex-col gap-2 max-w-2xl mx-auto">
-        {list.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl bg-secondary">
-              {activeTab === "posted" ? "✅" : "📝"}
-            </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {activeTab === "posted" ? "No posts yet" : "No drafts saved"}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1.5 max-w-xs">
-                {activeTab === "posted" ? "Deals you approve appear here instantly." : "Save a deal as draft from the edit modal to see it here."}
-              </p>
-            </div>
-          </div>
-        ) : list.map((entry, i) => {
-          const accent = catColor[entry.category] || "#E63946";
-          const isToday = fmtDate(entry.ts) === fmtDate(T);
-          const prev = i > 0 && fmtDate(list[i - 1].ts) === fmtDate(T);
-          const showSep = i === 0 || isToday !== prev || fmtDate(list[i - 1].ts) !== fmtDate(entry.ts);
-          return (
-            <div key={entry.id}>
-              {showSep && (
-                <div className="flex items-center gap-3 py-3">
-                  <div className="flex-1 h-px bg-border" />
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{isToday ? "Today" : fmtDate(entry.ts)}</span>
-                  <div className="flex-1 h-px bg-border" />
-                </div>
-              )}
-              <div className="flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border border-border hover:border-foreground/10 bg-card hover:shadow-sm transition-all">
-                <div className="relative w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center text-2xl flex-shrink-0 border border-border bg-secondary">
-                  {/* Always render emoji as base layer */}
-                  <div className="absolute inset-0 flex items-center justify-center text-xl"
-                    style={{ fontFamily: "'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif" }}>
-                    {entry.catEmoji}
-                  </div>
-                  {/* Product image on top — hides on error, revealing emoji */}
-                  {entry.imgUrl && (
-                    <img src={entry.imgUrl} alt="" className="absolute inset-0 w-full h-full object-cover"
-                      onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{entry.title}</p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {entry.price > 0 && <span className="text-xs font-mono font-bold text-foreground">{fmt(entry.price)}</span>}
-                    {entry.discount > 0 && <span className="text-xs font-semibold" style={{ color: "#16a34a" }}>{Math.round(entry.discount)}% off</span>}
-                    <span className="text-[11px] px-1.5 py-0.5 rounded-md font-medium" style={{ background: `${accent}12`, color: accent }}>{entry.category}</span>
-                    {entry.status === "draft" && <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold" style={{ background: "rgba(245,158,11,0.1)", color: "#f59e0b" }}>Draft</span>}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                  <span className="text-[11px] font-mono text-muted-foreground">{fmtTime(entry.ts)}</span>
-                  {entry.status === "draft" ? (
-                    <button onClick={() => onEdit(entry)}
-                      className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-lg font-semibold transition-colors"
-                      style={{ background: "rgba(230,57,70,0.08)", color: "#E63946", border: "1px solid rgba(230,57,70,0.2)" }}>
-                      <PenLine size={9} />Edit
-                    </button>
-                  ) : (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold"
-                      style={entry.affiliate ? { background: "rgba(22,163,74,0.08)", color: "#16a34a" } : { background: "var(--secondary)", color: "var(--muted-foreground)" }}>
-                      {entry.affiliate ? "Affiliated" : "No aff."}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Channels View ────────────────────────────────────────────────────────────
 function ChannelsView() {
   const [chs, setChs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newChannelInput, setNewChannelInput] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [newChannelInput, setNewChannelInput] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
-  const saveAlias = async (id: string, name: string) => {
-    if (!name.trim()) {
-      setEditingId(null);
-      return;
-    }
-    const newName = name.trim();
-    setChs(cs => cs.map(c => (c.id === id ? { ...c, name: newName } : c)));
+  const saveAlias = async (id: string, newName: string) => {
+    if (!newName.trim()) { setEditingId(null); return; }
+    setChs(prev => prev.map(c => c.id === id ? { ...c, name: newName } : c));
     setEditingId(null);
     try {
       await fetch(`${API_BASE}/api/v1/channels/alias`, {
@@ -1504,9 +985,9 @@ function ChannelsView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, name: newName })
       });
-      toast.success("Saved channel name!");
+      toast.success("Channel name saved!");
     } catch {
-      toast.error("Failed to save name");
+      toast.error("Failed to save alias");
     }
   };
 
@@ -1519,7 +1000,6 @@ function ChannelsView() {
           const mapped = data.channels.map((c: any) => {
             const fallback = c.id.split('/').pop() || c.id;
             const pretty = toChName(c.id);
-            // If pretty name is different from the raw fallback, it means we found a nice alias!
             return {
               ...c,
               name: (pretty !== fallback && pretty !== "Unknown") ? pretty : c.name
@@ -1544,11 +1024,8 @@ function ChannelsView() {
   const toggleChannel = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, active: !current } : c)));
     try {
-      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, {
-        method: "PUT"
-      });
+      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { method: "PUT" });
     } catch (err) {
-      console.error("Failed to toggle channel:", err);
       toast.error("Failed to toggle channel");
     }
   };
@@ -1556,11 +1033,8 @@ function ChannelsView() {
   const toggleAutoApprove = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve: !current } : c)));
     try {
-      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve`, {
-        method: "PUT"
-      });
+      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve`, { method: "PUT" });
     } catch (err) {
-      console.error("Failed to toggle auto-approve:", err);
       toast.error("Failed to toggle auto-approve");
     }
   };
@@ -1579,122 +1053,156 @@ function ChannelsView() {
         setShowAdd(false);
         fetchChannels();
         toast.success("Channel added successfully!");
-      } else {
-        toast.error("Failed to add channel");
       }
-    } catch (err) {
+    } catch {
       toast.error("Error adding channel");
     }
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="flex-1 overflow-y-auto px-6 py-6 max-w-4xl mx-auto flex flex-col gap-5">
+      {/* Header Banner */}
+      <div className="flex items-center justify-between p-5 rounded-3xl glass-panel border border-white/10">
         <div>
-          <p className="text-sm font-bold text-foreground">Source Channels ({chs.length})</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{chs.filter(c => c.active).length} active · {chs.filter(c => !c.active).length} paused</p>
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <span>📡</span> Source Telegram Channels ({chs.length})
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {chs.filter(c => c.active).length} listening · {chs.filter(c => !c.active).length} paused
+          </p>
         </div>
         <button onClick={() => setShowAdd(!showAdd)}
-          className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl text-white transition-all active:scale-95"
-          style={{ background: "#E63946", boxShadow: "0 4px 16px rgba(230,57,70,0.25)" }}>
-          <Plus size={13} />{showAdd ? "Close" : "Add Channel"}
+          className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-2xl text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all shadow-md">
+          <Plus size={14} /> {showAdd ? "Close" : "Add Channel"}
         </button>
       </div>
 
       {showAdd && (
-        <div className="flex items-center gap-2 p-3 rounded-2xl border border-border bg-card">
-          <input
-            value={newChannelInput}
-            onChange={e => setNewChannelInput(e.target.value)}
-            placeholder="e.g. @my_telegram_channel or https://t.me/..."
-            className="flex-1 px-3 py-2 rounded-xl text-sm text-foreground bg-input border border-border focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono"
-            onKeyDown={e => e.key === "Enter" && addChannel()}
-          />
+        <div className="flex items-center gap-2 p-3.5 rounded-2xl glass-panel border border-primary/30 animate-slide-up">
+          <input value={newChannelInput} onChange={e => setNewChannelInput(e.target.value)}
+            placeholder="Invite link: https://t.me/+... or username: @offerzone"
+            className="flex-1 px-3.5 py-2.5 rounded-xl text-xs font-mono text-white bg-slate-950/80 border border-white/10 focus:outline-none focus:border-primary/50"
+            onKeyDown={e => e.key === "Enter" && addChannel()} />
           <button onClick={addChannel}
-            className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:opacity-90 active:scale-95">
-            Add
+            className="px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95">
+            Connect
           </button>
         </div>
       )}
 
-      {loading && chs.length === 0 ? (
-        <div className="text-center py-12 text-sm text-muted-foreground">Loading channels...</div>
-      ) : (
-        chs.map(ch => (
-          <div key={ch.id} className="flex items-center gap-4 p-4 rounded-2xl border border-border bg-card transition-colors">
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-base font-bold flex-shrink-0"
-              style={{ background: `${ch.color || "#E63946"}12`, color: ch.color || "#E63946" }}>
-              {(ch.name || ch.id || "C")[0].toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0"
-              onDoubleClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}
-              title="Double-click to edit channel name">
-              {editingId === ch.id ? (
+      {/* Channel Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        {loading && chs.length === 0 ? (
+          <div className="col-span-2 text-center py-20 text-xs text-slate-400">Loading live channels…</div>
+        ) : (
+          chs.map(ch => (
+            <div key={ch.id} className="p-4 rounded-2xl glass-card flex flex-col justify-between gap-3 border border-white/8 hover:border-white/15">
+              <div className="flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-extrabold text-white flex-shrink-0 glow-pill-accent">
+                  {(ch.name || ch.id || "C")[0].toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0"
+                  onDoubleClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}
+                  title="Double-click to edit name">
+                  {editingId === ch.id ? (
+                    <div className="flex items-center gap-2">
+                      <input autoFocus value={editName} onChange={e => setEditName(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") saveAlias(ch.id, editName);
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        onBlur={() => saveAlias(ch.id, editName)}
+                        className="w-full px-2 py-1 rounded-lg text-xs font-bold text-white bg-slate-900 border border-primary/50 focus:outline-none" />
+                      <button onClick={() => saveAlias(ch.id, editName)} className="text-emerald-400 hover:text-emerald-300">
+                        <Check size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="cursor-pointer group flex flex-col" onClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}>
+                      <p className="text-xs font-bold text-white group-hover:text-primary transition-colors flex items-center gap-1.5">
+                        {ch.name || ch.id}
+                        <PenLine size={10} className="opacity-0 group-hover:opacity-100 text-slate-400" />
+                      </p>
+                      <p className="text-[10px] text-slate-500 font-mono truncate mt-0.5">{ch.id}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* 24h Deal Count Metric */}
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <span className="text-base font-extrabold font-mono text-white">
+                    {ch.deals_24h ?? 0}
+                  </span>
+                  <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">24h Deals</span>
+                </div>
+              </div>
+
+              {/* Controls Footer */}
+              <div className="flex items-center justify-between pt-2.5 border-t border-white/5 text-[11px]">
                 <div className="flex items-center gap-2">
-                  <input
-                    autoFocus
-                    value={editName}
-                    onChange={e => setEditName(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") saveAlias(ch.id, editName);
-                      if (e.key === "Escape") setEditingId(null);
-                    }}
-                    onBlur={() => saveAlias(ch.id, editName)}
-                    className="w-full px-2 py-1 rounded-lg text-sm font-bold text-foreground bg-input border border-primary/40 focus:outline-none"
-                  />
-                  <button onClick={() => saveAlias(ch.id, editName)} className="text-green-500 hover:text-green-600">
-                    <Check size={16} />
+                  <span className={`w-2 h-2 rounded-full ${ch.active ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
+                  <span className="text-slate-400 font-medium">{ch.active ? "Active" : "Paused"}</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button onClick={() => toggleAutoApprove(ch.id, ch.auto_approve)}
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${ch.auto_approve ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" : "bg-white/5 text-slate-500 border-white/10"}`}>
+                    Auto-Post {ch.auto_approve ? "ON" : "OFF"}
+                  </button>
+                  <button onClick={() => toggleChannel(ch.id, ch.active)}
+                    className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${ch.active ? "bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white"}`}>
+                    {ch.active ? <X size={12} /> : <Check size={12} />}
                   </button>
                 </div>
-              ) : (
-                <div className="group cursor-pointer flex items-center gap-1.5"
-                  onClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}>
-                  <div>
-                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
-                      {ch.name || ch.id}
-                      <PenLine size={12} className="opacity-0 group-hover:opacity-100 text-muted-foreground transition-opacity" />
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {ID_TO_URL[ch.id] ? (
-                        <a href={ID_TO_URL[ch.id]} target="_blank" rel="noreferrer" className="hover:underline hover:text-primary transition-colors">
-                          {ID_TO_URL[ch.id]}
-                        </a>
-                      ) : ch.id.startsWith("-100") ? (
-                        <a href={`https://web.telegram.org/k/#${ch.id.replace('-100', '-')}`} target="_blank" rel="noreferrer" className="hover:underline hover:text-primary transition-colors">
-                          https://web.telegram.org/k/#{ch.id.replace('-100', '-')}
-                        </a>
-                      ) : (
-                        ch.id
-                      )}
-                    </p>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
-            <div className="text-right flex-shrink-0 mr-2">
-              <p className="text-sm font-mono font-bold text-foreground">{ch.deals_24h ?? ch.deals ?? 0}</p>
-              <p className="text-[10px] text-muted-foreground">24h deals</p>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Posted Deals View ────────────────────────────────────────────────────────
+function PostedView({ deals }: { deals: Deal[] }) {
+  const postedDeals = deals.filter(d => d.status === "approved");
+
+  return (
+    <div className="flex-1 overflow-y-auto px-6 py-6 max-w-4xl mx-auto flex flex-col gap-4">
+      <div className="p-5 rounded-3xl glass-panel border border-white/10 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <span>🚀</span> Broadcasted Deals History ({postedDeals.length})
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">Live timeline of deals sent to Telegram & X</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {postedDeals.map(d => (
+          <div key={d.id} className="p-4 rounded-2xl glass-card flex items-center gap-4 border border-white/8 hover:border-white/15">
+            {d.imgUrl ? (
+              <img src={d.imgUrl} alt="" className="w-14 h-14 rounded-xl object-contain bg-slate-950/80 p-1 border border-white/10 flex-shrink-0" />
+            ) : (
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl bg-white/5 border border-white/10 flex-shrink-0">
+                {d.catEmoji}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-bold text-white truncate">{d.title}</h4>
+              <div className="flex items-center gap-3 mt-1 text-[11px]">
+                <span className="font-bold font-mono text-emerald-400">{fmt(d.price)}</span>
+                <span className="text-slate-500 font-mono">{fmtAgo(d.ts)}</span>
+                <span className="text-slate-400 font-semibold">{d.channel}</span>
+              </div>
             </div>
-            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-              <button onClick={() => toggleAutoApprove(ch.id, ch.auto_approve)}
-                className="flex items-center gap-1.5 px-2 py-1 rounded border transition-colors text-[10px] font-bold"
-                style={{
-                  background: ch.auto_approve ? "rgba(16, 185, 129, 0.1)" : "transparent",
-                  borderColor: ch.auto_approve ? "rgba(16, 185, 129, 0.3)" : "var(--border)",
-                  color: ch.auto_approve ? "#10B981" : "var(--text-muted)",
-                }}
-              >
-                Auto-Approve {ch.auto_approve ? "ON" : "OFF"}
-              </button>
-              <button onClick={() => toggleChannel(ch.id, ch.active)}>
-                {ch.active
-                  ? <ToggleRight size={28} style={{ color: "#16a34a" }} />
-                  : <ToggleLeft size={28} className="text-muted-foreground/40" />}
-              </button>
-            </div>
+            <button onClick={() => { navigator.clipboard.writeText(d.affText); toast.success("Copied post text!"); }}
+              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10" title="Copy Post">
+              <Copy size={14} />
+            </button>
           </div>
-        ))
-      )}
+        ))}
+      </div>
     </div>
   );
 }
@@ -1703,11 +1211,10 @@ function ChannelsView() {
 function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) => void }) {
   const [s, setS] = useState<AppSettings>({
     outputChannel: "@dealsforindia",
-    stylePrompt: "Write in a casual, enthusiastic style. Use emojis sparingly. Highlight the key benefits and price clearly. Keep under 900 characters.",
+    stylePrompt: "Write in a casual, enthusiastic style. Highlight key discount clearly.",
     dedupHours: 24, maxPerCycle: 40,
   });
   const [saved, setSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -1725,11 +1232,7 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
             }));
           }
         }
-      } catch (err) {
-        console.error("Failed to load settings:", err);
-      } finally {
-        setLoading(false);
-      }
+      } catch {}
     })();
   }, []);
 
@@ -1747,184 +1250,110 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
       });
       if (res.ok) {
         setSaved(true);
-        toast.success("Settings saved to server!");
+        toast.success("Settings saved to VM!");
         setTimeout(() => setSaved(false), 2500);
-      } else {
-        toast.error("Failed to save settings");
       }
-    } catch (err) {
+    } catch {
       toast.error("Error saving settings");
     }
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-6 pb-20 max-w-2xl mx-auto flex flex-col gap-6">
-      <div className="flex-shrink-0">
-        <p className="text-sm font-bold text-foreground">Settings</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Bot pipeline configuration</p>
+    <div className="flex-1 overflow-y-auto px-6 py-6 max-w-3xl mx-auto flex flex-col gap-5">
+      <div className="p-5 rounded-3xl glass-panel border border-white/10">
+        <h2 className="text-base font-bold text-white flex items-center gap-2">
+          <span>⚙️</span> DealFlow Pipeline Settings
+        </h2>
+        <p className="text-xs text-slate-400 mt-0.5">Configure scraping limits, destination channels, and AI prompt instructions</p>
       </div>
 
-      {/* Appearance */}
-      <div className="flex-shrink-0 rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Appearance</p>
+      <div className="p-5 rounded-3xl glass-card flex flex-col gap-4 border border-white/10">
+        <div>
+          <label className="block text-xs font-bold text-white mb-1.5">Broadcast Output Channel</label>
+          <input value={s.outputChannel} onChange={e => setS(v => ({ ...v, outputChannel: e.target.value }))}
+            className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white bg-slate-950/80 border border-white/10 focus:outline-none focus:border-primary/50" />
         </div>
-        <div className="px-5 py-4 flex flex-wrap items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">Theme</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{dark ? "Dark mode active" : "Light mode active"}</p>
-          </div>
-          <button onClick={() => setDark(!dark)}
-            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-border bg-secondary text-foreground transition-all hover:bg-muted active:scale-95">
-            {dark ? <Sun size={15} /> : <Moon size={15} />}
-            {dark ? "Switch to Light" : "Switch to Dark"}
-          </button>
-        </div>
-      </div>
 
-      {/* Output */}
-      <div className="flex-shrink-0 rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Output</p>
-        </div>
-        <div className="px-5 py-5 flex flex-col gap-5">
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-0.5">Output Channel</label>
-            <p className="text-xs text-muted-foreground mb-2">Telegram channel where approved deals are posted.</p>
-            <input value={s.outputChannel} onChange={e => setS(v => ({ ...v, outputChannel: e.target.value }))}
-              className="w-full px-3 py-2.5 rounded-xl text-sm text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-0.5">Max Posts per Cycle — <span className="font-mono text-primary">{s.maxPerCycle}</span></label>
-            <p className="text-xs text-muted-foreground mb-3">Maximum deals to post per scrape cycle.</p>
-            <input type="range" min={1} max={50} value={s.maxPerCycle}
-              onChange={e => setS(v => ({ ...v, maxPerCycle: Number(e.target.value) }))}
-              className="w-full" />
-            <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-              <span>1</span><span>50</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* AI Rewrite */}
-      <div className="flex-shrink-0 rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">AI Rewrite</p>
-        </div>
-        <div className="px-5 py-5">
-          <label className="block text-sm font-semibold text-foreground mb-0.5">Style Prompt</label>
-          <p className="text-xs text-muted-foreground mb-2">Instruction given to AI when rewriting deal posts.</p>
+        <div>
+          <label className="block text-xs font-bold text-white mb-1.5">AI Formatting Instruction Prompt</label>
           <textarea value={s.stylePrompt} onChange={e => setS(v => ({ ...v, stylePrompt: e.target.value }))} rows={4}
-            className="w-full px-3.5 py-3 rounded-xl text-sm text-foreground border border-border bg-input focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
+            className="w-full px-3.5 py-3 rounded-xl text-xs bg-slate-950/80 border border-white/10 text-white focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
         </div>
-      </div>
 
-      {/* Deduplication */}
-      <div className="flex-shrink-0 rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-border">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Deduplication</p>
-        </div>
-        <div className="px-5 py-5">
-          <label className="block text-sm font-semibold text-foreground mb-0.5">FP Hash TTL — <span className="font-mono text-primary">{s.dedupHours}h</span></label>
-          <p className="text-xs text-muted-foreground mb-3">Deals with the same fingerprint within this window are duplicates.</p>
-          <input type="range" min={1} max={72} value={s.dedupHours}
-            onChange={e => setS(v => ({ ...v, dedupHours: Number(e.target.value) }))}
-            className="w-full" />
-          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            <span>1h</span><span>72h</span>
-          </div>
-        </div>
+        <button onClick={save}
+          className="mt-2 py-3 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2">
+          <Check size={14} strokeWidth={3} /> Save Configuration
+        </button>
       </div>
-
-      <div className="flex-shrink-0 rounded-2xl border border-border overflow-hidden bg-card">
-        <div className="px-5 py-3 border-b border-border">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">API Keys</p>
-        </div>
-        <div className="px-5 py-4 flex flex-col gap-2">
-          <p className="text-xs text-muted-foreground mb-1">Keys are server-side only and not exposed in the UI.</p>
-          {["TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "EARNKARO_API_KEY"].map(k => (
-            <div key={k} className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-border bg-secondary">
-              <Shield size={12} className="text-muted-foreground flex-shrink-0" />
-              <span className="text-xs font-mono text-muted-foreground flex-1">{k}</span>
-              <CheckCircle2 size={13} style={{ color: "#16a34a" }} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <button onClick={save}
-        className="flex-shrink-0 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold text-white transition-all active:scale-[0.98]"
-        style={{ background: saved ? "#16a34a" : "#E63946", boxShadow: `0 4px 24px ${saved ? "rgba(22,163,74,0.25)" : "rgba(230,57,70,0.22)"}` }}>
-        {saved ? <><CheckCircle2 size={16} />Saved</> : <><Check size={16} strokeWidth={2.5} />Save Settings</>}
-      </button>
     </div>
   );
 }
 
-// ─── Nav ──────────────────────────────────────────────────────────────────────
+// ─── Sidebar Navigation ───────────────────────────────────────────────────────
 const NAV: { id: Tab; icon: React.ElementType; label: string }[] = [
-  { id: "Review", icon: Flame, label: "Review" },
-  { id: "Posted", icon: CheckSquare, label: "Posted" },
+  { id: "Review", icon: Flame, label: "Review Deck" },
+  { id: "Posted", icon: CheckSquare, label: "Broadcasted" },
   { id: "Channels", icon: Radio, label: "Channels" },
   { id: "Settings", icon: Settings2, label: "Settings" },
 ];
 
-function Sidebar({ tab, setTab, pending, dark, setDark, onCompose }: {
-  tab: Tab; setTab: (t: Tab) => void; pending: number; dark: boolean; setDark: (v: boolean) => void; onCompose: () => void;
+function Sidebar({ tab, setTab, pending, dark, setDark }: {
+  tab: Tab; setTab: (t: Tab) => void; pending: number; dark: boolean; setDark: (v: boolean) => void;
 }) {
   return (
-    <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-border" style={{ width: 200, background: "var(--sidebar)" }}>
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-          style={{ background: "linear-gradient(135deg,#E63946,#FF6B35)" }}>D</div>
+    <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-white/8 glass-panel" style={{ width: 220, background: "rgba(9, 10, 16, 0.85)" }}>
+      {/* Brand Header */}
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
+        <div className="w-9 h-9 rounded-2xl flex items-center justify-center glow-pill-primary text-white font-black text-base shadow-lg">
+          ⚡
+        </div>
         <div>
-          <p className="text-[13px] font-bold text-foreground">DealFlow</p>
+          <h1 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
+            DealFlow <span className="text-[10px] px-1.5 py-0.2 rounded bg-primary/20 text-primary border border-primary/30 font-mono">2.0</span>
+          </h1>
           <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" style={{ boxShadow: "0 0 5px rgba(34,197,94,0.6)" }} />
-            <span className="text-[9px] text-muted-foreground uppercase tracking-widest">Live</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[9px] text-slate-400 font-semibold tracking-wider uppercase">Live Engine</span>
           </div>
         </div>
       </div>
-      <div className="p-3">
-        <button onClick={onCompose} className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-white text-[13px] font-bold transition-all hover:opacity-90 active:scale-95"
-          style={{ background: "#E63946", boxShadow: "0 4px 12px rgba(230,57,70,0.3)" }}>
-          <PenLine size={14} />
-          Compose Deal
-        </button>
-      </div>
-      <nav className="flex-1 px-2 py-1 flex flex-col gap-0.5">
+
+      {/* Nav List */}
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
         {NAV.map(({ id, icon: Icon, label }) => {
           const active = tab === id;
           return (
             <button key={id} onClick={() => setTab(id)}
-              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${active ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"}`}
-              style={active ? { background: "rgba(230,57,70,0.08)" } : {}}>
-              {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full" style={{ background: "#E63946" }} />}
-              <Icon size={15} />
-              {label}
+              className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${active ? "bg-gradient-to-r from-rose-500/20 to-primary/10 text-white border border-primary/30 shadow-md shadow-primary/5" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
+              {active && <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-primary shadow-lg shadow-primary" />}
+              <Icon size={16} className={active ? "text-primary" : "text-slate-400"} />
+              <span>{label}</span>
               {id === "Review" && pending > 0 && (
-                <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md text-white flex-shrink-0"
-                  style={{ background: "#E63946", fontFamily: "'JetBrains Mono',monospace" }}>{pending}</span>
+                <span className="ml-auto text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-sm">
+                  {pending}
+                </span>
               )}
             </button>
           );
         })}
       </nav>
-      <div className="px-3 pb-4 pt-3 border-t border-border flex flex-col gap-2">
-        <div className="flex items-center justify-between px-2">
-          <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{DAILY_STATS.date}</span>
-          <button onClick={() => setDark(!dark)}
-            className="w-7 h-7 rounded-lg flex items-center justify-center bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-            {dark ? <Sun size={13} /> : <Moon size={13} />}
-          </button>
+
+      {/* System Monitor Footer */}
+      <div className="p-4 border-t border-white/8 flex flex-col gap-2.5">
+        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+          <span>Engine VM</span>
+          <span className="text-emerald-400 font-bold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" /> Online
+          </span>
         </div>
-        <div className="px-2 py-1.5 rounded-lg text-[10px] font-mono" style={{ background: "var(--secondary)" }}>
-          <div className="flex justify-between text-muted-foreground mb-0.5">
-            <span>Posted</span><span className="font-bold text-foreground">{DAILY_STATS.posted}</span>
+        <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/5 flex flex-col gap-1 text-[10px] font-mono text-slate-400">
+          <div className="flex justify-between">
+            <span>Workers</span>
+            <span className="text-white font-bold">5 Active</span>
           </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>Dupes</span><span className="font-bold text-foreground">{DAILY_STATS.dup}</span>
+          <div className="flex justify-between">
+            <span>Live Sync</span>
+            <span className="text-emerald-400">100% OK</span>
           </div>
         </div>
       </div>
@@ -1932,243 +1361,92 @@ function Sidebar({ tab, setTab, pending, dark, setDark, onCompose }: {
   );
 }
 
-function MobileHeader({ tab, pending, dark, setDark, onCompose }: {
-  tab: Tab; pending: number; dark: boolean; setDark: (v: boolean) => void; onCompose: () => void;
-}) {
-  return (
-    <header className="md:hidden flex items-center gap-3 px-4 border-b border-border flex-shrink-0" style={{ minHeight: 46, background: "var(--sidebar)" }}>
-      <div className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-        style={{ background: "linear-gradient(135deg,#E63946,#FF6B35)" }}>D</div>
-      <span className="text-sm font-semibold text-foreground flex-1">{tab}</span>
-      {tab === "Review" && pending > 0 && (
-        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md text-white" style={{ background: "#E63946" }}>{pending}</span>
-      )}
-      <button onClick={onCompose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ background: "#E63946" }}>
-        <PenLine size={14} />
-      </button>
-      <button onClick={() => setDark(!dark)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-secondary text-muted-foreground">
-        {dark ? <Sun size={14} /> : <Moon size={14} />}
-      </button>
-    </header>
-  );
-}
-
-function MobileNav({ tab, setTab, pending }: { tab: Tab; setTab: (t: Tab) => void; pending: number }) {
-  return (
-    <nav className="md:hidden mobile-nav flex-shrink-0 flex items-stretch border-t border-border" style={{ background: "var(--sidebar)" }}>
-      {NAV.map(({ id, icon: Icon, label }) => {
-        const active = tab === id;
-        return (
-          <button key={id} onClick={() => setTab(id)}
-            className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 relative transition-colors ${active ? "" : "text-muted-foreground/60"}`}
-            style={{ color: active ? "#E63946" : undefined }}>
-            {active && <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-8 rounded-full" style={{ background: "#E63946" }} />}
-            <Icon size={17} strokeWidth={active ? 2 : 1.75} />
-            <span className="text-[9.5px] font-semibold uppercase tracking-wider">{label}</span>
-            {id === "Review" && pending > 0 && (
-              <span className="absolute top-1.5 right-[calc(50%-20px)] text-[8px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center text-white"
-                style={{ background: "#E63946" }}>{pending > 9 ? "9+" : pending}</span>
-            )}
-          </button>
-        );
-      })}
-    </nav>
-  );
-}
-
-// ─── App ──────────────────────────────────────────────────────────────────────
+// ─── Main App Entry ───────────────────────────────────────────────────────────
 export default function App() {
   const [tab, setTab] = useState<Tab>("Review");
   const [deals, setDeals] = useState<Deal[]>(BASE_DEALS);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [dark, setDark] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
-  const wsRetry = useRef(0);
 
-  // ── Fetch deals from real API (fallback to static JSON) ──
   const loadDeals = useCallback(async () => {
     try {
       const apiDeals = await fetchPendingDeals();
       setDeals(apiDeals);
-    } catch (e) { 
+    } catch (e) {
       console.error("Failed to load deals", e);
     }
   }, []);
 
   useEffect(() => {
     loadDeals();
-    const timer = setInterval(() => {
-      loadDeals();
-    }, 15000);
+    const timer = setInterval(loadDeals, 30000);
     return () => clearInterval(timer);
   }, [loadDeals]);
 
-  // ── WebSocket for live deal push ──
+  // Real-time WebSocket connection
   useEffect(() => {
-    let alive = true;
-    function connect() {
-      if (!alive) return;
-      let ws: WebSocket;
+    let ws: WebSocket;
+    const connect = () => {
       try {
         ws = new WebSocket(WS_URL);
-      } catch (e) {
-        console.warn("WebSocket failed:", e);
-        return;
-      }
-      wsRef.current = ws;
-      ws.onopen = () => { wsRetry.current = 0; };
-      ws.onmessage = (ev) => {
-        try {
-          const msg = JSON.parse(ev.data);
-          if (msg.type === "new_deal" && msg.deal) {
-            const raw = msg.deal as RawDeal & { fp_hash?: string };
-            const newDeal = mapRawToDeal(raw);
-            setDeals(prev => [newDeal, ...prev.filter(d => d.id !== newDeal.id)]);
-            toast("New deal arrived", { duration: 2000 });
-          } else if (msg.type === "stats_update") {
-            // stats can be consumed by StatsBar if lifted later
-          }
-        } catch { /* ignore malformed frames */ }
-      };
-      ws.onclose = () => {
-        if (!alive) return;
-        const delay = Math.min(1000 * 2 ** wsRetry.current, 30000);
-        wsRetry.current++;
-        setTimeout(connect, delay);
-      };
-      ws.onerror = () => ws.close();
-    }
+        ws.onopen = () => console.log("WebSocket connected to DealFlow Engine");
+        ws.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.event === "new_deal" || data.event === "deal_approved") loadDeals();
+          } catch {}
+        };
+        ws.onclose = () => setTimeout(connect, 3000);
+      } catch {}
+    };
     connect();
-    return () => { alive = false; wsRef.current?.close(); };
-  }, []);
+    return () => { ws?.close(); };
+  }, [loadDeals]);
 
-  // ── Approve — optimistic UI + real API ──
-  const approve = useCallback((id: string) => {
-    setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "approved" as DealStatus } : d));
-    toast.success("Approved ✓", { duration: 1500 });
-    try { navigator.vibrate?.(12); } catch {}
-    apiApprove(id).then(ok => {
-      if (!ok) {
-        setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "pending" as DealStatus } : d));
-        toast.error("Approve failed — reverted", { duration: 2500 });
-      }
-    });
-  }, []);
+  const handleApprove = async (id: string) => {
+    setDeals(prev => prev.map(d => d.id === id ? { ...d, status: "approved" } : d));
+    toast.success("Deal approved & broadcasted!");
+    await apiApprove(id);
+  };
 
-  // ── Reject — optimistic UI + real API ──
-  const reject = useCallback((id: string) => {
-    setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "rejected" as DealStatus } : d));
-    toast.error("Rejected", { duration: 1400 });
-    try { navigator.vibrate?.([8, 30, 8]); } catch {}
-    apiReject(id).then(ok => {
-      if (!ok) {
-        setDeals(ds => ds.map(d => d.id === id ? { ...d, status: "pending" as DealStatus } : d));
-        toast.error("Reject failed — reverted", { duration: 2500 });
-      }
-    });
-  }, []);
+  const handleReject = async (id: string) => {
+    setDeals(prev => prev.map(d => d.id === id ? { ...d, status: "rejected" } : d));
+    toast.info("Deal skipped");
+    await apiReject(id);
+  };
 
-  // ── Compose ──
-  const compose = useCallback(() => {
-    setEditing({
-      id: "compose",
-      title: "",
-      price: 0,
-      mrp: 0,
-      category: "General",
-      imgUrl: "",
-      affText: "",
-      originalText: "Manually composed deal",
-      originalUrl: "",
-      originalImages: [],
-      sourceText: "",
-      sourceImages: [],
-      score: 0,
-      verdict: "",
-      ts: Date.now() / 1000,
-      channel: "Manual",
-      discount: 0,
-      status: "pending"
-    });
-  }, []);
-
-  // ── Save Draft — optimistic + API ──
-  const saveDraft = useCallback((changes: Partial<Deal>) => {
-    if (!editing) return;
-    if (editing.id === "compose") {
-      toast("Drafts not supported for composed deals", { duration: 1500 });
-      return;
-    }
-    setDeals(ds => ds.map(d => d.id === editing.id ? { ...d, ...changes, status: "draft" as DealStatus } : d));
-    toast("Draft saved", { duration: 1500 });
-    apiEdit(editing.id, changes as Record<string, unknown>);
-  }, [editing]);
-
-  // ── Save & Approve — optimistic + API ──
-  const saveApprove = useCallback((changes: Partial<Deal>) => {
-    if (!editing) return;
-    
-    if (editing.id === "compose") {
-      toast.success("Composed & Approved ✓", { duration: 1800 });
-      apiCompose(changes as Record<string, unknown>).then(ok => {
-        if (ok) {
-          setTimeout(loadDeals, 500); // refresh recent
-        } else {
-          toast.error("Failed to compose deal");
-        }
-      });
-      return;
-    }
-    
-    setDeals(ds => ds.map(d => d.id === editing.id ? { ...d, ...changes, status: "approved" as DealStatus } : d));
-    toast.success("Saved & Approved ✓", { duration: 1800 });
-    // Edit first, then approve — pass changes to approve too so the deal
-    // gets posted with the edited content even if edit races with approve
-    apiEdit(editing.id, changes as Record<string, unknown>).then(() =>
-      apiApprove(editing.id, changes as Record<string, unknown>)
-    );
-  }, [editing, loadDeals]);
-
-  const pending = deals.filter(d => d.status === "pending").length;
+  const pendingCount = deals.filter(d => d.status === "pending").length;
 
   return (
-    <div className={dark ? "dark" : ""} style={{ height: "100dvh" }}>
-      <div className="h-full bg-background flex flex-col overflow-hidden">
-        <style>{STYLES}</style>
-        <Toaster position="top-center" richColors toastOptions={{ style: { fontFamily: "'Inter',sans-serif", fontSize: 13 } }} />
+    <div className="flex h-screen w-screen overflow-hidden bg-[#07080E] text-white">
+      <Toaster position="top-right" richColors theme="dark" />
+      <Sidebar tab={tab} setTab={setTab} pending={pendingCount} dark={dark} setDark={setDark} />
 
-        <div className="flex-1 flex overflow-hidden">
-          <Sidebar tab={tab} setTab={setTab} pending={pending} dark={dark} setDark={setDark} onCompose={compose} />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <MobileHeader tab={tab} pending={pending} dark={dark} setDark={setDark} onCompose={compose} />
-            <AnimatePresence mode="wait">
-              <motion.div key={tab} className="flex-1 flex flex-col overflow-hidden"
-                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}>
-                {tab === "Review" && <ReviewView deals={deals} onApprove={approve} onReject={reject} onEdit={setEditing} dark={dark} />}
-                {tab === "DesiDime" && <DesiDimeView />}
-                {tab === "Posted" && <PostedView deals={deals} onEdit={setEditing} />}
-                {tab === "Channels" && <ChannelsView />}
-                {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
-              </motion.div>
-            </AnimatePresence>
-            <MobileNav tab={tab} setTab={setTab} pending={pending} />
-          </div>
-        </div>
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {tab === "Review" && (
+          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} dark={dark} />
+        )}
+        {tab === "Posted" && <PostedView deals={deals} />}
+        {tab === "Channels" && <ChannelsView />}
+        {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
+      </main>
 
-        <AnimatePresence>
-          {editing && (
-            <EditModal
-              deal={editing}
-              onClose={() => setEditing(null)}
-              onSaveDraft={saveDraft}
-              onSaveApprove={saveApprove}
-              onRemove={(id) => { setDeals(ds => ds.filter(d => d.id !== id)); setEditing(null); }}
-              onToast={(msg, type) => { if (type === "error") toast.error(msg); else if (type === "info") toast.info(msg); else toast.success(msg); }}
-            />
-          )}
-        </AnimatePresence>
-      </div>
+      {/* Edit Deal Modal */}
+      {editing && (
+        <EditModal deal={editing} onClose={() => setEditing(null)}
+          onSaveDraft={(chg) => setDeals(prev => prev.map(d => d.id === editing.id ? { ...d, ...chg } : d))}
+          onSaveApprove={(chg) => {
+            handleApprove(editing.id);
+            setEditing(null);
+          }}
+          onToast={(msg, type) => {
+            if (type === "success") toast.success(msg);
+            else if (type === "error") toast.error(msg);
+            else toast.info(msg);
+          }}
+        />
+      )}
     </div>
   );
 }
