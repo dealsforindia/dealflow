@@ -17,6 +17,7 @@ import {
 import {
   Category3DIcon, Store3DBadge, Nav3DIcon, Stat3DPill, FloatingCart3D, Satellite3D, SavingsPill3D
 } from "./components/Iconscout3DAssets";
+import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DealStatus = "pending" | "approved" | "rejected" | "draft";
@@ -901,6 +902,38 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   const approved = deals.filter(d => d.status === "approved").length;
   const rejected = deals.filter(d => d.status === "rejected").length;
 
+  const storeOptions: DropdownOption[] = [
+    { value: "All", label: "All Stores", icon: "🛍️" },
+    { value: "amazon", label: "Amazon", icon: "📦" },
+    { value: "flipkart", label: "Flipkart", icon: "🛍️" },
+    { value: "myntra", label: "Myntra", icon: "👗" },
+    { value: "desidime", label: "DesiDime", icon: "🔥" },
+    { value: "ajio", label: "AJIO", icon: "✨" },
+  ];
+
+  const channelOptions: DropdownOption[] = [
+    { value: "All", label: "All Channels", icon: "⚡" },
+    ...uniqueChannels.map(ch => ({
+      value: ch,
+      label: ch,
+      icon: "📡",
+    })),
+  ];
+
+  const sortOptions: DropdownOption[] = [
+    { value: "latest", label: "Newest First", icon: "⏰" },
+    { value: "discount", label: "Highest % Off", icon: "🔥" },
+    { value: "price_asc", label: "Price: Low to High", icon: "🏷️" },
+    { value: "price_desc", label: "Price: High to Low", icon: "💎" },
+  ];
+
+  const pageSizeOptions: DropdownOption[] = [
+    { value: "40", label: "40 / page" },
+    { value: "80", label: "80 / page" },
+    { value: "120", label: "120 / page" },
+    { value: "9999", label: "All Deals" },
+  ];
+
   void dark;
 
   return (
@@ -937,8 +970,40 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </div>
         </div>
 
-        {/* Tier 2: Sleek Horizontal Filter Bar */}
+        {/* Tier 2: Custom Dropdowns Row (First on Mobile) */}
         <div className="flex items-center justify-between gap-3 overflow-x-auto no-scrollbar py-0.5 flex-nowrap">
+          {/* Custom Glass Dropdowns */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <GlassDropdown
+              value={selectedStore}
+              onChange={val => { setSelectedStore(val); setPage(1); }}
+              options={storeOptions}
+              placeholder="All Stores"
+            />
+
+            <GlassDropdown
+              value={selectedChannel}
+              onChange={val => { setSelectedChannel(val); setPage(1); }}
+              options={channelOptions}
+              placeholder="All Channels"
+              searchable={true}
+            />
+
+            <GlassDropdown
+              value={sort}
+              onChange={val => { setSort(val as any); setPage(1); }}
+              options={sortOptions}
+              placeholder="Sort Order"
+            />
+
+            <GlassDropdown
+              value={String(pageSize)}
+              onChange={val => { setPageSize(Number(val)); setPage(1); }}
+              options={pageSizeOptions}
+              placeholder="Page Size"
+            />
+          </div>
+
           {/* Status Tabs: Segmented Control */}
           <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-950/80 border border-white/10 flex-shrink-0">
             <button onClick={() => { setFilter("pending"); setPage(1); }}
@@ -976,59 +1041,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
               }`}>
               <span>📦</span> All <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">{deals.length}</span>
             </button>
-          </div>
-
-          {/* Unified Compact Filters */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Store */}
-            <div className="relative">
-              <select value={selectedStore} onChange={e => { setSelectedStore(e.target.value); setPage(1); }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-950/80 text-slate-200 border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-6">
-                <option value="All">🛍️ Stores</option>
-                <option value="amazon">Amazon</option>
-                <option value="flipkart">Flipkart</option>
-                <option value="myntra">Myntra</option>
-                <option value="desidime">DesiDime</option>
-                <option value="ajio">AJIO</option>
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
-            </div>
-
-            {/* Channels */}
-            <div className="relative">
-              <select value={selectedChannel} onChange={e => { setSelectedChannel(e.target.value); setPage(1); }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-950/80 text-slate-200 border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-6 max-w-[140px] truncate">
-                <option value="All">⚡ Channels</option>
-                {uniqueChannels.map(ch => (
-                  <option key={ch} value={ch}>{ch}</option>
-                ))}
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
-            </div>
-
-            {/* Sort */}
-            <div className="relative">
-              <select value={sort} onChange={e => { setSort(e.target.value as any); setPage(1); }}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-950/80 text-slate-200 border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-6">
-                <option value="latest">⏰ Newest</option>
-                <option value="discount">🔥 % Off</option>
-                <option value="price_asc">🏷️ Price: Low</option>
-                <option value="price_desc">💎 Price: High</option>
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
-            </div>
-
-            {/* Page size */}
-            <div className="relative">
-              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
-                className="px-2 py-1.5 rounded-xl text-xs font-mono font-semibold bg-slate-950/80 text-slate-300 border border-white/10 focus:outline-none cursor-pointer appearance-none pr-5">
-                <option value={40}>40</option>
-                <option value={80}>80</option>
-                <option value={120}>120</option>
-                <option value={9999}>All</option>
-              </select>
-              <div className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
-            </div>
           </div>
         </div>
       </div>
