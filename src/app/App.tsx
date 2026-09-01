@@ -5,18 +5,16 @@ import {
   Check, X, Search, Sun, Moon, Zap, Tag, Settings2, Radio,
   CheckSquare, Plus, PenLine, Upload, Sparkles,
   Undo2, ExternalLink, Shield,
-  Clock, TrendingUp, Flame, RefreshCw, CheckCircle2,
+  Clock, Flame, RefreshCw, CheckCircle2,
   Maximize2, Copy, Link as LinkIcon, FileText,
-  Globe, ArrowUpRight, ShoppingCart, Percent,
-  Layers, Send, CheckCheck
+  Globe, ArrowUpDown, ShoppingCart, Percent,
+  Send, CheckCheck, Trash2, SlidersHorizontal, Eye
 } from "lucide-react";
-
-const dailyStatsRaw: any = { date: new Date().toISOString().split('T')[0], posted: 0, checked: 0, dup: 0, unrated: 0, affiliate: 0, auto_posted: 0, scam: 0 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DealStatus = "pending" | "approved" | "rejected" | "draft";
 type DealType = "product" | "trick";
-type Tab = "Review" | "DesiDime" | "Posted" | "Channels" | "Settings";
+type Tab = "Review" | "Posted" | "Channels" | "Settings";
 
 interface Deal {
   id: string; title: string; price: number; mrp: number; discount: number;
@@ -40,106 +38,51 @@ interface AppSettings {
   outputChannel: string; stylePrompt: string; dedupHours: number; maxPerCycle: number;
 }
 
-// ─── Data & Helpers ───────────────────────────────────────────────────────────
+// ─── Data & Channel Mappings ──────────────────────────────────────────────────
 const extractEmoji = (cat: string) => cat.split(" ")[0] || "🛍️";
 const extractCatName = (cat: string) => cat.split(" ").slice(1).join(" ") || cat;
 
-const ID_TO_URL: Record<string, string> = {
-  "-1001837130426": "https://t.me/+emveIa6ZQxoxYjAx",       // Crazy Deals
-  "-1002260825044": "https://t.me/c/2260825044",             // DealDrops
-  "-1002072521956": "https://t.me/dealspoint",               // Dealspoint Premium
-  "-1001346861267": "https://t.me/+OylJYrIZZHBzZjRi",       // DealzTrendz
-  "-1001782814661": "https://t.me/+fJX-MfWphoNiZDU6",       // DealzTrendz 2.0
-  "-1001218727546": "https://t.me/DesidimeHot",              // DesiDime - Handpicked Deals
-  "-1001480964161": "https://t.me/realearnkaro",             // EarnKaro
-  "-1001389782464": "https://t.me/extrape",                  // ExtraPe
-  "-1001921484161": "https://t.me/+tcoZTg6IJWl4ZDRI",       // FET (Deals & Tricks)
-  "-1002152564226": "https://t.me/addlist/RBY7rxcO-T03MjE1",// Fitness Finds by SQ
-  "-1001423395942": "https://t.me/+VNdMZqz_NhKNNXvsG",      // Free Earning Tech
-  "-1002617619168": "https://t.me/+VNdMZqz_NhKNNXvsG",      // Free Earning Tech (Alt)
-  "-1001955834193": "https://t.me/+JpTJUwE9J9A1NDE1",       // Genie All Deals
-  "-1001268661047": "https://t.me/c/1944516766",             // Genie Loot
-  "-1001667757195": "https://t.me/+Io8OVRMkSVs5YzI1",       // Genie Tricks
-  "-1002365543574": "https://t.me/glamhauldiaries",          // Glam Haul Diaries
-  "-1001589506039": "https://t.me/LootDealsApp",             // Loot Deals App
-  "-1001315464303": "https://t.me/+LQ3FigpMfmAyZGJl",       // Offerzone 2.0
-  "-1001707571730": "https://t.me/+kTvbwlaPbH1mM2E1",       // Offerzone 3.0
-  "-1002393042058": "https://t.me/+FpXKV70NYNY0NzQ1",       // Offerzone 4.0
-  "-1001702197669": "https://t.me/+uV5wcTkUWJEwM2Y1",       // Offerzone Tricks
-  "-1003866659228": "https://t.me/+4DwYqc6QfXhiMTI1",       // OZ Loot Bazaar
-  "-1003516611384": "https://t.me/c/2157774706",             // OZ Loot Deals
-  "-1003871814319": "https://t.me/bblbblp",                  // Private Deals From All
-  "-1001927095270": "https://t.me/addlist/RBY7rxcO-T03MjE1",// Shoppers Quest 2.0
-  "-1001786042652": "https://t.me/+958_Lu4ZoUxM2E9",        // Shopping Genie
-  "-1001450755585": "https://t.me/Loot_DealsX",             // Trending Loot Deals
-  "-1001357275556": "https://t.me/Technicalsheikh",          // Technical Sheikh
-  "-1001900048971": "https://t.me/realearnkaro",             // EarnKaro Official
-  "-1001447952139": "https://t.me/ShoppersQuest",            // Shoppers Quest
-};
-
 const toChName = (ch?: string): string => {
   if (!ch) return "Unknown";
+  const clean = ch.toLowerCase();
+  
+  if (ch.includes("X925uAMEGvgwOWY1") || ch.includes("1268661047")) return "Genie Loot";
+  if (clean.includes("lootdealsapp") || ch.includes("LootDealsApp")) return "Loot Deals App";
   if (ch.includes("emveIa6ZQxoxYjAx")) return "Crazy Deals";
   if (ch.includes("2260825044")) return "DealDrops";
-  if (ch.includes("@dealspoint") || ch.includes("dealspoint")) return "Dealspoint Premium";
+  if (clean.includes("dealspoint")) return "Dealspoint Premium";
   if (ch.includes("OylJYrIZZHBzZjRi")) return "DealzTrendz";
   if (ch.includes("fJX-MfWphoNiZDU6")) return "DealzTrendz 2.0";
-  if (ch.includes("@DesidimeHot") || ch.includes("DesidimeHot")) return "DesiDime Handpicked Deals";
-  if (ch.includes("@realearnkaro") || ch.includes("realearnkaro")) return "EarnKaro";
-  if (ch.includes("@extrape") || ch.includes("extrape")) return "ExtraPe";
+  if (clean.includes("desidimehot")) return "DesiDime Handpicked Deals";
+  if (clean.includes("realearnkaro")) return "EarnKaro";
+  if (clean.includes("extrape")) return "ExtraPe";
   if (ch.includes("tcoZTg6IJWl4ZDRI")) return "FET (Deals & Tricks)";
-  if (ch.includes("RBY7rxcO-T03MjE1")) return "Fitness Finds & Shoppers Quest";
+  if (ch.includes("RBY7rxcO-T03MjE1")) return "Fitness Finds & SQ";
   if (ch.includes("VNdMZqz_NhKNNXvsG")) return "Free Earning Tech";
   if (ch.includes("JpTJUwE9J9A1NDE1")) return "Genie All Deals";
-  if (ch.includes("1268661047")) return "Genie Loot";
   if (ch.includes("Io8OVRMkSVs5YzI1")) return "Genie Tricks";
-  if (ch.includes("@glamhauldiaries") || ch.includes("glamhauldiaries")) return "Glam Haul Diaries";
-  if (ch.includes("@lootdealsapp") || ch.includes("lootdealsapp")) return "Loot Deals App";
+  if (clean.includes("glamhauldiaries")) return "Glam Haul Diaries";
   if (ch.includes("LQ3FigpMfmAyZGJl")) return "Offerzone 2.0";
   if (ch.includes("kTvbwlaPbH1mM2E1")) return "Offerzone 3.0";
   if (ch.includes("FpXKV70NYNY0NzQ1")) return "Offerzone 4.0";
   if (ch.includes("uV5wcTkUWJEwM2Y1")) return "Offerzone Tricks";
   if (ch.includes("4DwYqc6QfXhiMTI1")) return "OZ Loot Bazaar";
   if (ch.includes("3516611384")) return "OZ Loot Deals";
-  if (ch.includes("@bblbblp") || ch.includes("bblbblp")) return "Private Deals From All";
+  if (clean.includes("bblbblp")) return "Private Deals From All";
   if (ch.includes("958_Lu4ZoUxM2E9")) return "Shopping Genie";
-  if (ch.includes("@Technicalsheikh") || ch.includes("Technicalsheikh")) return "Technical Sheikh";
-  if (ch.includes("@Loot_DealsX") || ch.includes("Loot_DealsX")) return "Trending Loot Deals";
-  if (ch.includes("offerzone")) return "Offerzone";
-  if (ch.includes("desidime")) return "Desidime";
-  if (ch.includes("shopquest")) return "Shoppers Quest";
+  if (clean.includes("technicalsheikh")) return "Technical Sheikh";
+  if (clean.includes("loot_dealsx")) return "Trending Loot Deals";
+  if (clean.includes("desidime")) return "DesiDime";
+  if (clean.includes("shopquest")) return "Shoppers Quest";
   
   if (ch.startsWith("@")) return ch.substring(1);
-  return ch;
-};
-
-const buildVerdict = (s: number | null) =>
-  s === null ? "Unrated — review manually." :
-  s >= 8 ? "🔥 Exceptional deal — prime recommendation." :
-  s >= 6 ? "⚡ Strong deal — high confidence." :
-  s >= 4 ? "👀 Decent discount — worth reviewing." : "⚠️ Low score — check genuine price.";
-
-const buildSignals = (d: RawDeal): string[] => {
-  const s: string[] = [];
-  if (d.prices.discount_pct && d.prices.discount_pct > 0) s.push(`${Math.round(d.prices.discount_pct)}% off`);
-  if (d.affiliate_applied) s.push("Affiliated");
-  if (d.coupon) s.push(`Coupon: ${d.coupon}`);
-  if (d.bank_offers?.length > 0) s.push(`${d.bank_offers.length} bank offer${d.bank_offers.length > 1 ? "s" : ""}`);
-  if (d.platforms?.[0]) s.push(d.platforms[0]);
-  if (d.flash) s.push("Flash sale");
-  return s.slice(0, 4);
+  return ch.split("/").pop() || ch;
 };
 
 const API_BASE = import.meta.env.PROD ? "https://api.rudranil.me" : (import.meta.env.VITE_API_URL || "");
+const WS_URL = import.meta.env.PROD ? "wss://api.rudranil.me/ws" : (import.meta.env.VITE_WS_URL || `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`);
 
-const BASE_DEALS: Deal[] = [];
-
-const DAILY_STATS = dailyStatsRaw as {
-  date: string; posted: number; checked: number; dup: number;
-  unrated: number; affiliate: number; auto_posted: number; scam: number;
-};
-
-// ─── Formatting & Colors ──────────────────────────────────────────────────────
+// ─── Formatters & Theme Utilities ─────────────────────────────────────────────
 const fmt = (p: number) => p === 0 ? "Free" : `₹${p.toLocaleString("en-IN")}`;
 const fmtAgo = (ts: number) => {
   const d = Math.floor(Date.now() / 1000 - ts);
@@ -148,8 +91,6 @@ const fmtAgo = (ts: number) => {
   return `${Math.floor(d / 3600)}h ago`;
 };
 
-const scoreColor = (s: number) => s === 0 ? "#64748B" : s >= 75 ? "#10B981" : s >= 50 ? "#F59E0B" : "#EF4444";
-
 const catColor: Record<string, string> = {
   Electronics: "#8B5CF6", Fashion: "#EC4899", "Home & Kitchen": "#F59E0B",
   Home: "#F59E0B", Beauty: "#F472B6", Sports: "#10B981", Banking: "#3B82F6",
@@ -157,37 +98,27 @@ const catColor: Record<string, string> = {
   Travel: "#06B6D4", Books: "#EAB308", Kids: "#F97316", Gaming: "#8B5CF6",
 };
 
-const extractUrls = (text: string): string[] => [...(text.match(/https?:\/\/[^\s]+/g) || [])];
-
-const stripAffTag = (url: string): string => {
-  try {
-    const u = new URL(url);
-    u.searchParams.delete("tag");
-    u.searchParams.delete("ref");
-    u.searchParams.delete("smid");
-    return u.toString();
-  } catch { return url; }
-};
-
 const getStoreBadge = (platforms: string[] = [], url: string = "") => {
   const platStr = (platforms.join(" ") + " " + url).toLowerCase();
   if (platStr.includes("amazon") || platStr.includes("amzn")) {
-    return { name: "Amazon", bg: "from-amber-500/20 to-orange-500/20", border: "border-amber-500/30", text: "text-amber-300" };
+    return { name: "Amazon", bg: "from-amber-500/20 to-orange-500/20", border: "border-amber-500/30", text: "text-amber-300", tag: "amazon" };
   }
   if (platStr.includes("flipkart") || platStr.includes("fkrt")) {
-    return { name: "Flipkart", bg: "from-blue-500/20 to-cyan-500/20", border: "border-blue-500/30", text: "text-blue-300" };
+    return { name: "Flipkart", bg: "from-blue-500/20 to-cyan-500/20", border: "border-blue-500/30", text: "text-blue-300", tag: "flipkart" };
   }
   if (platStr.includes("myntra")) {
-    return { name: "Myntra", bg: "from-pink-500/20 to-rose-500/20", border: "border-pink-500/30", text: "text-pink-300" };
+    return { name: "Myntra", bg: "from-pink-500/20 to-rose-500/20", border: "border-pink-500/30", text: "text-pink-300", tag: "myntra" };
   }
   if (platStr.includes("ajio")) {
-    return { name: "AJIO", bg: "from-purple-500/20 to-indigo-500/20", border: "border-purple-500/30", text: "text-purple-300" };
+    return { name: "AJIO", bg: "from-purple-500/20 to-indigo-500/20", border: "border-purple-500/30", text: "text-purple-300", tag: "ajio" };
   }
   if (platStr.includes("desidime")) {
-    return { name: "DesiDime", bg: "from-red-500/20 to-orange-500/20", border: "border-red-500/30", text: "text-red-300" };
+    return { name: "DesiDime", bg: "from-red-500/20 to-orange-500/20", border: "border-red-500/30", text: "text-red-300", tag: "desidime" };
   }
-  return { name: platforms[0] || "Store", bg: "from-slate-500/20 to-slate-600/20", border: "border-slate-500/30", text: "text-slate-300" };
+  return { name: platforms[0] || "Store", bg: "from-slate-500/20 to-slate-600/20", border: "border-slate-500/30", text: "text-slate-300", tag: "other" };
 };
+
+const extractUrls = (text: string): string[] => [...(text.match(/https?:\/\/[^\s]+/g) || [])];
 
 const aiRewriteSim = (text: string, inst: string): string => {
   const i = inst.toLowerCase();
@@ -196,8 +127,6 @@ const aiRewriteSim = (text: string, inst: string): string => {
   if (i.includes("clean")) return text.replace(/#\S+/g, "").replace(/\n{3,}/g, "\n\n").trim();
   return text + "\n\n⚡ Limited time — grab it fast!";
 };
-
-const WS_URL = import.meta.env.PROD ? "wss://api.rudranil.me/ws" : (import.meta.env.VITE_WS_URL || `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`);
 
 // ─── API Helpers ──────────────────────────────────────────────────────────────
 function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): Deal {
@@ -224,7 +153,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     })(),
     platforms: d.platforms || [],
     originalText: d.original_text || "", affText: d.aff_text || d.original_text || "",
-    verdict: buildVerdict(d.score), signals: buildSignals(d),
+    verdict: "", signals: [],
   };
 }
 
@@ -322,27 +251,6 @@ async function apiScrapeImage(id: string): Promise<string | null> {
   } catch { return null; }
 }
 
-// ─── Score Gauge ──────────────────────────────────────────────────────────────
-function ScoreRing({ score = 0, size = 38 }: { score?: number; size?: number; verdict?: string }) {
-  if (!score || isNaN(score) || score === 0) return null;
-  const r = (size - 6) / 2, circ = 2 * Math.PI * r, color = scoreColor(score);
-  return (
-    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={3.5} />
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={3.5}
-          strokeDasharray={`${(score / 100) * circ} ${circ}`} strokeLinecap="round"
-          style={{ filter: `drop-shadow(0 0 6px ${color}99)` }} />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span style={{ fontSize: size < 40 ? 10 : 12, color, fontFamily: "'JetBrains Mono',monospace", fontWeight: 800 }}>
-          {score}
-        </span>
-      </div>
-    </div>
-  );
-}
-
 // ─── Image Lightbox ───────────────────────────────────────────────────────────
 function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   return (
@@ -357,7 +265,6 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
         onClick={e => e.stopPropagation()} />
       <button className="absolute top-5 right-5 w-11 h-11 rounded-full flex items-center justify-center bg-white/10 text-white hover:bg-white/20 transition-colors border border-white/15"
         onClick={onClose}><X size={18} /></button>
-      <p className="absolute bottom-6 text-xs text-white/40 font-medium">Click anywhere outside to dismiss</p>
     </motion.div>
   );
 }
@@ -375,36 +282,31 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
 
   return (
     <motion.div layout
-      initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
+      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96 }}
       transition={{ type: "spring", damping: 24, stiffness: 300 }}
       className="glass-card rounded-2xl overflow-hidden flex flex-col group relative"
-      style={{
-        borderTop: `2px solid ${accent}`,
-      }}>
+      style={{ borderTop: `2px solid ${accent}` }}>
 
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
       {/* Image Showcase */}
-      <div className="relative overflow-hidden cursor-zoom-in flex-shrink-0 bg-slate-950/60"
+      <div className="relative overflow-hidden cursor-zoom-in flex-shrink-0 bg-slate-950/70"
         style={{ height: 168 }}
         onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
         
         {deal.imgUrl && !imgErr ? (
           <>
-            {/* Main Product Image */}
             <img src={deal.imgUrl} alt={deal.title}
               className="absolute inset-0 w-full h-full object-contain p-3 z-10 group-hover:scale-105 transition-transform duration-300 ease-out"
               onError={() => setImgErr(true)} />
 
-            {/* Ambient Background Glow */}
             <img src={deal.imgUrl} alt="" aria-hidden
               className="absolute inset-0 w-full h-full object-cover opacity-15 filter blur-xl saturate-200 z-0"
               onError={() => setImgErr(true)} />
 
-            {/* Expand Hover Hint */}
             <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-[2px]">
               <div className="p-2 rounded-xl bg-black/60 text-white/90 border border-white/10 shadow-lg">
-                <Maximize2 size={16} />
+                <Maximize2 size={15} />
               </div>
             </div>
           </>
@@ -417,23 +319,16 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
 
         {/* Top Badges: Store + Discount */}
         <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 flex-wrap">
-          {/* Store Brand Badge */}
           <span className={`px-2 py-0.5 rounded-lg text-[10px] font-bold bg-gradient-to-r ${store.bg} border ${store.border} ${store.text} backdrop-blur-md shadow-sm`}>
             {store.name}
           </span>
 
-          {/* Glowing Discount Flame Pill */}
           {deal.discount > 0 && (
-            <span className="px-2 py-0.5 rounded-lg text-white font-extrabold text-[10px] flex items-center gap-0.5 glow-pill-primary font-mono tracking-tight">
+            <span className="px-2 py-0.5 rounded-lg text-white font-extrabold text-[10px] flex items-center gap-0.5 glow-pill-primary font-mono tracking-tight shadow-md">
               <Flame size={10} className="fill-white" />
               {Math.round(deal.discount)}% OFF
             </span>
           )}
-        </div>
-
-        {/* Top Right: AI Quality Score */}
-        <div className="absolute top-2 right-2 z-20">
-          <ScoreRing score={deal.score} size={34} />
         </div>
 
         {/* Bottom Bar: Category & Affiliate */}
@@ -469,7 +364,7 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
       </div>
 
       {/* Deal Details & Content */}
-      <div className="flex flex-col flex-1 p-3.5 gap-2.5">
+      <div className="flex flex-col flex-1 p-3.5 gap-2">
         <h4 className="text-[13px] font-semibold text-white/95 leading-snug line-clamp-2 min-h-[36px]" title={deal.title}>
           {deal.title}
         </h4>
@@ -501,8 +396,8 @@ function DealCard({ deal, onApprove, onReject, onEdit }: {
 
         {/* Coupon Code Pill */}
         {deal.coupon && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
-            <Tag size={10} className="text-amber-400" />
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
+            <Tag size={9} className="text-amber-400" />
             <span className="text-[10px] font-bold font-mono text-amber-300">{deal.coupon}</span>
           </div>
         )}
@@ -647,26 +542,21 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               <p className="text-[11px] text-slate-400">{deal.channel} · Source: {deal.channelRaw}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ScoreRing score={deal.score} size={32} />
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors border border-white/10">
-              <X size={15} />
-            </button>
-          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors border border-white/10">
+            <X size={15} />
+          </button>
         </div>
 
         {/* Body Split View */}
         <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-0">
           {/* Left Form Controls */}
           <div className="md:col-span-7 p-5 flex flex-col gap-4 border-r border-white/10">
-            {/* Title */}
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Product Title</label>
               <input value={title} onChange={e => setTitle(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl text-sm font-medium bg-slate-900/90 border border-white/10 text-white focus:outline-none focus:border-primary/50 transition-colors" />
             </div>
 
-            {/* Prices */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Sale Price (₹)</label>
@@ -680,7 +570,6 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </div>
             </div>
 
-            {/* AI Rewriter */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Affiliate Post Text</label>
@@ -707,7 +596,6 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-900/90 border border-white/10 text-slate-200 focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
             </div>
 
-            {/* Quick Media & Link Tools */}
             <div className="flex items-center gap-2 pt-1">
               <button onClick={() => fileRef.current?.click()}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">
@@ -734,7 +622,6 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </span>
             </div>
 
-            {/* Mockup Card */}
             <div className="tg-preview-wrap flex-1 flex flex-col justify-between">
               <div className="flex flex-col gap-2.5">
                 <div className="tg-preview-header">
@@ -770,7 +657,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </div>
 
               <p className="text-[10px] text-slate-500 text-center mt-2">
-                This is the exact layout delivered to your Telegram followers.
+                Exact message delivered to your Telegram subscribers.
               </p>
             </div>
           </div>
@@ -804,18 +691,29 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   onReject: (id: string) => void; onEdit: (d: Deal) => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"score" | "latest" | "discount">("latest");
+  const [sort, setSort] = useState<"latest" | "discount" | "price_asc" | "price_desc">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedStore, setSelectedStore] = useState<string>("All");
+  const [pageSize, setPageSize] = useState<number>(40);
   const [page, setPage] = useState(1);
   const [sendTG, setSendTG] = useState(true);
   const [sendX, setSendX] = useState(false);
-  const PAGE_SIZE = 100;
 
-  const uniqueChannels = Array.from(new Set(deals.map(d => d.channel))).filter(Boolean).sort();
+  const uniqueChannels = Array.from(new Set(deals.map(d => d.channel)))
+    .filter(ch => Boolean(ch) && ch.toLowerCase() !== "unknown" && ch.toLowerCase() !== "dh")
+    .sort();
+
+  const uniqueCategories = Array.from(new Set(deals.map(d => d.category))).filter(Boolean).sort();
 
   let visible = deals.filter(d => {
     if (selectedChannel !== "All" && d.channel !== selectedChannel) return false;
+    if (selectedCategory !== "All" && d.category !== selectedCategory) return false;
+    if (selectedStore !== "All") {
+      const store = getStoreBadge(d.platforms, d.affText);
+      if (store.tag !== selectedStore) return false;
+    }
     if (filter !== "all" && d.status !== filter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -824,13 +722,14 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
     return true;
   });
 
-  if (sort === "score") visible = [...visible].sort((a, b) => b.score - a.score);
-  else if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
+  if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
   else if (sort === "discount") visible = [...visible].sort((a, b) => b.discount - a.discount);
+  else if (sort === "price_asc") visible = [...visible].sort((a, b) => (a.price || 999999) - (b.price || 999999));
+  else if (sort === "price_desc") visible = [...visible].sort((a, b) => (b.price || 0) - (a.price || 0));
 
-  const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pagedVisible = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pagedVisible = pageSize === 9999 ? visible : visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const pending = deals.filter(d => d.status === "pending").length;
   const approved = deals.filter(d => d.status === "approved").length;
@@ -841,14 +740,14 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Top Glass Filter Toolbar */}
-      <div className="flex-shrink-0 px-5 py-4 border-b border-white/8 glass-panel flex flex-col gap-3.5">
-        {/* Top Search Bar */}
+      <div className="flex-shrink-0 px-6 py-4 border-b border-white/8 glass-panel flex flex-col gap-3">
+        {/* Row 1: Search + Broadcast toggles */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search deals by title, brand, or channel name…"
-              className="w-full pl-10 pr-12 py-2.5 rounded-2xl text-xs font-medium text-white bg-slate-900/80 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-primary/50 transition-all shadow-inner" />
+              placeholder="Search deals by title, brand, store, or channel…"
+              className="w-full pl-10 pr-10 py-2.5 rounded-2xl text-xs font-medium text-white bg-slate-900/80 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-primary/50 transition-all shadow-inner" />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
                 <X size={13} />
@@ -856,7 +755,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
             )}
           </div>
 
-          {/* Broadcast Destination Controls */}
           <div className="flex items-center gap-2">
             <button onClick={() => setSendTG(!sendTG)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border shadow-sm ${sendTG ? "glow-pill-success text-white border-emerald-400/40 scale-[1.02]" : "bg-white/5 border-white/10 text-slate-400 opacity-60"}`}>
@@ -869,7 +767,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </div>
         </div>
 
-        {/* Filter Pills + Channel Selector + Sorting */}
+        {/* Row 2: Status tabs + Filter Dropdowns + Sorting */}
         <div className="flex items-center justify-between gap-3 flex-wrap">
           {/* Status Tabs */}
           <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-white/8">
@@ -883,37 +781,63 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
             ))}
           </div>
 
-          {/* Right Filters */}
+          {/* Controls: Channel Dropdown, Store Filter, Sort, Page Size */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Styled Channel Filter Dropdown */}
+            {/* Store filter */}
             <div className="relative">
-              <select
-                value={selectedChannel}
-                onChange={(e) => { setSelectedChannel(e.target.value); setPage(1); }}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-white border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-8">
-                <option value="All">⚡ All Channels ({deals.length})</option>
+              <select value={selectedStore} onChange={e => { setSelectedStore(e.target.value); setPage(1); }}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-white border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-7">
+                <option value="All">🛍️ All Stores</option>
+                <option value="amazon">Amazon</option>
+                <option value="flipkart">Flipkart</option>
+                <option value="myntra">Myntra</option>
+                <option value="desidime">DesiDime</option>
+                <option value="ajio">AJIO</option>
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[9px]">▼</div>
+            </div>
+
+            {/* Channel filter */}
+            <div className="relative">
+              <select value={selectedChannel} onChange={e => { setSelectedChannel(e.target.value); setPage(1); }}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-white border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-7">
+                <option value="All">⚡ All Channels</option>
                 {uniqueChannels.map(ch => (
                   <option key={ch} value={ch}>{ch}</option>
                 ))}
               </select>
-              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[10px]">▼</div>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[9px]">▼</div>
             </div>
 
-            {/* Sort options */}
-            <div className="flex items-center gap-1 p-1 rounded-2xl bg-slate-900/90 border border-white/8">
-              {([["latest", Clock, "Newest"], ["score", TrendingUp, "Top Score"], ["discount", Flame, "Highest %"]] as const).map(([v, Icon, label]) => (
-                <button key={v} onClick={() => { setSort(v); setPage(1); }}
-                  className={`flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-semibold transition-all ${sort === v ? "bg-white/15 text-white shadow-sm border border-white/10" : "text-slate-400 hover:text-white"}`}>
-                  <Icon size={11} /> {label}
-                </button>
-              ))}
+            {/* Sort Dropdown */}
+            <div className="relative">
+              <select value={sort} onChange={e => { setSort(e.target.value as any); setPage(1); }}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900/90 text-white border border-white/10 focus:outline-none focus:border-primary/50 cursor-pointer appearance-none pr-7">
+                <option value="latest">⏰ Newest Deals</option>
+                <option value="discount">🔥 Highest % Off</option>
+                <option value="price_asc">🏷️ Price: Low to High</option>
+                <option value="price_desc">💎 Price: High to Low</option>
+              </select>
+              <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[9px]">▼</div>
+            </div>
+
+            {/* Page Size Selector */}
+            <div className="relative">
+              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-mono font-semibold bg-slate-900/90 text-slate-300 border border-white/10 focus:outline-none cursor-pointer appearance-none pr-6">
+                <option value={40}>40 / pg</option>
+                <option value={80}>80 / pg</option>
+                <option value={120}>120 / pg</option>
+                <option value={9999}>All</option>
+              </select>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-[8px]">▼</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Deals Card Grid */}
-      <div className="flex-1 overflow-y-auto px-5 py-5">
+      <div className="flex-1 overflow-y-auto px-6 py-5">
         {visible.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-28 gap-4 text-center">
             <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-3xl">
@@ -921,11 +845,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
             </div>
             <div>
               <p className="text-sm font-bold text-white">No matching deals found</p>
-              <p className="text-xs text-slate-400 mt-1">Try switching channel filters or resetting your search.</p>
+              <p className="text-xs text-slate-400 mt-1">Try switching channel or store filters.</p>
             </div>
-            <button onClick={() => { setSearch(""); setFilter("pending"); setSelectedChannel("All"); setPage(1); }}
+            <button onClick={() => { setSearch(""); setFilter("pending"); setSelectedChannel("All"); setSelectedStore("All"); setPage(1); }}
               className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all">
-              <RefreshCw size={13} /> Reset Filters
+              <RefreshCw size={13} /> Reset All Filters
             </button>
           </div>
         ) : (
@@ -938,11 +862,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
               </AnimatePresence>
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between gap-4 mt-8 pt-4 border-t border-white/8">
+            {/* Pagination Controls */}
+            {totalPages > 1 && pageSize !== 9999 && (
+              <div className="flex items-center justify-between gap-4 mt-8 pt-5 border-t border-white/8">
                 <p className="text-xs font-semibold text-slate-400">
-                  Showing <span className="font-mono text-white font-bold">{(currentPage - 1) * PAGE_SIZE + 1}</span> - <span className="font-mono text-white font-bold">{Math.min(currentPage * PAGE_SIZE, visible.length)}</span> of <span className="font-mono text-white font-bold">{visible.length}</span> deals
+                  Showing <span className="font-mono text-white font-bold">{(currentPage - 1) * pageSize + 1}</span> - <span className="font-mono text-white font-bold">{Math.min(currentPage * pageSize, visible.length)}</span> of <span className="font-mono text-white font-bold">{visible.length}</span> deals
                 </p>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
@@ -997,7 +921,11 @@ function ChannelsView() {
       if (res.ok) {
         const data = await res.json();
         if (data.channels && Array.isArray(data.channels)) {
-          const mapped = data.channels.map((c: any) => {
+          const filtered = data.channels.filter((c: any) => {
+            const id = (c.id || "").toLowerCase();
+            return id !== "dh" && id !== "unknown" && id !== "";
+          });
+          const mapped = filtered.map((c: any) => {
             const fallback = c.id.split('/').pop() || c.id;
             const pretty = toChName(c.id);
             return {
@@ -1025,7 +953,8 @@ function ChannelsView() {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, active: !current } : c)));
     try {
       await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { method: "PUT" });
-    } catch (err) {
+      toast.success(`Channel ${!current ? "resumed" : "paused"}`);
+    } catch {
       toast.error("Failed to toggle channel");
     }
   };
@@ -1033,9 +962,25 @@ function ChannelsView() {
   const toggleAutoApprove = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve: !current } : c)));
     try {
-      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve`, { method: "PUT" });
-    } catch (err) {
-      toast.error("Failed to toggle auto-approve");
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve`, { method: "PUT" });
+      if (res.ok) {
+        toast.success(`Auto-Post ${!current ? "Enabled" : "Disabled"}`);
+      } else {
+        toast.error("Failed to update auto-post");
+      }
+    } catch {
+      toast.error("Failed to toggle auto-post");
+    }
+  };
+
+  const deleteChannel = async (id: string) => {
+    if (!confirm(`Are you sure you want to remove ${id}?`)) return;
+    setChs(cs => cs.filter(c => c.id !== id));
+    try {
+      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}`, { method: "DELETE" });
+      toast.success("Channel removed!");
+    } catch {
+      toast.error("Failed to delete channel");
     }
   };
 
@@ -1060,15 +1005,15 @@ function ChannelsView() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6 max-w-4xl mx-auto flex flex-col gap-5">
-      {/* Header Banner */}
+    <div className="flex-1 overflow-y-auto px-6 py-6 max-w-5xl mx-auto flex flex-col gap-5">
+      {/* Header */}
       <div className="flex items-center justify-between p-5 rounded-3xl glass-panel border border-white/10">
         <div>
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <span>📡</span> Source Telegram Channels ({chs.length})
+            <span>📡</span> Listening Channels ({chs.length})
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            {chs.filter(c => c.active).length} listening · {chs.filter(c => !c.active).length} paused
+            {chs.filter(c => c.active).length} listening · {chs.filter(c => !c.active).length} paused · Real-time Telegram scrape
           </p>
         </div>
         <button onClick={() => setShowAdd(!showAdd)}
@@ -1090,10 +1035,10 @@ function ChannelsView() {
         </div>
       )}
 
-      {/* Channel Grid */}
+      {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {loading && chs.length === 0 ? (
-          <div className="col-span-2 text-center py-20 text-xs text-slate-400">Loading live channels…</div>
+          <div className="col-span-2 text-center py-20 text-xs text-slate-400">Loading channels…</div>
         ) : (
           chs.map(ch => (
             <div key={ch.id} className="p-4 rounded-2xl glass-card flex flex-col justify-between gap-3 border border-white/8 hover:border-white/15">
@@ -1128,7 +1073,6 @@ function ChannelsView() {
                   )}
                 </div>
 
-                {/* 24h Deal Count Metric */}
                 <div className="flex flex-col items-end flex-shrink-0">
                   <span className="text-base font-extrabold font-mono text-white">
                     {ch.deals_24h ?? 0}
@@ -1141,17 +1085,23 @@ function ChannelsView() {
               <div className="flex items-center justify-between pt-2.5 border-t border-white/5 text-[11px]">
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${ch.active ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
-                  <span className="text-slate-400 font-medium">{ch.active ? "Active" : "Paused"}</span>
+                  <span className="text-slate-400 font-medium">{ch.active ? "Listening" : "Paused"}</span>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  {/* Auto-Post Toggle */}
                   <button onClick={() => toggleAutoApprove(ch.id, ch.auto_approve)}
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${ch.auto_approve ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" : "bg-white/5 text-slate-500 border-white/10"}`}>
+                    className={`text-[10px] font-bold px-3 py-1 rounded-lg border transition-all flex items-center gap-1.5 ${ch.auto_approve ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm" : "bg-white/5 text-slate-500 border-white/10"}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${ch.auto_approve ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
                     Auto-Post {ch.auto_approve ? "ON" : "OFF"}
                   </button>
                   <button onClick={() => toggleChannel(ch.id, ch.active)}
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${ch.active ? "bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white"}`}>
-                    {ch.active ? <X size={12} /> : <Check size={12} />}
+                    className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${ch.active ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white"}`} title={ch.active ? "Pause" : "Resume"}>
+                    {ch.active ? <Check size={12} /> : <X size={12} />}
+                  </button>
+                  <button onClick={() => deleteChannel(ch.id)}
+                    className="w-7 h-7 rounded-xl flex items-center justify-center bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-colors" title="Delete Channel">
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </div>
@@ -1302,7 +1252,6 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
 }) {
   return (
     <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-white/8 glass-panel" style={{ width: 220, background: "rgba(9, 10, 16, 0.85)" }}>
-      {/* Brand Header */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
         <div className="w-9 h-9 rounded-2xl flex items-center justify-center glow-pill-primary text-white font-black text-base shadow-lg">
           ⚡
@@ -1318,7 +1267,6 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
         </div>
       </div>
 
-      {/* Nav List */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
         {NAV.map(({ id, icon: Icon, label }) => {
           const active = tab === id;
@@ -1338,7 +1286,6 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
         })}
       </nav>
 
-      {/* System Monitor Footer */}
       <div className="p-4 border-t border-white/8 flex flex-col gap-2.5">
         <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
           <span>Engine VM</span>
@@ -1364,10 +1311,9 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
 // ─── Main App Entry ───────────────────────────────────────────────────────────
 export default function App() {
   const [tab, setTab] = useState<Tab>("Review");
-  const [deals, setDeals] = useState<Deal[]>(BASE_DEALS);
+  const [deals, setDeals] = useState<Deal[]>([]);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [dark, setDark] = useState(true);
-  const wsRef = useRef<WebSocket | null>(null);
 
   const loadDeals = useCallback(async () => {
     try {
@@ -1384,7 +1330,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [loadDeals]);
 
-  // Real-time WebSocket connection
   useEffect(() => {
     let ws: WebSocket;
     const connect = () => {
@@ -1432,7 +1377,6 @@ export default function App() {
         {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
       </main>
 
-      {/* Edit Deal Modal */}
       {editing && (
         <EditModal deal={editing} onClose={() => setEditing(null)}
           onSaveDraft={(chg) => setDeals(prev => prev.map(d => d.id === editing.id ? { ...d, ...chg } : d))}
