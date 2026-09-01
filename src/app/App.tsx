@@ -1480,7 +1480,7 @@ export default function App() {
       <Toaster position="top-right" richColors theme="dark" />
       <Sidebar tab={tab} setTab={setTab} pending={pendingCount} dark={dark} setDark={setDark} />
 
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
         {tab === "Review" && (
           <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} dark={dark} />
         )}
@@ -1488,6 +1488,28 @@ export default function App() {
         {tab === "Channels" && <ChannelsView />}
         {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
       </main>
+
+      {/* Mobile Smartphone Floating Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 px-3 py-2 bg-slate-950/95 border-t border-white/10 backdrop-blur-2xl flex items-center justify-around">
+        {NAV.map(({ id, label }) => {
+          const active = tab === id;
+          const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : "settings";
+          return (
+            <button key={id} onClick={() => setTab(id)}
+              className={`relative flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-all ${
+                active ? "text-primary font-black" : "text-slate-400 hover:text-white"
+              }`}>
+              <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "settings"} active={active} />
+              <span>{label}</span>
+              {id === "Review" && pendingCount > 0 && (
+                <span className="absolute top-0 right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-mono flex items-center justify-center shadow-sm">
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
       {editing && (
         <EditModal deal={editing} onClose={() => setEditing(null)}
