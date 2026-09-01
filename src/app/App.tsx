@@ -945,7 +945,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
       </div>
 
       {/* Deals Card Grid */}
-      <div className="flex-1 overflow-y-auto px-6 py-5">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 pb-28 md:pb-8">
         {visible.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
             {/* 3D Animated Empty State */}
@@ -961,7 +961,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </div>
         ) : (
           <>
-            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" }}>
+            <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
               <AnimatePresence mode="popLayout">
                 {pagedVisible.map(d => (
                   <DealCard key={d.id} deal={d} onApprove={onApprove} onReject={onReject} onEdit={onEdit} />
@@ -1319,7 +1319,7 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6 max-w-3xl mx-auto flex flex-col gap-5">
+    <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 pb-28 md:pb-8 max-w-3xl mx-auto flex flex-col gap-5">
       <div className="p-5 rounded-3xl glass-panel border border-white/10">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
           <span>⚙️</span> DealFlow Pipeline Settings
