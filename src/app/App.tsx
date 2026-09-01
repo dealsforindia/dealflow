@@ -683,6 +683,20 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                   </button>
                 )}
               </div>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {[
+                  { label: "🔥 Add Urgency", prompt: "add urgency and countdown emojis" },
+                  { label: "✂️ Make Concise", prompt: "make it very concise and clean under 4 lines" },
+                  { label: "💰 Highlight Discount", prompt: "highlight the highest discount and price drop" },
+                  { label: "✨ Add Clean Formatting", prompt: "clean emojis and format bullet points" }
+                ].map(chip => (
+                  <button key={chip.label} type="button" onClick={() => { setInstruction(chip.prompt); }}
+                    className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 hover:border-primary/40 transition-all">
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+
               <textarea value={text} onChange={e => setText(e.target.value)} rows={6}
                 className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-900/90 border border-white/10 text-slate-200 focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
             </div>
@@ -716,12 +730,16 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             <div className="tg-preview-wrap flex-1 flex flex-col justify-between">
               <div className="flex flex-col gap-2.5">
                 <div className="tg-preview-header">
-                  <div className="tg-preview-avatar">D</div>
+                  <div className="tg-preview-avatar">
+                    {deal.channel ? deal.channel.charAt(0).toUpperCase() : "D"}
+                  </div>
                   <div>
                     <div className="tg-preview-name">
-                      DealzTrendz <CheckCheck size={12} className="text-blue-400" />
+                      {deal.channel} <CheckCheck size={12} className="text-blue-400" />
                     </div>
-                    <div className="text-[10px] text-slate-400">@dealsforindiachannel</div>
+                    <div className="text-[10px] text-slate-400">
+                      {deal.channelRaw.startsWith("@") ? deal.channelRaw : `Telegram Channel · ${deal.channel}`}
+                    </div>
                   </div>
                 </div>
 
