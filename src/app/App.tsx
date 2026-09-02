@@ -31,6 +31,11 @@ interface Deal {
   affiliate: boolean; coupon: string | null; imgUrl: string;
   platforms: string[]; originalText: string; affText: string;
   verdict: string; signals: string[];
+  clusterCount?: number;
+  clusterChannels?: { name: string; channel: string; price?: number; ts?: number }[];
+  bestPrice?: number;
+  bestChannel?: string;
+  affiliateWarn?: string;
 }
 
 interface RawDeal {
@@ -40,6 +45,11 @@ interface RawDeal {
   original_text: string; source_channel: string; affiliate_applied: boolean;
   original_msg_link: string; deal_type: string; score: number | null;
   img_url?: string;
+  cluster_count?: number;
+  cluster_channels?: { name: string; channel: string; price?: number; ts?: number }[];
+  best_price?: number;
+  best_channel?: string;
+  affiliate_warn?: string;
 }
 
 interface AppSettings {
@@ -257,6 +267,11 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     originalText: d.original_text || "",
     affText: (d as any).ai_formatted_text || d.aff_text || d.original_text || "",
     verdict: "", signals: [],
+    clusterCount: d.cluster_count || 1,
+    clusterChannels: d.cluster_channels || [],
+    bestPrice: d.best_price,
+    bestChannel: d.best_channel,
+    affiliateWarn: d.affiliate_warn,
   };
 }
 
@@ -369,6 +384,28 @@ async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
     };
   } catch { return null; }
 }
+
+async function apiQuickDrop(url: string): Promise<any> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/quick-drop`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+async function fetchPromos(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/promos?limit=50`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.promos) ? data.promos : [];
+  } catch { return []; }
+}
+
 
 // ─── Image Lightbox (Mounted via Portal outside 3D Card CSS Transforms) ─────
 function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
@@ -553,6 +590,29 @@ function DealCard({
           )}
         </div>
 
+        {/* Multi-Channel Deal Cluster Badge */}
+        {deal.clusterCount && deal.clusterCount > 1 ? (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 border border-amber-500/35 text-amber-300 shadow-sm w-fit group/cluster relative cursor-help">
+            <span className="text-xs">🔥</span>
+            <span className="text-[11px] font-extrabold tracking-tight">Trending in {deal.clusterCount} Channels</span>
+            {deal.bestPrice && deal.bestPrice < deal.price && (
+              <span className="text-[10px] font-mono font-black text-emerald-400 bg-emerald-500/20 px-1.5 py-0.2 rounded border border-emerald-500/30">
+                Best: ₹{deal.bestPrice}
+              </span>
+            )}
+            {/* Popover showing channel breakdown */}
+            <div className="hidden group-hover/cluster:flex absolute bottom-full left-0 mb-2 p-2.5 rounded-xl bg-slate-900/98 border border-white/20 shadow-2xl backdrop-blur-xl flex-col gap-1.5 z-50 min-w-[190px] pointer-events-none">
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">Detected Across Streams:</span>
+              {deal.clusterChannels?.map((c, idx) => (
+                <div key={idx} className="flex items-center justify-between text-[11px] text-slate-200">
+                  <span className="truncate max-w-[120px] font-medium">{c.name || c.channel}</span>
+                  <span className="font-mono text-emerald-400 font-bold">{c.price ? `₹${c.price}` : "Deal"}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {/* Coupon Code Pill */}
         {deal.coupon && (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
@@ -561,12 +621,23 @@ function DealCard({
           </div>
         )}
 
-        {/* Channel & Timestamp */}
+        {/* Channel & Timestamp & Affiliate Safeguard */}
         <div className="flex items-center gap-2 mt-auto pt-3 border-t border-white/6 text-slate-400">
           <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-slate-800 border border-white/10 flex-shrink-0">
             {deal.channel[0]}
           </div>
           <span className="text-xs font-medium truncate flex-1 text-slate-300">{deal.channel}</span>
+          
+          {deal.affiliateWarn ? (
+            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1" title={deal.affiliateWarn}>
+              <Shield size={10} className="text-amber-400" /> Alert
+            </span>
+          ) : deal.affiliate ? (
+            <span className="text-[10px] font-mono text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1" title="Affiliate Tag Active">
+              <Shield size={9} className="text-emerald-400" /> rudranil
+            </span>
+          ) : null}
+
           <span className="text-xs text-slate-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
         </div>
 
@@ -902,19 +973,81 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 }
 
 // ─── Review View ──────────────────────────────────────────────────────────────
-function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
+// ─── Review View ──────────────────────────────────────────────────────────────
+function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
   deals: Deal[]; onApprove: (id: string) => void;
-  onReject: (id: string) => void; onEdit: (d: Deal) => void; dark: boolean;
+  onReject: (id: string) => void; onEdit: (d: Deal) => void;
+  onAddDeal: (deal: Deal) => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"latest" | "discount" | "price_asc" | "price_desc">("latest");
-  const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
+  const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "promos" | "all">("pending");
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
   const [selectedStore, setSelectedStore] = useState<string>("All");
   const [pageSize, setPageSize] = useState<number>(40);
   const [page, setPage] = useState(1);
   const [sendTG, setSendTG] = useState(true);
   const [sendX, setSendX] = useState(false);
+  const [promos, setPromos] = useState<any[]>([]);
+  const [isDropping, setIsDropping] = useState(false);
+  const [quickDropModal, setQuickDropModal] = useState(false);
+  const [modalUrl, setModalUrl] = useState("");
+
+  useEffect(() => {
+    fetchPromos().then(setPromos);
+  }, []);
+
+  const handleQuickDrop = async (url: string) => {
+    const cleanUrl = url.trim();
+    if (!cleanUrl || isDropping) return;
+    setIsDropping(true);
+    toast.loading("⚡ Ingesting, unshortening & scraping store details...", { id: "quickdrop" });
+    try {
+      const res = await apiQuickDrop(cleanUrl);
+      if (res?.success) {
+        triggerApproveConfetti();
+        toast.success(`🎉 Ingested: ${res.prod_name || "New Deal"}!`, { id: "quickdrop" });
+        const newDeal: Deal = {
+          id: res.fp_hash,
+          title: cleanDealTitle(res.prod_name, res.message),
+          price: res.price || 0,
+          mrp: 0,
+          discount: 0,
+          category: res.category || "General",
+          catEmoji: "🛍️",
+          channel: "Quick Drop",
+          channelRaw: "manual_drop",
+          score: 100,
+          ts: Math.floor(Date.now() / 1000),
+          status: "pending",
+          dealType: "product",
+          affiliate: true,
+          coupon: null,
+          imgUrl: res.img_url || "",
+          platforms: ["Manual"],
+          originalText: cleanUrl,
+          affText: res.message || cleanUrl,
+          verdict: "Manual Quick Drop",
+          signals: [],
+          clusterCount: 1,
+        };
+        onAddDeal(newDeal);
+        setSearch("");
+        setModalUrl("");
+        setQuickDropModal(false);
+        setFilter("pending");
+        setPage(1);
+      } else {
+        toast.error("Failed to ingest URL. Please verify the store link.", { id: "quickdrop" });
+      }
+    } catch {
+      toast.error("Network error during Quick Drop", { id: "quickdrop" });
+    } finally {
+      setIsDropping(false);
+    }
+  };
+
+  const isSearchUrl = search.trim().startsWith("http://") || search.trim().startsWith("https://");
 
   const uniqueChannels = Array.from(new Set(deals.map(d => d.channel)))
     .filter(ch => Boolean(ch) && ch.toLowerCase() !== "unknown" && ch.toLowerCase() !== "dh")
@@ -926,8 +1059,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
       const store = getStoreBadge(d.platforms, d.affText);
       if (store.tag !== selectedStore) return false;
     }
-    if (filter !== "all" && d.status !== filter) return false;
-    if (search.trim()) {
+    if (filter !== "all" && filter !== "promos" && d.status !== filter) return false;
+    if (search.trim() && !isSearchUrl) {
       const q = search.toLowerCase();
       return d.title.toLowerCase().includes(q) || (d.channel || "").toLowerCase().includes(q);
     }
@@ -1023,18 +1156,60 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
         {/* Tier 1: Search + Quick Tools */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
-            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search deals by title, brand, store, or channel…"
-              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm text-slate-100 bg-[#0A0C16]/90 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all" />
-            {search && (
+            {isSearchUrl ? (
+              <Zap size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 fill-emerald-400 animate-pulse" />
+            ) : (
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            )}
+            <input
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              onKeyDown={e => {
+                if (e.key === "Enter" && isSearchUrl && !isDropping) {
+                  e.preventDefault();
+                  handleQuickDrop(search);
+                }
+              }}
+              placeholder={isSearchUrl ? "⚡ Press Enter to Quick-Drop & scrape deal..." : "Search deals or paste any product URL to Quick Drop…"}
+              className={`w-full pl-10 pr-32 py-2.5 rounded-xl text-sm text-slate-100 bg-[#0A0C16]/90 border transition-all ${
+                isSearchUrl 
+                  ? "border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-[0_0_25px_rgba(16,185,129,0.25)]"
+                  : "border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30"
+              }`}
+            />
+            {isSearchUrl ? (
+              <button
+                type="button"
+                disabled={isDropping}
+                onClick={() => handleQuickDrop(search)}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/30 active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {isDropping ? (
+                  <>
+                    <RefreshCw size={12} className="animate-spin" /> Ingesting...
+                  </>
+                ) : (
+                  <>
+                    <Zap size={12} className="fill-slate-950" /> Drop Deal
+                  </>
+                )}
+              </button>
+            ) : search ? (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-100">
                 <X size={14} />
               </button>
-            )}
+            ) : null}
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setQuickDropModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border bg-gradient-to-r from-emerald-500/20 via-teal-500/15 to-transparent text-emerald-300 border-emerald-500/40 hover:border-emerald-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 cursor-pointer"
+              title="Post any product link in 3 seconds"
+            >
+              <Zap size={13} className="fill-emerald-400 text-emerald-400" />
+              <span className="hidden sm:inline">Quick Drop</span>
+            </button>
             <button onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); }}
               className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border ${bulkMode ? "bg-rose-600 text-white border-rose-500 shadow-md shadow-rose-500/20" : "bg-slate-900 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800"}`}>
               <CheckSquare size={13} /> <span className="hidden sm:inline">{bulkMode ? "Cancel Select" : "Select Mode"}</span>
@@ -1058,6 +1233,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
               { id: "pending", label: "Pending", icon: "🔥", count: pending, activeCls: "bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm" },
               { id: "approved", label: "Approved", icon: "✅", count: approved, activeCls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm" },
               { id: "rejected", label: "Rejected", icon: "🗑️", count: rejected, activeCls: "bg-slate-800 text-rose-300 border-white/15 shadow-sm" },
+              { id: "promos", label: "Promos & Loot", icon: "🎟️", count: promos.length, activeCls: "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm" },
               { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-slate-800 text-white border-white/15 shadow-sm" },
             ].map(tab => (
               <button
@@ -1114,9 +1290,62 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
         </div>
       </div>
 
-      {/* Deals Card Grid */}
+      {/* Deals Card Grid / Promos Stream */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 pb-28 md:pb-8">
-        {visible.length === 0 ? (
+        {filter === "promos" ? (
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-white/8 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎟️</span>
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">Promo & Cashback Stream</h3>
+                  <p className="text-[11px] text-slate-400">Auto-filtered UPI, referral, cashback, and app loot offers</p>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-lg">
+                {promos.length} Active Offers
+              </span>
+            </div>
+
+            {promos.length === 0 ? (
+              <div className="py-20 text-center flex flex-col items-center justify-center gap-2 text-slate-500">
+                <span className="text-4xl">🎟️</span>
+                <p className="font-bold text-slate-300">No Promos Captured Yet</p>
+                <p className="text-xs text-slate-500">Incoming UPI, GPay, or cashback broadcasts will be routed here automatically.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {promos.map((p, idx) => (
+                  <div key={idx} className="glass-card p-4 rounded-2xl flex flex-col gap-3 border border-amber-500/20 bg-gradient-to-b from-amber-500/[0.04] to-transparent hover:border-amber-500/40 transition-all">
+                    <div className="flex items-center justify-between text-xs text-amber-300 font-bold">
+                      <span className="flex items-center gap-1.5 truncate max-w-[160px]">
+                        <Tag size={12} className="text-amber-400 flex-shrink-0" />
+                        <span className="truncate">{p.channel_title || p.channel}</span>
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono flex-shrink-0">{fmtAgo(p.ts || p.processed_ts)}</span>
+                    </div>
+                    <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed font-mono line-clamp-4 bg-slate-950/60 p-2.5 rounded-xl border border-white/5">
+                      {p.text}
+                    </p>
+                    <div className="mt-auto pt-2 border-t border-white/5 flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 font-mono">Promo Loot</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(p.text);
+                          toast.success("Promo text copied!");
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Copy size={12} /> Copy Offer
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : visible.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
             {/* 3D Animated Empty State */}
             <EmptySearch3D />
@@ -1172,6 +1401,97 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           </>
         )}
       </div>
+
+      {/* Dedicated Quick Drop Glass Modal */}
+      <AnimatePresence>
+        {quickDropModal && (
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 backdrop-blur-2xl bg-black/85">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-lg rounded-3xl glass-card border border-emerald-500/30 p-6 flex flex-col gap-4 shadow-2xl bg-gradient-to-b from-[#0F1424] to-[#090C16]"
+            >
+              <div className="flex items-center justify-between border-b border-white/8 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40">
+                    <Zap size={16} className="fill-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
+                      ⚡ Quick Drop Deal
+                    </h3>
+                    <p className="text-[11px] text-slate-400">Paste any store link → instant unshorten, scrape & affiliate</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setQuickDropModal(false); setModalUrl(""); }}
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Supported Store Icons Pill */}
+              <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-400 font-mono">
+                <span className="text-slate-500">Supported:</span>
+                <span className="px-2 py-0.5 rounded bg-white/5 text-amber-300 border border-white/10">Amazon</span>
+                <span className="px-2 py-0.5 rounded bg-white/5 text-blue-300 border border-white/10">Flipkart</span>
+                <span className="px-2 py-0.5 rounded bg-white/5 text-rose-300 border border-white/10">Myntra</span>
+                <span className="px-2 py-0.5 rounded bg-white/5 text-purple-300 border border-white/10">AJIO</span>
+                <span className="px-2 py-0.5 rounded bg-white/5 text-orange-300 border border-white/10">Swiggy</span>
+                <span className="px-2 py-0.5 rounded bg-white/5 text-emerald-300 border border-white/10">Blinkit</span>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-slate-300">Product / Shortlink URL</label>
+                <div className="relative">
+                  <LinkIcon size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                  <input
+                    autoFocus
+                    value={modalUrl}
+                    onChange={e => setModalUrl(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && modalUrl.trim() && !isDropping) {
+                        e.preventDefault();
+                        handleQuickDrop(modalUrl);
+                      }
+                    }}
+                    placeholder="https://amzn.in/... or https://fkrt.cc/..."
+                    className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-slate-950/80 border border-white/15 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/40"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setQuickDropModal(false); setModalUrl(""); }}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-white/5 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!modalUrl.trim() || isDropping}
+                  onClick={() => handleQuickDrop(modalUrl)}
+                  className="px-5 py-2.5 rounded-xl text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-500/30 active:scale-95 disabled:opacity-40 cursor-pointer"
+                >
+                  {isDropping ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" /> Ingesting...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={13} /> Drop & Ingest Deal
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Bulk Action Bar */}
       {selectedIds.size > 0 && (
@@ -1855,16 +2175,21 @@ export default function App() {
     await apiReject(id);
   };
 
+  const handleAddDeal = (deal: Deal) => {
+    setDeals(prev => [deal, ...prev]);
+  };
+
   const pendingCount = deals.filter(d => d.status === "pending").length;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#07080E] text-white">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#07080E] text-white relative">
+      <div className="ambient-mesh" />
       <Toaster position="top-right" richColors theme="dark" />
       <Sidebar tab={tab} setTab={setTab} pending={pendingCount} dark={dark} setDark={setDark} />
 
-      <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
+      <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0 relative z-10">
         {tab === "Review" && (
-          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} dark={dark} />
+          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onAddDeal={handleAddDeal} dark={dark} />
         )}
         {tab === "Posted" && <PostedView deals={deals} />}
         {tab === "Channels" && <ChannelsView />}

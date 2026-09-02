@@ -289,3 +289,61 @@
   margin-top: 6px; 
   font-family: 'JetBrains Mono', monospace; 
 }
+
+/* ───────────────────────────────────────────────────────────────────
+   LIQUID NEON & AMBIENT GLASS DYNAMICS
+   ─────────────────────────────────────────────────────────────────── */
+@keyframes liquid-sweep {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.liquid-sweep {
+  background-size: 200% 200%;
+  animation: liquid-sweep 4s ease infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px -3px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 35px -2px rgba(16, 185, 129, 0.7); }
+}
+
+.pulse-drop-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.shimmer-element {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-element::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: shimmer-sweep 2.5s infinite;
+}
+
+.ambient-mesh {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: 
+    radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(255, 45, 85, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+}
