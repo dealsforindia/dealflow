@@ -179,12 +179,12 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   PETR KNOLL LIQUID SPECULAR GLASS BUTTONS
+   EXACT PETR KNOLL GLASS BUTTONS (CodePen: QwWLZdx)
    ═══════════════════════════════════════════════════════════════════ */
 @property --angle-1 {
   syntax: "<angle>";
   inherits: false;
-  initial-value: -45deg;
+  initial-value: -75deg;
 }
 
 @property --angle-2 {
@@ -193,156 +193,306 @@
   initial-value: -45deg;
 }
 
-.liquid-glass-wrap {
+/* Button Wrap Container */
+.button-wrap {
   position: relative;
-  border-radius: 0.85rem;
-  transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  perspective: 600px;
-}
-
-.liquid-glass-wrap:has(.liquid-glass-btn:active) {
-  transform: rotate3d(1, 0, 0, 14deg) scale(0.96);
-}
-
-.liquid-glass-btn {
-  position: relative;
+  z-index: 2;
+  border-radius: 999vw;
+  background: transparent;
+  pointer-events: none;
+  transition: all 400ms cubic-bezier(0.25, 1, 0.5, 1);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  user-select: none;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
-  overflow: hidden;
-  z-index: 2;
 }
 
-/* Base Refraction Specular Rim */
-.liquid-glass-btn::after {
+/* Button Shadow Container */
+.button-shadow {
+  --shadow-cuttoff-fix: 2em;
+  position: absolute;
+  width: calc(100% + var(--shadow-cuttoff-fix));
+  height: calc(100% + var(--shadow-cuttoff-fix));
+  top: calc(0% - var(--shadow-cuttoff-fix) / 2);
+  left: calc(0% - var(--shadow-cuttoff-fix) / 2);
+  filter: blur(clamp(2px, 0.125em, 12px));
+  -webkit-filter: blur(clamp(2px, 0.125em, 12px));
+  -moz-filter: blur(clamp(2px, 0.125em, 12px));
+  -ms-filter: blur(clamp(2px, 0.125em, 12px));
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Shadow */
+.button-shadow::after {
   content: "";
   position: absolute;
-  z-index: 1;
+  z-index: 0;
   inset: 0;
-  border-radius: 0.85rem;
+  border-radius: 999vw;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.15));
+  width: calc(100% - var(--shadow-cuttoff-fix) - 0.25em);
+  height: calc(100% - var(--shadow-cuttoff-fix) - 0.25em);
+  top: calc(var(--shadow-cuttoff-fix) - 0.5em);
+  left: calc(var(--shadow-cuttoff-fix) - 0.875em);
+  padding: 0.125em;
   box-sizing: border-box;
-  background: conic-gradient(
-    from var(--angle-1) at 50% 50%,
-    rgba(255, 255, 255, 0.4),
-    rgba(255, 255, 255, 0.05) 10% 40%,
-    rgba(255, 255, 255, 0.5) 50%,
-    rgba(255, 255, 255, 0.05) 60% 90%,
-    rgba(255, 255, 255, 0.4)
-  ),
-  linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
-  padding: 1px;
+  transition: all 400ms cubic-bezier(0.25, 1, 0.5, 1);
+  overflow: visible;
+  opacity: 1;
+}
+
+/* Base Petr Glass Button */
+button.petr-btn {
+  --border-width: clamp(1px, 0.0625em, 3px);
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  pointer-events: auto;
+  z-index: 3;
+  background: linear-gradient(
+    -75deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.05)
+  );
+  border-radius: 999vw;
+  box-shadow: inset 0 0.125em 0.125em rgba(0, 0, 0, 0.05),
+    inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
+    0 0.25em 0.125em -0.125em rgba(0, 0, 0, 0.3),
+    0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.2),
+    0 0 0 0 rgba(255, 255, 255, 1);
+  backdrop-filter: blur(clamp(1px, 0.125em, 8px));
+  -webkit-backdrop-filter: blur(clamp(1px, 0.125em, 8px));
+  -moz-backdrop-filter: blur(clamp(1px, 0.125em, 8px));
+  -ms-backdrop-filter: blur(clamp(1px, 0.125em, 8px));
+  transition: all 400ms cubic-bezier(0.25, 1, 0.5, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+button.petr-btn:hover {
+  transform: scale(0.975);
+  backdrop-filter: blur(0.01em);
+  -webkit-backdrop-filter: blur(0.01em);
+  -moz-backdrop-filter: blur(0.01em);
+  -ms-backdrop-filter: blur(0.01em);
+  box-shadow: inset 0 0.125em 0.125em rgba(0, 0, 0, 0.05),
+    inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
+    0 0.15em 0.05em -0.1em rgba(0, 0, 0, 0.25),
+    0 0 0.05em 0.1em inset rgba(255, 255, 255, 0.5),
+    0 0 0 0 rgba(255, 255, 255, 1);
+}
+
+/* Button Content Span */
+button.petr-btn span {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35em;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  font-family: "Inter", sans-serif;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-shadow: 0em 0.15em 0.05em rgba(0, 0, 0, 0.4);
+  transition: all 400ms cubic-bezier(0.25, 1, 0.5, 1);
+  padding-inline: 1.15em;
+  padding-block: 0.5em;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+button.petr-btn:hover span {
+  text-shadow: 0.025em 0.025em 0.025em rgba(0, 0, 0, 0.3);
+}
+
+/* Glass Specular Reflection Sweep */
+button.petr-btn span::after {
+  content: "";
+  display: block;
+  position: absolute;
+  z-index: 1;
+  width: calc(100% - var(--border-width));
+  height: calc(100% - var(--border-width));
+  top: calc(0% + var(--border-width) / 2);
+  left: calc(0% + var(--border-width) / 2);
+  box-sizing: border-box;
+  border-radius: 999vw;
+  overflow: clip;
+  background: linear-gradient(
+    var(--angle-2),
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 40% 50%,
+    rgba(255, 255, 255, 0) 55%
+  );
+  z-index: 3;
+  mix-blend-mode: screen;
   pointer-events: none;
-  transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  background-repeat: no-repeat;
+  transition: background-position calc(400ms * 1.25) cubic-bezier(0.25, 1, 0.5, 1),
+    --angle-2 calc(400ms * 1.25) cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.liquid-glass-btn:hover::after {
-  --angle-1: -135deg;
+button.petr-btn:hover span::after {
+  background-position: 25% 50%;
 }
 
-.liquid-glass-btn:active::after {
-  --angle-1: -85deg;
+button.petr-btn:active span::after {
+  background-position: 50% 15%;
+  --angle-2: -15deg;
 }
 
-/* Approve Button — Emerald Specular Glass */
-.liquid-glass-approve {
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.15) 100%);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.3),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
-    0 4px 15px -2px rgba(16, 185, 129, 0.25);
+/* Conic Specular Rim Outline */
+button.petr-btn::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: 999vw;
+  width: calc(100% + var(--border-width));
+  height: calc(100% + var(--border-width));
+  top: calc(0% - var(--border-width) / 2);
+  left: calc(0% - var(--border-width) / 2);
+  padding: var(--border-width);
+  box-sizing: border-box;
+  background: conic-gradient(
+      from var(--angle-1) at 50% 50%,
+      rgba(0, 0, 0, 0.6),
+      rgba(0, 0, 0, 0) 5% 40%,
+      rgba(0, 0, 0, 0.6) 50%,
+      rgba(0, 0, 0, 0) 60% 95%,
+      rgba(0, 0, 0, 0.6)
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.3));
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  transition: all 400ms cubic-bezier(0.25, 1, 0.5, 1), --angle-1 500ms ease;
+  box-shadow: inset 0 0 0 calc(var(--border-width) / 2) rgba(255, 255, 255, 0.5);
 }
 
-.liquid-glass-approve:hover {
-  background: linear-gradient(180deg, rgba(16, 185, 129, 0.5) 0%, rgba(5, 150, 105, 0.25) 100%);
+button.petr-btn:hover::after {
+  --angle-1: -125deg;
+}
+
+button.petr-btn:active::after {
+  --angle-1: -75deg;
+}
+
+/* Shadow Hover */
+.button-wrap:has(button.petr-btn:hover) .button-shadow {
+  filter: blur(clamp(2px, 0.0625em, 6px));
+  -webkit-filter: blur(clamp(2px, 0.0625em, 6px));
+  -moz-filter: blur(clamp(2px, 0.0625em, 6px));
+  -ms-filter: blur(clamp(2px, 0.0625em, 6px));
+  transition: filter 400ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.button-wrap:has(button.petr-btn:hover) .button-shadow::after {
+  top: calc(var(--shadow-cuttoff-fix) - 0.875em);
+  opacity: 1;
+}
+
+/* 3D Rotation on Active */
+.button-wrap:has(button.petr-btn:active) {
+  transform: rotate3d(1, 0, 0, 25deg);
+}
+
+.button-wrap:has(button.petr-btn:active) button.petr-btn {
+  box-shadow: inset 0 0.125em 0.125em rgba(0, 0, 0, 0.05),
+    inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
+    0 0.125em 0.125em -0.125em rgba(0, 0, 0, 0.2),
+    0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.2),
+    0 0.225em 0.05em 0 rgba(0, 0, 0, 0.05),
+    0 0.25em 0 0 rgba(255, 255, 255, 0.75),
+    inset 0 0.25em 0.05em 0 rgba(0, 0, 0, 0.15);
+}
+
+.button-wrap:has(button.petr-btn:active) .button-shadow {
+  filter: blur(clamp(2px, 0.125em, 12px));
+  -webkit-filter: blur(clamp(2px, 0.125em, 12px));
+}
+
+.button-wrap:has(button.petr-btn:active) .button-shadow::after {
+  top: calc(var(--shadow-cuttoff-fix) - 0.5em);
+  opacity: 0.75;
+}
+
+.button-wrap:has(button.petr-btn:active) span {
+  text-shadow: 0.025em 0.25em 0.05em rgba(0, 0, 0, 0.12);
+}
+
+/* ─── Color Themes with Petr Glass Mechanics ─── */
+
+/* Emerald Approve */
+button.petr-btn-emerald {
+  background: linear-gradient(
+    -75deg,
+    rgba(16, 185, 129, 0.15),
+    rgba(16, 185, 129, 0.4),
+    rgba(16, 185, 129, 0.15)
+  );
+}
+button.petr-btn-emerald span {
   color: #6ee7b7;
-  border-color: rgba(52, 211, 153, 0.6);
-  box-shadow: 
-    inset 0 1px 3px rgba(255, 255, 255, 0.5),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
-    0 8px 25px -4px rgba(16, 185, 129, 0.45);
-  transform: translateY(-1px);
+  font-weight: 700;
+}
+button.petr-btn-emerald:hover {
+  background: linear-gradient(
+    -75deg,
+    rgba(16, 185, 129, 0.25),
+    rgba(52, 211, 153, 0.5),
+    rgba(16, 185, 129, 0.25)
+  );
 }
 
-/* Edit Button — Ice Cyan Specular Glass */
-.liquid-glass-edit {
-  background: linear-gradient(180deg, rgba(6, 182, 212, 0.22) 0%, rgba(8, 145, 178, 0.08) 100%);
-  color: #38bdf8;
-  border: 1px solid rgba(6, 182, 212, 0.3);
-  box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
-    0 4px 15px -2px rgba(6, 182, 212, 0.18);
+/* Cyan Edit */
+button.petr-btn-cyan {
+  background: linear-gradient(
+    -75deg,
+    rgba(6, 182, 212, 0.12),
+    rgba(6, 182, 212, 0.32),
+    rgba(6, 182, 212, 0.12)
+  );
 }
-
-.liquid-glass-edit:hover {
-  background: linear-gradient(180deg, rgba(6, 182, 212, 0.38) 0%, rgba(8, 145, 178, 0.18) 100%);
+button.petr-btn-cyan span {
   color: #7dd3fc;
-  border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 
-    inset 0 1px 3px rgba(255, 255, 255, 0.45),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
-    0 8px 25px -4px rgba(6, 182, 212, 0.35);
-  transform: translateY(-1px);
 }
 
-/* Skip Button — Ruby Rose Specular Glass */
-.liquid-glass-skip {
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.2) 0%, rgba(225, 29, 72, 0.08) 100%);
-  color: #fb7185;
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
-    0 4px 15px -2px rgba(244, 63, 94, 0.18);
+/* Rose Skip */
+button.petr-btn-rose {
+  background: linear-gradient(
+    -75deg,
+    rgba(244, 63, 94, 0.12),
+    rgba(244, 63, 94, 0.32),
+    rgba(244, 63, 94, 0.12)
+  );
 }
-
-.liquid-glass-skip:hover {
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.35) 0%, rgba(225, 29, 72, 0.18) 100%);
+button.petr-btn-rose span {
   color: #fda4af;
-  border-color: rgba(251, 113, 133, 0.55);
-  box-shadow: 
-    inset 0 1px 3px rgba(255, 255, 255, 0.45),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
-    0 8px 25px -4px rgba(244, 63, 94, 0.35);
-  transform: translateY(-1px);
 }
 
-/* Primary Hero Solid Glass Pill (Save & Broadcast) */
-.liquid-glass-hero {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.85) 0%, rgba(6, 182, 212, 0.85) 100%);
-  color: #030712;
-  font-weight: 800;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 
-    inset 0 1px 3px rgba(255, 255, 255, 0.6),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.3),
-    0 6px 25px -2px rgba(16, 185, 129, 0.4);
-}
-
-.liquid-glass-hero:hover {
-  background: linear-gradient(135deg, rgba(52, 211, 153, 0.95) 0%, rgba(56, 189, 248, 0.95) 100%);
-  box-shadow: 
-    inset 0 1px 4px rgba(255, 255, 255, 0.8),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
-    0 10px 30px -3px rgba(16, 185, 129, 0.55);
-  transform: translateY(-1px);
-}
-
-.liquid-glass-hero:active {
-  transform: scale(0.97);
+/* Icon-only button padding override */
+button.petr-btn-icon span {
+  padding-inline: 0.75em;
+  padding-block: 0.55em;
 }
 
 .glow-emerald {

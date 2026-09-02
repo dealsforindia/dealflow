@@ -570,29 +570,32 @@ function DealCard({
           <span className="text-xs text-slate-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
         </div>
 
-        {/* Petr Knoll Liquid Specular Glass Action Buttons */}
+        {/* Exact Petr Knoll Glass Action Buttons */}
         {deal.status === "pending" ? (
           <div className="flex items-center gap-2 pt-1">
-            <div className="liquid-glass-wrap">
+            <div className="button-wrap">
               <button onClick={() => onReject(deal.id)}
-                className="liquid-glass-btn liquid-glass-skip w-10 h-10"
+                className="petr-btn petr-btn-rose petr-btn-icon"
                 title="Skip Deal">
-                <X size={16} strokeWidth={2.5} />
+                <span><X size={16} strokeWidth={2.5} /></span>
               </button>
+              <div className="button-shadow" />
             </div>
-            <div className="liquid-glass-wrap">
+            <div className="button-wrap">
               <button onClick={() => onEdit(deal)}
-                className="liquid-glass-btn liquid-glass-edit w-10 h-10"
+                className="petr-btn petr-btn-cyan petr-btn-icon"
                 title="Edit & Tune">
-                <PenLine size={14} strokeWidth={2.2} />
+                <span><PenLine size={14} strokeWidth={2.2} /></span>
               </button>
+              <div className="button-shadow" />
             </div>
-            <div className="liquid-glass-wrap flex-1 flex">
+            <div className="button-wrap flex-1 flex">
               <button onClick={() => onApprove(deal.id)}
-                className="liquid-glass-btn liquid-glass-hero flex-1 h-10 text-xs sm:text-sm gap-2"
+                className="petr-btn petr-btn-emerald flex-1"
                 title="Approve & Broadcast">
-                <Check size={16} strokeWidth={3} /> Approve
+                <span><Check size={16} strokeWidth={3} /> Approve</span>
               </button>
+              <div className="button-shadow" />
             </div>
           </div>
         ) : (
@@ -813,23 +816,26 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             </div>
 
             <div className="flex items-center gap-2.5 pt-1">
-              <div className="liquid-glass-wrap">
+              <div className="button-wrap">
                 <button onClick={() => fileRef.current?.click()}
-                  className="liquid-glass-btn liquid-glass-edit px-3 py-2 text-xs gap-1.5">
-                  <Upload size={13} strokeWidth={2} /> Upload Image
+                  className="petr-btn petr-btn-cyan">
+                  <span><Upload size={13} strokeWidth={2} /> Upload Image</span>
                 </button>
+                <div className="button-shadow" />
               </div>
-              <div className="liquid-glass-wrap">
+              <div className="button-wrap">
                 <button onClick={doScrapeImage} disabled={scrapingImage}
-                  className="liquid-glass-btn liquid-glass-edit px-3.5 py-2 text-xs gap-1.5 disabled:opacity-40">
-                  <Globe size={13} strokeWidth={2} /> {scrapingImage ? "Fetching..." : "Fetch Store Details"}
+                  className="petr-btn petr-btn-cyan disabled:opacity-40">
+                  <span><Globe size={13} strokeWidth={2} /> {scrapingImage ? "Fetching..." : "Fetch Store Details"}</span>
                 </button>
+                <div className="button-shadow" />
               </div>
-              <div className="liquid-glass-wrap">
+              <div className="button-wrap">
                 <button onClick={doRetryAffiliate} disabled={retryingAffiliate}
-                  className="liquid-glass-btn liquid-glass-approve px-3.5 py-2 text-xs gap-1.5 disabled:opacity-40">
-                  <Zap size={13} strokeWidth={2} /> Refresh Affiliate
+                  className="petr-btn petr-btn-emerald disabled:opacity-40">
+                  <span><Zap size={13} strokeWidth={2} /> Refresh Affiliate</span>
                 </button>
+                <div className="button-shadow" />
               </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             </div>
@@ -902,11 +908,12 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40">
               Save Draft
             </button>
-            <div className="liquid-glass-wrap">
+            <div className="button-wrap">
               <button onClick={() => { onSaveApprove(changes); onClose(); }}
-                className="liquid-glass-btn liquid-glass-hero px-6 py-2.5 text-xs gap-2">
-                <RocketBroadcast3D size={16} /> Save & Broadcast
+                className="petr-btn petr-btn-emerald">
+                <span><RocketBroadcast3D size={16} /> Save & Broadcast</span>
               </button>
+              <div className="button-shadow" />
             </div>
           </div>
         </div>
