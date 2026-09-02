@@ -570,24 +570,30 @@ function DealCard({
           <span className="text-xs text-slate-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
         </div>
 
-        {/* Luminous Action Buttons */}
+        {/* Petr Knoll Liquid Specular Glass Action Buttons */}
         {deal.status === "pending" ? (
           <div className="flex items-center gap-2 pt-1">
-            <button onClick={() => onReject(deal.id)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-900/90 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/10 hover:border-rose-500/40 transition-all active:scale-90 hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] cursor-pointer"
-              title="Skip Deal">
-              <X size={16} strokeWidth={2.5} />
-            </button>
-            <button onClick={() => onEdit(deal)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-900/90 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-white/10 hover:border-cyan-500/40 transition-all active:scale-90 hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] cursor-pointer"
-              title="Edit & Tune">
-              <PenLine size={14} />
-            </button>
-            <button onClick={() => onApprove(deal.id)}
-              className="flex-1 h-10 rounded-xl text-xs sm:text-sm font-bold text-slate-950 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all active:scale-95 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer"
-              title="Approve & Broadcast">
-              <Check size={16} strokeWidth={3} /> Approve
-            </button>
+            <div className="liquid-glass-wrap">
+              <button onClick={() => onReject(deal.id)}
+                className="liquid-glass-btn liquid-glass-skip w-10 h-10"
+                title="Skip Deal">
+                <X size={16} strokeWidth={2.5} />
+              </button>
+            </div>
+            <div className="liquid-glass-wrap">
+              <button onClick={() => onEdit(deal)}
+                className="liquid-glass-btn liquid-glass-edit w-10 h-10"
+                title="Edit & Tune">
+                <PenLine size={14} strokeWidth={2.2} />
+              </button>
+            </div>
+            <div className="liquid-glass-wrap flex-1 flex">
+              <button onClick={() => onApprove(deal.id)}
+                className="liquid-glass-btn liquid-glass-hero flex-1 h-10 text-xs sm:text-sm gap-2"
+                title="Approve & Broadcast">
+                <Check size={16} strokeWidth={3} /> Approve
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex items-center gap-1.5 pt-1">
@@ -806,19 +812,25 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-950/80 border border-white/10 text-slate-200 focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
             </div>
 
-            <div className="flex items-center gap-2 pt-1">
-              <button onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">
-                <Upload size={12} /> Upload Image
-              </button>
-              <button onClick={doScrapeImage} disabled={scrapingImage}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors">
-                <Globe size={12} /> {scrapingImage ? "Fetching..." : "Fetch Store Details"}
-              </button>
-              <button onClick={doRetryAffiliate} disabled={retryingAffiliate}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors">
-                <Zap size={12} /> Refresh Affiliate
-              </button>
+            <div className="flex items-center gap-2.5 pt-1">
+              <div className="liquid-glass-wrap">
+                <button onClick={() => fileRef.current?.click()}
+                  className="liquid-glass-btn liquid-glass-edit px-3 py-2 text-xs gap-1.5">
+                  <Upload size={13} strokeWidth={2} /> Upload Image
+                </button>
+              </div>
+              <div className="liquid-glass-wrap">
+                <button onClick={doScrapeImage} disabled={scrapingImage}
+                  className="liquid-glass-btn liquid-glass-edit px-3.5 py-2 text-xs gap-1.5 disabled:opacity-40">
+                  <Globe size={13} strokeWidth={2} /> {scrapingImage ? "Fetching..." : "Fetch Store Details"}
+                </button>
+              </div>
+              <div className="liquid-glass-wrap">
+                <button onClick={doRetryAffiliate} disabled={retryingAffiliate}
+                  className="liquid-glass-btn liquid-glass-approve px-3.5 py-2 text-xs gap-1.5 disabled:opacity-40">
+                  <Zap size={13} strokeWidth={2} /> Refresh Affiliate
+                </button>
+              </div>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             </div>
           </div>
@@ -890,10 +902,12 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40">
               Save Draft
             </button>
-            <button onClick={() => { onSaveApprove(changes); onClose(); }}
-              className="px-6 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-2">
-              <RocketBroadcast3D size={16} /> Save & Broadcast
-            </button>
+            <div className="liquid-glass-wrap">
+              <button onClick={() => { onSaveApprove(changes); onClose(); }}
+                className="liquid-glass-btn liquid-glass-hero px-6 py-2.5 text-xs gap-2">
+                <RocketBroadcast3D size={16} /> Save & Broadcast
+              </button>
+            </div>
           </div>
         </div>
       </div>
