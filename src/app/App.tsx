@@ -1198,39 +1198,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
     fetchPromos().then(setPromos);
   }, []);
 
-  // ─── Power Operator Keyboard Navigation (Linear / Vim style) ───
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement;
-      const isInput = activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA" || activeEl?.getAttribute("contenteditable") === "true";
-      if (isInput || quickDropModal) return;
-
-      if (e.key === "j" || e.key === "ArrowDown") {
-        e.preventDefault();
-        setActiveIdx(prev => (prev < pagedVisible.length - 1 ? prev + 1 : 0));
-      } else if (e.key === "k" || e.key === "ArrowUp") {
-        e.preventDefault();
-        setActiveIdx(prev => (prev > 0 ? prev - 1 : pagedVisible.length - 1));
-      } else if ((e.key === "a" || e.key === "A") && !e.ctrlKey && !e.metaKey) {
-        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
-          e.preventDefault();
-          onApprove(pagedVisible[activeIdx].id);
-        }
-      } else if ((e.key === "x" || e.key === "X") && !e.ctrlKey && !e.metaKey) {
-        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
-          e.preventDefault();
-          onReject(pagedVisible[activeIdx].id);
-        }
-      } else if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey) {
-        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
-          e.preventDefault();
-          onEdit(pagedVisible[activeIdx]);
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIdx, pagedVisible, quickDropModal, onApprove, onReject, onEdit]);
 
   const handleQuickDrop = async (url: string) => {
     const cleanUrl = url.trim();
@@ -1345,6 +1312,40 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
   const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pagedVisible = pageSize === 9999 ? visible : visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  // ─── Power Operator Keyboard Navigation (Linear / Vim style) ───
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA" || activeEl?.getAttribute("contenteditable") === "true";
+      if (isInput || quickDropModal) return;
+
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIdx(prev => (prev < pagedVisible.length - 1 ? prev + 1 : 0));
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIdx(prev => (prev > 0 ? prev - 1 : pagedVisible.length - 1));
+      } else if ((e.key === "a" || e.key === "A") && !e.ctrlKey && !e.metaKey) {
+        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
+          e.preventDefault();
+          onApprove(pagedVisible[activeIdx].id);
+        }
+      } else if ((e.key === "x" || e.key === "X") && !e.ctrlKey && !e.metaKey) {
+        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
+          e.preventDefault();
+          onReject(pagedVisible[activeIdx].id);
+        }
+      } else if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey) {
+        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
+          e.preventDefault();
+          onEdit(pagedVisible[activeIdx]);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeIdx, pagedVisible, quickDropModal, onApprove, onReject, onEdit]);
 
   const pending = deals.filter(d => d.status === "pending").length;
   const approved = deals.filter(d => d.status === "approved").length;
