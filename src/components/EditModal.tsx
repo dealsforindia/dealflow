@@ -284,6 +284,34 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
                     <label className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Post Text (Affiliate)</label>
                     <span className="text-[9px] font-mono" style={{ color: "var(--text-dim)", fontFamily: "'JetBrains Mono',monospace" }}>{text.length} chars</span>
                   </div>
+
+                  {/* Quick AI Presets */}
+                  <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                    {[
+                      { label: "🔥 Add Urgency", prompt: "add urgency and excitement for limited time" },
+                      { label: "✂️ Make Concise", prompt: "make concise and clean under 4 lines" },
+                      { label: "💰 Highlight Discount", prompt: "highlight the massive discount and savings" },
+                      { label: "✨ Clean Format", prompt: "clean formatting, remove hashtags, keep links" },
+                    ].map(preset => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={async () => {
+                          setInstruction(preset.prompt);
+                          setRewriting(true);
+                          setPrev(text);
+                          const result = await apiAiRewrite(deal.id, preset.prompt);
+                          setText(result ?? aiRewriteSim(text, preset.prompt));
+                          setRewriting(false);
+                        }}
+                        disabled={rewriting}
+                        className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white/5 hover:bg-emerald-500/15 text-slate-300 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/30 transition-all active:scale-95 disabled:opacity-40 flex items-center gap-1 cursor-pointer"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="flex gap-2 mb-2">
                     <input
                       value={instruction}
@@ -297,12 +325,12 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
                       onClick={doRewrite}
                       disabled={rewriting || !instruction.trim()}
                       className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-fast disabled:opacity-40"
-                      style={{ background: "rgba(255,45,85,0.08)", color: "#FF2D55", border: "1px solid rgba(255,45,85,0.2)" }}
+                      style={{ background: "rgba(16,185,129,0.12)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)" }}
                     >
                       {rewriting
-                        ? <span className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" />
+                        ? <span className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
                         : <Sparkles size={10} />}
-                      AI
+                      AI Tune
                     </button>
                     {prev && (
                       <button
@@ -464,10 +492,10 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
               </button>
               <button
                 onClick={() => { onSaveApprove(changes); onClose(); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-bold text-white transition-fast active:scale-[0.98]"
-                style={{ background: "#00D68F", boxShadow: "0 4px 20px rgba(0,214,143,0.28)" }}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-slate-950 transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer"
+                style={{ background: "linear-gradient(135deg, #10B981 0%, #06B6D4 100%)" }}
               >
-                <Check size={14} strokeWidth={2.5} /> Save & Approve
+                <Check size={16} strokeWidth={3} /> Save & Approve
               </button>
             </div>
           </div>

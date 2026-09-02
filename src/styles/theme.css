@@ -155,39 +155,53 @@
 }
 
 /* Glassmorphism & Neon Glow Utilities */
-/* Clean Modern SaaS Card & Panel Utilities */
+/* Glassmorphism & Neon Glow Utilities */
 .glass-panel {
-  background: rgba(14, 16, 24, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(13, 16, 28, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card {
-  background: #11131E;
+  background: linear-gradient(180deg, rgba(20, 24, 40, 0.7) 0%, rgba(13, 16, 28, 0.8) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 1rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 1.15rem;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-  box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.5);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.7), 0 0 25px -5px rgba(16, 185, 129, 0.15);
+  transform: translateY(-2px);
 }
 
-.glow-pill-primary {
-  background: #E11D48;
-  color: white;
+.glow-emerald {
+  box-shadow: 0 0 30px -5px rgba(16, 185, 129, 0.4);
 }
 
-.glow-pill-success {
-  background: #059669;
-  color: white;
+.glow-cyan {
+  box-shadow: 0 0 30px -5px rgba(6, 182, 212, 0.4);
 }
 
-.glow-pill-accent {
-  background: #4F46E5;
-  color: white;
+.glow-rose {
+  box-shadow: 0 0 30px -5px rgba(244, 63, 94, 0.4);
+}
+
+.glow-amber {
+  box-shadow: 0 0 30px -5px rgba(245, 158, 11, 0.4);
+}
+
+@keyframes radar-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(0.95); opacity: 0; }
+}
+
+.animate-radar {
+  animation: radar-pulse 2.2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
 }
 
 .tg-text {
@@ -200,14 +214,14 @@
 
 /* Realistic Telegram Mobile Post Preview Mockup */
 .tg-preview-wrap { 
-  background: #0E1621; 
+  background: #0D1622; 
   border-radius: 20px; 
   padding: 16px; 
   display: flex; 
   flex-direction: column; 
   gap: 12px; 
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: inset 0 2px 12px rgba(0,0,0,0.6), 0 16px 36px rgba(0,0,0,0.5);
 }
 
 .tg-preview-header { 
@@ -217,41 +231,41 @@
 }
 
 .tg-preview-avatar { 
-  width: 38px; 
-  height: 38px; 
+  width: 40px; 
+  height: 40px; 
   border-radius: 50%; 
-  background: linear-gradient(135deg, #FF2D55, #FF6B35); 
+  background: linear-gradient(135deg, #10B981, #06B6D4); 
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  font-size: 14px; 
+  font-size: 15px; 
   color: white; 
   font-weight: 800; 
   flex-shrink: 0; 
-  box-shadow: 0 4px 12px rgba(255,45,85,0.3);
+  box-shadow: 0 4px 14px rgba(16,185,129,0.35);
 }
 
 .tg-preview-name { 
-  font-size: 13px; 
+  font-size: 13.5px; 
   font-weight: 700; 
   color: #64B5F6; 
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
 }
 
 .tg-bubble { 
-  background: #182533; 
+  background: #172331; 
   border-radius: 6px 18px 18px 18px; 
-  padding: 12px 16px; 
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4); 
-  border: 1px solid rgba(255,255,255,0.05);
+  padding: 14px 16px; 
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45); 
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .tg-bubble-text { 
   font-size: 13px; 
-  line-height: 1.6; 
-  color: #E4ECF2; 
+  line-height: 1.65; 
+  color: #E2EAF0; 
   white-space: pre-wrap; 
   word-break: break-word; 
   font-family: 'Inter', system-ui, sans-serif;
@@ -261,6 +275,11 @@
   color: #64B5F6; 
   text-decoration: underline; 
   font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.tg-bubble-link:hover {
+  color: #90CAF9;
 }
 
 .tg-bubble-time { 
