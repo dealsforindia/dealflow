@@ -1971,89 +1971,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
           </div>
         </div>
 
-        {/* Tier 2: View Switcher (The Pill!) + Store/Channel Dropdowns */}
-        <div className="flex items-center justify-between gap-2 overflow-visible">
-          {/* Senior View Switcher Pill — ALWAYS VISIBLE ON MOBILE AND DESKTOP! */}
-          <div className="flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "grid"
-                  ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
-                  : "text-zinc-400 hover:text-zinc-200"
-              }`}
-              title="Cards Showcase View"
-            >
-              <LayoutGrid size={13} />
-              <span className="text-[11px] font-bold">Cards</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-                viewMode === "table"
-                  ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
-                  : "text-zinc-400 hover:text-zinc-200"
-              }`}
-              title="Dense List View"
-            >
-              <List size={13} />
-              <span className="text-[11px] font-bold">List</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("split")}
-              className={`hidden lg:flex px-3 py-1.5 rounded-full transition-all items-center gap-1.5 cursor-pointer ${
-                viewMode === "split"
-                  ? "bg-emerald-500/30 text-emerald-300 shadow-md border border-emerald-400/40 scale-[1.02]"
-                  : "text-zinc-400 hover:text-zinc-200"
-              }`}
-              title="3-Pane Split Inspector Desk"
-            >
-              <Columns size={13} />
-              <span className="text-[11px] font-bold">Inspector</span>
-            </button>
-          </div>
-
-          {/* Quick Filter Dropdowns: Responsive & Clean */}
-          <div className="flex items-center gap-1.5 overflow-visible flex-shrink-0">
-            <GlassDropdown
-              value={selectedStore}
-              onChange={val => { setSelectedStore(val); setPage(1); }}
-              options={storeOptions}
-              placeholder="Store"
-            />
-            <GlassDropdown
-              value={selectedChannel}
-              onChange={val => { setSelectedChannel(val); setPage(1); }}
-              options={channelOptions}
-              placeholder="Channel"
-              searchable={true}
-            />
-            <div className="hidden sm:block">
-              <GlassDropdown
-                value={sort}
-                onChange={val => { setSort(val as any); setPage(1); }}
-                options={sortOptions}
-                placeholder="Sort"
-                align="right"
-              />
-            </div>
-            <div className="hidden md:block">
-              <GlassDropdown
-                value={String(pageSize)}
-                onChange={val => { setPageSize(Number(val)); setPage(1); }}
-                options={pageSizeOptions}
-                placeholder="Page Size"
-                align="right"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Tier 3: Status Tabs with Sophisticated Eye-Pleasing Harmony */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {/* ─── MOBILE CONTROLS (Single High-Efficiency Scroll Strip on sm:hidden) ─── */}
+        <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {/* Status Tabs */}
           {[
             { id: "pending", label: "Pending", icon: "⏳", count: pending, activeCls: "bg-amber-400/15 text-amber-200 border-amber-400/40 shadow-[0_0_16px_rgba(251,191,36,0.18)]" },
             { id: "approved", label: "Approved", icon: "✓", count: approved, activeCls: "bg-emerald-400/15 text-emerald-200 border-emerald-400/40 shadow-[0_0_16px_rgba(52,211,153,0.18)]" },
@@ -2064,10 +1984,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
             <button
               key={tab.id}
               onClick={() => { setFilter(tab.id as any); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
-                filter === tab.id
-                  ? tab.activeCls
-                  : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
+                filter === tab.id ? tab.activeCls : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
               }`}
             >
               <span className="text-[11px]">{tab.icon}</span>
@@ -2077,6 +1995,157 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
               </span>
             </button>
           ))}
+
+          <div className="w-[1px] h-5 bg-white/10 flex-shrink-0 mx-0.5" />
+
+          {/* View Mode Switcher Pill */}
+          <div className="flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`px-2.5 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
+                viewMode === "grid" ? "bg-white/20 text-white shadow-sm border border-white/25" : "text-zinc-400"
+              }`}
+            >
+              <LayoutGrid size={11} />
+              <span className="text-[10.5px] font-bold">Cards</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`px-2.5 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
+                viewMode === "table" ? "bg-white/20 text-white shadow-sm border border-white/25" : "text-zinc-400"
+              }`}
+            >
+              <List size={11} />
+              <span className="text-[10.5px] font-bold">List</span>
+            </button>
+          </div>
+
+          {/* Quick Store Dropdown */}
+          <div className="flex-shrink-0">
+            <GlassDropdown
+              value={selectedStore}
+              onChange={val => { setSelectedStore(val); setPage(1); }}
+              options={storeOptions}
+              placeholder="Store"
+            />
+          </div>
+          <div className="flex-shrink-0">
+            <GlassDropdown
+              value={selectedChannel}
+              onChange={val => { setSelectedChannel(val); setPage(1); }}
+              options={channelOptions}
+              placeholder="Channel"
+              searchable={true}
+            />
+          </div>
+        </div>
+
+        {/* ─── DESKTOP/TABLET CONTROLS (Spacious 2-Tier on hidden sm:flex) ─── */}
+        <div className="hidden sm:flex flex-col gap-3">
+          {/* Tier 2: View Switcher (The Pill!) + Store/Channel Dropdowns */}
+          <div className="flex items-center justify-between gap-2 overflow-visible">
+            <div className="flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "grid"
+                    ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+                title="Cards Showcase View"
+              >
+                <LayoutGrid size={13} />
+                <span className="text-[11px] font-bold">Cards</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+                title="Dense List View"
+              >
+                <List size={13} />
+                <span className="text-[11px] font-bold">List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("split")}
+                className={`hidden lg:flex px-3 py-1.5 rounded-full transition-all items-center gap-1.5 cursor-pointer ${
+                  viewMode === "split"
+                    ? "bg-emerald-500/30 text-emerald-300 shadow-md border border-emerald-400/40 scale-[1.02]"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+                title="3-Pane Split Inspector Desk"
+              >
+                <Columns size={13} />
+                <span className="text-[11px] font-bold">Inspector</span>
+              </button>
+            </div>
+
+            {/* Quick Filter Dropdowns */}
+            <div className="flex items-center gap-1.5 overflow-visible flex-shrink-0">
+              <GlassDropdown
+                value={selectedStore}
+                onChange={val => { setSelectedStore(val); setPage(1); }}
+                options={storeOptions}
+                placeholder="Store"
+              />
+              <GlassDropdown
+                value={selectedChannel}
+                onChange={val => { setSelectedChannel(val); setPage(1); }}
+                options={channelOptions}
+                placeholder="Channel"
+                searchable={true}
+              />
+              <GlassDropdown
+                value={sort}
+                onChange={val => { setSort(val as any); setPage(1); }}
+                options={sortOptions}
+                placeholder="Sort"
+                align="right"
+              />
+              <div className="hidden md:block">
+                <GlassDropdown
+                  value={String(pageSize)}
+                  onChange={val => { setPageSize(Number(val)); setPage(1); }}
+                  options={pageSizeOptions}
+                  placeholder="Page Size"
+                  align="right"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Tier 3: Status Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {[
+              { id: "pending", label: "Pending", icon: "⏳", count: pending, activeCls: "bg-amber-400/15 text-amber-200 border-amber-400/40 shadow-[0_0_16px_rgba(251,191,36,0.18)]" },
+              { id: "approved", label: "Approved", icon: "✓", count: approved, activeCls: "bg-emerald-400/15 text-emerald-200 border-emerald-400/40 shadow-[0_0_16px_rgba(52,211,153,0.18)]" },
+              { id: "rejected", label: "Rejected", icon: "✕", count: rejected, activeCls: "bg-slate-800/90 text-slate-200 border-white/20 shadow-sm" },
+              { id: "promos", label: "Promos", icon: "🎟️", count: promos.length, activeCls: "bg-indigo-400/15 text-indigo-200 border-indigo-400/40 shadow-[0_0_16px_rgba(129,140,248,0.18)]" },
+              { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-white/10 text-white border-white/25 shadow-sm" },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => { setFilter(tab.id as any); setPage(1); }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
+                  filter === tab.id ? tab.activeCls : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
+                }`}
+              >
+                <span className="text-[11px]">{tab.icon}</span>
+                <span>{tab.label}</span>
+                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold font-mono ${filter === tab.id ? "bg-black/40 text-white" : "bg-white/5 text-slate-400"}`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -3118,20 +3187,20 @@ export default function App() {
         {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
       </main>
 
-      {/* Mobile Smartphone Floating Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 px-3 py-2 bg-slate-950/95 border-t border-white/10 backdrop-blur-2xl flex items-center justify-around">
+      {/* Mobile Smartphone Floating Bottom Navigation Capsule */}
+      <nav className="md:hidden fixed bottom-1.5 left-2 right-2 z-40 px-2 py-1 bg-slate-950/92 border border-white/12 backdrop-blur-2xl rounded-2xl shadow-2xl flex items-center justify-around">
         {NAV.map(({ id, label }) => {
           const active = tab === id;
           const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : "settings";
           return (
             <button key={id} onClick={() => setTab(id)}
               className={`relative flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-all ${
-                active ? "text-primary font-black" : "text-slate-400 hover:text-white"
+                active ? "text-indigo-400 font-black" : "text-slate-400 hover:text-white"
               }`}>
               <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "settings"} active={active} />
-              <span>{label}</span>
+              <span className="text-[9.5px] tracking-tight">{label}</span>
               {id === "Review" && pendingCount > 0 && (
-                <span className="absolute top-0 right-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
+                <span className="absolute -top-0.5 right-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
                   {pendingCount > 99 ? "99+" : pendingCount}
                 </span>
               )}
