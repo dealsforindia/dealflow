@@ -1010,9 +1010,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
         const newDeal: Deal = {
           id: res.fp_hash,
           title: cleanDealTitle(res.prod_name, res.message),
-          price: res.price || 0,
-          mrp: 0,
-          discount: 0,
+          price: res.price || res.prices?.sale || 0,
+          mrp: res.mrp || res.prices?.mrp || 0,
+          discount: res.discount || res.prices?.discount_pct || 0,
           category: res.category || "General",
           catEmoji: "🛍️",
           channel: "Quick Drop",
