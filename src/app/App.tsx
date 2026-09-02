@@ -2300,14 +2300,13 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
               <div className="w-20 sm:w-24 text-right">Actions</div>
             </div>
             <div className="divide-y divide-white/[0.04]">
-              {pagedVisible.map((d, idx) => (
+              {pagedVisible.map((d) => (
                 <DealTableRow
                   key={d.id}
                   deal={d}
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
-                  isActive={activeIdx === idx}
                   onApprove={onApprove}
                   onReject={onReject}
                   onEdit={onEdit}
@@ -2319,7 +2318,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
           /* Gallery Grid View */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
             <AnimatePresence mode="popLayout">
-              {pagedVisible.map((d, idx) => (
+              {pagedVisible.map((d) => (
                 <DealCard
                   key={d.id}
                   deal={d}
@@ -2329,7 +2328,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
-                  isActive={activeIdx === idx}
                 />
               ))}
             </AnimatePresence>
