@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { toast, Toaster } from "sonner";
 import {
   Check, X, Search, Sun, Moon, Zap, Tag, Settings2, Radio,
-  CheckSquare, Plus, PenLine, Upload, Sparkles,
+  CheckSquare, Plus, PenLine, Upload, Sparkles, Download,
   Undo2, ExternalLink, Shield,
   Clock, Flame, RefreshCw, CheckCircle2,
   Maximize2, Copy, Link as LinkIcon, FileText,
@@ -407,8 +407,27 @@ async function apiRetryAffiliate(id: string): Promise<string | null> {
   } catch { return null; }
 }
 
+function downloadImage(url?: string | null, filename: string = "deal-product.jpg") {
+  if (!url) return;
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.target = "_blank";
+    a.rel = "noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast.success("Downloading product asset...");
+  } catch {
+    window.open(url, "_blank");
+  }
+}
+
 interface ScrapedProductData {
   imgUrl?: string | null;
+  store_img_url?: string | null;
+  telegram_img_url?: string | null;
   title?: string | null;
   category?: string | null;
   price?: number | null;
@@ -421,8 +440,11 @@ async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/scrape-image`, { method: "POST" });
     if (!res.ok) return null;
     const data = await res.json();
+    const storeImg = data.store_img_url || data.img_url || data.url || data.image_url || null;
     return {
-      imgUrl: data.img_url || data.url || data.image_url || null,
+      imgUrl: storeImg,
+      store_img_url: storeImg,
+      telegram_img_url: data.telegram_img_url || null,
       title: data.title || data.prod_name || null,
       category: data.category || null,
       price: data.prices?.sale || data.price || null,
@@ -568,9 +590,22 @@ function DealCard({
         {/* Floating Badges */}
         <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
           {deal.discount > 0 && (
-            <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white font-mono text-[10px] font-bold shadow-md shadow-rose-500/30 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 text-white font-mono text-[10px] font-black shadow-md shadow-rose-500/30 flex items-center gap-1">
               <span>🔥</span> {Math.round(deal.discount)}% OFF
             </span>
+          )}
+          {deal.imgUrl && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadImage(deal.imgUrl, `${deal.title.slice(0, 24).replace(/[^\w]/g, "_")}.jpg`);
+              }}
+              className="w-7 h-7 rounded-lg bg-black/60 hover:bg-black/90 text-white/70 hover:text-emerald-300 border border-white/15 flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
+              title="Download Deal Image Asset"
+            >
+              <Download size={12} />
+            </button>
           )}
         </div>
 
@@ -594,10 +629,10 @@ function DealCard({
       </div>
 
       {/* ─── CARD BODY & CONTENT ─── */}
-      <div className="p-3.5 flex flex-col flex-1 justify-between gap-3 bg-gradient-to-b from-[#111322]/40 to-[#0A0C16]/60">
+      <div className="p-3.5 flex flex-col flex-1 justify-between gap-3 bg-gradient-to-b from-[#111322]/50 via-[#0C0E1A]/60 to-[#070810]/80">
         <div>
           <h4
-            className="text-[13px] sm:text-sm font-semibold text-zinc-100 line-clamp-2 leading-snug hover:text-emerald-300 transition-colors cursor-pointer"
+            className="font-heading text-[13.5px] sm:text-sm font-bold text-zinc-100 line-clamp-2 leading-snug hover:text-emerald-300 transition-colors cursor-pointer tracking-tight"
             onClick={() => onEdit(deal)}
             title={deal.title}
           >
@@ -605,25 +640,25 @@ function DealCard({
           </h4>
 
           {/* Pricing Row */}
-          <div className="flex items-baseline gap-2.5 mt-2">
+          <div className="flex items-baseline gap-2 mt-2 flex-wrap">
             {deal.price > 0 ? (
               <>
-                <span className="pro-price text-lg sm:text-xl font-black text-emerald-400">
+                <span className="pro-price text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-400 tabular-nums">
                   {fmt(deal.price)}
                 </span>
                 {deal.mrp > 0 && deal.mrp > deal.price && (
-                  <span className="text-xs text-zinc-500 line-through font-mono">
+                  <span className="text-xs text-zinc-500 line-through font-mono tabular-nums">
                     {fmt(deal.mrp)}
                   </span>
                 )}
                 {savings > 0 && (
-                  <span className="text-[10px] font-mono text-emerald-400/90 font-bold ml-auto">
+                  <span className="text-[10px] font-mono font-bold text-emerald-400/95 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md ml-auto">
                     Save {fmt(savings)}
                   </span>
                 )}
               </>
             ) : (
-              <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+              <span className="text-xs font-black text-amber-400 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg">
                 <span>⚡</span> Freebie Loot
               </span>
             )}
@@ -1418,26 +1453,38 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
+    
+    // 1. Instant local preview with zero network delay
     const reader = new FileReader();
-    reader.onload = (ev) => { setImgFile(ev.target?.result as string); };
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setImgFile(dataUrl);
+      setImgUrl(dataUrl);
+      setUploadedImg(dataUrl);
+    };
     reader.readAsDataURL(f);
 
+    // 2. Upload to server
     const fd = new FormData();
     fd.append("file", f);
     try {
+      onToast("Uploading image to server...", "info");
       const res = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, { method: "POST", body: fd });
       if (res.ok) {
         const data = await res.json();
-        const serverImg = data.img_url;
-        setImgUrl(serverImg);
-        setUploadedImg(serverImg);
-        setImgFile(null);
+        const serverImg = data.img_url || data.uploaded_img_url;
+        if (serverImg) {
+          setImgUrl(serverImg);
+          setUploadedImg(serverImg);
+        }
         onToast("Image uploaded to server successfully!", "success");
       } else {
-        onToast("Server image upload failed", "error");
+        onToast("Uploaded to local preview (server returned non-200)", "info");
       }
     } catch {
-      onToast("Image upload network error", "error");
+      onToast("Network issue uploading to server, keeping local preview", "info");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -1461,39 +1508,44 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 
   const doScrapeImage = async () => {
     setScrapingImage(true);
-    const result = await apiScrapeImage(deal.id);
-    if (result) {
-      const newStoreImg = result.store_img_url || result.img_url;
-      if (newStoreImg) {
-        setStoreImg(newStoreImg);
-        setImgUrl(newStoreImg);
-        setImgFile(null);
+    try {
+      const result = await apiScrapeImage(deal.id);
+      if (result) {
+        const newStoreImg = result.store_img_url || result.imgUrl;
+        if (newStoreImg) {
+          setStoreImg(newStoreImg);
+          setImgUrl(newStoreImg);
+          setImgFile(null);
+        }
+        if (result.telegram_img_url && !telegramImg) {
+          setTelegramImg(result.telegram_img_url);
+        }
+        if (result.title) setTitle(result.title);
+        if (result.price) setPrice(String(result.price));
+        if (result.mrp) setMrp(String(result.mrp));
+        if (result.affText) {
+          setText(result.affText);
+        } else if (result.title) {
+          const urls = text.match(/https?:\/\/\S+/g) || [];
+          const link = urls.length > 0 ? urls[0] : "";
+          const p = result.price || price || "";
+          const pStr = p ? ` @ ₹${p}` : "";
+          setText(`${result.title}${pStr}\n\n${link}`.trim());
+        }
+        onToast("✨ Scraped store photo & details! Switch between Telegram & Store photo anytime above.", "success");
+      } else {
+        onToast("Failed to fetch product details", "error");
       }
-      if (result.telegram_img_url && !telegramImg) {
-        setTelegramImg(result.telegram_img_url);
-      }
-      if (result.title) setTitle(result.title);
-      if (result.price) setPrice(String(result.price));
-      if (result.mrp) setMrp(String(result.mrp));
-      if (result.affText) {
-        setText(result.affText);
-      } else if (result.title) {
-        const urls = text.match(/https?:\/\/\S+/g) || [];
-        const link = urls.length > 0 ? urls[0] : "";
-        const p = result.price || price || "";
-        const pStr = p ? ` @ ₹${p}` : "";
-        setText(`${result.title}${pStr}\n\n${link}`.trim());
-      }
-      onToast("✨ Scraped store photo & details! Switch between Telegram & Store photo anytime above.", "success");
-    } else {
-      onToast("Failed to fetch product details", "error");
+    } catch {
+      onToast("Store scrape error", "error");
+    } finally {
+      setScrapingImage(false);
     }
-    setScrapingImage(false);
   };
 
   const changes: Partial<Deal> = {
     title,
-    imgUrl: imgFile || imgUrl,
+    imgUrl: uploadedImg || imgFile || imgUrl,
     telegramImgUrl: telegramImg,
     storeImgUrl: storeImg,
     uploadedImgUrl: uploadedImg,
@@ -1551,24 +1603,34 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </div>
             </div>
 
-            {/* Dual Image Choice Selector */}
-            {(telegramImg || storeImg || uploadedImg) && (
-              <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-slate-950/80 border border-white/8">
+            {/* Dual Image Choice Selector + Download Action */}
+            {(telegramImg || storeImg || uploadedImg || imgFile) && (
+              <div className="flex flex-col gap-2 p-3 rounded-2xl bg-slate-950/80 border border-white/8 shadow-inner">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Active Image for Post:
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <span>🖼️</span> Active Broadcast Photo:
                   </span>
-                  <span className="text-[10px] text-zinc-500">Tap to switch photo</span>
+                  {previewSrc && (
+                    <button
+                      type="button"
+                      onClick={() => downloadImage(previewSrc, `${title.slice(0, 24).replace(/[^\w]/g, "_")}.jpg`)}
+                      className="text-[10px] text-zinc-400 hover:text-emerald-300 flex items-center gap-1 transition-colors cursor-pointer font-semibold px-2 py-0.5 rounded-lg bg-white/5 border border-white/10"
+                      title="Download active photo to device"
+                    >
+                      <Download size={11} />
+                      <span>Download</span>
+                    </button>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   {telegramImg && (
                     <button
                       type="button"
                       onClick={() => { setImgUrl(telegramImg); setImgFile(null); }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
                         imgUrl === telegramImg && !imgFile
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30"
-                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md"
+                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
                       }`}
                     >
                       <img src={telegramImg} alt="" className="w-5 h-5 rounded object-cover" />
@@ -1579,27 +1641,27 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                     <button
                       type="button"
                       onClick={() => { setImgUrl(storeImg); setImgFile(null); }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
                         imgUrl === storeImg && !imgFile
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30"
-                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md"
+                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
                       }`}
                     >
                       <img src={storeImg} alt="" className="w-5 h-5 rounded object-cover" />
                       <span>🛍️ Store Product Photo</span>
                     </button>
                   )}
-                  {uploadedImg && uploadedImg !== telegramImg && uploadedImg !== storeImg && (
+                  {(uploadedImg || imgFile) && (
                     <button
                       type="button"
-                      onClick={() => { setImgUrl(uploadedImg); setImgFile(null); }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer ${
-                        imgUrl === uploadedImg && !imgFile
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30"
-                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                      onClick={() => { if (uploadedImg) setImgUrl(uploadedImg); }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
+                        (imgUrl === uploadedImg || imgFile)
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md"
+                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
                       }`}
                     >
-                      <img src={uploadedImg} alt="" className="w-5 h-5 rounded object-cover" />
+                      <img src={imgFile || uploadedImg} alt="" className="w-5 h-5 rounded object-cover" />
                       <span>⬆️ Custom Upload</span>
                     </button>
                   )}
