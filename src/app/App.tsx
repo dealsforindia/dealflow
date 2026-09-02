@@ -590,7 +590,7 @@ function DealCard({
         {/* Floating Badges */}
         <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
           {deal.discount > 0 && (
-            <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500 via-orange-500 to-amber-500 text-white font-mono text-[10px] font-black shadow-md shadow-rose-500/30 flex items-center gap-1">
+            <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-slate-950 font-mono text-[10px] font-black shadow-md shadow-amber-500/25 flex items-center gap-1">
               <span>🔥</span> {Math.round(deal.discount)}% OFF
             </span>
           )}
@@ -671,7 +671,7 @@ function DealCard({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onReject(deal.id)}
-                className="h-10 px-3.5 rounded-xl flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 active:scale-95 transition-all cursor-pointer"
+                className="h-10 px-3.5 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/[0.08] hover:border-white/20 active:scale-95 transition-all cursor-pointer"
                 title="Skip Deal"
               >
                 <X size={15} strokeWidth={2.5} />
@@ -680,7 +680,7 @@ function DealCard({
 
               <button
                 onClick={() => onEdit(deal)}
-                className="h-10 px-3 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 active:scale-95 transition-all cursor-pointer flex-1"
+                className="h-10 px-3 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] hover:border-white/20 active:scale-95 transition-all cursor-pointer flex-1"
                 title="Edit & Tune"
               >
                 <PenLine size={13} />
@@ -689,7 +689,7 @@ function DealCard({
 
               <button
                 onClick={() => onApprove(deal.id)}
-                className="h-10 px-4 rounded-xl text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 active:scale-95 shadow-lg shadow-emerald-500/25 cursor-pointer flex-1"
+                className="h-10 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-1 transition-all"
                 title="Approve & Broadcast"
               >
                 <Check size={16} strokeWidth={3} />
@@ -701,9 +701,9 @@ function DealCard({
               <div className={`flex-1 text-center text-xs font-bold py-1.5 rounded-xl border ${
                 deal.status === "approved"
                   ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-                  : "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                  : "bg-slate-800/80 text-slate-300 border-white/10"
               }`}>
-                {deal.status === "approved" ? "✓ Broadcasted" : "✗ Skipped"}
+                {deal.status === "approved" ? "✓ Broadcasted to Telegram" : "✕ Deal Skipped"}
               </div>
               <button
                 onClick={() => onEdit(deal)}
@@ -778,11 +778,11 @@ function DealTableRow({
       {/* Price & Discount */}
       <div className="w-28 sm:w-32 flex-shrink-0 text-right flex flex-col items-end">
         <div className="flex items-center gap-1.5">
-          <span className="pro-price text-sm font-bold text-emerald-400">
+          <span className="pro-price text-sm font-bold text-emerald-300">
             {fmt(deal.price)}
           </span>
           {deal.discount > 0 && (
-            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
               {Math.round(deal.discount)}%
             </span>
           )}
@@ -809,22 +809,22 @@ function DealTableRow({
           <>
             <button
               onClick={() => onReject(deal.id)}
-              className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 transition-all active:scale-95 cursor-pointer"
+              className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 transition-all active:scale-95 cursor-pointer"
               title="Skip"
             >
               <X size={13} />
             </button>
             <button
               onClick={() => onApprove(deal.id)}
-              className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 transition-all active:scale-95 shadow-sm cursor-pointer"
+              className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 transition-all active:scale-95 shadow-sm cursor-pointer"
               title="Approve"
             >
               <Check size={13} strokeWidth={2.5} />
             </button>
           </>
         ) : (
-          <span className={`text-[11px] font-semibold ${deal.status === "approved" ? "text-emerald-400" : "text-rose-400"}`}>
-            {deal.status === "approved" ? "✓ Posted" : "✗ Skipped"}
+          <span className={`text-[11px] font-semibold ${deal.status === "approved" ? "text-emerald-300" : "text-slate-400"}`}>
+            {deal.status === "approved" ? "✓ Posted" : "✕ Skipped"}
           </span>
         )}
       </div>
@@ -1049,7 +1049,7 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
       <div className="p-3 border-t border-white/8 bg-slate-950/90 flex items-center gap-2">
         <button
           onClick={() => onReject(deal.id)}
-          className="px-3 py-2.5 rounded-xl text-xs font-bold bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-white/10 flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+          className="px-3 py-2.5 rounded-xl text-xs font-bold bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
         >
           <X size={14} /> Skip
         </button>
@@ -1073,149 +1073,7 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
   );
 }
 
-// ─── Mobile Swipe Deck (Tinder-Style Gestures) ─────────────────────────────────
-interface MobileSwipeDeckProps {
-  deals: Deal[];
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
-  onEdit: (deal: Deal) => void;
-}
 
-function MobileSwipeDeck({ deals, onApprove, onReject, onEdit }: MobileSwipeDeckProps) {
-  const [deckIdx, setDeckIdx] = useState(0);
-  const activeDeal = deals[deckIdx];
-
-  const handleDragEnd = (_: any, info: any) => {
-    if (!activeDeal) return;
-    if (info.offset.x > 90) {
-      // Swiped Right -> Approve
-      navigator.vibrate?.(40);
-      onApprove(activeDeal.id);
-      setDeckIdx(prev => prev + 1);
-    } else if (info.offset.x < -90) {
-      // Swiped Left -> Skip
-      navigator.vibrate?.(30);
-      onReject(activeDeal.id);
-      setDeckIdx(prev => prev + 1);
-    }
-  };
-
-  if (!activeDeal) {
-    return (
-      <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
-        <span className="text-4xl">🎉</span>
-        <h4 className="text-sm font-bold text-white">Deck Empty</h4>
-        <p className="text-xs text-zinc-400">All available deals in this queue have been curated!</p>
-      </div>
-    );
-  }
-
-  const store = getStoreBadge(activeDeal.platforms, activeDeal.affText);
-  const savings = activeDeal.mrp > activeDeal.price ? activeDeal.mrp - activeDeal.price : 0;
-
-  return (
-    <div className="w-full flex flex-col items-center justify-center py-4 px-3 relative min-h-[500px]">
-      {/* Swipe Progress Badge */}
-      <div className="mb-3 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono text-zinc-400">
-        Deal <span className="text-emerald-400 font-bold">{deckIdx + 1}</span> of {deals.length}
-      </div>
-
-      {/* Draggable Card */}
-      <motion.div
-        key={activeDeal.id}
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        onDragEnd={handleDragEnd}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="pro-swipe-card p-4 flex flex-col gap-3 relative cursor-grab active:cursor-grabbing"
-      >
-        {/* Top Badges */}
-        <div className="flex items-center justify-between">
-          <Store3DBadge store={store.tag} />
-          <span className="text-xs text-zinc-400 truncate">{activeDeal.channel}</span>
-          <span className="text-[11px] text-zinc-500 font-mono">{fmtAgo(activeDeal.ts)}</span>
-        </div>
-
-        {/* Thumbnail */}
-        <div className="w-full h-52 rounded-2xl bg-[#080911] border border-white/8 flex items-center justify-center overflow-hidden relative">
-          {activeDeal.imgUrl ? (
-            <img src={activeDeal.imgUrl} alt="" className="max-h-full max-w-full object-contain p-2" />
-          ) : (
-            <span className="text-4xl">{activeDeal.catEmoji}</span>
-          )}
-
-          {activeDeal.discount > 0 && (
-            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-rose-600 text-white font-mono text-xs font-bold shadow-md">
-              {Math.round(activeDeal.discount)}% OFF
-            </span>
-          )}
-        </div>
-
-        {/* Title */}
-        <h4 className="text-sm font-bold text-zinc-100 line-clamp-2 leading-snug">
-          {activeDeal.title}
-        </h4>
-
-        {/* Price & Savings */}
-        <div className="flex items-baseline gap-2">
-          <span className="pro-price text-xl font-bold text-emerald-400">
-            {fmt(activeDeal.price)}
-          </span>
-          {activeDeal.mrp > 0 && activeDeal.mrp > activeDeal.price && (
-            <span className="text-xs text-zinc-500 line-through font-mono">
-              {fmt(activeDeal.mrp)}
-            </span>
-          )}
-          {savings > 0 && (
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-mono">
-              Save {fmt(savings)}
-            </span>
-          )}
-        </div>
-
-        {/* Direction Guides */}
-        <div className="flex items-center justify-between pt-2 border-t border-white/6 text-[10px] font-mono text-zinc-500">
-          <span>👈 Swipe Left to Skip</span>
-          <span>Swipe Right to Post 👉</span>
-        </div>
-      </motion.div>
-
-      {/* Bottom Manual Touch Action Buttons */}
-      <div className="flex items-center gap-4 mt-6 z-20">
-        <button
-          onClick={() => {
-            navigator.vibrate?.(30);
-            onReject(activeDeal.id);
-            setDeckIdx(prev => prev + 1);
-          }}
-          className="w-13 h-13 rounded-2xl bg-slate-900 border border-rose-500/30 text-rose-400 flex items-center justify-center shadow-lg active:scale-90 transition-all cursor-pointer"
-          title="Skip"
-        >
-          <X size={20} strokeWidth={2.5} />
-        </button>
-        <button
-          onClick={() => onEdit(activeDeal)}
-          className="w-11 h-11 rounded-2xl bg-slate-900 border border-white/15 text-zinc-300 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
-          title="Edit"
-        >
-          <PenLine size={16} />
-        </button>
-        <button
-          onClick={() => {
-            navigator.vibrate?.(40);
-            onApprove(activeDeal.id);
-            setDeckIdx(prev => prev + 1);
-          }}
-          className="w-13 h-13 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/40 active:scale-90 transition-all cursor-pointer"
-          title="Approve & Post"
-        >
-          <Check size={22} strokeWidth={3} />
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Raycast Command Palette Modal ─────────────────────────────────────────────
 interface CommandPaletteModalProps {
@@ -2045,18 +1903,18 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
               onClick={() => setQuickDropModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:border-emerald-300 active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:border-indigo-400 active:scale-95 cursor-pointer shadow-sm"
               title="Quick Drop"
             >
-              <Zap size={13} className="fill-emerald-400 text-emerald-400" />
+              <Zap size={13} className="fill-indigo-400 text-indigo-400" />
               <span className="hidden md:inline">Quick Drop</span>
             </button>
             <button
               onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); }}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
                 bulkMode
-                  ? "bg-rose-600 text-white border-rose-500"
-                  : "bg-slate-900 border-white/10 text-slate-300 hover:text-white"
+                  ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-500/25"
+                  : "bg-white/[0.04] border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.08]"
               }`}
               title="Select Mode"
             >
@@ -2067,8 +1925,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
               onClick={() => setSendTG(!sendTG)}
               className={`hidden sm:flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold transition-all border ${
                 sendTG
-                  ? "bg-emerald-600 text-white border-emerald-500"
-                  : "bg-slate-900 border-white/10 text-slate-400 opacity-60"
+                  ? "bg-emerald-600/90 text-white border-emerald-500 shadow-sm"
+                  : "bg-white/[0.04] border-white/10 text-slate-400 opacity-60"
               }`}
             >
               <Send size={11} /> <span>TG</span>
@@ -2157,27 +2015,27 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
           </div>
         </div>
 
-        {/* Tier 3: Status Tabs with Smooth Touch Momentum and NO Ugly Scrollbar */}
+        {/* Tier 3: Status Tabs with Sophisticated Eye-Pleasing Harmony */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {[
-            { id: "pending", label: "Pending", icon: "🔥", count: pending, activeCls: "bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm" },
-            { id: "approved", label: "Approved", icon: "✅", count: approved, activeCls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm" },
-            { id: "rejected", label: "Rejected", icon: "🗑️", count: rejected, activeCls: "bg-slate-800 text-rose-300 border-white/15 shadow-sm" },
-            { id: "promos", label: "Promos", icon: "🎟️", count: promos.length, activeCls: "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm" },
-            { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-slate-800 text-white border-white/15 shadow-sm" },
+            { id: "pending", label: "Pending", icon: "⏳", count: pending, activeCls: "bg-amber-400/15 text-amber-200 border-amber-400/40 shadow-[0_0_16px_rgba(251,191,36,0.18)]" },
+            { id: "approved", label: "Approved", icon: "✓", count: approved, activeCls: "bg-emerald-400/15 text-emerald-200 border-emerald-400/40 shadow-[0_0_16px_rgba(52,211,153,0.18)]" },
+            { id: "rejected", label: "Rejected", icon: "✕", count: rejected, activeCls: "bg-slate-800/90 text-slate-200 border-white/20 shadow-sm" },
+            { id: "promos", label: "Promos", icon: "🎟️", count: promos.length, activeCls: "bg-indigo-400/15 text-indigo-200 border-indigo-400/40 shadow-[0_0_16px_rgba(129,140,248,0.18)]" },
+            { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-white/10 text-white border-white/25 shadow-sm" },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => { setFilter(tab.id as any); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
                 filter === tab.id
                   ? tab.activeCls
-                  : "text-slate-400 hover:text-slate-200 border-transparent hover:bg-white/5"
+                  : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
               }`}
             >
-              <span>{tab.icon}</span>
+              <span className="text-[11px]">{tab.icon}</span>
               <span>{tab.label}</span>
-              <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black font-mono ${filter === tab.id ? "bg-black/50 text-white" : "bg-white/5 text-slate-400"}`}>
+              <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold font-mono ${filter === tab.id ? "bg-black/40 text-white" : "bg-white/5 text-slate-400"}`}>
                 {tab.count}
               </span>
             </button>
@@ -2300,7 +2158,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
                           </span>
                         )}
                         {d.discount > 0 && (
-                          <span className="text-[9px] font-bold px-1 rounded bg-rose-500/20 text-rose-300">
+                          <span className="text-[9px] font-bold px-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                             {Math.round(d.discount)}%
                           </span>
                         )}
@@ -2311,14 +2169,14 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
                     <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => onReject(d.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 cursor-pointer"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 cursor-pointer transition-all active:scale-95"
                         title="Skip"
                       >
                         <X size={13} />
                       </button>
                       <button
                         onClick={() => onApprove(d.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 shadow-sm cursor-pointer"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 shadow-sm cursor-pointer transition-all active:scale-95"
                         title="Approve"
                       >
                         <Check size={13} strokeWidth={2.5} />
@@ -3102,12 +2960,16 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
           const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : "settings";
           return (
             <button key={id} onClick={() => setTab(id)}
-              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${active ? "bg-gradient-to-r from-rose-500/20 via-primary/15 to-transparent text-white border border-primary/30 shadow-md shadow-primary/10" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
-              {active && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-full bg-primary shadow-lg shadow-primary" />}
+              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                active 
+                  ? "bg-indigo-500/15 text-white border border-indigo-500/30 shadow-sm shadow-indigo-500/10" 
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
+              }`}>
+              {active && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-full bg-indigo-500 shadow-md shadow-indigo-500" />}
               <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "settings"} active={active} />
               <span className="tracking-tight">{label}</span>
               {id === "Review" && pending > 0 && (
-                <span className="ml-auto text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-sm shadow-rose-500/30">
+                <span className="ml-auto text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow-sm">
                   {pending}
                 </span>
               )}
@@ -3232,7 +3094,7 @@ export default function App() {
               <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "settings"} active={active} />
               <span>{label}</span>
               {id === "Review" && pendingCount > 0 && (
-                <span className="absolute top-0 right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-mono flex items-center justify-center shadow-sm">
+                <span className="absolute top-0 right-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
                   {pendingCount > 99 ? "99+" : pendingCount}
                 </span>
               )}
