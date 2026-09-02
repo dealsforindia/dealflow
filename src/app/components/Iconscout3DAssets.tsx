@@ -220,14 +220,14 @@ export function Nav3DIcon({ icon, active }: { icon: "review" | "broadcast" | "ch
   return (
     <motion.div
       className={`relative flex items-center justify-center w-7 h-7 rounded-xl transition-all duration-300 ${
-        active ? "bg-primary/20 shadow-[0_0_15px_rgba(244,63,94,0.35)]" : "bg-white/5"
+        active ? "bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.35)]" : "bg-white/5"
       }`}
       animate={active ? { scale: [1, 1.12, 1], rotateZ: [0, 4, -4, 0] } : {}}
       transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
     >
       <span className="text-base filter drop-shadow-[0_2px_5px_rgba(0,0,0,0.5)]">{icons[icon]}</span>
       {active && (
-        <span className="absolute -bottom-0.5 w-2 h-0.5 rounded-full bg-rose-500 shadow-[0_0_6px_#F43F5E]" />
+        <span className="absolute -bottom-0.5 w-2 h-0.5 rounded-full bg-indigo-400 shadow-[0_0_6px_#818CF8]" />
       )}
     </motion.div>
   );
@@ -245,7 +245,7 @@ export function Stat3DPill({ label, count, icon, color, active, onClick }: {
       whileTap={{ scale: 0.96 }}
       className={`flex items-center gap-2 px-3.5 py-1.5 rounded-2xl border text-xs font-bold transition-all backdrop-blur-xl ${
         active
-          ? `${color} shadow-[0_0_20px_rgba(244,63,94,0.25)] border-white/25`
+          ? `${color} shadow-[0_0_20px_rgba(99,102,241,0.25)] border-white/25`
           : "bg-slate-900/60 border-white/5 text-slate-400 hover:text-white hover:bg-slate-800/70"
       }`}
     >

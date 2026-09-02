@@ -513,206 +513,243 @@ function DealCard({
 }) {
   const [lightbox, setLightbox] = useState(false);
   const [imgErr, setImgErr] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only tilt on desktop screens
-    if (window.innerWidth < 640) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 6;
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -6;
-    setTilt({ x, y });
-  };
-
-  const handleMouseLeave = () => {
-    setTilt({ x: 0, y: 0 });
-  };
-
   const store = getStoreBadge(deal.platforms, deal.affText);
   const savings = deal.mrp > deal.price ? deal.mrp - deal.price : 0;
 
   return (
     <motion.div layout
-      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        transform: `perspective(1000px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
-        transition: "transform 0.15s ease-out, border-color 0.2s ease, box-shadow 0.2s ease",
-      }}
       className={`pro-card rounded-2xl overflow-hidden flex flex-col group relative transition-all ${
-        selected ? "ring-2 ring-emerald-400 bg-emerald-500/10 border-emerald-400/50 shadow-lg shadow-emerald-500/20" : ""
+        selected ? "ring-2 ring-indigo-400 bg-indigo-500/10 border-indigo-400/50 shadow-lg shadow-indigo-500/20" : ""
       } ${isActive ? "pro-card-active" : ""}`}>
 
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
-      {/* ─── CARD HEADER (Store & Channel & Timestamp) ─── */}
-      <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/6 bg-white/[0.02]">
-        <div className="flex items-center gap-2 min-w-0">
-          <Store3DBadge store={store.tag} />
-          <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[140px] sm:max-w-[180px]">
-            {deal.channel}
-          </span>
-        </div>
-        <span className="text-[10px] text-zinc-400 font-mono flex-shrink-0">
-          {fmtAgo(deal.ts)}
-        </span>
-      </div>
+      {/* ─── MOBILE LAYOUT: Compact Modern Split Specimen (sm:hidden) ─── */}
+      <div className="flex sm:hidden p-2.5 gap-2.5 items-center">
+        {/* Left: Square Media Box */}
+        <div
+          className="relative w-24 h-24 rounded-xl bg-[#080911] border border-white/8 flex items-center justify-center p-1.5 flex-shrink-0 cursor-zoom-in overflow-hidden"
+          onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
+        >
+          {deal.imgUrl && !imgErr ? (
+            <img src={deal.imgUrl} alt="" className="w-full h-full object-contain" onError={() => setImgErr(true)} />
+          ) : (
+            <span className="text-2xl">{deal.catEmoji}</span>
+          )}
 
-      {/* ─── IMAGE SHOWCASE (Centered, Zero Distortion, Responsive) ─── */}
-      <div
-        className="relative w-full h-44 sm:h-52 bg-[#080911] flex items-center justify-center p-3 overflow-hidden cursor-zoom-in border-b border-white/6 group/img"
-        onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
-      >
-        {deal.imgUrl && !imgErr ? (
-          <>
-            <img
-              src={deal.imgUrl}
-              alt={deal.title}
-              className="max-h-full max-w-full object-contain filter drop-shadow-md group-hover/img:scale-105 transition-transform duration-200 ease-out"
-              loading="lazy"
-              onError={() => setImgErr(true)}
-            />
-            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
-              <div className="p-2 rounded-lg bg-slate-900/90 text-white border border-white/20 shadow-xl">
-                <Maximize2 size={14} />
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-zinc-500">
-            <span className="text-4xl">{deal.catEmoji}</span>
-            <span className="text-[10px] font-semibold tracking-wider uppercase opacity-60">No Media</span>
-          </div>
-        )}
-
-        {/* Floating Badges */}
-        <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
           {deal.discount > 0 && (
-            <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-slate-950 font-mono text-[10px] font-black shadow-md shadow-amber-500/25 flex items-center gap-1">
-              <span>🔥</span> {Math.round(deal.discount)}% OFF
+            <span className="absolute top-1 left-1 px-1.5 py-0.2 rounded-md bg-amber-400 text-slate-950 font-mono text-[9px] font-black shadow-sm">
+              {Math.round(deal.discount)}%
             </span>
           )}
+
           {deal.imgUrl && (
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                downloadImage(deal.imgUrl, `${deal.title.slice(0, 24).replace(/[^\w]/g, "_")}.jpg`);
+                downloadImage(deal.imgUrl, `${deal.title.slice(0, 20)}.jpg`);
               }}
-              className="w-7 h-7 rounded-lg bg-black/60 hover:bg-black/90 text-white/70 hover:text-emerald-300 border border-white/15 flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
-              title="Download Deal Image Asset"
+              className="absolute bottom-1 right-1 w-5 h-5 rounded-md bg-black/70 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-md"
+              title="Download"
             >
-              <Download size={12} />
+              <Download size={10} />
+            </button>
+          )}
+
+          {(bulkMode || selected) && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleSelect?.(deal.id); }}
+              className={`absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center ${
+                selected ? "bg-indigo-500 text-white" : "bg-black/80 border border-white/20 text-white/40"
+              }`}
+            >
+              {selected ? <Check size={10} strokeWidth={3} /> : null}
             </button>
           )}
         </div>
 
-        {/* Top Left: Multi-Card Selection Checkbox */}
-        {(bulkMode || selected) && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSelect?.(deal.id);
-            }}
-            className={`absolute top-2.5 left-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${
-              selected
-                ? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-300 font-bold"
-                : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/40"
-            }`}
-          >
-            {selected ? <Check size={12} className="stroke-[3]" /> : null}
-          </button>
-        )}
-      </div>
+        {/* Right: Content & Inline Action Strip */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between h-24">
+          <div>
+            <div className="flex items-center gap-1.5 justify-between">
+              <div className="flex items-center gap-1 min-w-0">
+                <Store3DBadge store={store.tag} />
+                <span className="text-[10px] text-slate-400 truncate max-w-[90px]">{deal.channel}</span>
+              </div>
+              <span className="text-[9px] text-slate-500 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
+            </div>
 
-      {/* ─── CARD BODY & CONTENT ─── */}
-      <div className="p-3.5 flex flex-col flex-1 justify-between gap-3 bg-gradient-to-b from-[#111322]/50 via-[#0C0E1A]/60 to-[#070810]/80">
-        <div>
-          <h4
-            className="font-heading text-[13.5px] sm:text-sm font-bold text-zinc-100 line-clamp-2 leading-snug hover:text-emerald-300 transition-colors cursor-pointer tracking-tight"
-            onClick={() => onEdit(deal)}
-            title={deal.title}
-          >
-            {deal.title}
-          </h4>
+            <h4
+              className="font-heading text-xs font-bold text-slate-100 line-clamp-1 leading-snug mt-1 hover:text-indigo-300 transition-colors cursor-pointer tracking-tight"
+              onClick={() => onEdit(deal)}
+              title={deal.title}
+            >
+              {deal.title}
+            </h4>
 
-          {/* Pricing Row */}
-          <div className="flex items-baseline gap-2 mt-2 flex-wrap">
-            {deal.price > 0 ? (
-              <>
-                <span className="pro-price text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-400 tabular-nums">
-                  {fmt(deal.price)}
+            {/* Price Row */}
+            <div className="flex items-baseline gap-1.5 mt-0.5">
+              <span className="pro-price text-sm font-black text-emerald-300 tabular-nums">{fmt(deal.price)}</span>
+              {deal.mrp > deal.price && (
+                <span className="text-[10px] text-slate-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>
+              )}
+              {savings > 0 && (
+                <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1 rounded ml-auto">
+                  Save {fmt(savings)}
                 </span>
-                {deal.mrp > 0 && deal.mrp > deal.price && (
-                  <span className="text-xs text-zinc-500 line-through font-mono tabular-nums">
-                    {fmt(deal.mrp)}
-                  </span>
-                )}
-                {savings > 0 && (
-                  <span className="text-[10px] font-mono font-bold text-emerald-400/95 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md ml-auto">
-                    Save {fmt(savings)}
-                  </span>
-                )}
+              )}
+            </div>
+          </div>
+
+          {/* Inline Touch Buttons (Thumb-friendly, 28px height) */}
+          <div className="flex items-center gap-1.5 mt-auto" onClick={e => e.stopPropagation()}>
+            {deal.status === "pending" ? (
+              <>
+                <button
+                  onClick={() => onReject(deal.id)}
+                  className="h-7 px-2.5 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer"
+                  title="Skip"
+                >
+                  <X size={12} strokeWidth={2.5} />
+                </button>
+                <button
+                  onClick={() => onEdit(deal)}
+                  className="h-7 px-2.5 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer flex-1 gap-1"
+                  title="Edit & Tune"
+                >
+                  <PenLine size={11} /> <span>Tune</span>
+                </button>
+                <button
+                  onClick={() => onApprove(deal.id)}
+                  className="h-7 px-3 rounded-lg text-[11px] font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-sm shadow-emerald-500/20 cursor-pointer flex-1"
+                  title="Approve"
+                >
+                  <Check size={13} strokeWidth={3} /> <span>Post</span>
+                </button>
               </>
             ) : (
-              <span className="text-xs font-black text-amber-400 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg">
-                <span>⚡</span> Freebie Loot
+              <span className={`text-[10px] font-bold py-0.5 px-2 rounded-md border flex-1 text-center ${
+                deal.status === "approved" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-slate-800 text-slate-400 border-white/10"
+              }`}>
+                {deal.status === "approved" ? "✓ Posted" : "✕ Skipped"}
               </span>
             )}
           </div>
         </div>
+      </div>
 
-        {/* ─── CARD FOOTER (Big Thumb Action Buttons) ─── */}
-        <div className="pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
-          {deal.status === "pending" ? (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onReject(deal.id)}
-                className="h-10 px-3.5 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/[0.08] hover:border-white/20 active:scale-95 transition-all cursor-pointer"
-                title="Skip Deal"
-              >
-                <X size={15} strokeWidth={2.5} />
-                <span className="hidden xs:inline text-xs font-semibold ml-1">Skip</span>
-              </button>
+      {/* ─── DESKTOP/TABLET LAYOUT: Luxury Specimen Showcase Card (hidden sm:flex) ─── */}
+      <div className="hidden sm:flex flex-col flex-1">
+        {/* Header */}
+        <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/6 bg-white/[0.02]">
+          <div className="flex items-center gap-2 min-w-0">
+            <Store3DBadge store={store.tag} />
+            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[180px]">{deal.channel}</span>
+          </div>
+          <span className="text-[10px] text-zinc-400 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
+        </div>
 
-              <button
-                onClick={() => onEdit(deal)}
-                className="h-10 px-3 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] hover:border-white/20 active:scale-95 transition-all cursor-pointer flex-1"
-                title="Edit & Tune"
-              >
-                <PenLine size={13} />
-                <span className="text-xs font-semibold ml-1.5">Edit & Tune</span>
-              </button>
-
-              <button
-                onClick={() => onApprove(deal.id)}
-                className="h-10 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-1 transition-all"
-                title="Approve & Broadcast"
-              >
-                <Check size={16} strokeWidth={3} />
-                <span>Approve</span>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between gap-2">
-              <div className={`flex-1 text-center text-xs font-bold py-1.5 rounded-xl border ${
-                deal.status === "approved"
-                  ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-                  : "bg-slate-800/80 text-slate-300 border-white/10"
-              }`}>
-                {deal.status === "approved" ? "✓ Broadcasted to Telegram" : "✕ Deal Skipped"}
+        {/* Media Showcase */}
+        <div
+          className="relative w-full h-48 bg-[#080911] flex items-center justify-center p-3 overflow-hidden cursor-zoom-in border-b border-white/6 group/img"
+          onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
+        >
+          {deal.imgUrl && !imgErr ? (
+            <>
+              <img src={deal.imgUrl} alt={deal.title} className="max-h-full max-w-full object-contain filter drop-shadow-md group-hover/img:scale-105 transition-transform duration-200 ease-out" loading="lazy" onError={() => setImgErr(true)} />
+              <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
+                <div className="p-2 rounded-lg bg-slate-900/90 text-white border border-white/20 shadow-xl">
+                  <Maximize2 size={14} />
+                </div>
               </div>
-              <button
-                onClick={() => onEdit(deal)}
-                className="h-8 px-3 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-colors text-xs font-medium cursor-pointer"
-              >
-                <PenLine size={12} className="mr-1" /> View
-              </button>
+            </>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-zinc-500">
+              <span className="text-4xl">{deal.catEmoji}</span>
+              <span className="text-[10px] font-semibold tracking-wider uppercase opacity-60">No Media</span>
             </div>
           )}
+
+          {/* Badges */}
+          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
+            {deal.discount > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-slate-950 font-mono text-[10px] font-black shadow-md shadow-amber-500/25 flex items-center gap-1">
+                <span>🔥</span> {Math.round(deal.discount)}% OFF
+              </span>
+            )}
+            {deal.imgUrl && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); downloadImage(deal.imgUrl, `${deal.title.slice(0, 24).replace(/[^\w]/g, "_")}.jpg`); }}
+                className="w-7 h-7 rounded-lg bg-black/60 hover:bg-black/90 text-white/70 hover:text-emerald-300 border border-white/15 flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
+                title="Download Asset"
+              >
+                <Download size={12} />
+              </button>
+            )}
+          </div>
+
+          {(bulkMode || selected) && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onToggleSelect?.(deal.id); }}
+              className={`absolute top-2.5 left-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${
+                selected ? "bg-indigo-500 text-white ring-2 ring-indigo-300 font-bold" : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/40"
+              }`}
+            >
+              {selected ? <Check size={12} className="stroke-[3]" /> : null}
+            </button>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="p-3.5 flex flex-col flex-1 justify-between gap-3 bg-gradient-to-b from-[#111322]/50 via-[#0C0E1A]/60 to-[#070810]/80">
+          <div>
+            <h4 className="font-heading text-[13.5px] font-bold text-zinc-100 line-clamp-2 leading-snug hover:text-indigo-300 transition-colors cursor-pointer tracking-tight" onClick={() => onEdit(deal)} title={deal.title}>
+              {deal.title}
+            </h4>
+            <div className="flex items-baseline gap-2 mt-2 flex-wrap">
+              {deal.price > 0 ? (
+                <>
+                  <span className="pro-price text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-400 tabular-nums">{fmt(deal.price)}</span>
+                  {deal.mrp > deal.price && <span className="text-xs text-zinc-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>}
+                  {savings > 0 && <span className="text-[10px] font-mono font-bold text-emerald-400/95 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md ml-auto">Save {fmt(savings)}</span>}
+                </>
+              ) : (
+                <span className="text-xs font-black text-amber-400 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg"><span>⚡</span> Freebie Loot</span>
+              )}
+            </div>
+          </div>
+
+          {/* Footer Buttons */}
+          <div className="pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
+            {deal.status === "pending" ? (
+              <div className="flex items-center gap-2">
+                <button onClick={() => onReject(deal.id)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Skip">
+                  <X size={14} strokeWidth={2.5} /><span className="ml-1">Skip</span>
+                </button>
+                <button onClick={() => onEdit(deal)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer flex-1" title="Edit & Tune">
+                  <PenLine size={13} /><span className="ml-1.5">Edit & Tune</span>
+                </button>
+                <button onClick={() => onApprove(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-1 transition-all" title="Approve & Broadcast">
+                  <Check size={15} strokeWidth={3} /><span>Approve</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                <div className={`flex-1 text-center text-xs font-bold py-1.5 rounded-xl border ${deal.status === "approved" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-slate-800/80 text-slate-300 border-white/10"}`}>
+                  {deal.status === "approved" ? "✓ Broadcasted to Telegram" : "✕ Deal Skipped"}
+                </div>
+                <button onClick={() => onEdit(deal)} className="h-8 px-3 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-zinc-400 hover:text-white text-xs font-medium cursor-pointer">
+                  <PenLine size={12} className="mr-1" /> View
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
