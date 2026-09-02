@@ -575,17 +575,17 @@ function DealCard({
           <div className="flex items-center gap-2 pt-1">
             <button onClick={() => onReject(deal.id)}
               className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-900/90 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/10 hover:border-rose-500/40 transition-all active:scale-90 hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] cursor-pointer"
-              title="Skip Deal (S)">
+              title="Skip Deal">
               <X size={16} strokeWidth={2.5} />
             </button>
             <button onClick={() => onEdit(deal)}
               className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-900/90 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-white/10 hover:border-cyan-500/40 transition-all active:scale-90 hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] cursor-pointer"
-              title="Edit & Tune (E)">
+              title="Edit & Tune">
               <PenLine size={14} />
             </button>
             <button onClick={() => onApprove(deal.id)}
               className="flex-1 h-10 rounded-xl text-xs sm:text-sm font-bold text-slate-950 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all active:scale-95 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer"
-              title="Approve & Broadcast (A)">
+              title="Approve & Broadcast">
               <Check size={16} strokeWidth={3} /> Approve
             </button>
           </div>
@@ -978,40 +978,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
   const currentPage = Math.min(page, totalPages);
   const pagedVisible = pageSize === 9999 ? visible : visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // Global Keyboard Shortcuts (A: Approve, S: Skip, E: Edit, Ctrl+K: Search)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
-      if (tag === "input" || tag === "textarea" || tag === "select" || (e.target as HTMLElement)?.isContentEditable) {
-        return;
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        const searchInput = document.querySelector('input[placeholder*="Search deals"]') as HTMLInputElement;
-        searchInput?.focus();
-        return;
-      }
-
-      if (pagedVisible.length === 0) return;
-      const targetDeal = pagedVisible[0];
-
-      if (e.key.toLowerCase() === "a" && filter === "pending") {
-        e.preventDefault();
-        onApprove(targetDeal.id);
-      } else if (e.key.toLowerCase() === "s" && filter === "pending") {
-        e.preventDefault();
-        onReject(targetDeal.id);
-      } else if (e.key.toLowerCase() === "e") {
-        e.preventDefault();
-        onEdit(targetDeal);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [pagedVisible, filter, onApprove, onReject, onEdit]);
-
   const pending = deals.filter(d => d.status === "pending").length;
   const approved = deals.filter(d => d.status === "approved").length;
   const rejected = deals.filter(d => d.status === "rejected").length;
@@ -1059,17 +1025,13 @@ function ReviewView({ deals, onApprove, onReject, onEdit, dark }: {
           <div className="relative flex-1">
             <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search deals by title, brand, store, or channel… (Press ⌘K)"
-              className="w-full pl-10 pr-20 py-2.5 rounded-xl text-sm text-slate-100 bg-[#0A0C16]/90 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all" />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-              {search ? (
-                <button onClick={() => setSearch("")} className="text-slate-400 hover:text-slate-100">
-                  <X size={14} />
-                </button>
-              ) : (
-                <span className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-white/5 border border-white/10 text-slate-400">⌘K</span>
-              )}
-            </div>
+              placeholder="Search deals by title, brand, store, or channel…"
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-sm text-slate-100 bg-[#0A0C16]/90 border border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 transition-all" />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-100">
+                <X size={14} />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
