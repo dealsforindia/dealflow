@@ -10,7 +10,7 @@ import {
   Maximize2, Copy, Link as LinkIcon, FileText,
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
-  LayoutGrid, List, CornerDownLeft, Command
+  LayoutGrid, List, Columns, Smartphone, Layers, CornerDownLeft, Command
 } from "lucide-react";
 import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
@@ -30,6 +30,9 @@ interface Deal {
   category: string; catEmoji: string; channel: string; channelRaw: string;
   score: number; ts: number; status: DealStatus; dealType: DealType;
   affiliate: boolean; coupon: string | null; imgUrl: string;
+  telegramImgUrl?: string;
+  storeImgUrl?: string;
+  uploadedImgUrl?: string;
   platforms: string[]; originalText: string; affText: string;
   verdict: string; signals: string[];
   clusterCount?: number;
@@ -46,6 +49,9 @@ interface RawDeal {
   original_text: string; source_channel: string; affiliate_applied: boolean;
   original_msg_link: string; deal_type: string; score: number | null;
   img_url?: string;
+  telegram_img_url?: string;
+  store_img_url?: string;
+  uploaded_img_url?: string;
   cluster_count?: number;
   cluster_channels?: { name: string; channel: string; price?: number; ts?: number }[];
   best_price?: number;
@@ -255,14 +261,42 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
     affiliate: d.affiliate_applied, coupon: d.coupon,
     imgUrl: (() => {
-      if (d.img_url && !d.img_url.includes("74.225.250.0")) return d.img_url;
-      if (d.img_url?.includes("74.225.250.0")) {
-        const match = d.img_url.match(/\/images\/(.+)$/);
+      const u = d.img_url;
+      if (u && !u.includes("74.225.250.0")) return u;
+      if (u?.includes("74.225.250.0")) {
+        const match = u.match(/\/images\/(.+)$/);
         if (match) return `${API_BASE}/images/${match[1]}`;
       }
       if (!d.img_path) return "";
       const fname = d.img_path.includes("/images/") ? "images/" + d.img_path.split("/images/").pop() : d.img_path;
       return `${API_BASE}/${fname}`;
+    })(),
+    telegramImgUrl: (() => {
+      const u = d.telegram_img_url || d.img_url;
+      if (u && !u.includes("74.225.250.0")) return u;
+      if (u?.includes("74.225.250.0")) {
+        const match = u.match(/\/images\/(.+)$/);
+        if (match) return `${API_BASE}/images/${match[1]}`;
+      }
+      return "";
+    })(),
+    storeImgUrl: (() => {
+      const u = d.store_img_url;
+      if (u && !u.includes("74.225.250.0")) return u;
+      if (u?.includes("74.225.250.0")) {
+        const match = u.match(/\/images\/(.+)$/);
+        if (match) return `${API_BASE}/images/${match[1]}`;
+      }
+      return "";
+    })(),
+    uploadedImgUrl: (() => {
+      const u = d.uploaded_img_url;
+      if (u && !u.includes("74.225.250.0")) return u;
+      if (u?.includes("74.225.250.0")) {
+        const match = u.match(/\/images\/(.+)$/);
+        if (match) return `${API_BASE}/images/${match[1]}`;
+      }
+      return "";
     })(),
     platforms: d.platforms || [],
     originalText: d.original_text || "",
@@ -324,6 +358,18 @@ async function apiApprove(id: string, changes?: Record<string, unknown>): Promis
   try {
     const payload = changes ? mapChangesToBackend(changes) : {};
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/approve`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function apiUpdateDeal(id: string, changes: Record<string, unknown>): Promise<boolean> {
+  try {
+    const payload = mapChangesToBackend(changes);
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/edit`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -479,194 +525,90 @@ function DealCard({
 
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
-      {/* ─── MOBILE RESPONSIVE LAYOUT (< 640px) ─── */}
-      <div className="sm:hidden flex flex-row p-3 gap-3 items-center w-full">
-        {/* Thumbnail with Store & Discount */}
-        <div
-          className="relative w-22 h-22 rounded-xl bg-[#090B14] border border-white/8 flex items-center justify-center overflow-hidden flex-shrink-0 cursor-zoom-in"
-          onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
-        >
-          {deal.imgUrl && !imgErr ? (
-            <img src={deal.imgUrl} alt={deal.title} className="max-h-full max-w-full object-contain p-1" onError={() => setImgErr(true)} />
-          ) : (
-            <span className="text-2xl">{deal.catEmoji}</span>
-          )}
-          {deal.discount > 0 && (
-            <span className="absolute bottom-1 left-1 px-1.5 py-0.2 rounded bg-rose-600/90 text-white font-mono text-[9px] font-bold shadow-sm">
-              {Math.round(deal.discount)}%
-            </span>
-          )}
+      {/* ─── CARD HEADER (Store & Channel & Timestamp) ─── */}
+      <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/6 bg-white/[0.02]">
+        <div className="flex items-center gap-2 min-w-0">
+          <Store3DBadge store={store.tag} />
+          <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[140px] sm:max-w-[180px]">
+            {deal.channel}
+          </span>
         </div>
-
-        {/* Middle Info Column */}
-        <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <div className="flex items-center gap-1.5">
-            <Store3DBadge store={store.tag} />
-            <span className="text-[10px] text-zinc-400 truncate">{deal.channel}</span>
-            <span className="text-[10px] text-zinc-500 font-mono ml-auto">{fmtAgo(deal.ts)}</span>
-          </div>
-          <h4 className="text-[12.5px] font-semibold text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={() => onEdit(deal)} title={deal.title}>
-            {deal.title}
-          </h4>
-          <div className="flex items-baseline gap-2">
-            {deal.price > 0 ? (
-              <>
-                <span className="pro-price text-base font-bold text-emerald-400">
-                  {fmt(deal.price)}
-                </span>
-                {deal.mrp > 0 && deal.mrp > deal.price && (
-                  <span className="text-[11px] text-zinc-500 line-through font-mono">
-                    {fmt(deal.mrp)}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="text-[10px] font-bold text-amber-400">⚡ Freebie</span>
-            )}
-            {deal.affiliate && (
-              <span className="text-[9px] font-mono text-emerald-400/80 bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/20">
-                dealshare
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Right Actions */}
-        <div className="flex flex-col gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
-          {deal.status === "pending" ? (
-            <>
-              <button
-                onClick={() => onApprove(deal.id)}
-                className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center shadow-md shadow-emerald-500/30 active:scale-95 cursor-pointer"
-                title="Approve"
-              >
-                <Check size={14} strokeWidth={3} />
-              </button>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => onEdit(deal)}
-                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-zinc-400 flex items-center justify-center active:scale-95 cursor-pointer"
-                  title="Edit"
-                >
-                  <PenLine size={12} />
-                </button>
-                <button
-                  onClick={() => onReject(deal.id)}
-                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-white/10 flex items-center justify-center active:scale-95 cursor-pointer"
-                  title="Skip"
-                >
-                  <X size={12} strokeWidth={2.5} />
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className={`text-[10px] font-bold px-2 py-1 rounded-md border text-center ${
-              deal.status === "approved" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-rose-500/15 text-rose-400 border-rose-500/30"
-            }`}>
-              {deal.status === "approved" ? "✓ Done" : "✗ Skip"}
-            </div>
-          )}
-        </div>
+        <span className="text-[10px] text-zinc-400 font-mono flex-shrink-0">
+          {fmtAgo(deal.ts)}
+        </span>
       </div>
 
-      {/* ─── DESKTOP GALLERY CARD (>= 640px) ─── */}
-      <div className="hidden sm:flex flex-col flex-1">
-        {/* Image Showcase */}
-        <div className="relative w-full h-48 sm:h-52 bg-[#080911] flex items-center justify-center p-3.5 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0 border-b border-white/6"
-          onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
-          
-          {deal.imgUrl && !imgErr ? (
-            <>
-              <img src={deal.imgUrl} alt={deal.title}
-                className="max-h-full max-w-full w-auto h-auto object-contain filter drop-shadow-md group-hover:scale-[1.03] transition-transform duration-200 ease-out z-10"
-                loading="lazy"
-                onError={() => setImgErr(true)} />
-
-              <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
-                <div className="p-2 rounded-lg bg-slate-900/90 text-white border border-white/20 shadow-xl">
-                  <Maximize2 size={14} />
-                </div>
+      {/* ─── IMAGE SHOWCASE (Centered, Zero Distortion, Responsive) ─── */}
+      <div
+        className="relative w-full h-44 sm:h-52 bg-[#080911] flex items-center justify-center p-3 overflow-hidden cursor-zoom-in border-b border-white/6 group/img"
+        onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
+      >
+        {deal.imgUrl && !imgErr ? (
+          <>
+            <img
+              src={deal.imgUrl}
+              alt={deal.title}
+              className="max-h-full max-w-full object-contain filter drop-shadow-md group-hover/img:scale-105 transition-transform duration-200 ease-out"
+              loading="lazy"
+              onError={() => setImgErr(true)}
+            />
+            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
+              <div className="p-2 rounded-lg bg-slate-900/90 text-white border border-white/20 shadow-xl">
+                <Maximize2 size={14} />
               </div>
-            </>
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-zinc-500">
-              <span className="text-4xl">{deal.catEmoji}</span>
-              <span className="text-[10px] font-semibold tracking-wider uppercase opacity-60">No Media</span>
             </div>
-          )}
-
-          {/* Top Badges: Store + Discount */}
-          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-2 flex-wrap">
-            <Store3DBadge store={store.tag} />
-
-            {deal.discount > 0 && (
-              <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-rose-500/20 to-orange-500/20 text-rose-300 border border-rose-500/35 font-mono text-[11px] font-bold shadow-sm flex items-center gap-1">
-                <span>🔥</span> {Math.round(deal.discount)}% OFF
-              </span>
-            )}
+          </>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-zinc-500">
+            <span className="text-4xl">{deal.catEmoji}</span>
+            <span className="text-[10px] font-semibold tracking-wider uppercase opacity-60">No Media</span>
           </div>
+        )}
 
-          {/* Top Right: Selection Checkbox */}
-          {(bulkMode || selected) && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleSelect?.(deal.id);
-              }}
-              className={`absolute top-2.5 right-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${
-                selected
-                  ? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-300 font-bold"
-                  : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/40"
-              }`}
-            >
-              {selected ? <Check size={12} className="stroke-[3]" /> : null}
-            </button>
-          )}
-
-          {/* Bottom Bar: Category Badge */}
-          <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-900/90 text-zinc-300 backdrop-blur-md border border-white/10 font-medium">
-              {deal.catEmoji} {deal.category}
+        {/* Floating Badges */}
+        <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
+          {deal.discount > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-amber-500 text-white font-mono text-[10px] font-bold shadow-md shadow-rose-500/30 flex items-center gap-1">
+              <span>🔥</span> {Math.round(deal.discount)}% OFF
             </span>
-
-            {deal.affiliate && (
-              <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center" title="Affiliate Monetized">
-                <Zap size={10} className="fill-emerald-400" />
-              </span>
-            )}
-          </div>
-
-          {/* Status Overlays */}
-          {deal.status === "approved" && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm">
-              <div className="flex flex-col items-center gap-1 text-emerald-400 font-bold text-xs">
-                <CheckCircle2 size={30} className="text-emerald-400" />
-                <span>Broadcasted</span>
-              </div>
-            </div>
-          )}
-          {deal.status === "rejected" && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm">
-              <div className="flex flex-col items-center gap-1 text-rose-400 font-bold text-xs">
-                <X size={30} className="text-rose-400" />
-                <span>Skipped</span>
-              </div>
-            </div>
           )}
         </div>
 
-        {/* Deal Details & Content */}
-        <div className="flex flex-col flex-1 p-4 gap-2.5">
-          <h4 className="pro-title line-clamp-2 min-h-[38px] cursor-pointer hover:text-emerald-300 transition-colors" onClick={() => onEdit(deal)} title={deal.title}>
+        {/* Top Left: Multi-Card Selection Checkbox */}
+        {(bulkMode || selected) && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect?.(deal.id);
+            }}
+            className={`absolute top-2.5 left-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${
+              selected
+                ? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-300 font-bold"
+                : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/40"
+            }`}
+          >
+            {selected ? <Check size={12} className="stroke-[3]" /> : null}
+          </button>
+        )}
+      </div>
+
+      {/* ─── CARD BODY & CONTENT ─── */}
+      <div className="p-3.5 flex flex-col flex-1 justify-between gap-3 bg-gradient-to-b from-[#111322]/40 to-[#0A0C16]/60">
+        <div>
+          <h4
+            className="text-[13px] sm:text-sm font-semibold text-zinc-100 line-clamp-2 leading-snug hover:text-emerald-300 transition-colors cursor-pointer"
+            onClick={() => onEdit(deal)}
+            title={deal.title}
+          >
             {deal.title}
           </h4>
 
-          {/* Price & Savings */}
-          <div className="flex items-baseline gap-2 flex-wrap">
+          {/* Pricing Row */}
+          <div className="flex items-baseline gap-2.5 mt-2">
             {deal.price > 0 ? (
               <>
-                <span className="pro-price text-xl font-bold text-emerald-400 leading-none">
+                <span className="pro-price text-lg sm:text-xl font-black text-emerald-400">
                   {fmt(deal.price)}
                 </span>
                 {deal.mrp > 0 && deal.mrp > deal.price && (
@@ -675,84 +617,64 @@ function DealCard({
                   </span>
                 )}
                 {savings > 0 && (
-                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
+                  <span className="text-[10px] font-mono text-emerald-400/90 font-bold ml-auto">
                     Save {fmt(savings)}
                   </span>
                 )}
               </>
             ) : (
-              <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                ⚡ Freebie
+              <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                <span>⚡</span> Freebie Loot
               </span>
             )}
           </div>
+        </div>
 
-          {/* Multi-Channel Deal Cluster Badge */}
-          {deal.clusterCount && deal.clusterCount > 1 ? (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium w-fit group/cluster relative cursor-help">
-              <span>🔥</span>
-              <span>Trending in {deal.clusterCount} Channels</span>
-              {deal.bestPrice && deal.bestPrice < deal.price && (
-                <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/20 px-1 rounded">
-                  Best: ₹{deal.bestPrice}
-                </span>
-              )}
-              {/* Popover */}
-              <div className="hidden group-hover/cluster:flex absolute bottom-full left-0 mb-2 p-2.5 rounded-xl bg-slate-900 border border-white/20 shadow-2xl backdrop-blur-xl flex-col gap-1 z-50 min-w-[180px] pointer-events-none">
-                <span className="text-[9px] text-zinc-400 font-bold uppercase font-mono">Detected In:</span>
-                {deal.clusterChannels?.map((c, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-[11px] text-zinc-200">
-                    <span className="truncate max-w-[110px]">{c.name || c.channel}</span>
-                    <span className="font-mono text-emerald-400 font-bold">{c.price ? `₹${c.price}` : "Deal"}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {/* Channel & Timestamp & Affiliate Badge */}
-          <div className="flex items-center gap-2 mt-auto pt-2.5 border-t border-white/6 text-zinc-400">
-            <div className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white bg-slate-800 border border-white/10 flex-shrink-0">
-              {deal.channel[0]}
-            </div>
-            <span className="text-xs truncate flex-1 text-zinc-300">{deal.channel}</span>
-            
-            {deal.affiliate && (
-              <span className="text-[9px] font-mono text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded flex items-center gap-1" title="Tag: dealshare0b7-21 Active">
-                <Shield size={9} className="text-emerald-400" /> dealshare
-              </span>
-            )}
-
-            <span className="text-[11px] text-zinc-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
-          </div>
-
-          {/* Action Buttons */}
+        {/* ─── CARD FOOTER (Big Thumb Action Buttons) ─── */}
+        <div className="pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
           {deal.status === "pending" ? (
-            <div className="flex items-center gap-1.5 pt-1">
-              <button onClick={() => onReject(deal.id)}
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 transition-all active:scale-90 cursor-pointer"
-                title="Skip Deal (X)">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onReject(deal.id)}
+                className="h-10 px-3.5 rounded-xl flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 active:scale-95 transition-all cursor-pointer"
+                title="Skip Deal"
+              >
                 <X size={15} strokeWidth={2.5} />
+                <span className="hidden xs:inline text-xs font-semibold ml-1">Skip</span>
               </button>
-              <button onClick={() => onEdit(deal)}
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-100 border border-white/10 transition-all active:scale-90 cursor-pointer"
-                title="Edit Deal (E)">
+
+              <button
+                onClick={() => onEdit(deal)}
+                className="h-10 px-3 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white border border-white/10 active:scale-95 transition-all cursor-pointer flex-1"
+                title="Edit & Tune"
+              >
                 <PenLine size={13} />
+                <span className="text-xs font-semibold ml-1.5">Edit & Tune</span>
               </button>
-              <button onClick={() => onApprove(deal.id)}
-                className="flex-1 h-9 rounded-xl text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 bg-emerald-400 hover:bg-emerald-300 transition-all active:scale-95 shadow-md shadow-emerald-500/30 cursor-pointer"
-                title="Approve & Broadcast (A)">
-                <Check size={15} strokeWidth={3} /> Approve
+
+              <button
+                onClick={() => onApprove(deal.id)}
+                className="h-10 px-4 rounded-xl text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 active:scale-95 shadow-lg shadow-emerald-500/25 cursor-pointer flex-1"
+                title="Approve & Broadcast"
+              >
+                <Check size={16} strokeWidth={3} />
+                <span>Approve</span>
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 pt-1">
-              <div className={`flex-1 text-center text-[11px] font-bold py-1 rounded-lg border ${deal.status === "approved" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-rose-500/15 text-rose-400 border-rose-500/30"}`}>
-                {deal.status === "approved" ? "✓ Approved" : "✗ Skipped"}
+            <div className="flex items-center justify-between gap-2">
+              <div className={`flex-1 text-center text-xs font-bold py-1.5 rounded-xl border ${
+                deal.status === "approved"
+                  ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                  : "bg-rose-500/15 text-rose-300 border-rose-500/30"
+              }`}>
+                {deal.status === "approved" ? "✓ Broadcasted" : "✗ Skipped"}
               </div>
-              <button onClick={() => onEdit(deal)}
-                className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-colors" title="Edit">
-                <PenLine size={11} />
+              <button
+                onClick={() => onEdit(deal)}
+                className="h-8 px-3 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-colors text-xs font-medium cursor-pointer"
+              >
+                <PenLine size={12} className="mr-1" /> View
               </button>
             </div>
           )}
@@ -853,14 +775,14 @@ function DealTableRow({
             <button
               onClick={() => onReject(deal.id)}
               className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 transition-all active:scale-95 cursor-pointer"
-              title="Skip (X)"
+              title="Skip"
             >
               <X size={13} />
             </button>
             <button
               onClick={() => onApprove(deal.id)}
               className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 transition-all active:scale-95 shadow-sm cursor-pointer"
-              title="Approve (A)"
+              title="Approve"
             >
               <Check size={13} strokeWidth={2.5} />
             </button>
@@ -871,6 +793,577 @@ function DealTableRow({
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── 3-Pane Split Inspector Desk (Zero-Modal Workflow) ─────────────────────────
+interface SplitPaneInspectorProps {
+  deal: Deal | null;
+  onApprove: (id: string, changes?: Partial<Deal>) => void;
+  onReject: (id: string) => void;
+  onUpdateDeal: (id: string, changes: Partial<Deal>) => void;
+  onToast: (msg: string, type?: "success" | "error" | "info") => void;
+}
+
+function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }: SplitPaneInspectorProps) {
+  if (!deal) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center text-zinc-500 border border-white/8 rounded-2xl bg-[#090B14]/80 backdrop-blur-xl">
+        <Columns size={36} className="text-zinc-600 mb-3" />
+        <h4 className="text-sm font-bold text-zinc-300">No Deal Selected</h4>
+        <p className="text-xs text-zinc-500 max-w-xs mt-1">
+          Click any deal from the left stream to inspect, live-tune, and broadcast immediately without popups.
+        </p>
+      </div>
+    );
+  }
+
+  const [title, setTitle] = useState(deal.title);
+  const [price, setPrice] = useState(String(deal.price || ""));
+  const [mrp, setMrp] = useState(String(deal.mrp || ""));
+  const [text, setText] = useState(deal.affText || deal.title || "");
+  const [imgUrl, setImgUrl] = useState(deal.imgUrl || "");
+  const [rewriting, setRewriting] = useState(false);
+  const [scraping, setScraping] = useState(false);
+
+  // Synchronize state when selected deal changes
+  useEffect(() => {
+    setTitle(deal.title);
+    setPrice(String(deal.price || ""));
+    setMrp(String(deal.mrp || ""));
+    setText(deal.affText || deal.title || "");
+    setImgUrl(deal.imgUrl || "");
+  }, [deal.id]);
+
+  const handleAiPreset = async (presetPrompt: string) => {
+    setRewriting(true);
+    onToast(`Applying AI tune: ${presetPrompt}...`, "info");
+    try {
+      const res = await apiAiRewrite(deal.id, presetPrompt);
+      if (res) {
+        setText(res);
+        onUpdateDeal(deal.id, { affText: res });
+        onToast("AI tune applied!", "success");
+      }
+    } catch {
+      onToast("AI tuning failed", "error");
+    } finally {
+      setRewriting(false);
+    }
+  };
+
+  const handleScrapeStore = async () => {
+    setScraping(true);
+    onToast("Scraping store details...", "info");
+    try {
+      const res = await apiScrapeImage(deal.id);
+      if (res) {
+        if (res.imgUrl) setImgUrl(res.imgUrl);
+        if (res.title) setTitle(res.title);
+        if (res.price) setPrice(String(res.price));
+        if (res.mrp) setMrp(String(res.mrp));
+        if (res.affText) setText(res.affText);
+        onUpdateDeal(deal.id, {
+          title: res.title || title,
+          price: res.price ? Number(res.price) : deal.price,
+          mrp: res.mrp ? Number(res.mrp) : deal.mrp,
+          imgUrl: res.imgUrl || imgUrl,
+          affText: res.affText || text,
+        });
+        onToast("✨ Product details updated from store!", "success");
+      }
+    } catch {
+      onToast("Store scrape failed", "error");
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  const store = getStoreBadge(deal.platforms, deal.affText);
+
+  return (
+    <div className="h-full flex flex-col pro-split-inspector rounded-2xl overflow-hidden border border-white/8 shadow-2xl">
+      {/* Top Header */}
+      <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between bg-white/[0.02]">
+        <div className="flex items-center gap-2">
+          <Store3DBadge store={store.tag} />
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-white truncate max-w-[200px]">{deal.channel}</span>
+            <span className="text-[10px] text-zinc-500 font-mono">{fmtAgo(deal.ts)}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={handleScrapeStore}
+            disabled={scraping}
+            className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/5 hover:bg-white/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            title="Fetch Store Details"
+          >
+            <RefreshCw size={11} className={scraping ? "animate-spin" : ""} /> Store
+          </button>
+        </div>
+      </div>
+
+      {/* Scrollable Inspector Body */}
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3.5">
+        {/* Live Telegram Preview Bubble */}
+        <div className="tg-bubble rounded-xl p-3 border border-white/10 bg-slate-950/70 shadow-inner">
+          <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-white/6 text-xs text-zinc-300 font-bold">
+            <div className="w-4 h-4 rounded-full bg-slate-800 text-[9px] font-bold text-white flex items-center justify-center">
+              {deal.channel[0]}
+            </div>
+            <span className="truncate">{deal.channel}</span>
+            <CheckCheck size={12} className="text-blue-400 ml-0.5" />
+            <span className="text-[9px] text-emerald-400 font-mono ml-auto">Live Preview</span>
+          </div>
+
+          {/* Photo */}
+          {imgUrl && (
+            <div className="w-full h-36 rounded-lg bg-black/40 border border-white/8 mb-2.5 overflow-hidden flex items-center justify-center">
+              <img src={imgUrl} alt="" className="max-h-full max-w-full object-contain p-1" />
+            </div>
+          )}
+
+          {/* Message Text Rendering */}
+          <div className="tg-bubble-text text-xs text-zinc-200 leading-relaxed font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
+            {text.split("\n").slice(0, 10).join("\n")
+              .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
+              .split(/(https?:\/\/\S+)/g)
+              .map((part, i) =>
+                /^https?:\/\//.test(part)
+                  ? <a key={i} href={part} className="tg-bubble-link" target="_blank" rel="noreferrer">{part.length > 25 ? part.slice(0, 25) + "…" : part}</a>
+                  : <span key={i} dangerouslySetInnerHTML={{ __html: part }} />
+              )
+            }
+          </div>
+        </div>
+
+        {/* 1-Click AI Tuning Presets */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
+            <span>✨ 1-Click AI Tuning</span>
+            {rewriting && <span className="text-emerald-400 animate-pulse font-bold">Tuning...</span>}
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[
+              { label: "🔥 Urgency", prompt: "Add urgency, limited time and deal emojis" },
+              { label: "✂️ Concise", prompt: "Make concise, strip clutter, keep link and price" },
+              { label: "💰 Highlight % Off", prompt: "Emphasize maximum discount percentage and savings" },
+              { label: "✨ Format", prompt: "Format clean bullet points with verified emojis" },
+            ].map((p, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleAiPreset(p.prompt)}
+                disabled={rewriting}
+                className="px-2 py-1 rounded-lg text-[10px] font-bold bg-white/5 hover:bg-emerald-500/20 text-zinc-300 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/30 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Price & MRP Inline Inputs */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block mb-1">Sale Price (₹)</label>
+            <input
+              type="number"
+              value={price}
+              onChange={e => {
+                setPrice(e.target.value);
+                onUpdateDeal(deal.id, { price: Number(e.target.value) || 0 });
+              }}
+              className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono text-emerald-400 bg-slate-950/80 border border-white/10 focus:outline-none focus:border-emerald-500/50"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block mb-1">MRP Price (₹)</label>
+            <input
+              type="number"
+              value={mrp}
+              onChange={e => {
+                setMrp(e.target.value);
+                onUpdateDeal(deal.id, { mrp: Number(e.target.value) || 0 });
+              }}
+              className="w-full px-2.5 py-1.5 rounded-lg text-xs font-mono text-zinc-400 bg-slate-950/80 border border-white/10 focus:outline-none focus:border-white/20"
+            />
+          </div>
+        </div>
+
+        {/* Message Editor Textarea */}
+        <div className="flex flex-col gap-1">
+          <label className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+            <span>Edit Broadcast Message</span>
+            <span>{text.length} chars</span>
+          </label>
+          <textarea
+            value={text}
+            rows={4}
+            onChange={e => {
+              setText(e.target.value);
+              onUpdateDeal(deal.id, { affText: e.target.value });
+            }}
+            className="w-full p-2.5 rounded-xl text-xs font-mono text-zinc-200 bg-slate-950/90 border border-white/10 focus:outline-none focus:border-emerald-500/40 resize-none"
+          />
+        </div>
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div className="p-3 border-t border-white/8 bg-slate-950/90 flex items-center gap-2">
+        <button
+          onClick={() => onReject(deal.id)}
+          className="px-3 py-2.5 rounded-xl text-xs font-bold bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-white/10 flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+        >
+          <X size={14} /> Skip
+        </button>
+        <button
+          onClick={() => {
+            onApprove(deal.id, {
+              title,
+              price: Number(price) || deal.price,
+              mrp: Number(mrp) || deal.mrp,
+              affText: text,
+              imgUrl,
+            });
+            triggerApproveConfetti();
+          }}
+          className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 hover:from-emerald-300 hover:to-teal-300 flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/30 active:scale-95 transition-all cursor-pointer"
+        >
+          <Check size={15} strokeWidth={3} /> Broadcast Deal Now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile Swipe Deck (Tinder-Style Gestures) ─────────────────────────────────
+interface MobileSwipeDeckProps {
+  deals: Deal[];
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onEdit: (deal: Deal) => void;
+}
+
+function MobileSwipeDeck({ deals, onApprove, onReject, onEdit }: MobileSwipeDeckProps) {
+  const [deckIdx, setDeckIdx] = useState(0);
+  const activeDeal = deals[deckIdx];
+
+  const handleDragEnd = (_: any, info: any) => {
+    if (!activeDeal) return;
+    if (info.offset.x > 90) {
+      // Swiped Right -> Approve
+      navigator.vibrate?.(40);
+      onApprove(activeDeal.id);
+      setDeckIdx(prev => prev + 1);
+    } else if (info.offset.x < -90) {
+      // Swiped Left -> Skip
+      navigator.vibrate?.(30);
+      onReject(activeDeal.id);
+      setDeckIdx(prev => prev + 1);
+    }
+  };
+
+  if (!activeDeal) {
+    return (
+      <div className="py-20 text-center flex flex-col items-center justify-center gap-3">
+        <span className="text-4xl">🎉</span>
+        <h4 className="text-sm font-bold text-white">Deck Empty</h4>
+        <p className="text-xs text-zinc-400">All available deals in this queue have been curated!</p>
+      </div>
+    );
+  }
+
+  const store = getStoreBadge(activeDeal.platforms, activeDeal.affText);
+  const savings = activeDeal.mrp > activeDeal.price ? activeDeal.mrp - activeDeal.price : 0;
+
+  return (
+    <div className="w-full flex flex-col items-center justify-center py-4 px-3 relative min-h-[500px]">
+      {/* Swipe Progress Badge */}
+      <div className="mb-3 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] font-mono text-zinc-400">
+        Deal <span className="text-emerald-400 font-bold">{deckIdx + 1}</span> of {deals.length}
+      </div>
+
+      {/* Draggable Card */}
+      <motion.div
+        key={activeDeal.id}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        onDragEnd={handleDragEnd}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="pro-swipe-card p-4 flex flex-col gap-3 relative cursor-grab active:cursor-grabbing"
+      >
+        {/* Top Badges */}
+        <div className="flex items-center justify-between">
+          <Store3DBadge store={store.tag} />
+          <span className="text-xs text-zinc-400 truncate">{activeDeal.channel}</span>
+          <span className="text-[11px] text-zinc-500 font-mono">{fmtAgo(activeDeal.ts)}</span>
+        </div>
+
+        {/* Thumbnail */}
+        <div className="w-full h-52 rounded-2xl bg-[#080911] border border-white/8 flex items-center justify-center overflow-hidden relative">
+          {activeDeal.imgUrl ? (
+            <img src={activeDeal.imgUrl} alt="" className="max-h-full max-w-full object-contain p-2" />
+          ) : (
+            <span className="text-4xl">{activeDeal.catEmoji}</span>
+          )}
+
+          {activeDeal.discount > 0 && (
+            <span className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md bg-rose-600 text-white font-mono text-xs font-bold shadow-md">
+              {Math.round(activeDeal.discount)}% OFF
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <h4 className="text-sm font-bold text-zinc-100 line-clamp-2 leading-snug">
+          {activeDeal.title}
+        </h4>
+
+        {/* Price & Savings */}
+        <div className="flex items-baseline gap-2">
+          <span className="pro-price text-xl font-bold text-emerald-400">
+            {fmt(activeDeal.price)}
+          </span>
+          {activeDeal.mrp > 0 && activeDeal.mrp > activeDeal.price && (
+            <span className="text-xs text-zinc-500 line-through font-mono">
+              {fmt(activeDeal.mrp)}
+            </span>
+          )}
+          {savings > 0 && (
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-mono">
+              Save {fmt(savings)}
+            </span>
+          )}
+        </div>
+
+        {/* Direction Guides */}
+        <div className="flex items-center justify-between pt-2 border-t border-white/6 text-[10px] font-mono text-zinc-500">
+          <span>👈 Swipe Left to Skip</span>
+          <span>Swipe Right to Post 👉</span>
+        </div>
+      </motion.div>
+
+      {/* Bottom Manual Touch Action Buttons */}
+      <div className="flex items-center gap-4 mt-6 z-20">
+        <button
+          onClick={() => {
+            navigator.vibrate?.(30);
+            onReject(activeDeal.id);
+            setDeckIdx(prev => prev + 1);
+          }}
+          className="w-13 h-13 rounded-2xl bg-slate-900 border border-rose-500/30 text-rose-400 flex items-center justify-center shadow-lg active:scale-90 transition-all cursor-pointer"
+          title="Skip"
+        >
+          <X size={20} strokeWidth={2.5} />
+        </button>
+        <button
+          onClick={() => onEdit(activeDeal)}
+          className="w-11 h-11 rounded-2xl bg-slate-900 border border-white/15 text-zinc-300 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
+          title="Edit"
+        >
+          <PenLine size={16} />
+        </button>
+        <button
+          onClick={() => {
+            navigator.vibrate?.(40);
+            onApprove(activeDeal.id);
+            setDeckIdx(prev => prev + 1);
+          }}
+          className="w-13 h-13 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/40 active:scale-90 transition-all cursor-pointer"
+          title="Approve & Post"
+        >
+          <Check size={22} strokeWidth={3} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Raycast Command Palette Modal ─────────────────────────────────────────────
+interface CommandPaletteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  deals: Deal[];
+  uniqueChannels: string[];
+  onSelectStore: (store: string) => void;
+  onSelectChannel: (channel: string) => void;
+  onSelectViewMode: (mode: "grid" | "table" | "split") => void;
+  onSelectMobileMode: (mode: "stream" | "swipe") => void;
+  onQuickDrop: () => void;
+  onEditDeal: (deal: Deal) => void;
+  onApproveDeal: (id: string) => void;
+}
+
+function CommandPaletteModal({
+  isOpen, onClose, deals, uniqueChannels,
+  onSelectStore, onSelectChannel, onSelectViewMode, onSelectMobileMode,
+  onQuickDrop, onEditDeal, onApproveDeal,
+}: CommandPaletteModalProps) {
+  const [query, setQuery] = useState("");
+
+  if (!isOpen) return null;
+
+  const stores = ["Amazon", "Flipkart", "Myntra", "DesiDime", "AJIO"];
+  const filteredStores = stores.filter(s => s.toLowerCase().includes(query.toLowerCase()));
+  const filteredChannels = uniqueChannels.filter(c => c.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+  const matchingDeals = deals
+    .filter(d => d.title.toLowerCase().includes(query.toLowerCase()) || d.channel.toLowerCase().includes(query.toLowerCase()))
+    .slice(0, 6);
+
+  return (
+    <div className="fixed inset-0 z-[999999] flex items-start justify-center pt-20 p-4 backdrop-blur-2xl bg-black/75" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: -10 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-xl rounded-2xl pro-command-palette overflow-hidden border border-white/12 shadow-2xl flex flex-col"
+      >
+        {/* Search Bar */}
+        <div className="p-3.5 border-b border-white/10 flex items-center gap-3">
+          <Search size={16} className="text-zinc-400 flex-shrink-0" />
+          <input
+            autoFocus
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Type a command, store, channel, or deal title..."
+            className="w-full bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none font-medium"
+          />
+          <span className="text-[10px] font-mono text-zinc-500 px-2 py-0.5 rounded bg-white/5 border border-white/10">
+            ESC to close
+          </span>
+        </div>
+
+        {/* Command Body */}
+        <div className="max-h-[60vh] overflow-y-auto p-2 flex flex-col gap-3">
+          {/* Quick Actions */}
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 px-2 mb-1 block">
+              Quick Actions
+            </span>
+            <div className="flex flex-col gap-0.5">
+              <button
+                onClick={() => { onQuickDrop(); onClose(); }}
+                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-200 hover:bg-emerald-500/15 hover:text-emerald-300 flex items-center gap-2.5 text-left transition-colors cursor-pointer"
+              >
+                <Zap size={13} className="text-emerald-400" />
+                <span>⚡ Quick Drop URL (Ingest & Scrape Store)</span>
+              </button>
+              <button
+                onClick={() => { onSelectViewMode("split"); onClose(); }}
+                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-200 hover:bg-white/10 flex items-center gap-2.5 text-left transition-colors cursor-pointer"
+              >
+                <Columns size={13} className="text-cyan-400" />
+                <span>📐 Switch to Split-Pane Command Desk</span>
+              </button>
+              <button
+                onClick={() => { onSelectViewMode("table"); onClose(); }}
+                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-200 hover:bg-white/10 flex items-center gap-2.5 text-left transition-colors cursor-pointer"
+              >
+                <List size={13} className="text-amber-400" />
+                <span>⚡ Switch to Linear Dense Table</span>
+              </button>
+              <button
+                onClick={() => { onSelectViewMode("grid"); onClose(); }}
+                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-200 hover:bg-white/10 flex items-center gap-2.5 text-left transition-colors cursor-pointer"
+              >
+                <LayoutGrid size={13} className="text-purple-400" />
+                <span>🖼️ Switch to Showcase Grid</span>
+              </button>
+              <button
+                onClick={() => { onSelectMobileMode("swipe"); onClose(); }}
+                className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-zinc-200 hover:bg-white/10 flex items-center gap-2.5 text-left transition-colors cursor-pointer sm:hidden"
+              >
+                <Smartphone size={13} className="text-emerald-400" />
+                <span>🎴 Switch to Mobile Swipe Deck Mode</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Store Filters */}
+          {filteredStores.length > 0 && (
+            <div>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 px-2 mb-1 block">
+                Filter by Store
+              </span>
+              <div className="grid grid-cols-2 gap-1">
+                {filteredStores.map((s, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => { onSelectStore(s.toLowerCase()); onClose(); }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-white/10 flex items-center gap-2 text-left transition-colors cursor-pointer"
+                  >
+                    <span>🛍️</span> {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Channel Filters */}
+          {filteredChannels.length > 0 && (
+            <div>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 px-2 mb-1 block">
+                Filter by Stream Channel
+              </span>
+              <div className="flex flex-col gap-0.5">
+                {filteredChannels.map((c, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => { onSelectChannel(c); onClose(); }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-300 hover:bg-white/10 flex items-center gap-2 text-left transition-colors cursor-pointer"
+                  >
+                    <span>📡</span> <span className="truncate">{c}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Matching Deals */}
+          {query.trim().length > 1 && matchingDeals.length > 0 && (
+            <div>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500 px-2 mb-1 block">
+                Matching Deals
+              </span>
+              <div className="flex flex-col gap-1">
+                {matchingDeals.map((d) => (
+                  <div
+                    key={d.id}
+                    onClick={() => { onEditDeal(d); onClose(); }}
+                    className="px-3 py-2 rounded-xl bg-white/[0.02] hover:bg-white/10 border border-white/5 flex items-center justify-between gap-3 cursor-pointer group transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <span className="text-sm">{d.catEmoji}</span>
+                      <span className="text-xs font-medium text-zinc-200 truncate group-hover:text-emerald-300">
+                        {d.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="pro-price text-xs font-bold text-emerald-400">
+                        {fmt(d.price)}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onApproveDeal(d.id);
+                          onClose();
+                        }}
+                        className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/40"
+                      >
+                        Approve
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -908,7 +1401,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   };
 
   const [text, setText] = useState(getInitialText());
-  const [imgUrl, setImgUrl] = useState(deal.imgUrl);
+  const [telegramImg, setTelegramImg] = useState(deal.telegramImgUrl || deal.imgUrl || "");
+  const [storeImg, setStoreImg] = useState(deal.storeImgUrl || "");
+  const [uploadedImg, setUploadedImg] = useState(deal.uploadedImgUrl || "");
+  const [imgUrl, setImgUrl] = useState(deal.imgUrl || deal.telegramImgUrl || "");
   const [imgFile, setImgFile] = useState<string | null>(null);
   const [instruction, setInstruction] = useState("");
   const [rewriting, setRewriting] = useState(false);
@@ -917,7 +1413,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [scrapingImage, setScrapingImage] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const previewSrc = imgFile || imgUrl || null;
-  const isDirty = title !== deal.title || price !== String(deal.price || "") || imgUrl !== deal.imgUrl || text !== deal.affText;
+  const isDirty = title !== deal.title || price !== String(deal.price || "") || imgUrl !== deal.imgUrl || text !== deal.affText || imgFile !== null;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -932,11 +1428,16 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
       const res = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, { method: "POST", body: fd });
       if (res.ok) {
         const data = await res.json();
-        setImgUrl(data.img_url);
-        onToast("Image uploaded!", "success");
+        const serverImg = data.img_url;
+        setImgUrl(serverImg);
+        setUploadedImg(serverImg);
+        setImgFile(null);
+        onToast("Image uploaded to server successfully!", "success");
+      } else {
+        onToast("Server image upload failed", "error");
       }
     } catch {
-      onToast("Image upload failed", "error");
+      onToast("Image upload network error", "error");
     }
   };
 
@@ -962,7 +1463,15 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     setScrapingImage(true);
     const result = await apiScrapeImage(deal.id);
     if (result) {
-      if (result.imgUrl) { setImgUrl(result.imgUrl); setImgFile(null); }
+      const newStoreImg = result.store_img_url || result.img_url;
+      if (newStoreImg) {
+        setStoreImg(newStoreImg);
+        setImgUrl(newStoreImg);
+        setImgFile(null);
+      }
+      if (result.telegram_img_url && !telegramImg) {
+        setTelegramImg(result.telegram_img_url);
+      }
       if (result.title) setTitle(result.title);
       if (result.price) setPrice(String(result.price));
       if (result.mrp) setMrp(String(result.mrp));
@@ -975,7 +1484,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
         const pStr = p ? ` @ ₹${p}` : "";
         setText(`${result.title}${pStr}\n\n${link}`.trim());
       }
-      onToast("✨ Product details & post text updated from store!", "success");
+      onToast("✨ Scraped store photo & details! Switch between Telegram & Store photo anytime above.", "success");
     } else {
       onToast("Failed to fetch product details", "error");
     }
@@ -983,45 +1492,49 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   };
 
   const changes: Partial<Deal> = {
-    title, imgUrl: imgFile || imgUrl,
+    title,
+    imgUrl: imgFile || imgUrl,
+    telegramImgUrl: telegramImg,
+    storeImgUrl: storeImg,
+    uploadedImgUrl: uploadedImg,
     price: Number(price) || deal.price,
     mrp: Number(mrp) || deal.mrp,
     affText: text,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-xl"
       style={{ background: "rgba(3, 7, 18, 0.85)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       
-      <div className="relative w-full max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl border border-white/10 bg-slate-900/95 shadow-2xl shadow-black/80 flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-primary/30">
+      <div className="relative w-full max-w-4xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#0A0C16]/95 backdrop-blur-2xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-slate-900/90 backdrop-blur-md">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-slate-950 shadow-lg shadow-emerald-500/20 flex-shrink-0">
               <PenLine size={15} />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-white tracking-wide">Edit &amp; Review Deal</h2>
-              <p className="text-[11px] text-slate-400">
+            <div className="min-w-0">
+              <h2 className="text-sm font-bold text-white tracking-wide truncate">Edit &amp; Tune Deal</h2>
+              <p className="text-[11px] text-slate-400 truncate">
                 {deal.channel ? `${deal.channel} · ` : ""}Source: {deal.channelRaw || "Direct"}
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
-            <X size={16} />
+          <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0">
+            <X size={17} />
           </button>
         </div>
 
-        {/* Body Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-0 flex-1">
+        {/* Scrollable Body Grid */}
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-0">
           {/* Left Form */}
-          <div className="md:col-span-7 p-6 flex flex-col gap-4 border-r border-white/10">
+          <div className="md:col-span-7 p-4 sm:p-6 flex flex-col gap-4 border-r border-white/10">
             {/* Title */}
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Product Title</label>
               <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium bg-slate-950/80 border border-white/10 text-white focus:outline-none focus:border-primary/50" />
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-950/80 border border-white/10 text-white focus:outline-none focus:border-emerald-500/50" />
             </div>
 
             {/* Price Inputs */}
@@ -1029,14 +1542,70 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Sale Price (₹)</label>
                 <input type="number" value={price} onChange={e => setPrice(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-950/80 border border-white/10 text-emerald-400 focus:outline-none focus:border-emerald-500/50" />
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-950/80 border border-white/10 text-emerald-400 focus:outline-none focus:border-emerald-500/50" />
               </div>
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">MRP Price (₹)</label>
                 <input type="number" value={mrp} onChange={e => setMrp(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium bg-slate-950/80 border border-white/10 text-slate-400 focus:outline-none focus:border-white/20" />
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-950/80 border border-white/10 text-slate-400 focus:outline-none focus:border-white/20" />
               </div>
             </div>
+
+            {/* Dual Image Choice Selector */}
+            {(telegramImg || storeImg || uploadedImg) && (
+              <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-slate-950/80 border border-white/8">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Active Image for Post:
+                  </span>
+                  <span className="text-[10px] text-zinc-500">Tap to switch photo</span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {telegramImg && (
+                    <button
+                      type="button"
+                      onClick={() => { setImgUrl(telegramImg); setImgFile(null); }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer ${
+                        imgUrl === telegramImg && !imgFile
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30"
+                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                      }`}
+                    >
+                      <img src={telegramImg} alt="" className="w-5 h-5 rounded object-cover" />
+                      <span>📸 Telegram Photo</span>
+                    </button>
+                  )}
+                  {storeImg && (
+                    <button
+                      type="button"
+                      onClick={() => { setImgUrl(storeImg); setImgFile(null); }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer ${
+                        imgUrl === storeImg && !imgFile
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30"
+                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                      }`}
+                    >
+                      <img src={storeImg} alt="" className="w-5 h-5 rounded object-cover" />
+                      <span>🛍️ Store Product Photo</span>
+                    </button>
+                  )}
+                  {uploadedImg && uploadedImg !== telegramImg && uploadedImg !== storeImg && (
+                    <button
+                      type="button"
+                      onClick={() => { setImgUrl(uploadedImg); setImgFile(null); }}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all cursor-pointer ${
+                        imgUrl === uploadedImg && !imgFile
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30"
+                          : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                      }`}
+                    >
+                      <img src={uploadedImg} alt="" className="w-5 h-5 rounded object-cover" />
+                      <span>⬆️ Custom Upload</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Affiliate Text */}
             <div className="flex flex-col gap-2">
@@ -1047,12 +1616,12 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 
               {/* AI Prompt Input */}
               <div className="relative">
-                <input type="text" placeholder='AI command: "make concise", "add emojis", "highlight 60% discount"...'
+                <input type="text" placeholder='AI tune command: "make concise", "highlight discount"...'
                   value={instruction} onChange={e => setInstruction(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && doRewrite()}
-                  className="w-full pl-3.5 pr-20 py-2 rounded-xl text-xs bg-slate-950/80 border border-white/10 text-slate-300 placeholder:text-slate-400 focus:outline-none focus:border-primary/50" />
+                  className="w-full pl-3.5 pr-20 py-2 rounded-xl text-xs bg-slate-950/80 border border-white/10 text-slate-300 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50" />
                 <button onClick={doRewrite} disabled={rewriting || !instruction.trim()}
-                  className="absolute right-1 top-1 bottom-1 px-2.5 rounded-lg text-[10px] font-bold bg-primary text-slate-950 hover:bg-primary-hover disabled:opacity-40 transition-colors flex items-center gap-1">
+                  className="absolute right-1 top-1 bottom-1 px-2.5 rounded-lg text-[10px] font-bold bg-emerald-400 text-slate-950 hover:bg-emerald-300 disabled:opacity-40 transition-colors flex items-center gap-1 cursor-pointer">
                   <Sparkles size={10} /> {rewriting ? "..." : "Tune"}
                 </button>
               </div>
@@ -1066,27 +1635,27 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                   { label: "✨ Add Clean Formatting", prompt: "clean emojis and format bullet points" }
                 ].map(chip => (
                   <button key={chip.label} type="button" onClick={() => { setInstruction(chip.prompt); }}
-                    className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 hover:border-primary/40 transition-all">
+                    className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 hover:border-emerald-500/40 transition-all cursor-pointer">
                     {chip.label}
                   </button>
                 ))}
               </div>
 
               <textarea value={text} onChange={e => setText(e.target.value)} rows={6}
-                className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-950/80 border border-white/10 text-slate-200 focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
+                className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-950/80 border border-white/10 text-slate-200 focus:outline-none focus:border-emerald-500/50 resize-none leading-relaxed" />
             </div>
 
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 flex-wrap">
               <button onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors cursor-pointer">
                 <Upload size={12} /> Upload Image
               </button>
               <button onClick={doScrapeImage} disabled={scrapingImage}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors cursor-pointer">
                 <Globe size={12} /> {scrapingImage ? "Fetching..." : "Fetch Store Details"}
               </button>
               <button onClick={doRetryAffiliate} disabled={retryingAffiliate}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors cursor-pointer">
                 <Zap size={12} /> Refresh Affiliate
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -1094,7 +1663,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           </div>
 
           {/* Right Live Telegram Mockup */}
-          <div className="md:col-span-5 p-5 flex flex-col gap-3 bg-slate-950/70">
+          <div className="md:col-span-5 p-4 sm:p-5 flex flex-col gap-3 bg-slate-950/70 border-t md:border-t-0 border-white/10">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Telegram Post Preview</span>
               <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
@@ -1149,19 +1718,19 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           </div>
         </div>
 
-        {/* Footer Actions with 3D Rocket */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-white/10 bg-slate-950/80">
+        {/* Sticky Footer Actions with 3D Rocket */}
+        <div className="sticky bottom-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3 border-t border-white/10 bg-[#060810]/95 backdrop-blur-xl">
           <button onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors">
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors cursor-pointer">
             Cancel
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button onClick={() => { onSaveDraft(changes); onClose(); }} disabled={!isDirty}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40">
+              className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer">
               Save Draft
             </button>
             <button onClick={() => { onSaveApprove(changes); onClose(); }}
-              className="px-6 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-2">
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-2 cursor-pointer">
               <RocketBroadcast3D size={16} /> Save & Broadcast
             </button>
           </div>
@@ -1191,11 +1760,25 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
   const [isDropping, setIsDropping] = useState(false);
   const [quickDropModal, setQuickDropModal] = useState(false);
   const [modalUrl, setModalUrl] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
-  const [activeIdx, setActiveIdx] = useState<number>(-1);
+  const [viewMode, setViewMode] = useState<"grid" | "table" | "split">("grid");
+  const [mobileMode, setMobileMode] = useState<"stream" | "swipe">("stream");
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [selectedSplitId, setSelectedSplitId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPromos().then(setPromos);
+  }, []);
+
+  // Cmd+K / Ctrl+K Universal Command Palette
+  useEffect(() => {
+    const handleCmdK = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleCmdK);
+    return () => window.removeEventListener("keydown", handleCmdK);
   }, []);
 
 
@@ -1312,40 +1895,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
   const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pagedVisible = pageSize === 9999 ? visible : visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
-  // ─── Power Operator Keyboard Navigation (Linear / Vim style) ───
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const activeEl = document.activeElement;
-      const isInput = activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA" || activeEl?.getAttribute("contenteditable") === "true";
-      if (isInput || quickDropModal) return;
-
-      if (e.key === "j" || e.key === "ArrowDown") {
-        e.preventDefault();
-        setActiveIdx(prev => (prev < pagedVisible.length - 1 ? prev + 1 : 0));
-      } else if (e.key === "k" || e.key === "ArrowUp") {
-        e.preventDefault();
-        setActiveIdx(prev => (prev > 0 ? prev - 1 : pagedVisible.length - 1));
-      } else if ((e.key === "a" || e.key === "A") && !e.ctrlKey && !e.metaKey) {
-        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
-          e.preventDefault();
-          onApprove(pagedVisible[activeIdx].id);
-        }
-      } else if ((e.key === "x" || e.key === "X") && !e.ctrlKey && !e.metaKey) {
-        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
-          e.preventDefault();
-          onReject(pagedVisible[activeIdx].id);
-        }
-      } else if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey) {
-        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
-          e.preventDefault();
-          onEdit(pagedVisible[activeIdx]);
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIdx, pagedVisible, quickDropModal, onApprove, onReject, onEdit]);
+  const selectedSplitDeal = pagedVisible.find(d => d.id === selectedSplitId) || pagedVisible[0] || null;
 
   const pending = deals.filter(d => d.status === "pending").length;
   const approved = deals.filter(d => d.status === "approved").length;
@@ -1387,15 +1937,15 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden perspective-1000 relative">
-      {/* Sleek Minimalist Toolbar */}
-      <div className="flex-shrink-0 px-4 sm:px-6 py-3 border-b border-white/8 glass-panel flex flex-col gap-2.5 relative z-40 overflow-visible">
-        {/* Tier 1: Search + Quick Tools */}
-        <div className="flex items-center gap-3">
+      {/* Sleek Senior Minimalist Toolbar */}
+      <div className="flex-shrink-0 px-3 sm:px-6 py-2.5 sm:py-3 border-b border-white/8 glass-panel flex flex-col gap-2.5 relative z-40 overflow-visible">
+        {/* Tier 1: Search + Essential Actions */}
+        <div className="flex items-center gap-2">
           <div className="relative flex-1">
             {isSearchUrl ? (
-              <Zap size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 fill-emerald-400 animate-pulse" />
+              <Zap size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 fill-emerald-400 animate-pulse" />
             ) : (
-              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             )}
             <input
               value={search}
@@ -1406,11 +1956,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
                   handleQuickDrop(search);
                 }
               }}
-              placeholder={isSearchUrl ? "⚡ Press Enter to Quick-Drop & scrape deal..." : "Search deals or paste any product URL to Quick Drop…"}
-              className={`w-full pl-10 pr-32 py-2.5 rounded-xl text-sm text-slate-100 bg-[#0A0C16]/90 border transition-all ${
+              placeholder={isSearchUrl ? "⚡ Press Enter to Quick-Drop deal..." : "Search deals or paste product URL…"}
+              className={`w-full pl-9 pr-8 sm:pr-28 py-2 rounded-xl text-xs sm:text-sm text-slate-100 bg-[#0A0C16]/90 border transition-all ${
                 isSearchUrl 
-                  ? "border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-[0_0_25px_rgba(16,185,129,0.25)]"
-                  : "border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30"
+                  ? "border-emerald-500/60 ring-2 ring-emerald-500/30"
+                  : "border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50"
               }`}
             />
             {isSearchUrl ? (
@@ -1418,143 +1968,162 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
                 type="button"
                 disabled={isDropping}
                 onClick={() => handleQuickDrop(search)}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/30 active:scale-95 cursor-pointer disabled:opacity-50"
+                className="absolute right-1 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 transition-all flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer disabled:opacity-50"
               >
-                {isDropping ? (
-                  <>
-                    <RefreshCw size={12} className="animate-spin" /> Ingesting...
-                  </>
-                ) : (
-                  <>
-                    <Zap size={12} className="fill-slate-950" /> Drop Deal
-                  </>
-                )}
+                <Zap size={11} className="fill-slate-950" />
+                <span className="hidden sm:inline">Drop</span>
               </button>
             ) : search ? (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-100">
-                <X size={14} />
+              <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-100 p-1">
+                <X size={13} />
               </button>
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <button
               onClick={() => setQuickDropModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border bg-gradient-to-r from-emerald-500/20 via-teal-500/15 to-transparent text-emerald-300 border-emerald-500/40 hover:border-emerald-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] active:scale-95 cursor-pointer"
-              title="Post any product link in 3 seconds"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:border-emerald-300 active:scale-95 cursor-pointer"
+              title="Quick Drop"
             >
               <Zap size={13} className="fill-emerald-400 text-emerald-400" />
-              <span className="hidden sm:inline">Quick Drop</span>
+              <span className="hidden md:inline">Quick Drop</span>
             </button>
-            <button onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); }}
-              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border ${bulkMode ? "bg-rose-600 text-white border-rose-500 shadow-md shadow-rose-500/20" : "bg-slate-900 border-white/10 text-slate-300 hover:text-white hover:bg-slate-800"}`}>
-              <CheckSquare size={13} /> <span className="hidden sm:inline">{bulkMode ? "Cancel Select" : "Select Mode"}</span>
+            <button
+              onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                bulkMode
+                  ? "bg-rose-600 text-white border-rose-500"
+                  : "bg-slate-900 border-white/10 text-slate-300 hover:text-white"
+              }`}
+              title="Select Mode"
+            >
+              <CheckSquare size={13} />
+              <span className="hidden md:inline">{bulkMode ? "Cancel" : "Select"}</span>
             </button>
-            <button onClick={() => setSendTG(!sendTG)}
-              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border ${sendTG ? "bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-500/20" : "bg-slate-900 border-white/10 text-slate-400 opacity-60 hover:opacity-100"}`}>
-              <Send size={12} /> <span className="hidden sm:inline">Telegram</span>
-            </button>
-            <button onClick={() => setSendX(!sendX)}
-              className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border ${sendX ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-500/20" : "bg-slate-900 border-white/10 text-slate-400 opacity-60 hover:opacity-100"}`}>
-              <span>𝕏</span> <span className="hidden sm:inline">Twitter</span>
+            <button
+              onClick={() => setSendTG(!sendTG)}
+              className={`hidden sm:flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                sendTG
+                  ? "bg-emerald-600 text-white border-emerald-500"
+                  : "bg-slate-900 border-white/10 text-slate-400 opacity-60"
+              }`}
+            >
+              <Send size={11} /> <span>TG</span>
             </button>
           </div>
         </div>
 
-        {/* Tier 2: Clean 2-Way Responsive Filter Bar */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 overflow-visible">
-          {/* Status Tabs with Luminous Badges */}
-          <div className="order-2 md:order-1 flex items-center gap-1.5 p-1 rounded-2xl bg-[#090B14]/90 border border-white/10 overflow-x-auto no-scrollbar flex-shrink-0">
-            {[
-              { id: "pending", label: "Pending", icon: "🔥", count: pending, activeCls: "bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm" },
-              { id: "approved", label: "Approved", icon: "✅", count: approved, activeCls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm" },
-              { id: "rejected", label: "Rejected", icon: "🗑️", count: rejected, activeCls: "bg-slate-800 text-rose-300 border-white/15 shadow-sm" },
-              { id: "promos", label: "Promos & Loot", icon: "🎟️", count: promos.length, activeCls: "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm" },
-              { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-slate-800 text-white border-white/15 shadow-sm" },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => { setFilter(tab.id as any); setPage(1); }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
-                  filter === tab.id
-                    ? tab.activeCls
-                    : "text-slate-400 hover:text-slate-200 border-transparent hover:bg-white/5"
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black font-mono ${filter === tab.id ? "bg-black/50 text-white" : "bg-white/5 text-slate-400"}`}>
-                  {tab.count}
-                </span>
-              </button>
-            ))}
+        {/* Tier 2: View Switcher (The Pill!) + Store/Channel Dropdowns */}
+        <div className="flex items-center justify-between gap-2 overflow-visible">
+          {/* Senior View Switcher Pill — ALWAYS VISIBLE ON MOBILE AND DESKTOP! */}
+          <div className="flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === "grid"
+                  ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+              title="Cards Showcase View"
+            >
+              <LayoutGrid size={13} />
+              <span className="text-[11px] font-bold">Cards</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("table")}
+              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
+                viewMode === "table"
+                  ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+              title="Dense List View"
+            >
+              <List size={13} />
+              <span className="text-[11px] font-bold">List</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("split")}
+              className={`hidden lg:flex px-3 py-1.5 rounded-full transition-all items-center gap-1.5 cursor-pointer ${
+                viewMode === "split"
+                  ? "bg-emerald-500/30 text-emerald-300 shadow-md border border-emerald-400/40 scale-[1.02]"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+              title="3-Pane Split Inspector Desk"
+            >
+              <Columns size={13} />
+              <span className="text-[11px] font-bold">Inspector</span>
+            </button>
           </div>
 
-          {/* Custom Glass Dropdowns: Dropdowns 1st on Mobile, Right side on PC */}
-          <div className="order-1 md:order-2 flex items-center gap-2 flex-wrap sm:flex-nowrap overflow-visible flex-shrink-0 relative z-50">
+          {/* Quick Filter Dropdowns: Responsive & Clean */}
+          <div className="flex items-center gap-1.5 overflow-visible flex-shrink-0">
             <GlassDropdown
               value={selectedStore}
               onChange={val => { setSelectedStore(val); setPage(1); }}
               options={storeOptions}
-              placeholder="All Stores"
+              placeholder="Store"
             />
-
             <GlassDropdown
               value={selectedChannel}
               onChange={val => { setSelectedChannel(val); setPage(1); }}
               options={channelOptions}
-              placeholder="All Channels"
+              placeholder="Channel"
               searchable={true}
             />
-
-            <GlassDropdown
-              value={sort}
-              onChange={val => { setSort(val as any); setPage(1); }}
-              options={sortOptions}
-              placeholder="Sort Order"
-              align="right"
-            />
-
-            <GlassDropdown
-              value={String(pageSize)}
-              onChange={val => { setPageSize(Number(val)); setPage(1); }}
-              options={pageSizeOptions}
-              placeholder="Page Size"
-              align="right"
-            />
-
-            {/* View Mode Switcher (Grid vs Dense Table) */}
-            <div className="hidden sm:flex items-center p-1 rounded-xl bg-slate-900/90 border border-white/10 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === "grid"
-                    ? "bg-white/15 text-white shadow-sm border border-white/20"
-                    : "text-zinc-400 hover:text-zinc-200"
-                }`}
-                title="Gallery Grid View"
-              >
-                <LayoutGrid size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-white/15 text-white shadow-sm border border-white/20"
-                    : "text-zinc-400 hover:text-zinc-200"
-                }`}
-                title="Linear-Style Dense Table View"
-              >
-                <List size={14} />
-              </button>
+            <div className="hidden sm:block">
+              <GlassDropdown
+                value={sort}
+                onChange={val => { setSort(val as any); setPage(1); }}
+                options={sortOptions}
+                placeholder="Sort"
+                align="right"
+              />
+            </div>
+            <div className="hidden md:block">
+              <GlassDropdown
+                value={String(pageSize)}
+                onChange={val => { setPageSize(Number(val)); setPage(1); }}
+                options={pageSizeOptions}
+                placeholder="Page Size"
+                align="right"
+              />
             </div>
           </div>
         </div>
+
+        {/* Tier 3: Status Tabs with Smooth Touch Momentum and NO Ugly Scrollbar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          {[
+            { id: "pending", label: "Pending", icon: "🔥", count: pending, activeCls: "bg-rose-500/20 text-rose-300 border-rose-500/40 shadow-sm" },
+            { id: "approved", label: "Approved", icon: "✅", count: approved, activeCls: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm" },
+            { id: "rejected", label: "Rejected", icon: "🗑️", count: rejected, activeCls: "bg-slate-800 text-rose-300 border-white/15 shadow-sm" },
+            { id: "promos", label: "Promos", icon: "🎟️", count: promos.length, activeCls: "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm" },
+            { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-slate-800 text-white border-white/15 shadow-sm" },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => { setFilter(tab.id as any); setPage(1); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
+                filter === tab.id
+                  ? tab.activeCls
+                  : "text-slate-400 hover:text-slate-200 border-transparent hover:bg-white/5"
+              }`}
+            >
+              <span>{tab.icon}</span>
+              <span>{tab.label}</span>
+              <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black font-mono ${filter === tab.id ? "bg-black/50 text-white" : "bg-white/5 text-slate-400"}`}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Deals Card Grid / Linear Table / Promos Stream */}
+      {/* Deals Card Grid / Linear Table / Split Inspector */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 pb-28 md:pb-8">
         {filter === "promos" ? (
           <div className="flex flex-col gap-4">
@@ -1621,6 +2190,102 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
               className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all cursor-pointer">
               <RefreshCw size={13} /> Reset All Filters
             </button>
+          </div>
+        ) : viewMode === "split" ? (
+          /* 3-Pane Command Desk (Split Inspector View) */
+          <div className="pro-split-container flex-1 h-[calc(100vh-210px)] min-h-[550px]">
+            {/* Left Stream (~55% width) */}
+            <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-2">
+              {pagedVisible.map((d) => {
+                const isSel = (selectedSplitDeal?.id === d.id);
+                const storeBadge = getStoreBadge(d.platforms, d.affText);
+                return (
+                  <div
+                    key={d.id}
+                    onClick={() => setSelectedSplitId(d.id)}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 select-none ${
+                      isSel
+                        ? "bg-emerald-500/10 border-emerald-400/50 shadow-md shadow-emerald-500/10 ring-1 ring-emerald-400/40"
+                        : "bg-white/[0.02] border-white/6 hover:border-white/15 hover:bg-white/[0.04]"
+                    }`}
+                  >
+                    {/* Thumbnail */}
+                    <div className="w-11 h-11 rounded-lg bg-[#080911] border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {d.imgUrl ? (
+                        <img src={d.imgUrl} alt="" className="w-full h-full object-contain p-0.5" />
+                      ) : (
+                        <span className="text-sm">{d.catEmoji}</span>
+                      )}
+                    </div>
+
+                    {/* Center Details */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <Store3DBadge store={storeBadge.tag} />
+                        <span className="text-[10px] text-zinc-400 truncate">{d.channel}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono ml-auto">{fmtAgo(d.ts)}</span>
+                      </div>
+                      <h5 className="text-xs font-semibold text-zinc-200 truncate group-hover:text-emerald-300">
+                        {d.title}
+                      </h5>
+                      <div className="flex items-center gap-2">
+                        <span className="pro-price text-xs font-bold text-emerald-400">
+                          {fmt(d.price)}
+                        </span>
+                        {d.mrp > 0 && d.mrp > d.price && (
+                          <span className="text-[10px] text-zinc-500 line-through font-mono">
+                            {fmt(d.mrp)}
+                          </span>
+                        )}
+                        {d.discount > 0 && (
+                          <span className="text-[9px] font-bold px-1 rounded bg-rose-500/20 text-rose-300">
+                            {Math.round(d.discount)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Inline Action */}
+                    <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => onReject(d.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 cursor-pointer"
+                        title="Skip"
+                      >
+                        <X size={13} />
+                      </button>
+                      <button
+                        onClick={() => onApprove(d.id)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 shadow-sm cursor-pointer"
+                        title="Approve"
+                      >
+                        <Check size={13} strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Right Sticky Inspector (~45% width) */}
+            <div className="hidden lg:block w-[420px] xl:w-[460px] flex-shrink-0 h-full">
+              <SplitPaneInspector
+                deal={selectedSplitDeal}
+                onApprove={(id, customChanges) => {
+                  if (customChanges) {
+                    const target = deals.find(d => d.id === id);
+                    if (target) Object.assign(target, customChanges);
+                  }
+                  onApprove(id);
+                }}
+                onReject={onReject}
+                onUpdateDeal={(id, changes) => {
+                  const target = deals.find(d => d.id === id);
+                  if (target) Object.assign(target, changes);
+                }}
+                onToast={toast as any}
+              />
+            </div>
           </div>
         ) : viewMode === "table" ? (
           /* Linear-Style High-Density Table View */
@@ -1690,17 +2355,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
                 Next
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Linear Keyboard Shortcuts Legend HUD */}
-        {visible.length > 0 && filter !== "promos" && (
-          <div className="hidden sm:flex items-center justify-center gap-6 py-3 mt-6 text-[11px] font-mono text-zinc-500 border-t border-white/6">
-            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-white/8 text-zinc-300 font-bold border border-white/10">J</kbd> Next</span>
-            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-white/8 text-zinc-300 font-bold border border-white/10">K</kbd> Prev</span>
-            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">A</kbd> Approve</span>
-            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30">X</kbd> Skip</span>
-            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-white/8 text-zinc-300 font-bold border border-white/10">E</kbd> Edit</span>
           </div>
         )}
       </div>
@@ -2465,11 +3119,17 @@ export default function App() {
     return () => { ws?.close(); };
   }, [loadDeals]);
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (id: string, changes?: Partial<Deal>) => {
     triggerApproveConfetti();
-    setDeals(prev => prev.map(d => d.id === id ? { ...d, status: "approved" } : d));
+    setDeals(prev => prev.map(d => d.id === id ? { ...d, ...(changes || {}), status: "approved" } : d));
     toast.success("Deal approved & broadcasted!");
-    await apiApprove(id);
+    await apiApprove(id, changes);
+  };
+
+  const handleSaveDraft = async (id: string, changes: Partial<Deal>) => {
+    setDeals(prev => prev.map(d => d.id === id ? { ...d, ...changes } : d));
+    toast.success("Deal draft updated!");
+    await apiUpdateDeal(id, changes);
   };
 
   const handleReject = async (id: string) => {
@@ -2522,10 +3182,15 @@ export default function App() {
       </nav>
 
       {editing && (
-        <EditModal deal={editing} onClose={() => setEditing(null)}
-          onSaveDraft={(chg) => setDeals(prev => prev.map(d => d.id === editing.id ? { ...d, ...chg } : d))}
-          onSaveApprove={(chg) => {
-            handleApprove(editing.id);
+        <EditModal
+          deal={editing}
+          onClose={() => setEditing(null)}
+          onSaveDraft={async (chg) => {
+            await handleSaveDraft(editing.id, chg);
+            setEditing(null);
+          }}
+          onSaveApprove={async (chg) => {
+            await handleApprove(editing.id, chg);
             setEditing(null);
           }}
           onToast={(msg, type) => {
