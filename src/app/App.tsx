@@ -9,7 +9,8 @@ import {
   Clock, Flame, RefreshCw, CheckCircle2,
   Maximize2, Copy, Link as LinkIcon, FileText,
   Globe, ArrowUpDown, ShoppingCart, Percent,
-  Send, CheckCheck, Trash2, SlidersHorizontal, Eye
+  Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
+  LayoutGrid, List, CornerDownLeft, Command
 } from "lucide-react";
 import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
@@ -427,10 +428,11 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
-// ─── 3D Tilt Card Wrapper ─────────────────────────────────────────────────────
+// ─── Senior Pro Deal Card (Responsive Mobile Horizontal + Desktop Specular Grid) ───
 function DealCard({
   deal, onApprove, onReject, onEdit,
   selected = false, onToggleSelect, bulkMode = false,
+  isActive = false,
 }: {
   deal: Deal;
   onApprove: (id: string) => void;
@@ -439,15 +441,18 @@ function DealCard({
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
   bulkMode?: boolean;
+  isActive?: boolean;
 }) {
   const [lightbox, setLightbox] = useState(false);
   const [imgErr, setImgErr] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only tilt on desktop screens
+    if (window.innerWidth < 640) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 8;
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -8;
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 6;
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -6;
     setTilt({ x, y });
   };
 
@@ -460,219 +465,413 @@ function DealCard({
 
   return (
     <motion.div layout
-      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
+      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
         transform: `perspective(1000px) rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
         transition: "transform 0.15s ease-out, border-color 0.2s ease, box-shadow 0.2s ease",
       }}
-      className={`glass-card overflow-hidden flex flex-col group relative transition-all ${
+      className={`pro-card rounded-2xl overflow-hidden flex flex-col group relative transition-all ${
         selected ? "ring-2 ring-emerald-400 bg-emerald-500/10 border-emerald-400/50 shadow-lg shadow-emerald-500/20" : ""
-      }`}>
+      } ${isActive ? "pro-card-active" : ""}`}>
 
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
-      {/* Image Showcase */}
-      <div className="relative w-full h-48 sm:h-56 bg-[#090B14] flex items-center justify-center p-3.5 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0 border-b border-white/5"
-        onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
-        
-        {deal.imgUrl && !imgErr ? (
-          <>
-            <img src={deal.imgUrl} alt={deal.title}
-              className="max-h-full max-w-full w-auto h-auto object-contain filter drop-shadow-md group-hover:scale-[1.04] transition-transform duration-250 ease-out z-10"
-              loading="lazy"
-              onError={() => setImgErr(true)} />
-
-            <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/45 backdrop-blur-[2px]">
-              <div className="p-2.5 rounded-xl bg-slate-900/90 text-white border border-white/20 shadow-xl">
-                <Maximize2 size={16} />
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-slate-500">
-            <span className="text-4xl sm:text-5xl">{deal.catEmoji}</span>
-            <span className="text-xs font-semibold tracking-wider uppercase opacity-60">No Media</span>
-          </div>
-        )}
-
-        {/* Top Badges: Store + Clean Flame Discount Badge */}
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-2 flex-wrap">
-          <Store3DBadge store={store.tag} />
-
-          {deal.discount > 0 && (
-            <span className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-rose-500/25 to-orange-500/25 text-rose-300 border border-rose-500/40 font-black text-xs font-mono tracking-normal shadow-sm flex items-center gap-1">
-              <span>🔥</span> {Math.round(deal.discount)}% OFF
-            </span>
-          )}
-        </div>
-
-        {/* Top Right: Selection Checkbox */}
-        {(bulkMode || selected) && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSelect?.(deal.id);
-            }}
-            className={`absolute top-3 right-3 z-30 w-7 h-7 rounded-xl flex items-center justify-center transition-all shadow-md ${
-              selected
-                ? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-300 font-bold"
-                : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/40"
-            }`}
-          >
-            {selected ? <Check size={14} className="stroke-[3]" /> : null}
-          </button>
-        )}
-
-        {/* Bottom Bar: Category Badge */}
-        <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-          <span className="text-xs px-2.5 py-1 rounded-lg bg-slate-900/90 text-slate-200 backdrop-blur-md border border-white/10 font-semibold shadow-sm">
-            {deal.catEmoji} {deal.category}
-          </span>
-
-          {deal.affiliate && (
-            <span className="w-6 h-6 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/30 border border-emerald-300/40" title="Affiliate Monetized">
-              <Zap size={11} className="fill-slate-950 stroke-none" />
-            </span>
-          )}
-        </div>
-
-        {/* Status Overlays */}
-        {deal.status === "approved" && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-1.5 text-emerald-400 font-bold text-sm">
-              <CheckCircle2 size={36} className="text-emerald-400" />
-              <span>Broadcasted</span>
-            </div>
-          </div>
-        )}
-        {deal.status === "rejected" && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-1.5 text-rose-400 font-bold text-sm">
-              <X size={36} className="text-rose-400" />
-              <span>Skipped</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Deal Details & Content */}
-      <div className="flex flex-col flex-1 p-4 sm:p-5 gap-3">
-        <h4 className="text-sm sm:text-[15px] font-semibold text-slate-100 leading-relaxed line-clamp-2 min-h-[46px]" title={deal.title}>
-          {deal.title}
-        </h4>
-
-        {/* Price & Savings */}
-        <div className="flex items-baseline gap-2.5 flex-wrap">
-          {deal.price > 0 ? (
-            <>
-              <span className="text-xl sm:text-2xl font-black bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 bg-clip-text text-transparent font-mono tracking-tight leading-none drop-shadow-sm">
-                {fmt(deal.price)}
-              </span>
-              {deal.mrp > 0 && deal.mrp > deal.price && (
-                <span className="text-xs text-slate-400 line-through font-mono">
-                  {fmt(deal.mrp)}
-                </span>
-              )}
-              {savings > 0 && (
-                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-mono">
-                  Save {fmt(savings)}
-                </span>
-              )}
-            </>
+      {/* ─── MOBILE RESPONSIVE LAYOUT (< 640px) ─── */}
+      <div className="sm:hidden flex flex-row p-3 gap-3 items-center w-full">
+        {/* Thumbnail with Store & Discount */}
+        <div
+          className="relative w-22 h-22 rounded-xl bg-[#090B14] border border-white/8 flex items-center justify-center overflow-hidden flex-shrink-0 cursor-zoom-in"
+          onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
+        >
+          {deal.imgUrl && !imgErr ? (
+            <img src={deal.imgUrl} alt={deal.title} className="max-h-full max-w-full object-contain p-1" onError={() => setImgErr(true)} />
           ) : (
-            <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
-              ⚡ Trick / Freebie
+            <span className="text-2xl">{deal.catEmoji}</span>
+          )}
+          {deal.discount > 0 && (
+            <span className="absolute bottom-1 left-1 px-1.5 py-0.2 rounded bg-rose-600/90 text-white font-mono text-[9px] font-bold shadow-sm">
+              {Math.round(deal.discount)}%
             </span>
           )}
         </div>
 
-        {/* Multi-Channel Deal Cluster Badge */}
-        {deal.clusterCount && deal.clusterCount > 1 ? (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-rose-500/15 border border-amber-500/35 text-amber-300 shadow-sm w-fit group/cluster relative cursor-help">
-            <span className="text-xs">🔥</span>
-            <span className="text-[11px] font-extrabold tracking-tight">Trending in {deal.clusterCount} Channels</span>
-            {deal.bestPrice && deal.bestPrice < deal.price && (
-              <span className="text-[10px] font-mono font-black text-emerald-400 bg-emerald-500/20 px-1.5 py-0.2 rounded border border-emerald-500/30">
-                Best: ₹{deal.bestPrice}
+        {/* Middle Info Column */}
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <Store3DBadge store={store.tag} />
+            <span className="text-[10px] text-zinc-400 truncate">{deal.channel}</span>
+            <span className="text-[10px] text-zinc-500 font-mono ml-auto">{fmtAgo(deal.ts)}</span>
+          </div>
+          <h4 className="text-[12.5px] font-semibold text-zinc-100 line-clamp-2 leading-snug cursor-pointer" onClick={() => onEdit(deal)} title={deal.title}>
+            {deal.title}
+          </h4>
+          <div className="flex items-baseline gap-2">
+            {deal.price > 0 ? (
+              <>
+                <span className="pro-price text-base font-bold text-emerald-400">
+                  {fmt(deal.price)}
+                </span>
+                {deal.mrp > 0 && deal.mrp > deal.price && (
+                  <span className="text-[11px] text-zinc-500 line-through font-mono">
+                    {fmt(deal.mrp)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-[10px] font-bold text-amber-400">⚡ Freebie</span>
+            )}
+            {deal.affiliate && (
+              <span className="text-[9px] font-mono text-emerald-400/80 bg-emerald-500/10 px-1 py-0.2 rounded border border-emerald-500/20">
+                dealshare
               </span>
             )}
-            {/* Popover showing channel breakdown */}
-            <div className="hidden group-hover/cluster:flex absolute bottom-full left-0 mb-2 p-2.5 rounded-xl bg-slate-900/98 border border-white/20 shadow-2xl backdrop-blur-xl flex-col gap-1.5 z-50 min-w-[190px] pointer-events-none">
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">Detected Across Streams:</span>
-              {deal.clusterChannels?.map((c, idx) => (
-                <div key={idx} className="flex items-center justify-between text-[11px] text-slate-200">
-                  <span className="truncate max-w-[120px] font-medium">{c.name || c.channel}</span>
-                  <span className="font-mono text-emerald-400 font-bold">{c.price ? `₹${c.price}` : "Deal"}</span>
-                </div>
-              ))}
-            </div>
           </div>
-        ) : null}
-
-        {/* Coupon Code Pill */}
-        {deal.coupon && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/25 w-fit">
-            <Tag size={11} className="text-amber-400" />
-            <span className="text-xs font-bold font-mono text-amber-300">{deal.coupon}</span>
-          </div>
-        )}
-
-        {/* Channel & Timestamp & Affiliate Safeguard */}
-        <div className="flex items-center gap-2 mt-auto pt-3 border-t border-white/6 text-slate-400">
-          <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-slate-800 border border-white/10 flex-shrink-0">
-            {deal.channel[0]}
-          </div>
-          <span className="text-xs font-medium truncate flex-1 text-slate-300">{deal.channel}</span>
-          
-          {deal.affiliateWarn ? (
-            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded-md flex items-center gap-1" title={deal.affiliateWarn}>
-              <Shield size={10} className="text-amber-400" /> Alert
-            </span>
-          ) : deal.affiliate ? (
-            <span className="text-[10px] font-mono text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1" title="Affiliate Tag Active">
-              <Shield size={9} className="text-emerald-400" /> dealshare
-            </span>
-          ) : null}
-
-          <span className="text-xs text-slate-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
         </div>
 
-        {/* Luminous Action Buttons */}
-        {deal.status === "pending" ? (
-          <div className="flex items-center gap-2 pt-1">
-            <button onClick={() => onReject(deal.id)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-900/90 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-white/10 hover:border-rose-500/40 transition-all active:scale-90 hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] cursor-pointer"
-              title="Skip Deal">
-              <X size={16} strokeWidth={2.5} />
-            </button>
-            <button onClick={() => onEdit(deal)}
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-slate-900/90 hover:bg-cyan-500/20 text-slate-400 hover:text-cyan-400 border border-white/10 hover:border-cyan-500/40 transition-all active:scale-90 hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] cursor-pointer"
-              title="Edit & Tune">
-              <PenLine size={14} />
-            </button>
-            <button onClick={() => onApprove(deal.id)}
-              className="flex-1 h-10 rounded-xl text-xs sm:text-sm font-bold text-slate-950 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all active:scale-95 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer"
-              title="Approve & Broadcast">
-              <Check size={16} strokeWidth={3} /> Approve
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 pt-1">
-            <div className={`flex-1 text-center text-[11px] font-bold py-1.5 rounded-xl border ${deal.status === "approved" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-rose-500/15 text-rose-400 border-rose-500/30"}`}>
-              {deal.status === "approved" ? "✓ Approved" : "✗ Skipped"}
+        {/* Right Actions */}
+        <div className="flex flex-col gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+          {deal.status === "pending" ? (
+            <>
+              <button
+                onClick={() => onApprove(deal.id)}
+                className="w-8 h-8 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center shadow-md shadow-emerald-500/30 active:scale-95 cursor-pointer"
+                title="Approve"
+              >
+                <Check size={14} strokeWidth={3} />
+              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => onEdit(deal)}
+                  className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-zinc-400 flex items-center justify-center active:scale-95 cursor-pointer"
+                  title="Edit"
+                >
+                  <PenLine size={12} />
+                </button>
+                <button
+                  onClick={() => onReject(deal.id)}
+                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 border border-white/10 flex items-center justify-center active:scale-95 cursor-pointer"
+                  title="Skip"
+                >
+                  <X size={12} strokeWidth={2.5} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className={`text-[10px] font-bold px-2 py-1 rounded-md border text-center ${
+              deal.status === "approved" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-rose-500/15 text-rose-400 border-rose-500/30"
+            }`}>
+              {deal.status === "approved" ? "✓ Done" : "✗ Skip"}
             </div>
-            <button onClick={() => onEdit(deal)}
-              className="w-8 h-8 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors" title="Edit">
-              <PenLine size={12} />
-            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ─── DESKTOP GALLERY CARD (>= 640px) ─── */}
+      <div className="hidden sm:flex flex-col flex-1">
+        {/* Image Showcase */}
+        <div className="relative w-full h-48 sm:h-52 bg-[#080911] flex items-center justify-center p-3.5 overflow-hidden rounded-t-2xl cursor-zoom-in flex-shrink-0 border-b border-white/6"
+          onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}>
+          
+          {deal.imgUrl && !imgErr ? (
+            <>
+              <img src={deal.imgUrl} alt={deal.title}
+                className="max-h-full max-w-full w-auto h-auto object-contain filter drop-shadow-md group-hover:scale-[1.03] transition-transform duration-200 ease-out z-10"
+                loading="lazy"
+                onError={() => setImgErr(true)} />
+
+              <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
+                <div className="p-2 rounded-lg bg-slate-900/90 text-white border border-white/20 shadow-xl">
+                  <Maximize2 size={14} />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-zinc-500">
+              <span className="text-4xl">{deal.catEmoji}</span>
+              <span className="text-[10px] font-semibold tracking-wider uppercase opacity-60">No Media</span>
+            </div>
+          )}
+
+          {/* Top Badges: Store + Discount */}
+          <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-2 flex-wrap">
+            <Store3DBadge store={store.tag} />
+
+            {deal.discount > 0 && (
+              <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-rose-500/20 to-orange-500/20 text-rose-300 border border-rose-500/35 font-mono text-[11px] font-bold shadow-sm flex items-center gap-1">
+                <span>🔥</span> {Math.round(deal.discount)}% OFF
+              </span>
+            )}
           </div>
-        )}
+
+          {/* Top Right: Selection Checkbox */}
+          {(bulkMode || selected) && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleSelect?.(deal.id);
+              }}
+              className={`absolute top-2.5 right-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${
+                selected
+                  ? "bg-emerald-500 text-slate-950 ring-2 ring-emerald-300 font-bold"
+                  : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/40"
+              }`}
+            >
+              {selected ? <Check size={12} className="stroke-[3]" /> : null}
+            </button>
+          )}
+
+          {/* Bottom Bar: Category Badge */}
+          <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
+            <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-900/90 text-zinc-300 backdrop-blur-md border border-white/10 font-medium">
+              {deal.catEmoji} {deal.category}
+            </span>
+
+            {deal.affiliate && (
+              <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center" title="Affiliate Monetized">
+                <Zap size={10} className="fill-emerald-400" />
+              </span>
+            )}
+          </div>
+
+          {/* Status Overlays */}
+          {deal.status === "approved" && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-1 text-emerald-400 font-bold text-xs">
+                <CheckCircle2 size={30} className="text-emerald-400" />
+                <span>Broadcasted</span>
+              </div>
+            </div>
+          )}
+          {deal.status === "rejected" && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-1 text-rose-400 font-bold text-xs">
+                <X size={30} className="text-rose-400" />
+                <span>Skipped</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Deal Details & Content */}
+        <div className="flex flex-col flex-1 p-4 gap-2.5">
+          <h4 className="pro-title line-clamp-2 min-h-[38px] cursor-pointer hover:text-emerald-300 transition-colors" onClick={() => onEdit(deal)} title={deal.title}>
+            {deal.title}
+          </h4>
+
+          {/* Price & Savings */}
+          <div className="flex items-baseline gap-2 flex-wrap">
+            {deal.price > 0 ? (
+              <>
+                <span className="pro-price text-xl font-bold text-emerald-400 leading-none">
+                  {fmt(deal.price)}
+                </span>
+                {deal.mrp > 0 && deal.mrp > deal.price && (
+                  <span className="text-xs text-zinc-500 line-through font-mono">
+                    {fmt(deal.mrp)}
+                  </span>
+                )}
+                {savings > 0 && (
+                  <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">
+                    Save {fmt(savings)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                ⚡ Freebie
+              </span>
+            )}
+          </div>
+
+          {/* Multi-Channel Deal Cluster Badge */}
+          {deal.clusterCount && deal.clusterCount > 1 ? (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-300 text-[11px] font-medium w-fit group/cluster relative cursor-help">
+              <span>🔥</span>
+              <span>Trending in {deal.clusterCount} Channels</span>
+              {deal.bestPrice && deal.bestPrice < deal.price && (
+                <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/20 px-1 rounded">
+                  Best: ₹{deal.bestPrice}
+                </span>
+              )}
+              {/* Popover */}
+              <div className="hidden group-hover/cluster:flex absolute bottom-full left-0 mb-2 p-2.5 rounded-xl bg-slate-900 border border-white/20 shadow-2xl backdrop-blur-xl flex-col gap-1 z-50 min-w-[180px] pointer-events-none">
+                <span className="text-[9px] text-zinc-400 font-bold uppercase font-mono">Detected In:</span>
+                {deal.clusterChannels?.map((c, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-[11px] text-zinc-200">
+                    <span className="truncate max-w-[110px]">{c.name || c.channel}</span>
+                    <span className="font-mono text-emerald-400 font-bold">{c.price ? `₹${c.price}` : "Deal"}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Channel & Timestamp & Affiliate Badge */}
+          <div className="flex items-center gap-2 mt-auto pt-2.5 border-t border-white/6 text-zinc-400">
+            <div className="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold text-white bg-slate-800 border border-white/10 flex-shrink-0">
+              {deal.channel[0]}
+            </div>
+            <span className="text-xs truncate flex-1 text-zinc-300">{deal.channel}</span>
+            
+            {deal.affiliate && (
+              <span className="text-[9px] font-mono text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded flex items-center gap-1" title="Tag: dealshare0b7-21 Active">
+                <Shield size={9} className="text-emerald-400" /> dealshare
+              </span>
+            )}
+
+            <span className="text-[11px] text-zinc-500 flex-shrink-0 font-mono">{fmtAgo(deal.ts)}</span>
+          </div>
+
+          {/* Action Buttons */}
+          {deal.status === "pending" ? (
+            <div className="flex items-center gap-1.5 pt-1">
+              <button onClick={() => onReject(deal.id)}
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 hover:border-rose-500/30 transition-all active:scale-90 cursor-pointer"
+                title="Skip Deal (X)">
+                <X size={15} strokeWidth={2.5} />
+              </button>
+              <button onClick={() => onEdit(deal)}
+                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-zinc-100 border border-white/10 transition-all active:scale-90 cursor-pointer"
+                title="Edit Deal (E)">
+                <PenLine size={13} />
+              </button>
+              <button onClick={() => onApprove(deal.id)}
+                className="flex-1 h-9 rounded-xl text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 bg-emerald-400 hover:bg-emerald-300 transition-all active:scale-95 shadow-md shadow-emerald-500/30 cursor-pointer"
+                title="Approve & Broadcast (A)">
+                <Check size={15} strokeWidth={3} /> Approve
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 pt-1">
+              <div className={`flex-1 text-center text-[11px] font-bold py-1 rounded-lg border ${deal.status === "approved" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-rose-500/15 text-rose-400 border-rose-500/30"}`}>
+                {deal.status === "approved" ? "✓ Approved" : "✗ Skipped"}
+              </div>
+              <button onClick={() => onEdit(deal)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition-colors" title="Edit">
+                <PenLine size={11} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </motion.div>
+  );
+}
+
+// ─── Linear-Style High-Density Table Row Component ───
+function DealTableRow({
+  deal, selected, bulkMode, isActive,
+  onApprove, onReject, onEdit, onToggleSelect,
+}: {
+  deal: Deal;
+  selected?: boolean;
+  bulkMode?: boolean;
+  isActive?: boolean;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onEdit: (deal: Deal) => void;
+  onToggleSelect?: (id: string) => void;
+}) {
+  const store = getStoreBadge(deal.platforms, deal.affText);
+  return (
+    <div
+      onClick={() => onEdit(deal)}
+      className={`pro-table-row px-4 py-2 flex items-center gap-3.5 cursor-pointer group select-none ${
+        isActive ? "pro-table-row-active" : ""
+      } ${selected ? "bg-emerald-500/10" : ""}`}
+    >
+      {/* Checkbox */}
+      {bulkMode && (
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={(e) => {
+            e.stopPropagation();
+            onToggleSelect?.(deal.id);
+          }}
+          className="w-4 h-4 rounded border-white/20 bg-slate-900 text-emerald-500 focus:ring-0 cursor-pointer flex-shrink-0"
+        />
+      )}
+
+      {/* Thumbnail */}
+      <div className="w-10 h-10 rounded-lg bg-[#080911] border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+        {deal.imgUrl ? (
+          <img src={deal.imgUrl} alt={deal.title} className="w-full h-full object-contain p-0.5" />
+        ) : (
+          <span className="text-sm">{deal.catEmoji}</span>
+        )}
+      </div>
+
+      {/* Store */}
+      <div className="w-20 flex-shrink-0">
+        <Store3DBadge store={store.tag} />
+      </div>
+
+      {/* Product Title */}
+      <div className="flex-1 min-w-0">
+        <span className="pro-title truncate block text-xs sm:text-[13px] group-hover:text-emerald-300 transition-colors">
+          {deal.title}
+        </span>
+      </div>
+
+      {/* Price & Discount */}
+      <div className="w-28 sm:w-32 flex-shrink-0 text-right flex flex-col items-end">
+        <div className="flex items-center gap-1.5">
+          <span className="pro-price text-sm font-bold text-emerald-400">
+            {fmt(deal.price)}
+          </span>
+          {deal.discount > 0 && (
+            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+              {Math.round(deal.discount)}%
+            </span>
+          )}
+        </div>
+        {deal.mrp > 0 && deal.mrp > deal.price && (
+          <span className="text-[10px] text-zinc-500 line-through font-mono">
+            {fmt(deal.mrp)}
+          </span>
+        )}
+      </div>
+
+      {/* Channel Source & Time */}
+      <div className="hidden md:flex w-36 flex-shrink-0 items-center gap-1.5 text-xs text-zinc-400">
+        <div className="w-3.5 h-3.5 rounded-full bg-slate-800 text-[8px] font-bold text-white flex items-center justify-center">
+          {deal.channel[0]}
+        </div>
+        <span className="truncate flex-1 text-[11px]">{deal.channel}</span>
+        <span className="text-[10px] text-zinc-500 font-mono">{fmtAgo(deal.ts)}</span>
+      </div>
+
+      {/* Quick Action Buttons */}
+      <div className="w-20 sm:w-24 flex-shrink-0 flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
+        {deal.status === "pending" ? (
+          <>
+            <button
+              onClick={() => onReject(deal.id)}
+              className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-zinc-400 hover:text-rose-300 border border-white/10 transition-all active:scale-95 cursor-pointer"
+              title="Skip (X)"
+            >
+              <X size={13} />
+            </button>
+            <button
+              onClick={() => onApprove(deal.id)}
+              className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 border border-emerald-500/30 transition-all active:scale-95 shadow-sm cursor-pointer"
+              title="Approve (A)"
+            >
+              <Check size={13} strokeWidth={2.5} />
+            </button>
+          </>
+        ) : (
+          <span className={`text-[11px] font-semibold ${deal.status === "approved" ? "text-emerald-400" : "text-rose-400"}`}>
+            {deal.status === "approved" ? "✓ Posted" : "✗ Skipped"}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -992,10 +1191,46 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
   const [isDropping, setIsDropping] = useState(false);
   const [quickDropModal, setQuickDropModal] = useState(false);
   const [modalUrl, setModalUrl] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [activeIdx, setActiveIdx] = useState<number>(-1);
 
   useEffect(() => {
     fetchPromos().then(setPromos);
   }, []);
+
+  // ─── Power Operator Keyboard Navigation (Linear / Vim style) ───
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl?.tagName === "INPUT" || activeEl?.tagName === "TEXTAREA" || activeEl?.getAttribute("contenteditable") === "true";
+      if (isInput || quickDropModal) return;
+
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIdx(prev => (prev < pagedVisible.length - 1 ? prev + 1 : 0));
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIdx(prev => (prev > 0 ? prev - 1 : pagedVisible.length - 1));
+      } else if ((e.key === "a" || e.key === "A") && !e.ctrlKey && !e.metaKey) {
+        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
+          e.preventDefault();
+          onApprove(pagedVisible[activeIdx].id);
+        }
+      } else if ((e.key === "x" || e.key === "X") && !e.ctrlKey && !e.metaKey) {
+        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
+          e.preventDefault();
+          onReject(pagedVisible[activeIdx].id);
+        }
+      } else if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey) {
+        if (activeIdx >= 0 && activeIdx < pagedVisible.length) {
+          e.preventDefault();
+          onEdit(pagedVisible[activeIdx]);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeIdx, pagedVisible, quickDropModal, onApprove, onReject, onEdit]);
 
   const handleQuickDrop = async (url: string) => {
     const cleanUrl = url.trim();
@@ -1286,11 +1521,39 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
               placeholder="Page Size"
               align="right"
             />
+
+            {/* View Mode Switcher (Grid vs Dense Table) */}
+            <div className="hidden sm:flex items-center p-1 rounded-xl bg-slate-900/90 border border-white/10 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "grid"
+                    ? "bg-white/15 text-white shadow-sm border border-white/20"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+                title="Gallery Grid View"
+              >
+                <LayoutGrid size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`p-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-white/15 text-white shadow-sm border border-white/20"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+                title="Linear-Style Dense Table View"
+              >
+                <List size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Deals Card Grid / Promos Stream */}
+      {/* Deals Card Grid / Linear Table / Promos Stream */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 pb-28 md:pb-8">
         {filter === "promos" ? (
           <div className="flex flex-col gap-4">
@@ -1354,51 +1617,90 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
               <p className="text-xs text-slate-400 mt-1">Try switching your channel or store filters.</p>
             </div>
             <button onClick={() => { setSearch(""); setFilter("pending"); setSelectedChannel("All"); setSelectedStore("All"); setPage(1); }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all cursor-pointer">
               <RefreshCw size={13} /> Reset All Filters
             </button>
           </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-              <AnimatePresence mode="popLayout">
-                {pagedVisible.map(d => (
-                  <DealCard
-                    key={d.id}
-                    deal={d}
-                    onApprove={onApprove}
-                    onReject={onReject}
-                    onEdit={onEdit}
-                    selected={selectedIds.has(d.id)}
-                    onToggleSelect={toggleSelect}
-                    bulkMode={bulkMode}
-                  />
-                ))}
-              </AnimatePresence>
+        ) : viewMode === "table" ? (
+          /* Linear-Style High-Density Table View */
+          <div className="rounded-2xl border border-white/8 bg-gradient-to-b from-[#111320]/90 to-[#0A0C16]/90 backdrop-blur-xl overflow-hidden shadow-2xl">
+            <div className="px-4 py-2.5 bg-white/[0.03] border-b border-white/8 flex items-center gap-3.5 text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+              {bulkMode && <div className="w-4 flex-shrink-0" />}
+              <div className="w-10 flex-shrink-0 text-center">Media</div>
+              <div className="w-20 flex-shrink-0">Store</div>
+              <div className="flex-1">Product Title</div>
+              <div className="w-28 sm:w-32 text-right">Price / Off</div>
+              <div className="hidden md:block w-36">Channel</div>
+              <div className="w-20 sm:w-24 text-right">Actions</div>
             </div>
+            <div className="divide-y divide-white/[0.04]">
+              {pagedVisible.map((d, idx) => (
+                <DealTableRow
+                  key={d.id}
+                  deal={d}
+                  selected={selectedIds.has(d.id)}
+                  onToggleSelect={toggleSelect}
+                  bulkMode={bulkMode}
+                  isActive={activeIdx === idx}
+                  onApprove={onApprove}
+                  onReject={onReject}
+                  onEdit={onEdit}
+                />
+              ))}
+            </div>
+          </div>
+        ) : (
+          /* Gallery Grid View */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
+            <AnimatePresence mode="popLayout">
+              {pagedVisible.map((d, idx) => (
+                <DealCard
+                  key={d.id}
+                  deal={d}
+                  onApprove={onApprove}
+                  onReject={onReject}
+                  onEdit={onEdit}
+                  selected={selectedIds.has(d.id)}
+                  onToggleSelect={toggleSelect}
+                  bulkMode={bulkMode}
+                  isActive={activeIdx === idx}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && pageSize !== 9999 && (
-              <div className="flex items-center justify-between gap-4 mt-8 pt-5 border-t border-white/8">
-                <p className="text-xs font-semibold text-slate-400">
-                  Showing <span className="font-mono text-white font-bold">{(currentPage - 1) * pageSize + 1}</span> - <span className="font-mono text-white font-bold">{Math.min(currentPage * pageSize, visible.length)}</span> of <span className="font-mono text-white font-bold">{visible.length}</span> deals
-                </p>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                    className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 transition-colors">
-                    Previous
-                  </button>
-                  <span className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 text-white border border-white/15">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                    className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 transition-colors">
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+        {/* Pagination Controls */}
+        {visible.length > 0 && filter !== "promos" && totalPages > 1 && pageSize !== 9999 && (
+          <div className="flex items-center justify-between gap-4 mt-8 pt-5 border-t border-white/8">
+            <p className="text-xs font-semibold text-slate-400">
+              Showing <span className="font-mono text-white font-bold">{(currentPage - 1) * pageSize + 1}</span> - <span className="font-mono text-white font-bold">{Math.min(currentPage * pageSize, visible.length)}</span> of <span className="font-mono text-white font-bold">{visible.length}</span> deals
+            </p>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer">
+                Previous
+              </button>
+              <span className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 text-white border border-white/15">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                className="px-4 py-2 rounded-xl text-xs font-bold border border-white/10 bg-white/5 text-white hover:bg-white/10 disabled:opacity-40 transition-colors cursor-pointer">
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Linear Keyboard Shortcuts Legend HUD */}
+        {visible.length > 0 && filter !== "promos" && (
+          <div className="hidden sm:flex items-center justify-center gap-6 py-3 mt-6 text-[11px] font-mono text-zinc-500 border-t border-white/6">
+            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-white/8 text-zinc-300 font-bold border border-white/10">J</kbd> Next</span>
+            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-white/8 text-zinc-300 font-bold border border-white/10">K</kbd> Prev</span>
+            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">A</kbd> Approve</span>
+            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30">X</kbd> Skip</span>
+            <span className="flex items-center gap-1.5"><kbd className="px-1.5 py-0.5 rounded bg-white/8 text-zinc-300 font-bold border border-white/10">E</kbd> Edit</span>
+          </div>
         )}
       </div>
 
