@@ -634,7 +634,7 @@ function DealCard({
             </span>
           ) : deal.affiliate ? (
             <span className="text-[10px] font-mono text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md flex items-center gap-1" title="Affiliate Tag Active">
-              <Shield size={9} className="text-emerald-400" /> rudranil
+              <Shield size={9} className="text-emerald-400" /> dealshare
             </span>
           ) : null}
 
