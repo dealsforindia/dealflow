@@ -490,15 +490,13 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
               >
                 Save Draft
               </button>
-              <div className="button-wrap flex-1 flex">
-                <button
-                  onClick={() => { onSaveApprove(changes); onClose(); }}
-                  className="petr-btn petr-btn-emerald flex-1"
-                >
-                  <span><Check size={16} strokeWidth={3} /> Save & Approve</span>
-                </button>
-                <div className="button-shadow" />
-              </div>
+              <button
+                onClick={() => { onSaveApprove(changes); onClose(); }}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-slate-950 transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer"
+                style={{ background: "linear-gradient(135deg, #10B981 0%, #06B6D4 100%)" }}
+              >
+                <Check size={16} strokeWidth={3} /> Save & Approve
+              </button>
             </div>
           </div>
         </div>
