@@ -2,121 +2,174 @@ import React from "react";
 import { motion } from "motion/react";
 
 // ─── 1. High-Fidelity 3D Category & Store Icons ───────────────────────────────
-export function Category3DIcon({ category, size = 20 }: { category: string; size?: number }) {
-  const cat = category.toLowerCase();
+export function Category3DIcon({ category, size = 16 }: { category: string; size?: number }) {
+  const cat = (category || "").toLowerCase();
+
+  let icon = "🛍️";
+  let glow = "rgba(100, 116, 139, 0.4)";
+  let rotate = 0;
 
   if (cat.includes("fashion") || cat.includes("cloth") || cat.includes("apparel")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(244,63,94,0.4)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: 10 }}
-      >
-        👗
-      </motion.span>
-    );
+    icon = "👗";
+    glow = "rgba(244, 63, 94, 0.5)";
+    rotate = 8;
+  } else if (cat.includes("footwear") || cat.includes("shoe")) {
+    icon = "👟";
+    glow = "rgba(249, 115, 22, 0.5)";
+    rotate = -8;
+  } else if (cat.includes("electronic") || cat.includes("phone") || cat.includes("tech")) {
+    icon = "📱";
+    glow = "rgba(139, 92, 246, 0.5)";
+    rotate = -6;
+  } else if (cat.includes("audio") || cat.includes("headphone") || cat.includes("sound")) {
+    icon = "🎧";
+    glow = "rgba(6, 182, 212, 0.5)";
+    rotate = 8;
+  } else if (cat.includes("beauty") || cat.includes("personal") || cat.includes("cosmetic")) {
+    icon = "💄";
+    glow = "rgba(244, 114, 182, 0.5)";
+    rotate = 10;
+  } else if (cat.includes("grocery") || cat.includes("food") || cat.includes("dining")) {
+    icon = "🛒";
+    glow = "rgba(16, 185, 129, 0.5)";
+    rotate = -6;
+  } else if (cat.includes("home") || cat.includes("kitchen")) {
+    icon = "🏠";
+    glow = "rgba(245, 158, 11, 0.5)";
+    rotate = 6;
+  } else if (cat.includes("gaming") || cat.includes("game")) {
+    icon = "🎮";
+    glow = "rgba(168, 85, 247, 0.5)";
+    rotate = 10;
+  } else if (cat.includes("watch")) {
+    icon = "⌚";
+    glow = "rgba(14, 165, 233, 0.5)";
+    rotate = -6;
+  } else if (cat.includes("bank") || cat.includes("card") || cat.includes("credit")) {
+    icon = "💳";
+    glow = "rgba(59, 130, 246, 0.5)";
+    rotate = -8;
+  } else if (cat.includes("trick") || cat.includes("loot") || cat.includes("free")) {
+    icon = "🎁";
+    glow = "rgba(234, 179, 8, 0.6)";
+    rotate = 12;
   }
-  if (cat.includes("electronic") || cat.includes("phone") || cat.includes("tech")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(139,92,246,0.4)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: -8 }}
-      >
-        💻
-      </motion.span>
-    );
-  }
-  if (cat.includes("audio") || cat.includes("headphone") || cat.includes("sound")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(6,182,212,0.4)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: 8 }}
-      >
-        🎧
-      </motion.span>
-    );
-  }
-  if (cat.includes("beauty") || cat.includes("personal") || cat.includes("cosmetic")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(244,114,182,0.4)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: 12 }}
-      >
-        💄
-      </motion.span>
-    );
-  }
-  if (cat.includes("grocery") || cat.includes("food") || cat.includes("dining")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(16,185,129,0.4)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: -6 }}
-      >
-        🛒
-      </motion.span>
-    );
-  }
-  if (cat.includes("home") || cat.includes("kitchen")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(245,158,11,0.4)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: 6 }}
-      >
-        🏠
-      </motion.span>
-    );
-  }
-  if (cat.includes("gaming") || cat.includes("game")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(168,85,247,0.4)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: 12 }}
-      >
-        🎮
-      </motion.span>
-    );
-  }
-  if (cat.includes("bank") || cat.includes("card") || cat.includes("credit")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(59,130,246,0.4)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: -10 }}
-      >
-        💳
-      </motion.span>
-    );
-  }
-  if (cat.includes("trick") || cat.includes("loot") || cat.includes("free")) {
-    return (
-      <motion.span
-        className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(234,179,8,0.5)]"
-        style={{ fontSize: size }}
-        whileHover={{ scale: 1.25, rotate: 15 }}
-      >
-        🎁
-      </motion.span>
-    );
-  }
+
   return (
     <motion.span
-      className="inline-flex items-center justify-center filter drop-shadow-[0_4px_8px_rgba(100,116,139,0.3)]"
-      style={{ fontSize: size }}
-      whileHover={{ scale: 1.25 }}
+      className="inline-flex items-center justify-center select-none"
+      style={{
+        fontSize: size,
+        filter: `drop-shadow(0 2px 6px ${glow})`,
+      }}
+      whileHover={{ scale: 1.25, rotate }}
+      transition={{ type: "spring", stiffness: 400, damping: 15 }}
     >
-      🛍️
+      {icon}
     </motion.span>
   );
 }
 
-// ─── 2. 3D Store Brand Badges ────────────────────────────────────────────────
-export function Store3DBadge({ store, size = 18 }: { store: string; size?: number }) {
+// ─── 2. 3D Category Fallback Pedestal (Replaces Flat "NO MEDIA") ───────────────
+export function Category3DPlaceholder({ category }: { category: string }) {
+  const cat = (category || "").toLowerCase();
+
+  let icon = "🛍️";
+  let bgGradient = "from-slate-800/40 via-slate-900/60 to-black/80";
+  let ringColor = "rgba(148, 163, 184, 0.25)";
+  let glowColor = "rgba(148, 163, 184, 0.2)";
+
+  if (cat.includes("fashion") || cat.includes("cloth") || cat.includes("apparel")) {
+    icon = "👗";
+    bgGradient = "from-rose-500/20 via-pink-900/30 to-black/80";
+    ringColor = "rgba(244, 63, 94, 0.4)";
+    glowColor = "rgba(244, 63, 94, 0.3)";
+  } else if (cat.includes("footwear") || cat.includes("shoe")) {
+    icon = "👟";
+    bgGradient = "from-orange-500/20 via-amber-900/30 to-black/80";
+    ringColor = "rgba(249, 115, 22, 0.4)";
+    glowColor = "rgba(249, 115, 22, 0.3)";
+  } else if (cat.includes("electronic") || cat.includes("phone") || cat.includes("tech")) {
+    icon = "📱";
+    bgGradient = "from-violet-500/20 via-purple-900/30 to-black/80";
+    ringColor = "rgba(139, 92, 246, 0.4)";
+    glowColor = "rgba(139, 92, 246, 0.3)";
+  } else if (cat.includes("audio") || cat.includes("headphone") || cat.includes("sound")) {
+    icon = "🎧";
+    bgGradient = "from-cyan-500/20 via-blue-900/30 to-black/80";
+    ringColor = "rgba(6, 182, 212, 0.4)";
+    glowColor = "rgba(6, 182, 212, 0.3)";
+  } else if (cat.includes("beauty") || cat.includes("personal") || cat.includes("cosmetic")) {
+    icon = "💄";
+    bgGradient = "from-pink-500/20 via-rose-900/30 to-black/80";
+    ringColor = "rgba(236, 72, 153, 0.4)";
+    glowColor = "rgba(236, 72, 153, 0.3)";
+  } else if (cat.includes("grocery") || cat.includes("food") || cat.includes("dining")) {
+    icon = "🛒";
+    bgGradient = "from-emerald-500/20 via-teal-900/30 to-black/80";
+    ringColor = "rgba(16, 185, 129, 0.4)";
+    glowColor = "rgba(16, 185, 129, 0.3)";
+  } else if (cat.includes("home") || cat.includes("kitchen")) {
+    icon = "🏠";
+    bgGradient = "from-amber-500/20 via-yellow-900/30 to-black/80";
+    ringColor = "rgba(245, 158, 11, 0.4)";
+    glowColor = "rgba(245, 158, 11, 0.3)";
+  } else if (cat.includes("gaming") || cat.includes("game")) {
+    icon = "🎮";
+    bgGradient = "from-purple-500/20 via-indigo-900/30 to-black/80";
+    ringColor = "rgba(168, 85, 247, 0.4)";
+    glowColor = "rgba(168, 85, 247, 0.3)";
+  } else if (cat.includes("trick") || cat.includes("loot") || cat.includes("free")) {
+    icon = "🎁";
+    bgGradient = "from-yellow-500/20 via-amber-900/30 to-black/80";
+    ringColor = "rgba(234, 179, 8, 0.45)";
+    glowColor = "rgba(234, 179, 8, 0.35)";
+  }
+
+  return (
+    <div className={`w-full h-full relative flex flex-col items-center justify-center p-4 bg-gradient-to-b ${bgGradient} overflow-hidden select-none`}>
+      {/* 3D Glass Pedestal */}
+      <motion.div
+        className="relative flex items-center justify-center w-20 h-20 rounded-3xl backdrop-blur-xl border"
+        style={{
+          borderColor: ringColor,
+          boxShadow: `0 8px 32px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.15)`,
+          background: "rgba(10, 14, 26, 0.65)",
+        }}
+        animate={{
+          y: [0, -5, 0],
+          rotateZ: [0, 2, -2, 0],
+        }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="text-4xl filter drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)]">{icon}</span>
+
+        {/* Orbiting Sparkle */}
+        <motion.span
+          className="absolute -top-1.5 -right-1.5 text-xs filter drop-shadow-md"
+          animate={{ scale: [1, 1.4, 1], rotate: [0, 180, 360] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          ✨
+        </motion.span>
+      </motion.div>
+
+      {/* Floating Ground Shadow */}
+      <motion.div
+        className="w-16 h-2 rounded-full bg-black/60 blur-sm mt-3"
+        animate={{ scale: [1, 0.85, 1], opacity: [0.6, 0.3, 0.6] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-2 font-mono">
+        {category || "Special Offer"}
+      </span>
+    </div>
+  );
+}
+
+// ─── 3. 3D Store Brand Badges ────────────────────────────────────────────────
+export function Store3DBadge({ store }: { store: string; size?: number }) {
   const s = store.toLowerCase();
 
   if (s.includes("amazon") || s.includes("amzn")) {
@@ -208,13 +261,13 @@ export function Store3DBadge({ store, size = 18 }: { store: string; size?: numbe
   );
 }
 
-// ─── 3. 3D Floating Nav / Sidebar Icons ───────────────────────────────────────
+// ─── 4. 3D Floating Nav / Sidebar Icons ───────────────────────────────────────
 export function Nav3DIcon({ icon, active }: { icon: "review" | "broadcast" | "channels" | "settings"; active: boolean }) {
   const icons = {
     review: "🛒",
     broadcast: "🚀",
     channels: "📡",
-    settings: "⚙️"
+    settings: "⚙️",
   };
 
   return (
@@ -233,45 +286,220 @@ export function Nav3DIcon({ icon, active }: { icon: "review" | "broadcast" | "ch
   );
 }
 
-// ─── 4. 3D Stat Counter Pill ──────────────────────────────────────────────────
-export function Stat3DPill({ label, count, icon, color, active, onClick }: {
-  label: string; count: number; icon: string; color: string; active: boolean; onClick: () => void;
+// ─── 5. 3D Stat Counter Pill ──────────────────────────────────────────────────
+export function Stat3DPill({
+  id,
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  id: string;
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
 }) {
+  const configs: Record<string, { icon: string; activeCls: string }> = {
+    pending: {
+      icon: "⏳",
+      activeCls: "bg-amber-400/15 text-amber-200 border-amber-400/50 shadow-[0_0_18px_rgba(251,191,36,0.22)]",
+    },
+    approved: {
+      icon: "✓",
+      activeCls: "bg-emerald-400/15 text-emerald-200 border-emerald-400/50 shadow-[0_0_18px_rgba(52,211,153,0.22)]",
+    },
+    rejected: {
+      icon: "✕",
+      activeCls: "bg-slate-800/95 text-slate-200 border-white/30 shadow-md",
+    },
+    promos: {
+      icon: "🎟️",
+      activeCls: "bg-indigo-400/15 text-indigo-200 border-indigo-400/50 shadow-[0_0_18px_rgba(129,140,248,0.22)]",
+    },
+    all: {
+      icon: "📦",
+      activeCls: "bg-white/15 text-white border-white/30 shadow-md",
+    },
+  };
+
+  const cfg = configs[id] || configs.all;
+
   return (
     <motion.button
       type="button"
       onClick={onClick}
       whileHover={{ scale: 1.04, y: -1 }}
       whileTap={{ scale: 0.96 }}
-      className={`flex items-center gap-2 px-3.5 py-1.5 rounded-2xl border text-xs font-bold transition-all backdrop-blur-xl ${
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
         active
-          ? `${color} shadow-[0_0_20px_rgba(99,102,241,0.25)] border-white/25`
-          : "bg-slate-900/60 border-white/5 text-slate-400 hover:text-white hover:bg-slate-800/70"
+          ? cfg.activeCls
+          : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
       }`}
     >
-      <span className="text-sm filter drop-shadow-sm">{icon}</span>
+      <span className="text-[12px] filter drop-shadow-sm">{cfg.icon}</span>
       <span>{label}</span>
-      <span className="px-1.5 py-0.5 rounded-full bg-black/40 text-[10px] font-mono font-black border border-white/10">
+      <span
+        className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold font-mono ${
+          active ? "bg-black/40 text-white" : "bg-white/5 text-slate-400"
+        }`}
+      >
         {count}
       </span>
     </motion.button>
   );
 }
 
-// ─── 5. 3D Savings Pill ───────────────────────────────────────────────────────
+// ─── 6. 3D Savings Pill ───────────────────────────────────────────────────────
 export function SavingsPill3D({ amount }: { amount: number }) {
+  if (!amount || amount <= 0) return null;
   return (
     <motion.div
-      className="flex items-center gap-1.5 text-[11px] font-black text-emerald-300 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-2.5 py-1 rounded-xl border border-emerald-400/40 shadow-[0_0_15px_rgba(16,185,129,0.25)] backdrop-blur-md"
-      whileHover={{ scale: 1.06, y: -1 }}
+      className="inline-flex items-center gap-1 text-[10.5px] font-black text-emerald-300 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-2 py-0.5 rounded-lg border border-emerald-400/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] backdrop-blur-md select-none"
+      whileHover={{ scale: 1.05, y: -1 }}
     >
-      <span className="filter drop-shadow-[0_1px_3px_rgba(16,185,129,0.6)]">💰</span>
+      <span className="text-xs filter drop-shadow-[0_1px_3px_rgba(16,185,129,0.6)]">💰</span>
       <span>Save ₹{amount.toLocaleString("en-IN")}</span>
     </motion.div>
   );
 }
 
-// ─── 6. 3D Floating Cart & Satellite Headers ──────────────────────────────────
+// ─── 7. 3D Studio Wand for Edit Modal ─────────────────────────────────────────
+export function StudioWand3D({ size = 32 }: { size?: number }) {
+  return (
+    <motion.div
+      className="relative flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/25 to-pink-500/25 border border-indigo-400/40 backdrop-blur-xl shadow-[0_0_18px_rgba(99,102,241,0.35)]"
+      style={{ width: size, height: size }}
+      animate={{ rotate: [0, 4, -4, 0] }}
+      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <span className="text-base filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]">🪄</span>
+      <motion.span
+        className="absolute -top-1 -right-1 text-[10px]"
+        animate={{ scale: [1, 1.35, 1], opacity: [0.7, 1, 0.7] }}
+        transition={{ duration: 1.8, repeat: Infinity }}
+      >
+        ✨
+      </motion.span>
+    </motion.div>
+  );
+}
+
+// ─── 8. 3D "All Caught Up" Celebration State ──────────────────────────────────
+export function AllCaughtUp3D({ onRefresh }: { onRefresh?: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center justify-center p-8 sm:p-12 text-center max-w-md mx-auto my-auto"
+    >
+      <div className="relative w-28 h-28 flex items-center justify-center mb-4">
+        {/* 3D Glowing Trophy */}
+        <motion.div
+          className="w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-400/25 via-orange-500/20 to-purple-600/20 border border-amber-400/40 flex items-center justify-center backdrop-blur-xl shadow-[0_16px_40px_rgba(245,158,11,0.3)]"
+          animate={{ y: [0, -6, 0], rotateZ: [0, 3, -3, 0] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <span className="text-5xl filter drop-shadow-[0_8px_20px_rgba(245,158,11,0.6)]">🏆</span>
+
+          <motion.div
+            className="absolute -top-2 -right-2 text-lg"
+            animate={{ scale: [1, 1.4, 1], rotate: 360 }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            ✨
+          </motion.div>
+          <motion.div
+            className="absolute -bottom-1 -left-1 text-sm"
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+          >
+            🎉
+          </motion.div>
+        </motion.div>
+
+        {/* Ambient Ground Shadow */}
+        <motion.div
+          className="absolute bottom-1 w-20 h-3 rounded-full bg-black/50 blur-md"
+          animate={{ scale: [1, 0.8, 1], opacity: [0.6, 0.3, 0.6] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
+      <h3 className="text-lg font-black text-white tracking-tight">
+        You're All Caught Up!
+      </h3>
+      <p className="text-xs text-slate-400 mt-1.5 max-w-xs leading-relaxed">
+        Zero pending deals in queue. Background workers are actively monitoring 27 channels for price drops.
+      </p>
+
+      {onRefresh && (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onRefresh}
+          className="mt-5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600/80 hover:bg-indigo-500 border border-indigo-400/30 shadow-lg shadow-indigo-500/25 flex items-center gap-2 cursor-pointer transition-all"
+        >
+          <span>🔄</span>
+          <span>Refresh Stream</span>
+        </motion.button>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── 9. 3D Empty Filter State ─────────────────────────────────────────────────
+export function EmptyFilter3D({ onClear }: { onClear?: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center justify-center p-8 sm:p-12 text-center max-w-md mx-auto my-auto"
+    >
+      <div className="relative w-28 h-28 flex items-center justify-center mb-3">
+        <motion.div
+          className="w-20 h-20 rounded-3xl bg-slate-900/90 border border-white/15 flex items-center justify-center backdrop-blur-xl shadow-2xl"
+          animate={{ y: [0, -6, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <span className="text-4xl filter drop-shadow-md">🔍</span>
+          <motion.span
+            className="absolute -top-1 -right-1 text-sm"
+            animate={{ scale: [1, 1.3, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            ⚡
+          </motion.span>
+        </motion.div>
+
+        <motion.div
+          className="absolute bottom-1 w-16 h-3 rounded-full bg-black/40 blur-md"
+          animate={{ scale: [1, 0.8, 1], opacity: [0.6, 0.3, 0.6] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+
+      <h3 className="text-sm font-bold text-white tracking-tight">
+        No Matching Deals Found
+      </h3>
+      <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
+        Try adjusting your store or channel filters, or search for different keywords.
+      </p>
+
+      {onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="mt-4 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all cursor-pointer"
+        >
+          Reset Filters
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── 10. 3D Floating Cart & Satellite Headers ─────────────────────────────────
 export function FloatingCart3D({ size = 40 }: { size?: number }) {
   return (
     <motion.div

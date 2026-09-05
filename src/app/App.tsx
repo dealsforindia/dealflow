@@ -16,7 +16,8 @@ import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
 } from "./components/LottieAnimations";
 import {
-  Category3DIcon, Store3DBadge, Nav3DIcon, Stat3DPill, FloatingCart3D, Satellite3D, SavingsPill3D
+  Category3DIcon, Store3DBadge, Nav3DIcon, Stat3DPill, FloatingCart3D, Satellite3D, SavingsPill3D,
+  Category3DPlaceholder, StudioWand3D, AllCaughtUp3D, EmptyFilter3D
 } from "./components/Iconscout3DAssets";
 import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
 
@@ -536,7 +537,7 @@ function DealCard({
           {deal.imgUrl && !imgErr ? (
             <img src={deal.imgUrl} alt="" className="w-full h-full object-contain" onError={() => setImgErr(true)} />
           ) : (
-            <span className="text-2xl">{deal.catEmoji}</span>
+            <Category3DPlaceholder category={deal.category} />
           )}
 
           {deal.discount > 0 && (
@@ -578,7 +579,8 @@ function DealCard({
             <div className="flex items-center gap-1.5 justify-between">
               <div className="flex items-center gap-1 min-w-0">
                 <Store3DBadge store={store.tag} />
-                <span className="text-[10px] text-slate-400 truncate max-w-[90px]">{deal.channel}</span>
+                <Category3DIcon category={deal.category} size={13} />
+                <span className="text-[10px] text-slate-400 truncate max-w-[80px]">{deal.channel}</span>
               </div>
               <span className="text-[9px] text-slate-500 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
             </div>
@@ -592,16 +594,14 @@ function DealCard({
             </h4>
 
             {/* Price Row */}
-            <div className="flex items-baseline gap-1.5 mt-0.5">
-              <span className="pro-price text-sm font-black text-emerald-300 tabular-nums">{fmt(deal.price)}</span>
-              {deal.mrp > deal.price && (
-                <span className="text-[10px] text-slate-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>
-              )}
-              {savings > 0 && (
-                <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1 rounded ml-auto">
-                  Save {fmt(savings)}
-                </span>
-              )}
+            <div className="flex items-center justify-between gap-1 mt-0.5">
+              <div className="flex items-baseline gap-1.5">
+                <span className="pro-price text-sm font-black text-emerald-300 tabular-nums">{fmt(deal.price)}</span>
+                {deal.mrp > deal.price && (
+                  <span className="text-[10px] text-slate-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>
+                )}
+              </div>
+              {savings > 0 && <SavingsPill3D amount={savings} />}
             </div>
           </div>
 
@@ -648,7 +648,8 @@ function DealCard({
         <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/6 bg-white/[0.02]">
           <div className="flex items-center gap-2 min-w-0">
             <Store3DBadge store={store.tag} />
-            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[180px]">{deal.channel}</span>
+            <Category3DIcon category={deal.category} size={15} />
+            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[170px]">{deal.channel}</span>
           </div>
           <span className="text-[10px] text-zinc-400 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
         </div>
@@ -668,10 +669,7 @@ function DealCard({
               </div>
             </>
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-zinc-500">
-              <span className="text-4xl">{deal.catEmoji}</span>
-              <span className="text-[10px] font-semibold tracking-wider uppercase opacity-60">No Media</span>
-            </div>
+            <Category3DPlaceholder category={deal.category} />
           )}
 
           {/* Badges */}
@@ -712,12 +710,14 @@ function DealCard({
             <h4 className="font-heading text-[13.5px] font-bold text-zinc-100 line-clamp-2 leading-snug hover:text-indigo-300 transition-colors cursor-pointer tracking-tight" onClick={() => onEdit(deal)} title={deal.title}>
               {deal.title}
             </h4>
-            <div className="flex items-baseline gap-2 mt-2 flex-wrap">
+            <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
               {deal.price > 0 ? (
                 <>
-                  <span className="pro-price text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-400 tabular-nums">{fmt(deal.price)}</span>
-                  {deal.mrp > deal.price && <span className="text-xs text-zinc-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>}
-                  {savings > 0 && <span className="text-[10px] font-mono font-bold text-emerald-400/95 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md ml-auto">Save {fmt(savings)}</span>}
+                  <div className="flex items-baseline gap-2">
+                    <span className="pro-price text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-400 tabular-nums">{fmt(deal.price)}</span>
+                    {deal.mrp > deal.price && <span className="text-xs text-zinc-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>}
+                  </div>
+                  {savings > 0 && <SavingsPill3D amount={savings} />}
                 </>
               ) : (
                 <span className="text-xs font-black text-amber-400 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg"><span>⚡</span> Freebie Loot</span>
@@ -796,7 +796,7 @@ function DealTableRow({
         {deal.imgUrl ? (
           <img src={deal.imgUrl} alt={deal.title} className="w-full h-full object-contain p-0.5" />
         ) : (
-          <span className="text-sm">{deal.catEmoji}</span>
+          <Category3DIcon category={deal.category} size={18} />
         )}
       </div>
 
@@ -1458,9 +1458,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
         {/* Sticky Header */}
         <div className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-slate-900/90 backdrop-blur-md">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-slate-950 shadow-lg shadow-emerald-500/20 flex-shrink-0">
-              <PenLine size={15} />
-            </div>
+            <StudioWand3D size={36} />
             <div className="min-w-0">
               <h2 className="text-sm font-bold text-white tracking-wide truncate">Edit &amp; Tune Deal</h2>
               <p className="text-[11px] text-slate-400 truncate">
@@ -1699,10 +1697,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 
 // ─── Review View ──────────────────────────────────────────────────────────────
 // ─── Review View ──────────────────────────────────────────────────────────────
-function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
+function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, dark }: {
   deals: Deal[]; onApprove: (id: string) => void;
   onReject: (id: string) => void; onEdit: (d: Deal) => void;
-  onAddDeal: (deal: Deal) => void; dark: boolean;
+  onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"latest" | "discount" | "price_asc" | "price_desc">("latest");
@@ -2028,25 +2026,20 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
           {/* Mobile Tier 2: Status Tabs Horizontal Scroll Strip */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {[
-              { id: "pending", label: "Pending", icon: "⏳", count: pending, activeCls: "bg-amber-400/15 text-amber-200 border-amber-400/40 shadow-[0_0_16px_rgba(251,191,36,0.18)]" },
-              { id: "approved", label: "Approved", icon: "✓", count: approved, activeCls: "bg-emerald-400/15 text-emerald-200 border-emerald-400/40 shadow-[0_0_16px_rgba(52,211,153,0.18)]" },
-              { id: "rejected", label: "Rejected", icon: "✕", count: rejected, activeCls: "bg-slate-800/90 text-slate-200 border-white/20 shadow-sm" },
-              { id: "promos", label: "Promos", icon: "🎟️", count: promos.length, activeCls: "bg-indigo-400/15 text-indigo-200 border-indigo-400/40 shadow-[0_0_16px_rgba(129,140,248,0.18)]" },
-              { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-white/10 text-white border-white/25 shadow-sm" },
+              { id: "pending", label: "Pending", count: pending },
+              { id: "approved", label: "Approved", count: approved },
+              { id: "rejected", label: "Rejected", count: rejected },
+              { id: "promos", label: "Promos", count: promos.length },
+              { id: "all", label: "All", count: deals.length },
             ].map(tab => (
-              <button
+              <Stat3DPill
                 key={tab.id}
+                id={tab.id}
+                label={tab.label}
+                count={tab.count}
+                active={filter === tab.id}
                 onClick={() => { setFilter(tab.id as any); setPage(1); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
-                  filter === tab.id ? tab.activeCls : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
-                }`}
-              >
-                <span className="text-[11px]">{tab.icon}</span>
-                <span>{tab.label}</span>
-                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold font-mono ${filter === tab.id ? "bg-black/40 text-white" : "bg-white/5 text-slate-400"}`}>
-                  {tab.count}
-                </span>
-              </button>
+              />
             ))}
           </div>
         </div>
@@ -2134,25 +2127,20 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
           {/* Tier 3: Status Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {[
-              { id: "pending", label: "Pending", icon: "⏳", count: pending, activeCls: "bg-amber-400/15 text-amber-200 border-amber-400/40 shadow-[0_0_16px_rgba(251,191,36,0.18)]" },
-              { id: "approved", label: "Approved", icon: "✓", count: approved, activeCls: "bg-emerald-400/15 text-emerald-200 border-emerald-400/40 shadow-[0_0_16px_rgba(52,211,153,0.18)]" },
-              { id: "rejected", label: "Rejected", icon: "✕", count: rejected, activeCls: "bg-slate-800/90 text-slate-200 border-white/20 shadow-sm" },
-              { id: "promos", label: "Promos", icon: "🎟️", count: promos.length, activeCls: "bg-indigo-400/15 text-indigo-200 border-indigo-400/40 shadow-[0_0_16px_rgba(129,140,248,0.18)]" },
-              { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-white/10 text-white border-white/25 shadow-sm" },
+              { id: "pending", label: "Pending", count: pending },
+              { id: "approved", label: "Approved", count: approved },
+              { id: "rejected", label: "Rejected", count: rejected },
+              { id: "promos", label: "Promos", count: promos.length },
+              { id: "all", label: "All", count: deals.length },
             ].map(tab => (
-              <button
+              <Stat3DPill
                 key={tab.id}
+                id={tab.id}
+                label={tab.label}
+                count={tab.count}
+                active={filter === tab.id}
                 onClick={() => { setFilter(tab.id as any); setPage(1); }}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
-                  filter === tab.id ? tab.activeCls : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
-                }`}
-              >
-                <span className="text-[11px]">{tab.icon}</span>
-                <span>{tab.label}</span>
-                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold font-mono ${filter === tab.id ? "bg-black/40 text-white" : "bg-white/5 text-slate-400"}`}>
-                  {tab.count}
-                </span>
-              </button>
+              />
             ))}
           </div>
         </div>
@@ -2214,18 +2202,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
             )}
           </div>
         ) : visible.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-            {/* 3D Animated Empty State */}
-            <EmptySearch3D />
-            <div>
-              <p className="text-sm font-bold text-white">No matching deals found</p>
-              <p className="text-xs text-slate-400 mt-1">Try switching your channel or store filters.</p>
-            </div>
-            <button onClick={() => { setSearch(""); setFilter("pending"); setSelectedChannel("All"); setSelectedStore("All"); setPage(1); }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all cursor-pointer">
-              <RefreshCw size={13} /> Reset All Filters
-            </button>
-          </div>
+          filter === "pending" && !search.trim() && selectedChannel === "All" && selectedStore === "All" ? (
+            <AllCaughtUp3D onRefresh={onRefresh} />
+          ) : (
+            <EmptyFilter3D onClear={() => { setSearch(""); setFilter("pending"); setSelectedChannel("All"); setSelectedStore("All"); setPage(1); }} />
+          )
         ) : viewMode === "split" ? (
           /* 3-Pane Command Desk (Split Inspector View) */
           <div className="pro-split-container flex-1 h-[calc(100vh-210px)] min-h-[550px]">
@@ -2249,7 +2230,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
                       {d.imgUrl ? (
                         <img src={d.imgUrl} alt="" className="w-full h-full object-contain p-0.5" />
                       ) : (
-                        <span className="text-sm">{d.catEmoji}</span>
+                        <Category3DIcon category={d.category} size={20} />
                       )}
                     </div>
 
@@ -2403,13 +2384,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
               className="w-full max-w-lg rounded-3xl glass-card border border-emerald-500/30 p-6 flex flex-col gap-4 shadow-2xl bg-gradient-to-b from-[#0F1424] to-[#090C16]"
             >
               <div className="flex items-center justify-between border-b border-white/8 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/40">
-                    <Zap size={16} className="fill-emerald-400" />
-                  </div>
+                <div className="flex items-center gap-2.5">
+                  <FloatingCart3D size={38} />
                   <div>
                     <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
-                      ⚡ Quick Drop Deal
+                      Quick Drop Deal
                     </h3>
                     <p className="text-[11px] text-slate-400">Paste any store link → instant unshorten, scrape & affiliate</p>
                   </div>
@@ -2423,14 +2402,14 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
               </div>
 
               {/* Supported Store Icons Pill */}
-              <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-400 font-mono">
-                <span className="text-slate-500">Supported:</span>
-                <span className="px-2 py-0.5 rounded bg-white/5 text-amber-300 border border-white/10">Amazon</span>
-                <span className="px-2 py-0.5 rounded bg-white/5 text-blue-300 border border-white/10">Flipkart</span>
-                <span className="px-2 py-0.5 rounded bg-white/5 text-rose-300 border border-white/10">Myntra</span>
-                <span className="px-2 py-0.5 rounded bg-white/5 text-purple-300 border border-white/10">AJIO</span>
-                <span className="px-2 py-0.5 rounded bg-white/5 text-orange-300 border border-white/10">Swiggy</span>
-                <span className="px-2 py-0.5 rounded bg-white/5 text-emerald-300 border border-white/10">Blinkit</span>
+              <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-slate-400 font-mono">
+                <span className="text-slate-500 mr-1">Supported:</span>
+                <Store3DBadge store="Amazon" />
+                <Store3DBadge store="Flipkart" />
+                <Store3DBadge store="Myntra" />
+                <Store3DBadge store="AJIO" />
+                <Store3DBadge store="DesiDime" />
+                <Store3DBadge store="Blinkit" />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -2922,11 +2901,14 @@ function PostedView({ deals }: { deals: Deal[] }) {
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 max-w-4xl mx-auto flex flex-col gap-4">
       <div className="p-5 rounded-3xl glass-panel border border-white/10 flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <span>🚀</span> Broadcasted Deals History ({postedDeals.length})
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">Live timeline of deals sent to Telegram & X</p>
+        <div className="flex items-center gap-3">
+          <RocketBroadcast3D size={36} />
+          <div>
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              Broadcasted Deals History ({postedDeals.length})
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">Live timeline of deals sent to Telegram & X</p>
+          </div>
         </div>
       </div>
 
@@ -2936,8 +2918,8 @@ function PostedView({ deals }: { deals: Deal[] }) {
             {d.imgUrl ? (
               <img src={d.imgUrl} alt="" className="w-14 h-14 rounded-xl object-contain bg-slate-950/80 p-1 border border-white/10 flex-shrink-0" />
             ) : (
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl bg-white/5 border border-white/10 flex-shrink-0">
-                {d.catEmoji}
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0">
+                <Category3DIcon category={d.category} size={28} />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -3189,7 +3171,7 @@ export default function App() {
 
       <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0 relative z-10">
         {tab === "Review" && (
-          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onAddDeal={handleAddDeal} dark={dark} />
+          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onAddDeal={handleAddDeal} onRefresh={loadDeals} dark={dark} />
         )}
         {tab === "Posted" && <PostedView deals={deals} />}
         {tab === "Channels" && <ChannelsView />}
