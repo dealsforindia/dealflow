@@ -1971,74 +1971,83 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, dark }: {
           </div>
         </div>
 
-        {/* ─── MOBILE CONTROLS (Single High-Efficiency Scroll Strip on sm:hidden) ─── */}
-        <div className="flex sm:hidden items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          {/* Status Tabs */}
-          {[
-            { id: "pending", label: "Pending", icon: "⏳", count: pending, activeCls: "bg-amber-400/15 text-amber-200 border-amber-400/40 shadow-[0_0_16px_rgba(251,191,36,0.18)]" },
-            { id: "approved", label: "Approved", icon: "✓", count: approved, activeCls: "bg-emerald-400/15 text-emerald-200 border-emerald-400/40 shadow-[0_0_16px_rgba(52,211,153,0.18)]" },
-            { id: "rejected", label: "Rejected", icon: "✕", count: rejected, activeCls: "bg-slate-800/90 text-slate-200 border-white/20 shadow-sm" },
-            { id: "promos", label: "Promos", icon: "🎟️", count: promos.length, activeCls: "bg-indigo-400/15 text-indigo-200 border-indigo-400/40 shadow-[0_0_16px_rgba(129,140,248,0.18)]" },
-            { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-white/10 text-white border-white/25 shadow-sm" },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => { setFilter(tab.id as any); setPage(1); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
-                filter === tab.id ? tab.activeCls : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
-              }`}
-            >
-              <span className="text-[11px]">{tab.icon}</span>
-              <span>{tab.label}</span>
-              <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold font-mono ${filter === tab.id ? "bg-black/40 text-white" : "bg-white/5 text-slate-400"}`}>
-                {tab.count}
-              </span>
-            </button>
-          ))}
+        {/* ─── MOBILE CONTROLS (2-Tier High-Efficiency Layout on sm:hidden) ─── */}
+        <div className="flex sm:hidden flex-col gap-2">
+          {/* Mobile Tier 1: Quick Filter Dropdowns + View Switcher */}
+          <div className="flex items-center justify-between gap-1.5 overflow-visible">
+            <div className="flex items-center gap-1.5 overflow-visible flex-1 min-w-0">
+              <GlassDropdown
+                value={selectedStore}
+                onChange={val => { setSelectedStore(val); setPage(1); }}
+                options={storeOptions}
+                placeholder="Store"
+                className="flex-1 min-w-0"
+              />
+              <GlassDropdown
+                value={selectedChannel}
+                onChange={val => { setSelectedChannel(val); setPage(1); }}
+                options={channelOptions}
+                placeholder="Channel"
+                searchable={true}
+                className="flex-1 min-w-0"
+              />
+              <GlassDropdown
+                value={sort}
+                onChange={val => { setSort(val as any); setPage(1); }}
+                options={sortOptions}
+                placeholder="Sort"
+                align="right"
+              />
+            </div>
 
-          <div className="w-[1px] h-5 bg-white/10 flex-shrink-0 mx-0.5" />
-
-          {/* View Mode Switcher Pill */}
-          <div className="flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`px-2.5 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
-                viewMode === "grid" ? "bg-white/20 text-white shadow-sm border border-white/25" : "text-zinc-400"
-              }`}
-            >
-              <LayoutGrid size={11} />
-              <span className="text-[10.5px] font-bold">Cards</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`px-2.5 py-1 rounded-full transition-all flex items-center gap-1 cursor-pointer ${
-                viewMode === "table" ? "bg-white/20 text-white shadow-sm border border-white/25" : "text-zinc-400"
-              }`}
-            >
-              <List size={11} />
-              <span className="text-[10.5px] font-bold">List</span>
-            </button>
+            {/* View Switcher Pill */}
+            <div className="flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded-full transition-all flex items-center justify-center cursor-pointer ${
+                  viewMode === "grid" ? "bg-white/20 text-white shadow-sm border border-white/25" : "text-zinc-400"
+                }`}
+                title="Cards View"
+              >
+                <LayoutGrid size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`p-1.5 rounded-full transition-all flex items-center justify-center cursor-pointer ${
+                  viewMode === "table" ? "bg-white/20 text-white shadow-sm border border-white/25" : "text-zinc-400"
+                }`}
+                title="List View"
+              >
+                <List size={13} />
+              </button>
+            </div>
           </div>
 
-          {/* Quick Store Dropdown */}
-          <div className="flex-shrink-0">
-            <GlassDropdown
-              value={selectedStore}
-              onChange={val => { setSelectedStore(val); setPage(1); }}
-              options={storeOptions}
-              placeholder="Store"
-            />
-          </div>
-          <div className="flex-shrink-0">
-            <GlassDropdown
-              value={selectedChannel}
-              onChange={val => { setSelectedChannel(val); setPage(1); }}
-              options={channelOptions}
-              placeholder="Channel"
-              searchable={true}
-            />
+          {/* Mobile Tier 2: Status Tabs Horizontal Scroll Strip */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            {[
+              { id: "pending", label: "Pending", icon: "⏳", count: pending, activeCls: "bg-amber-400/15 text-amber-200 border-amber-400/40 shadow-[0_0_16px_rgba(251,191,36,0.18)]" },
+              { id: "approved", label: "Approved", icon: "✓", count: approved, activeCls: "bg-emerald-400/15 text-emerald-200 border-emerald-400/40 shadow-[0_0_16px_rgba(52,211,153,0.18)]" },
+              { id: "rejected", label: "Rejected", icon: "✕", count: rejected, activeCls: "bg-slate-800/90 text-slate-200 border-white/20 shadow-sm" },
+              { id: "promos", label: "Promos", icon: "🎟️", count: promos.length, activeCls: "bg-indigo-400/15 text-indigo-200 border-indigo-400/40 shadow-[0_0_16px_rgba(129,140,248,0.18)]" },
+              { id: "all", label: "All", icon: "📦", count: deals.length, activeCls: "bg-white/10 text-white border-white/25 shadow-sm" },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => { setFilter(tab.id as any); setPage(1); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex-shrink-0 cursor-pointer ${
+                  filter === tab.id ? tab.activeCls : "text-slate-400 hover:text-slate-200 border-white/5 hover:bg-white/5"
+                }`}
+              >
+                <span className="text-[11px]">{tab.icon}</span>
+                <span>{tab.label}</span>
+                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold font-mono ${filter === tab.id ? "bg-black/40 text-white" : "bg-white/5 text-slate-400"}`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
 
