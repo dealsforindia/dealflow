@@ -10,7 +10,8 @@ import {
   Maximize2, Copy, Link as LinkIcon, FileText,
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
-  LayoutGrid, List, Columns, Smartphone, Layers, CornerDownLeft, Command
+  LayoutGrid, List, Columns, Smartphone, Layers, CornerDownLeft, Command,
+  Volume2, VolumeX, Keyboard, TrendingUp
 } from "lucide-react";
 import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
@@ -20,6 +21,10 @@ import {
   Category3DPlaceholder, StudioWand3D, AllCaughtUp3D, EmptyFilter3D
 } from "./components/Iconscout3DAssets";
 import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
+import {
+  playApprove, playReject, playCopy, playTick,
+  isSoundMuted, toggleSound
+} from "./utils/soundFX";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DealStatus = "pending" | "approved" | "rejected" | "draft";
@@ -497,6 +502,16 @@ function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
   );
 }
 
+const getStoreAura = (tag: string) => {
+  const t = tag.toLowerCase();
+  if (t === "amazon") return "from-amber-500/90 via-orange-500/60 to-transparent";
+  if (t === "flipkart") return "from-blue-500/90 via-amber-400/70 to-transparent";
+  if (t === "myntra") return "from-pink-500/90 via-rose-400/60 to-transparent";
+  if (t === "ajio") return "from-purple-500/90 via-indigo-400/60 to-transparent";
+  if (t === "desidime") return "from-red-500/90 via-orange-500/60 to-transparent";
+  return "from-emerald-500/70 via-teal-500/40 to-transparent";
+};
+
 // ─── Senior Pro Deal Card (Responsive Mobile Horizontal + Desktop Specular Grid) ───
 function DealCard({
   deal, onApprove, onReject, onEdit,
@@ -514,8 +529,43 @@ function DealCard({
 }) {
   const [lightbox, setLightbox] = useState(false);
   const [imgErr, setImgErr] = useState(false);
+  const [copied, setCopied] = useState(false);
   const store = getStoreBadge(deal.platforms, deal.affText);
   const savings = deal.mrp > deal.price ? deal.mrp - deal.price : 0;
+  const isSuperLoot = (deal.discount >= 70) || (savings >= 1500);
+  const isUnder299 = deal.price > 0 && deal.price <= 299;
+  const isFresh = (Date.now() / 1000 - deal.ts) < 900;
+
+  const handleCopyPost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const postText = deal.affText || deal.originalText || `${deal.title} @ ₹${deal.price}`;
+    navigator.clipboard.writeText(postText);
+    setCopied(true);
+    playCopy();
+    toast.success("📋 Deal post copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOpenStore = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const urlMatch = (deal.affText || deal.originalText || "").match(/https?:\/\/\S+/);
+    const targetUrl = urlMatch ? urlMatch[0] : "";
+    if (targetUrl) {
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
+    } else {
+      toast.info("No external store link found in deal");
+    }
+  };
+
+  const handleApproveWithSound = (id: string) => {
+    playApprove();
+    onApprove(id);
+  };
+
+  const handleRejectWithSound = (id: string) => {
+    playReject();
+    onReject(id);
+  };
 
   return (
     <motion.div layout
@@ -523,7 +573,10 @@ function DealCard({
       transition={{ duration: 0.2, ease: "easeOut" }}
       className={`pro-card rounded-2xl overflow-hidden flex flex-col group relative transition-all ${
         selected ? "ring-2 ring-indigo-400 bg-indigo-500/10 border-indigo-400/50 shadow-lg shadow-indigo-500/20" : ""
-      } ${isActive ? "pro-card-active" : ""}`}>
+      } ${isActive ? "ring-2 ring-emerald-400/90 shadow-[0_0_30px_rgba(16,185,129,0.35)] scale-[1.01] bg-emerald-500/[0.04]" : ""}`}>
+
+      {/* Brand-Reactive Top Border Accent Line */}
+      <div className={`absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r ${getStoreAura(store.tag)} z-30 opacity-90`} />
 
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
@@ -610,7 +663,7 @@ function DealCard({
             {deal.status === "pending" ? (
               <>
                 <button
-                  onClick={() => onReject(deal.id)}
+                  onClick={() => handleRejectWithSound(deal.id)}
                   className="h-7 px-2.5 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer"
                   title="Skip"
                 >
@@ -624,7 +677,7 @@ function DealCard({
                   <PenLine size={11} /> <span>Tune</span>
                 </button>
                 <button
-                  onClick={() => onApprove(deal.id)}
+                  onClick={() => handleApproveWithSound(deal.id)}
                   className="h-7 px-3 rounded-lg text-[11px] font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-sm shadow-emerald-500/20 cursor-pointer flex-1"
                   title="Approve"
                 >
@@ -651,7 +704,15 @@ function DealCard({
             <Category3DIcon category={deal.category} size={15} />
             <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[170px]">{deal.channel}</span>
           </div>
-          <span className="text-[10px] text-zinc-400 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {isFresh && (
+              <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                LIVE
+              </span>
+            )}
+            <span className="text-[10px] text-zinc-400 font-mono">{fmtAgo(deal.ts)}</span>
+          </div>
         </div>
 
         {/* Media Showcase */}
@@ -672,11 +733,21 @@ function DealCard({
             <Category3DPlaceholder category={deal.category} />
           )}
 
-          {/* Badges */}
+          {/* Loot Badges in Media Box */}
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
+            {isSuperLoot && (
+              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-red-500 to-amber-500 text-white font-mono text-[9px] font-black shadow-md shadow-red-500/30 flex items-center gap-1">
+                <span>🔥</span> SUPER LOOT
+              </span>
+            )}
+            {isUnder299 && !isSuperLoot && (
+              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-mono text-[9px] font-black shadow-md shadow-cyan-500/30 flex items-center gap-1">
+                <span>⚡</span> UNDER ₹299
+              </span>
+            )}
             {deal.discount > 0 && (
               <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-slate-950 font-mono text-[10px] font-black shadow-md shadow-amber-500/25 flex items-center gap-1">
-                <span>🔥</span> {Math.round(deal.discount)}% OFF
+                {Math.round(deal.discount)}% OFF
               </span>
             )}
             {deal.imgUrl && (
@@ -689,6 +760,40 @@ function DealCard({
                 <Download size={12} />
               </button>
             )}
+          </div>
+
+          {/* Quick Action Floating Bar on Card Hover */}
+          <div
+            className="absolute bottom-2 inset-x-2 z-30 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={handleCopyPost}
+              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-emerald-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              title="Copy formatted deal post"
+            >
+              {copied ? <Check size={11} className="text-emerald-400 stroke-[3]" /> : <Copy size={11} />}
+              <span>{copied ? "Copied!" : "Copy Post"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenStore}
+              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-blue-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              title="Open product link"
+            >
+              <ExternalLink size={11} />
+              <span>Store</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit(deal); }}
+              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-amber-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              title="Edit & Tune"
+            >
+              <PenLine size={11} />
+              <span>Tune</span>
+            </button>
           </div>
 
           {(bulkMode || selected) && (
@@ -729,13 +834,13 @@ function DealCard({
           <div className="pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
             {deal.status === "pending" ? (
               <div className="flex items-center gap-2">
-                <button onClick={() => onReject(deal.id)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Skip">
+                <button onClick={() => handleRejectWithSound(deal.id)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Skip">
                   <X size={14} strokeWidth={2.5} /><span className="ml-1">Skip</span>
                 </button>
                 <button onClick={() => onEdit(deal)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer flex-1" title="Edit & Tune">
                   <PenLine size={13} /><span className="ml-1.5">Edit & Tune</span>
                 </button>
-                <button onClick={() => onApprove(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-1 transition-all" title="Approve & Broadcast">
+                <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-1 transition-all" title="Approve & Broadcast">
                   <Check size={15} strokeWidth={3} /><span>Approve</span>
                 </button>
               </div>
@@ -1719,6 +1824,15 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [mobileMode, setMobileMode] = useState<"stream" | "swipe">("stream");
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedSplitId, setSelectedSplitId] = useState<string | null>(null);
+  const [smartPreset, setSmartPreset] = useState<string>("all");
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
+  const [soundMuted, setSoundMutedState] = useState<boolean>(isSoundMuted());
+
+  const handleToggleSound = () => {
+    const next = toggleSound();
+    setSoundMutedState(next);
+    toast.info(next ? "🔇 Audio haptics muted" : "🔊 Audio haptics enabled");
+  };
 
   useEffect(() => {
     fetchPromos().then(setPromos);
@@ -1804,6 +1918,21 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
       const q = search.toLowerCase();
       return d.title.toLowerCase().includes(q) || (d.channel || "").toLowerCase().includes(q);
     }
+    if (smartPreset === "super_loot") {
+      const isSuper = (d.discount >= 70) || (d.mrp - d.price >= 1500);
+      if (!isSuper) return false;
+    } else if (smartPreset === "under_499") {
+      if (!(d.price > 0 && d.price <= 499)) return false;
+    } else if (smartPreset === "electronics") {
+      const cat = d.category.toLowerCase();
+      if (!cat.includes("electronics") && !cat.includes("audio") && !cat.includes("computer") && !cat.includes("gaming")) return false;
+    } else if (smartPreset === "fashion") {
+      const cat = d.category.toLowerCase();
+      if (!cat.includes("fashion") && !cat.includes("footwear") && !cat.includes("beauty")) return false;
+    } else if (smartPreset === "grocery") {
+      const cat = d.category.toLowerCase();
+      if (!cat.includes("grocery") && !cat.includes("food")) return false;
+    }
     return true;
   });
 
@@ -1829,6 +1958,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     if (ids.length === 0) return;
     toast.success(`Approving & broadcasting ${ids.length} deals...`);
     triggerApproveConfetti();
+    playApprove();
     for (const id of ids) {
       onApprove(id);
     }
@@ -1840,6 +1970,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     toast.info(`Skipping ${ids.length} deals...`);
+    playReject();
     for (const id of ids) {
       onReject(id);
     }
@@ -1855,6 +1986,83 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const pending = deals.filter(d => d.status === "pending").length;
   const approved = deals.filter(d => d.status === "approved").length;
   const rejected = deals.filter(d => d.status === "rejected").length;
+
+  // Velocity and Smart Curation Telemetry
+  const superLootCount = deals.filter(d => (filter === "all" || d.status === filter) && ((d.discount >= 70) || (d.mrp - d.price >= 1500))).length;
+  const under499Count = deals.filter(d => (filter === "all" || d.status === filter) && d.price > 0 && d.price <= 499).length;
+  const approvedToday = deals.filter(d => d.status === "approved" && (Date.now() / 1000 - d.ts) < 86400).length;
+  const totalQueueSavings = visible.reduce((acc, d) => acc + (d.mrp > d.price ? d.mrp - d.price : 0), 0);
+  const avgDiscount = visible.length > 0 ? Math.round(visible.reduce((acc, d) => acc + (d.discount || 0), 0) / visible.length) : 0;
+
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [page, smartPreset, filter, selectedChannel, selectedStore]);
+
+  // Pro Curation Keyboard Shortcuts: J, K, A, X, E, C, O
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+        return;
+      }
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIndex(prev => {
+          const next = Math.min(pagedVisible.length - 1, prev + 1);
+          playTick();
+          return next;
+        });
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex(prev => {
+          const next = Math.max(0, prev - 1);
+          playTick();
+          return next;
+        });
+      } else if (e.key.toLowerCase() === "a") {
+        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
+          e.preventDefault();
+          const targetDeal = pagedVisible[activeIndex];
+          if (targetDeal.status === "pending") {
+            playApprove();
+            onApprove(targetDeal.id);
+          }
+        }
+      } else if (e.key.toLowerCase() === "x") {
+        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
+          e.preventDefault();
+          const targetDeal = pagedVisible[activeIndex];
+          if (targetDeal.status === "pending") {
+            playReject();
+            onReject(targetDeal.id);
+          }
+        }
+      } else if (e.key.toLowerCase() === "e") {
+        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
+          e.preventDefault();
+          onEdit(pagedVisible[activeIndex]);
+        }
+      } else if (e.key.toLowerCase() === "c") {
+        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
+          e.preventDefault();
+          const d = pagedVisible[activeIndex];
+          const postText = d.affText || d.originalText || `${d.title} @ ₹${d.price}`;
+          navigator.clipboard.writeText(postText);
+          playCopy();
+          toast.success("📋 Deal post copied!");
+        }
+      } else if (e.key.toLowerCase() === "o") {
+        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
+          e.preventDefault();
+          const d = pagedVisible[activeIndex];
+          const urlMatch = (d.affText || d.originalText || "").match(/https?:\/\/\S+/);
+          if (urlMatch) window.open(urlMatch[0], "_blank");
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeIndex, pagedVisible, onApprove, onReject, onEdit]);
 
   const storeOptions: DropdownOption[] = [
     { value: "All", label: "All Stores", icon: "🛍️" },
@@ -1965,6 +2173,18 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
               }`}
             >
               <Send size={11} /> <span>TG</span>
+            </button>
+            <button
+              onClick={handleToggleSound}
+              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 ${
+                soundMuted
+                  ? "bg-white/[0.04] border-white/10 text-slate-400 opacity-60 hover:opacity-100"
+                  : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 shadow-sm"
+              }`}
+              title={soundMuted ? "Audio Haptics Muted (Click to enable)" : "Audio Haptics Enabled (Click to mute)"}
+            >
+              {soundMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+              <span className="hidden lg:inline">{soundMuted ? "Muted" : "Audio"}</span>
             </button>
           </div>
         </div>
@@ -2143,6 +2363,57 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
               />
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* ─── CURATOR VELOCITY & SMART PRESET PULSE BAR ─── */}
+      <div className="flex-shrink-0 px-3 sm:px-6 py-2 bg-[#090B14]/90 border-b border-white/6 flex items-center justify-between gap-3 flex-wrap relative z-30">
+        {/* Left: Velocity Metrics */}
+        <div className="flex items-center gap-2 font-mono text-[11px]">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-bold">
+            <TrendingUp size={12} className="text-emerald-400" />
+            <span>{approvedToday} Approved Today</span>
+          </div>
+          {totalQueueSavings > 0 && (
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium">
+              <span>💰</span>
+              <span>₹{totalQueueSavings.toLocaleString("en-IN")} Savings In View</span>
+            </div>
+          )}
+          {avgDiscount > 0 && (
+            <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 font-medium">
+              <span>🔥</span>
+              <span>Avg {avgDiscount}% Off</span>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Smart Filter Presets */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
+          {[
+            { id: "all", label: "All Deals" },
+            { id: "super_loot", label: "🔥 Super Loot", count: superLootCount },
+            { id: "under_499", label: "⚡ Under ₹499", count: under499Count },
+            { id: "electronics", label: "📱 Tech" },
+            { id: "fashion", label: "👗 Fashion" },
+            { id: "grocery", label: "🛒 Grocery" },
+          ].map(p => (
+            <button
+              key={p.id}
+              onClick={() => { setSmartPreset(p.id); setPage(1); }}
+              className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 active:scale-95 ${
+                smartPreset === p.id
+                  ? "bg-white/20 text-white border border-white/30 shadow-sm"
+                  : "bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] border border-white/5"
+              }`}
+            >
+              <span>{p.label}</span>
+              {p.count !== undefined && (
+                <span className="text-[9px] font-mono opacity-80 font-normal">({p.count})</span>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -2344,6 +2615,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
+                  isActive={pagedVisible[activeIndex]?.id === d.id}
                 />
               ))}
             </AnimatePresence>
@@ -2489,6 +2761,24 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           </button>
         </div>
       )}
+
+      {/* Floating Keyboard Navigation HUD (Desktop Pro Mode) */}
+      <div className="hidden lg:flex fixed bottom-4 right-6 z-40 items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/90 border border-emerald-500/30 shadow-2xl backdrop-blur-xl text-[11px] font-mono text-zinc-300 pointer-events-none">
+        <div className="flex items-center gap-1 text-emerald-400 font-bold">
+          <Keyboard size={13} />
+          <span>Pro</span>
+        </div>
+        <span className="text-zinc-600">•</span>
+        <span className="text-zinc-400"><kbd className="px-1 py-0.5 rounded bg-white/10 text-white text-[10px]">J</kbd>/<kbd className="px-1 py-0.5 rounded bg-white/10 text-white text-[10px]">K</kbd> Nav</span>
+        <span className="text-zinc-600">•</span>
+        <span className="text-emerald-300"><kbd className="px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">A</kbd> Post</span>
+        <span className="text-zinc-600">•</span>
+        <span className="text-rose-300"><kbd className="px-1 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px]">X</kbd> Skip</span>
+        <span className="text-zinc-600">•</span>
+        <span className="text-amber-300"><kbd className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px]">E</kbd> Tune</span>
+        <span className="text-zinc-600">•</span>
+        <span className="text-cyan-300"><kbd className="px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px]">C</kbd> Copy</span>
+      </div>
     </div>
   );
 }
