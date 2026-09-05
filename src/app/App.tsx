@@ -11,7 +11,7 @@ import {
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
   LayoutGrid, List, Columns, Smartphone, Layers, CornerDownLeft, Command,
-  Volume2, VolumeX, Keyboard, TrendingUp
+  Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History
 } from "lucide-react";
 import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
@@ -22,7 +22,7 @@ import {
 } from "./components/Iconscout3DAssets";
 import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
 import {
-  playApprove, playReject, playCopy, playTick,
+  playApprove, playReject, playCopy, playTick, playGlitch, playUndo,
   isSoundMuted, toggleSound
 } from "./utils/soundFX";
 
@@ -519,7 +519,7 @@ function DealCard({
   isActive = false,
 }: {
   deal: Deal;
-  onApprove: (id: string) => void;
+  onApprove: (id: string, changes?: Partial<Deal>) => void;
   onReject: (id: string) => void;
   onEdit: (deal: Deal) => void;
   selected?: boolean;
@@ -530,11 +530,16 @@ function DealCard({
   const [lightbox, setLightbox] = useState(false);
   const [imgErr, setImgErr] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copyPlatform, setCopyPlatform] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [showArbitrage, setShowArbitrage] = useState(false);
+
   const store = getStoreBadge(deal.platforms, deal.affText);
   const savings = deal.mrp > deal.price ? deal.mrp - deal.price : 0;
   const isSuperLoot = (deal.discount >= 70) || (savings >= 1500);
   const isUnder299 = deal.price > 0 && deal.price <= 299;
   const isFresh = (Date.now() / 1000 - deal.ts) < 900;
+  const isGlitch = (deal.discount >= 80 && deal.mrp >= 1000) || (deal.price > 0 && deal.price <= 99 && deal.mrp >= 999) || (savings >= 3500);
 
   const handleCopyPost = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -544,6 +549,40 @@ function DealCard({
     playCopy();
     toast.success("📋 Deal post copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCopyWA = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const urlMatch = (deal.affText || deal.originalText || "").match(/https?:\/\/\S+/);
+    const link = urlMatch ? urlMatch[0] : "";
+    const waText = `🔥 *${deal.title}*\n\n💰 *Price:* ₹${deal.price} ~₹${deal.mrp}~\n📉 *Discount:* ${Math.round(deal.discount)}% OFF (${store.label})\n\n🔗 *Buy Now:* ${link}\n\n⚡ _Loot fast before price changes!_`;
+    navigator.clipboard.writeText(waText);
+    playCopy();
+    setCopyPlatform("wa");
+    toast.success("💬 Copied in WhatsApp Broadcast format (*bold*, ~strike~)");
+    setTimeout(() => setCopyPlatform(null), 2000);
+  };
+
+  const handleCopyX = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const urlMatch = (deal.affText || deal.originalText || "").match(/https?:\/\/\S+/);
+    const link = urlMatch ? urlMatch[0] : "";
+    const shortTitle = deal.title.length > 90 ? deal.title.slice(0, 87) + "..." : deal.title;
+    const xText = `🚨 LOOT DEAL: ${shortTitle}\n\n₹${deal.price} (MRP ₹${deal.mrp}, ${Math.round(deal.discount)}% OFF)\n\n🛒 ${link}\n\n#Deals #Loot #Discounts #${store.tag.toUpperCase()}`;
+    navigator.clipboard.writeText(xText);
+    playCopy();
+    setCopyPlatform("x");
+    toast.success("🐦 Copied for X/Twitter (<280 chars with hashtags)");
+    setTimeout(() => setCopyPlatform(null), 2000);
+  };
+
+  const handlePostGlitch = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    playGlitch();
+    const glitchHeader = `🚨 *PRICE ERROR / LOOT GLITCH DETECTED!* 🚨\n⚡ *MRP ₹${deal.mrp} dropped to ₹${deal.price}! (${Math.round(deal.discount)}% OFF)*\n\n`;
+    const updatedAffText = `${glitchHeader}${deal.affText || deal.originalText}\n\n⚠️ *Hurry! Price glitch may get corrected anytime!*`;
+    onApprove(deal.id, { affText: updatedAffText });
+    toast.success("🚨 Posted as Price Error Glitch!");
   };
 
   const handleOpenStore = (e: React.MouseEvent) => {
@@ -571,6 +610,11 @@ function DealCard({
     <motion.div layout
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      }}
+      onMouseLeave={() => setMousePos(null)}
       className={`pro-card rounded-2xl overflow-hidden flex flex-col group relative transition-all ${
         selected ? "ring-2 ring-indigo-400 bg-indigo-500/10 border-indigo-400/50 shadow-lg shadow-indigo-500/20" : ""
       } ${isActive ? "ring-2 ring-emerald-400/90 shadow-[0_0_30px_rgba(16,185,129,0.35)] scale-[1.01] bg-emerald-500/[0.04]" : ""}`}>
@@ -578,10 +622,20 @@ function DealCard({
       {/* Brand-Reactive Top Border Accent Line */}
       <div className={`absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r ${getStoreAura(store.tag)} z-30 opacity-90`} />
 
+      {/* Hardware-Accelerated Specular Cursor Light Cone */}
+      {mousePos && (
+        <div
+          className="pointer-events-none absolute inset-0 z-10 transition-opacity duration-200 opacity-60 group-hover:opacity-100 rounded-2xl overflow-hidden"
+          style={{
+            background: `radial-gradient(350px circle at ${mousePos.x}px ${mousePos.y}px, rgba(99, 102, 241, 0.08), transparent 65%)`,
+          }}
+        />
+      )}
+
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
       {/* ─── MOBILE LAYOUT: Compact Modern Split Specimen (sm:hidden) ─── */}
-      <div className="flex sm:hidden p-2.5 gap-2.5 items-center">
+      <div className="flex sm:hidden p-2.5 gap-2.5 items-center relative z-20">
         {/* Left: Square Media Box */}
         <div
           className="relative w-24 h-24 rounded-xl bg-[#080911] border border-white/8 flex items-center justify-center p-1.5 flex-shrink-0 cursor-zoom-in overflow-hidden"
@@ -596,6 +650,12 @@ function DealCard({
           {deal.discount > 0 && (
             <span className="absolute top-1 left-1 px-1.5 py-0.2 rounded-md bg-amber-400 text-slate-950 font-mono text-[9px] font-black shadow-sm">
               {Math.round(deal.discount)}%
+            </span>
+          )}
+
+          {isGlitch && (
+            <span className="absolute bottom-1 left-1 px-1 rounded-md bg-red-600 text-white font-mono text-[8px] font-black shadow-sm animate-pulse">
+              🚨 GLITCH
             </span>
           )}
 
@@ -664,18 +724,27 @@ function DealCard({
               <>
                 <button
                   onClick={() => handleRejectWithSound(deal.id)}
-                  className="h-7 px-2.5 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer"
+                  className="h-7 px-2 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer"
                   title="Skip"
                 >
                   <X size={12} strokeWidth={2.5} />
                 </button>
                 <button
                   onClick={() => onEdit(deal)}
-                  className="h-7 px-2.5 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer flex-1 gap-1"
+                  className="h-7 px-2 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer flex-1 gap-1"
                   title="Edit & Tune"
                 >
                   <PenLine size={11} /> <span>Tune</span>
                 </button>
+                {isGlitch && (
+                  <button
+                    onClick={handlePostGlitch}
+                    className="h-7 px-2 rounded-lg text-[10px] font-black text-white flex items-center justify-center gap-1 bg-red-600 hover:bg-red-500 active:scale-95 shadow-sm shadow-red-600/30 cursor-pointer"
+                    title="Post Glitch"
+                  >
+                    <span>🚨</span>
+                  </button>
+                )}
                 <button
                   onClick={() => handleApproveWithSound(deal.id)}
                   className="h-7 px-3 rounded-lg text-[11px] font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-sm shadow-emerald-500/20 cursor-pointer flex-1"
@@ -696,7 +765,7 @@ function DealCard({
       </div>
 
       {/* ─── DESKTOP/TABLET LAYOUT: Luxury Specimen Showcase Card (hidden sm:flex) ─── */}
-      <div className="hidden sm:flex flex-col flex-1">
+      <div className="hidden sm:flex flex-col flex-1 relative z-20">
         {/* Header */}
         <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/6 bg-white/[0.02]">
           <div className="flex items-center gap-2 min-w-0">
@@ -734,13 +803,19 @@ function DealCard({
           )}
 
           {/* Loot Badges in Media Box */}
-          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5">
-            {isSuperLoot && (
+          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 flex-wrap justify-end">
+            {isGlitch && (
+              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 text-white font-mono text-[9px] font-black shadow-lg shadow-red-600/40 flex items-center gap-1 border border-red-400/50 animate-pulse">
+                <AlertTriangle size={10} className="text-amber-200 fill-amber-200" />
+                <span>🚨 GLITCH</span>
+              </span>
+            )}
+            {isSuperLoot && !isGlitch && (
               <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-red-500 to-amber-500 text-white font-mono text-[9px] font-black shadow-md shadow-red-500/30 flex items-center gap-1">
                 <span>🔥</span> SUPER LOOT
               </span>
             )}
-            {isUnder299 && !isSuperLoot && (
+            {isUnder299 && !isSuperLoot && !isGlitch && (
               <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-mono text-[9px] font-black shadow-md shadow-cyan-500/30 flex items-center gap-1">
                 <span>⚡</span> UNDER ₹299
               </span>
@@ -762,24 +837,50 @@ function DealCard({
             )}
           </div>
 
-          {/* Quick Action Floating Bar on Card Hover */}
+          {/* Quick Action Floating Bar on Card Hover (Multi-Platform Copy & Actions) */}
           <div
-            className="absolute bottom-2 inset-x-2 z-30 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto"
+            className="absolute bottom-2 inset-x-2 z-30 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto flex-wrap"
             onClick={e => e.stopPropagation()}
           >
+            {isGlitch && deal.status === "pending" && (
+              <button
+                type="button"
+                onClick={handlePostGlitch}
+                className="px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white hover:brightness-110 border border-red-400/60 shadow-xl shadow-red-600/40 flex items-center gap-1 cursor-pointer active:scale-95 transition-all animate-pulse"
+                title="1-Click Post as Price Error Glitch"
+              >
+                <span>🚨 Post Glitch</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={handleCopyPost}
-              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-emerald-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-              title="Copy formatted deal post"
+              className="px-2 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-emerald-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+              title="Copy Telegram formatted deal post"
             >
               {copied ? <Check size={11} className="text-emerald-400 stroke-[3]" /> : <Copy size={11} />}
-              <span>{copied ? "Copied!" : "Copy Post"}</span>
+              <span>{copied ? "Copied" : "Post"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyWA}
+              className="px-2 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-emerald-400 hover:text-emerald-300 hover:bg-black border border-emerald-500/30 backdrop-blur-md shadow-xl flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+              title="Copy in WhatsApp Broadcast format (*bold*, ~strike~)"
+            >
+              <span>{copyPlatform === "wa" ? "✓ WA" : "💬 WA"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyX}
+              className="px-2 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-sky-400 hover:text-sky-300 hover:bg-black border border-sky-500/30 backdrop-blur-md shadow-xl flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
+              title="Copy for X/Twitter (<280 chars with tags)"
+            >
+              <span>{copyPlatform === "x" ? "✓ X" : "🐦 X"}</span>
             </button>
             <button
               type="button"
               onClick={handleOpenStore}
-              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-blue-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              className="px-2 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-blue-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
               title="Open product link"
             >
               <ExternalLink size={11} />
@@ -788,7 +889,7 @@ function DealCard({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onEdit(deal); }}
-              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-amber-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+              className="px-2 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-amber-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
               title="Edit & Tune"
             >
               <PenLine size={11} />
@@ -828,6 +929,75 @@ function DealCard({
                 <span className="text-xs font-black text-amber-400 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg"><span>⚡</span> Freebie Loot</span>
               )}
             </div>
+
+            {/* ─── CROSS-CHANNEL DUPLICATE ARBITRAGE & PRICE MATRIX DRAWER ─── */}
+            {((deal.clusterCount && deal.clusterCount > 1) || (deal.clusterChannels && deal.clusterChannels.length > 1)) && (
+              <div className="mt-2.5 pt-2 border-t border-white/6">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setShowArbitrage(!showArbitrage); }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-[10.5px] text-indigo-300 font-semibold cursor-pointer transition-all"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Layers size={12} className="text-indigo-400" />
+                    <span>Cross-Channel: {deal.clusterCount || deal.clusterChannels?.length} Sources</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                    {deal.bestPrice && deal.bestPrice < deal.price && (
+                      <span className="text-emerald-400 font-bold bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 rounded-md">
+                        Best ₹{deal.bestPrice}
+                      </span>
+                    )}
+                    {showArbitrage ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </div>
+                </button>
+
+                <AnimatePresence>
+                  {showArbitrage && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-1.5 p-2 rounded-xl bg-black/50 border border-white/10 flex flex-col gap-1.5 text-[10px]"
+                    >
+                      <div className="text-[9px] uppercase tracking-wider text-zinc-500 font-mono flex items-center justify-between px-1">
+                        <span>Channel Source</span>
+                        <span>Price Logged</span>
+                      </div>
+                      {(deal.clusterChannels || []).map((c, i) => {
+                        const isLowest = deal.bestPrice && c.price === deal.bestPrice;
+                        return (
+                          <div key={i} className="flex items-center justify-between px-1 py-1 rounded-lg bg-white/[0.02]">
+                            <span className="truncate max-w-[140px] text-zinc-300 font-medium">{toChName(c.channel || c.name)}</span>
+                            <span className="font-mono font-bold text-white flex items-center gap-1">
+                              {c.price ? `₹${c.price}` : "—"}
+                              {isLowest && (
+                                <span className="text-emerald-400 text-[9px] font-bold bg-emerald-500/20 border border-emerald-500/30 px-1 rounded">
+                                  ★ Lowest
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {deal.bestPrice && deal.bestPrice < deal.price && deal.status === "pending" && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onApprove(deal.id, { price: deal.bestPrice });
+                            toast.success(`Adopted lower price: ₹${deal.bestPrice}`);
+                          }}
+                          className="mt-1 w-full py-1 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-[10.5px] font-bold text-center cursor-pointer transition-all"
+                        >
+                          ✨ Adopt Lowest Price (₹{deal.bestPrice})
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
           </div>
 
           {/* Footer Buttons */}
@@ -870,7 +1040,7 @@ function DealTableRow({
   selected?: boolean;
   bulkMode?: boolean;
   isActive?: boolean;
-  onApprove: (id: string) => void;
+  onApprove: (id: string, changes?: Partial<Deal>) => void;
   onReject: (id: string) => void;
   onEdit: (deal: Deal) => void;
   onToggleSelect?: (id: string) => void;
@@ -1803,7 +1973,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 // ─── Review View ──────────────────────────────────────────────────────────────
 // ─── Review View ──────────────────────────────────────────────────────────────
 function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, dark }: {
-  deals: Deal[]; onApprove: (id: string) => void;
+  deals: Deal[]; onApprove: (id: string, changes?: Partial<Deal>) => void;
   onReject: (id: string) => void; onEdit: (d: Deal) => void;
   onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
 }) {
@@ -1828,6 +1998,15 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [soundMuted, setSoundMutedState] = useState<boolean>(isSoundMuted());
 
+  // Frontier Undo Buffer & Telemetry State
+  const [undoState, setUndoState] = useState<{
+    deal: Deal;
+    prevStatus: DealStatus;
+    action: "approved" | "rejected";
+    expiresAt: number;
+  } | null>(null);
+  const [showTelemetry, setShowTelemetry] = useState(false);
+
   const handleToggleSound = () => {
     const next = toggleSound();
     setSoundMutedState(next);
@@ -1837,6 +2016,52 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   useEffect(() => {
     fetchPromos().then(setPromos);
   }, []);
+
+  // 5-Second Undo Expiry Timer
+  useEffect(() => {
+    if (!undoState) return;
+    const interval = setInterval(() => {
+      if (Date.now() >= undoState.expiresAt) {
+        setUndoState(null);
+      }
+    }, 200);
+    return () => clearInterval(interval);
+  }, [undoState]);
+
+  const handleApproveWithUndo = (id: string, changes?: Partial<Deal>) => {
+    const target = deals.find(d => d.id === id);
+    onApprove(id, changes);
+    if (target) {
+      setUndoState({
+        deal: target,
+        prevStatus: target.status,
+        action: "approved",
+        expiresAt: Date.now() + 5000,
+      });
+    }
+  };
+
+  const handleRejectWithUndo = (id: string) => {
+    const target = deals.find(d => d.id === id);
+    onReject(id);
+    if (target) {
+      setUndoState({
+        deal: target,
+        prevStatus: target.status,
+        action: "rejected",
+        expiresAt: Date.now() + 5000,
+      });
+    }
+  };
+
+  const handlePerformUndo = () => {
+    if (!undoState) return;
+    const { deal, prevStatus } = undoState;
+    playUndo();
+    onApprove(deal.id, { status: prevStatus });
+    toast.info(`↩️ Reverted action on "${deal.title.slice(0, 24)}..."`);
+    setUndoState(null);
+  };
 
   // Cmd+K / Ctrl+K Universal Command Palette
   useEffect(() => {
@@ -1849,7 +2074,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     window.addEventListener("keydown", handleCmdK);
     return () => window.removeEventListener("keydown", handleCmdK);
   }, []);
-
 
   const handleQuickDrop = async (url: string) => {
     const cleanUrl = url.trim();
@@ -1907,6 +2131,47 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     .filter(ch => Boolean(ch) && ch.toLowerCase() !== "unknown" && ch.toLowerCase() !== "dh")
     .sort();
 
+  // Linear/Gmail-Style Power Operator Search Parser
+  const parseSearchQuery = (query: string) => {
+    const tokens = query.trim().split(/\s+/);
+    const ops: {
+      maxPrice?: number;
+      minPrice?: number;
+      minDiscount?: number;
+      store?: string;
+      channel?: string;
+      isGlitch?: boolean;
+      isSuper?: boolean;
+      textWords: string[];
+    } = { textWords: [] };
+
+    for (const token of tokens) {
+      if (!token) continue;
+      const lower = token.toLowerCase();
+      if (lower.startsWith("p:<")) {
+        const val = parseFloat(lower.replace("p:<", ""));
+        if (!isNaN(val)) ops.maxPrice = val;
+      } else if (lower.startsWith("p:>")) {
+        const val = parseFloat(lower.replace("p:>", ""));
+        if (!isNaN(val)) ops.minPrice = val;
+      } else if (lower.startsWith("d:>")) {
+        const val = parseFloat(lower.replace("d:>", ""));
+        if (!isNaN(val)) ops.minDiscount = val;
+      } else if (lower.startsWith("s:")) {
+        ops.store = lower.replace("s:", "");
+      } else if (lower.startsWith("ch:")) {
+        ops.channel = lower.replace("ch:", "");
+      } else if (lower === "is:glitch" || lower === "glitch:true") {
+        ops.isGlitch = true;
+      } else if (lower === "is:super" || lower === "super:true") {
+        ops.isSuper = true;
+      } else {
+        ops.textWords.push(lower);
+      }
+    }
+    return ops;
+  };
+
   let visible = deals.filter(d => {
     if (selectedChannel !== "All" && d.channel !== selectedChannel) return false;
     if (selectedStore !== "All") {
@@ -1915,8 +2180,31 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     }
     if (filter !== "all" && filter !== "promos" && d.status !== filter) return false;
     if (search.trim() && !isSearchUrl) {
-      const q = search.toLowerCase();
-      return d.title.toLowerCase().includes(q) || (d.channel || "").toLowerCase().includes(q);
+      const ops = parseSearchQuery(search);
+      if (ops.maxPrice !== undefined && d.price > ops.maxPrice) return false;
+      if (ops.minPrice !== undefined && d.price < ops.minPrice) return false;
+      if (ops.minDiscount !== undefined && d.discount < ops.minDiscount) return false;
+      if (ops.store) {
+        const store = getStoreBadge(d.platforms, d.affText);
+        if (!store.tag.toLowerCase().includes(ops.store)) return false;
+      }
+      if (ops.channel) {
+        if (!(d.channel || "").toLowerCase().includes(ops.channel)) return false;
+      }
+      if (ops.isGlitch) {
+        const savings = d.mrp > d.price ? d.mrp - d.price : 0;
+        const isGlitch = (d.discount >= 80 && d.mrp >= 1000) || (d.price > 0 && d.price <= 99 && d.mrp >= 999) || (savings >= 3500);
+        if (!isGlitch) return false;
+      }
+      if (ops.isSuper) {
+        const isSuper = (d.discount >= 70) || (d.mrp - d.price >= 1500);
+        if (!isSuper) return false;
+      }
+      if (ops.textWords.length > 0) {
+        const searchable = `${d.title} ${d.channel} ${d.category} ${d.originalText}`.toLowerCase();
+        const allMatch = ops.textWords.every(w => searchable.includes(w));
+        if (!allMatch) return false;
+      }
     }
     if (smartPreset === "super_loot") {
       const isSuper = (d.discount >= 70) || (d.mrp - d.price >= 1500);
@@ -1994,16 +2282,90 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const totalQueueSavings = visible.reduce((acc, d) => acc + (d.mrp > d.price ? d.mrp - d.price : 0), 0);
   const avgDiscount = visible.length > 0 ? Math.round(visible.reduce((acc, d) => acc + (d.discount || 0), 0) / visible.length) : 0;
 
+  // Telemetry Store Share Calculations
+  const storeCounts = visible.reduce((acc, d) => {
+    const store = getStoreBadge(d.platforms, d.affText).tag.toLowerCase();
+    acc[store] = (acc[store] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const totalVisible = Math.max(1, visible.length);
+  const storeColors: Record<string, { label: string; bg: string; text: string }> = {
+    amazon: { label: "Amazon", bg: "bg-[#FF9900]", text: "text-[#FF9900]" },
+    flipkart: { label: "Flipkart", bg: "bg-[#2874F0]", text: "text-[#2874F0]" },
+    myntra: { label: "Myntra", bg: "bg-[#FF3F6C]", text: "text-[#FF3F6C]" },
+    desidime: { label: "DesiDime", bg: "bg-[#E53935]", text: "text-[#E53935]" },
+    ajio: { label: "AJIO", bg: "bg-[#00B4D8]", text: "text-[#00B4D8]" },
+    other: { label: "Other", bg: "bg-[#8B5CF6]", text: "text-[#8B5CF6]" },
+  };
+
+  const handleExportCSV = () => {
+    if (visible.length === 0) {
+      toast.info("No deals in current view to export");
+      return;
+    }
+    const headers = ["ID", "Title", "Price (INR)", "MRP (INR)", "Discount (%)", "Store", "Channel", "Status", "Date", "Affiliate Link"];
+    const rows = visible.map(d => {
+      const store = getStoreBadge(d.platforms, d.affText);
+      const linkMatch = (d.affText || d.originalText || "").match(/https?:\/\/\S+/);
+      const link = linkMatch ? linkMatch[0] : "";
+      const dateStr = new Date(d.ts * 1000).toISOString();
+      return [
+        `"${d.id}"`,
+        `"${(d.title || "").replace(/"/g, '""')}"`,
+        d.price || 0,
+        d.mrp || 0,
+        Math.round(d.discount || 0),
+        `"${store.tag}"`,
+        `"${(d.channel || "").replace(/"/g, '""')}"`,
+        `"${d.status}"`,
+        `"${dateStr}"`,
+        `"${link}"`,
+      ].join(",");
+    });
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `dealflow_deals_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`📊 Exported ${visible.length} deals to CSV!`);
+  };
+
+  const handleExportJSON = () => {
+    if (visible.length === 0) {
+      toast.info("No deals in current view to export");
+      return;
+    }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(visible, null, 2));
+    const link = document.createElement("a");
+    link.setAttribute("href", dataStr);
+    link.setAttribute("download", `dealflow_deals_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(`📥 Exported ${visible.length} deals to JSON!`);
+  };
+
   useEffect(() => {
     setActiveIndex(-1);
   }, [page, smartPreset, filter, selectedChannel, selectedStore]);
 
-  // Pro Curation Keyboard Shortcuts: J, K, A, X, E, C, O
+  // Pro Curation Keyboard Shortcuts: J, K, A, X, E, C, O, Ctrl+Z
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
         return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
+        if (undoState) {
+          e.preventDefault();
+          handlePerformUndo();
+          return;
+        }
       }
       if (e.key === "j" || e.key === "ArrowDown") {
         e.preventDefault();
@@ -2025,7 +2387,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           const targetDeal = pagedVisible[activeIndex];
           if (targetDeal.status === "pending") {
             playApprove();
-            onApprove(targetDeal.id);
+            handleApproveWithUndo(targetDeal.id);
           }
         }
       } else if (e.key.toLowerCase() === "x") {
@@ -2034,7 +2396,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           const targetDeal = pagedVisible[activeIndex];
           if (targetDeal.status === "pending") {
             playReject();
-            onReject(targetDeal.id);
+            handleRejectWithUndo(targetDeal.id);
           }
         }
       } else if (e.key.toLowerCase() === "e") {
@@ -2062,7 +2424,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIndex, pagedVisible, onApprove, onReject, onEdit]);
+  }, [activeIndex, pagedVisible, onApprove, onReject, onEdit, undoState]);
 
   const storeOptions: DropdownOption[] = [
     { value: "All", label: "All Stores", icon: "🛍️" },
@@ -2187,6 +2549,32 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
               <span className="hidden lg:inline">{soundMuted ? "Muted" : "Audio"}</span>
             </button>
           </div>
+        </div>
+
+        {/* Linear-Style Power Operator Suggestion Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[10.5px]">
+          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-wider flex-shrink-0">⚡ Operators:</span>
+          {[
+            { label: "p:<500", desc: "< ₹500" },
+            { label: "d:>70", desc: ">70% Off" },
+            { label: "is:glitch", desc: "Price Error" },
+            { label: "s:amazon", desc: "Amazon" },
+            { label: "s:flipkart", desc: "Flipkart" },
+            { label: "ch:genie", desc: "Genie" },
+          ].map(op => (
+            <button
+              key={op.label}
+              type="button"
+              onClick={() => {
+                setSearch(prev => (prev ? `${prev.trim()} ${op.label}` : op.label));
+                setPage(1);
+              }}
+              className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10 font-mono flex-shrink-0 cursor-pointer active:scale-95 transition-all flex items-center gap-1"
+            >
+              <span className="text-indigo-400 font-bold">{op.label}</span>
+              <span className="text-zinc-500 hidden sm:inline font-sans">({op.desc})</span>
+            </button>
+          ))}
         </div>
 
         {/* ─── MOBILE CONTROLS (2-Tier High-Efficiency Layout on sm:hidden) ─── */}
@@ -2388,34 +2776,129 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           )}
         </div>
 
-        {/* Right: Smart Filter Presets */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
-          {[
-            { id: "all", label: "All Deals" },
-            { id: "super_loot", label: "🔥 Super Loot", count: superLootCount },
-            { id: "under_499", label: "⚡ Under ₹499", count: under499Count },
-            { id: "electronics", label: "📱 Tech" },
-            { id: "fashion", label: "👗 Fashion" },
-            { id: "grocery", label: "🛒 Grocery" },
-          ].map(p => (
-            <button
-              key={p.id}
-              onClick={() => { setSmartPreset(p.id); setPage(1); }}
-              className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 active:scale-95 ${
-                smartPreset === p.id
-                  ? "bg-white/20 text-white border border-white/30 shadow-sm"
-                  : "bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] border border-white/5"
-              }`}
-            >
-              <span>{p.label}</span>
-              {p.count !== undefined && (
-                <span className="text-[9px] font-mono opacity-80 font-normal">({p.count})</span>
-              )}
-            </button>
-          ))}
+        {/* Right: Smart Filter Presets & Telemetry Toggle */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
+            {[
+              { id: "all", label: "All Deals" },
+              { id: "super_loot", label: "🔥 Super Loot", count: superLootCount },
+              { id: "under_499", label: "⚡ Under ₹499", count: under499Count },
+              { id: "electronics", label: "📱 Tech" },
+              { id: "fashion", label: "👗 Fashion" },
+              { id: "grocery", label: "🛒 Grocery" },
+            ].map(p => (
+              <button
+                key={p.id}
+                onClick={() => { setSmartPreset(p.id); setPage(1); }}
+                className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 active:scale-95 ${
+                  smartPreset === p.id
+                    ? "bg-white/20 text-white border border-white/30 shadow-sm"
+                    : "bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] border border-white/5"
+                }`}
+              >
+                <span>{p.label}</span>
+                {p.count !== undefined && (
+                  <span className="text-[9px] font-mono opacity-80 font-normal">({p.count})</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowTelemetry(!showTelemetry)}
+            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 active:scale-95 border ${
+              showTelemetry
+                ? "bg-indigo-500/25 text-indigo-300 border-indigo-400/50 shadow-md shadow-indigo-500/20"
+                : "bg-white/[0.03] text-zinc-400 hover:text-white border-white/10"
+            }`}
+            title="Toggle Queue Telemetry & Store Share Breakdown"
+          >
+            <BarChart3 size={12} className="text-indigo-400" />
+            <span className="hidden sm:inline">Telemetry</span>
+            {showTelemetry ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+          </button>
         </div>
       </div>
+
+      {/* ─── COLLAPSIBLE STREAM HEALTH & STORE SHARE TELEMETRY DRAWER ─── */}
+      <AnimatePresence>
+        {showTelemetry && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex-shrink-0 px-3 sm:px-6 py-3 bg-[#080912]/95 border-b border-white/10 overflow-hidden relative z-20"
+          >
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2 font-mono text-[11px] text-zinc-400">
+                  <span className="font-bold text-white uppercase tracking-wider">Queue Distribution</span>
+                  <span>•</span>
+                  <span>{visible.length} deals in view</span>
+                  <span>•</span>
+                  <span>₹{totalQueueSavings.toLocaleString("en-IN")} potential customer savings</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExportCSV}
+                    className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-sm"
+                  >
+                    <Download size={11} />
+                    <span>Export CSV</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportJSON}
+                    className="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-sm"
+                  >
+                    <Download size={11} />
+                    <span>Export JSON</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Visual Stacked Multi-Store Distribution Bar */}
+              <div className="w-full h-3 rounded-full bg-white/5 border border-white/10 overflow-hidden flex">
+                {Object.entries(storeCounts).map(([sKey, count]) => {
+                  const pct = Math.round((count / totalVisible) * 100);
+                  const color = storeColors[sKey] || storeColors.other;
+                  return (
+                    <div
+                      key={sKey}
+                      style={{ width: `${(count / totalVisible) * 100}%` }}
+                      className={`h-full ${color.bg} transition-all duration-300 hover:brightness-125`}
+                      title={`${color.label}: ${count} deals (${pct}%)`}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Store Share Breakdown Chips */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-[11px]">
+                {Object.entries(storeCounts).map(([sKey, count]) => {
+                  const pct = Math.round((count / totalVisible) * 100);
+                  const color = storeColors[sKey] || storeColors.other;
+                  return (
+                    <button
+                      key={sKey}
+                      type="button"
+                      onClick={() => { setSelectedStore(sKey); setPage(1); }}
+                      className="px-2 py-0.5 rounded-md bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all flex-shrink-0"
+                    >
+                      <span className={`w-2 h-2 rounded-full ${color.bg}`} />
+                      <span className="text-zinc-300 font-medium">{color.label}</span>
+                      <span className="font-mono text-zinc-400 font-bold">{pct}% ({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Deals Card Grid / Linear Table / Split Inspector */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 pb-28 md:pb-8">
@@ -2563,9 +3046,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                     const target = deals.find(d => d.id === id);
                     if (target) Object.assign(target, customChanges);
                   }
-                  onApprove(id);
+                  handleApproveWithUndo(id, customChanges);
                 }}
-                onReject={onReject}
+                onReject={handleRejectWithUndo}
                 onUpdateDeal={(id, changes) => {
                   const target = deals.find(d => d.id === id);
                   if (target) Object.assign(target, changes);
@@ -2594,8 +3077,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
-                  onApprove={onApprove}
-                  onReject={onReject}
+                  onApprove={handleApproveWithUndo}
+                  onReject={handleRejectWithUndo}
                   onEdit={onEdit}
                 />
               ))}
@@ -2609,8 +3092,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                 <DealCard
                   key={d.id}
                   deal={d}
-                  onApprove={onApprove}
-                  onReject={onReject}
+                  onApprove={handleApproveWithUndo}
+                  onReject={handleRejectWithUndo}
                   onEdit={onEdit}
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
@@ -2762,6 +3245,36 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
         </div>
       )}
 
+      {/* ─── 5-SECOND FLOATING UNDO BUFFER (Ctrl+Z) ─── */}
+      <AnimatePresence>
+        {undoState && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.95 }}
+            className="fixed bottom-24 md:bottom-12 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-[#090B16]/95 border border-indigo-500/40 shadow-2xl shadow-indigo-500/20 backdrop-blur-2xl"
+          >
+            <div className="flex items-center gap-2 text-xs">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <span className="text-zinc-300">
+                Deal <span className="font-bold text-white max-w-[160px] truncate inline-block align-bottom">{undoState.deal.title}</span> marked as{" "}
+                <span className={undoState.action === "approved" ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+                  {undoState.action === "approved" ? "Approved" : "Skipped"}
+                </span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handlePerformUndo}
+              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-md shadow-indigo-600/30"
+            >
+              <Undo2 size={13} />
+              <span>Undo (Ctrl+Z)</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Floating Keyboard Navigation HUD (Desktop Pro Mode) */}
       <div className="hidden lg:flex fixed bottom-4 right-6 z-40 items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/90 border border-emerald-500/30 shadow-2xl backdrop-blur-xl text-[11px] font-mono text-zinc-300 pointer-events-none">
         <div className="flex items-center gap-1 text-emerald-400 font-bold">
@@ -2778,6 +3291,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
         <span className="text-amber-300"><kbd className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px]">E</kbd> Tune</span>
         <span className="text-zinc-600">•</span>
         <span className="text-cyan-300"><kbd className="px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px]">C</kbd> Copy</span>
+        <span className="text-zinc-600">•</span>
+        <span className="text-indigo-300"><kbd className="px-1 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px]">Ctrl+Z</kbd> Undo</span>
       </div>
     </div>
   );
