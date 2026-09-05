@@ -512,6 +512,60 @@ const getStoreAura = (tag: string) => {
   return "from-emerald-500/70 via-teal-500/40 to-transparent";
 };
 
+// ─── Mathematical Affiliate Commission Yield Engine ───
+export function calculateCommissionYield(deal: Deal): {
+  ratePct: number;
+  estYieldPerSale: number;
+  categoryTier: string;
+} {
+  const store = getStoreBadge(deal.platforms, deal.affText).tag.toLowerCase();
+  const cat = (deal.category || "").toLowerCase();
+  let rate = 5.0; // default 5%
+  let tier = "General";
+
+  if (store.includes("amazon")) {
+    if (cat.includes("fashion") || cat.includes("apparel") || cat.includes("clothing") || cat.includes("footwear") || cat.includes("shoes") || cat.includes("watch") || cat.includes("jewelry")) {
+      rate = 9.0;
+      tier = "Fashion & Apparel (9%)";
+    } else if (cat.includes("beauty") || cat.includes("personal") || cat.includes("health")) {
+      rate = 8.0;
+      tier = "Beauty & Personal (8%)";
+    } else if (cat.includes("home") || cat.includes("kitchen")) {
+      rate = 6.0;
+      tier = "Home & Kitchen (6%)";
+    } else if (cat.includes("grocery") || cat.includes("food") || cat.includes("pantry")) {
+      rate = 5.0;
+      tier = "Grocery (5%)";
+    } else if (cat.includes("phone") || cat.includes("mobile")) {
+      rate = 1.5;
+      tier = "Mobiles (1.5%)";
+    } else if (cat.includes("electronics") || cat.includes("audio") || cat.includes("computer") || cat.includes("gaming")) {
+      rate = 4.0;
+      tier = "Electronics & Tech (4%)";
+    }
+  } else if (store.includes("flipkart")) {
+    if (cat.includes("fashion") || cat.includes("footwear")) {
+      rate = 8.5;
+      tier = "Fashion (8.5%)";
+    } else if (cat.includes("home") || cat.includes("kitchen")) {
+      rate = 6.0;
+      tier = "Home & Kitchen (6%)";
+    } else if (cat.includes("electronics") || cat.includes("mobile")) {
+      rate = 2.5;
+      tier = "Electronics (2.5%)";
+    } else {
+      rate = 4.0;
+      tier = "General (4%)";
+    }
+  } else if (store.includes("myntra") || store.includes("ajio")) {
+    rate = 8.0;
+    tier = "Fashion & Lifestyle (8%)";
+  }
+
+  const estYield = deal.price > 0 ? Math.round((deal.price * rate) / 100) : 0;
+  return { ratePct: rate, estYieldPerSale: estYield, categoryTier: tier };
+}
+
 // ─── Senior Pro Deal Card (Responsive Mobile Horizontal + Desktop Specular Grid) ───
 function DealCard({
   deal, onApprove, onReject, onEdit,
@@ -540,6 +594,9 @@ function DealCard({
   const isUnder299 = deal.price > 0 && deal.price <= 299;
   const isFresh = (Date.now() / 1000 - deal.ts) < 900;
   const isGlitch = (deal.discount >= 80 && deal.mrp >= 1000) || (deal.price > 0 && deal.price <= 99 && deal.mrp >= 999) || (savings >= 3500);
+  const comm = calculateCommissionYield(deal);
+  const isATL = (deal.discount >= 70 && deal.price > 0) || (Boolean(deal.bestPrice) && deal.price <= (deal.bestPrice || 0) && deal.discount >= 55) || (deal.price > 0 && deal.price <= deal.mrp * 0.35);
+  const hasAffTag = deal.affText.includes("tag=") || deal.affText.includes("earnkaro") || deal.affText.includes("extrape") || deal.affText.includes("bitli") || deal.affText.includes("linkredirect") || deal.affiliate;
 
   const handleCopyPost = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -659,6 +716,12 @@ function DealCard({
             </span>
           )}
 
+          {isATL && !isGlitch && (
+            <span className="absolute bottom-1 left-1 px-1 rounded-md bg-amber-400 text-slate-950 font-mono text-[8px] font-black shadow-sm">
+              🏆 ATL
+            </span>
+          )}
+
           {deal.imgUrl && (
             <button
               type="button"
@@ -714,7 +777,14 @@ function DealCard({
                   <span className="text-[10px] text-slate-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>
                 )}
               </div>
-              {savings > 0 && <SavingsPill3D amount={savings} />}
+              <div className="flex items-center gap-1">
+                {savings > 0 && <SavingsPill3D amount={savings} />}
+                {deal.price > 0 && comm.estYieldPerSale > 0 && (
+                  <span className="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1 py-0.2 rounded" title={comm.categoryTier}>
+                    💎 ₹{comm.estYieldPerSale}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -771,7 +841,17 @@ function DealCard({
           <div className="flex items-center gap-2 min-w-0">
             <Store3DBadge store={store.tag} />
             <Category3DIcon category={deal.category} size={15} />
-            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[170px]">{deal.channel}</span>
+            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]">{deal.channel}</span>
+            {hasAffTag ? (
+              <span className="flex items-center gap-1 text-[9.5px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded-md font-mono" title="Affiliate tracking tag verified active">
+                <Shield size={10} className="text-emerald-400" />
+                <span>Monetized</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-[9.5px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-md font-mono" title="Generic store link detected - unmonetized">
+                <span>⚠️ Generic</span>
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {isFresh && (
@@ -810,7 +890,12 @@ function DealCard({
                 <span>🚨 GLITCH</span>
               </span>
             )}
-            {isSuperLoot && !isGlitch && (
+            {isATL && !isGlitch && (
+              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-mono text-[9px] font-black shadow-lg shadow-amber-500/30 flex items-center gap-1 border border-amber-300/60">
+                <span>🏆</span> ALL-TIME LOW
+              </span>
+            )}
+            {isSuperLoot && !isGlitch && !isATL && (
               <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-red-500 to-amber-500 text-white font-mono text-[9px] font-black shadow-md shadow-red-500/30 flex items-center gap-1">
                 <span>🔥</span> SUPER LOOT
               </span>
@@ -930,6 +1015,19 @@ function DealCard({
               )}
             </div>
 
+            {/* Affiliate Monetization Yield Breakdown */}
+            {deal.price > 0 && (
+              <div className="mt-2 flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 text-[11px] shadow-sm">
+                <div className="flex items-center gap-1.5 text-emerald-300 font-medium">
+                  <span className="text-xs">💎</span>
+                  <span className="font-semibold text-zinc-300">Est. Yield:</span>
+                  <span className="font-mono font-bold text-emerald-300 text-xs">₹{comm.estYieldPerSale}</span>
+                  <span className="text-emerald-400/80 text-[10px]">/sale ({comm.ratePct}%)</span>
+                </div>
+                <span className="text-[10px] text-zinc-400 truncate max-w-[130px] font-mono">{comm.categoryTier}</span>
+              </div>
+            )}
+
             {/* ─── CROSS-CHANNEL DUPLICATE ARBITRAGE & PRICE MATRIX DRAWER ─── */}
             {((deal.clusterCount && deal.clusterCount > 1) || (deal.clusterChannels && deal.clusterChannels.length > 1)) && (
               <div className="mt-2.5 pt-2 border-t border-white/6">
@@ -1046,6 +1144,9 @@ function DealTableRow({
   onToggleSelect?: (id: string) => void;
 }) {
   const store = getStoreBadge(deal.platforms, deal.affText);
+  const comm = calculateCommissionYield(deal);
+  const isATL = (deal.discount >= 70 && deal.price > 0) || (Boolean(deal.bestPrice) && deal.price <= (deal.bestPrice || 0) && deal.discount >= 55) || (deal.price > 0 && deal.price <= deal.mrp * 0.35);
+
   return (
     <div
       onClick={() => onEdit(deal)}
@@ -1087,23 +1188,34 @@ function DealTableRow({
         </span>
       </div>
 
-      {/* Price & Discount */}
-      <div className="w-28 sm:w-32 flex-shrink-0 text-right flex flex-col items-end">
+      {/* Price & Discount & Commission */}
+      <div className="w-32 sm:w-36 flex-shrink-0 text-right flex flex-col items-end">
         <div className="flex items-center gap-1.5">
           <span className="pro-price text-sm font-bold text-emerald-300">
             {fmt(deal.price)}
           </span>
-          {deal.discount > 0 && (
+          {isATL ? (
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 shadow-sm">
+              ATL
+            </span>
+          ) : deal.discount > 0 ? (
             <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
               {Math.round(deal.discount)}%
             </span>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {deal.mrp > 0 && deal.mrp > deal.price && (
+            <span className="text-[10px] text-zinc-500 line-through font-mono">
+              {fmt(deal.mrp)}
+            </span>
+          )}
+          {deal.price > 0 && comm.estYieldPerSale > 0 && (
+            <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1 rounded" title={`${comm.categoryTier} (${comm.ratePct}%)`}>
+              💎 ₹{comm.estYieldPerSale}
+            </span>
           )}
         </div>
-        {deal.mrp > 0 && deal.mrp > deal.price && (
-          <span className="text-[10px] text-zinc-500 line-through font-mono">
-            {fmt(deal.mrp)}
-          </span>
-        )}
       </div>
 
       {/* Channel Source & Time */}
@@ -1771,6 +1883,44 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </div>
             </div>
 
+            {/* Live Financial Yield & All-Time Low Calculations */}
+            {(() => {
+              const currentPrice = Number(price) || deal.price;
+              const currentMrp = Number(mrp) || deal.mrp;
+              const currentDiscount = currentMrp > currentPrice && currentMrp > 0 ? Math.round(((currentMrp - currentPrice) / currentMrp) * 100) : deal.discount;
+              const simulatedDeal: Deal = { ...deal, price: currentPrice, mrp: currentMrp, discount: currentDiscount, affText: text };
+              const modalComm = calculateCommissionYield(simulatedDeal);
+              const modalIsATL = (currentDiscount >= 70 && currentPrice > 0) || (Boolean(deal.bestPrice) && currentPrice <= (deal.bestPrice || 0) && currentDiscount >= 55) || (currentPrice > 0 && currentPrice <= currentMrp * 0.35);
+              const modalHasAff = text.includes("tag=") || text.includes("earnkaro") || text.includes("extrape") || text.includes("bitli") || text.includes("linkredirect") || deal.affiliate;
+
+              return (
+                <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/10 flex items-center justify-between gap-3 text-xs flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-emerald-400 font-bold flex items-center gap-1 font-mono">
+                      <span>💎</span> Est. Yield: ₹{modalComm.estYieldPerSale}
+                    </span>
+                    <span className="text-slate-400 text-[11px] font-mono">({modalComm.ratePct}% · {modalComm.categoryTier})</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                    {modalIsATL && (
+                      <span className="px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/30 font-bold flex items-center gap-1">
+                        <span>🏆</span> ATL ({currentDiscount}% Off)
+                      </span>
+                    )}
+                    {modalHasAff ? (
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1">
+                        <Shield size={10} /> Monetized
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1">
+                        ⚠️ Generic Link
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Dual Image Choice Selector + Download Action */}
             {(telegramImg || storeImg || uploadedImg || imgFile) && (
               <div className="flex flex-col gap-2 p-3 rounded-2xl bg-slate-950/80 border border-white/8 shadow-inner">
@@ -1978,7 +2128,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"latest" | "discount" | "price_asc" | "price_desc">("latest");
+  const [sort, setSort] = useState<"latest" | "yield_desc" | "discount" | "atl" | "price_asc" | "price_desc">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "promos" | "all">("pending");
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
   const [selectedStore, setSelectedStore] = useState<string>("All");
@@ -1998,15 +2148,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [soundMuted, setSoundMutedState] = useState<boolean>(isSoundMuted());
 
-  // Frontier Undo Buffer & Telemetry State
-  const [undoState, setUndoState] = useState<{
-    deal: Deal;
-    prevStatus: DealStatus;
-    action: "approved" | "rejected";
-    expiresAt: number;
-  } | null>(null);
-  const [showTelemetry, setShowTelemetry] = useState(false);
-
   const handleToggleSound = () => {
     const next = toggleSound();
     setSoundMutedState(next);
@@ -2016,52 +2157,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   useEffect(() => {
     fetchPromos().then(setPromos);
   }, []);
-
-  // 5-Second Undo Expiry Timer
-  useEffect(() => {
-    if (!undoState) return;
-    const interval = setInterval(() => {
-      if (Date.now() >= undoState.expiresAt) {
-        setUndoState(null);
-      }
-    }, 200);
-    return () => clearInterval(interval);
-  }, [undoState]);
-
-  const handleApproveWithUndo = (id: string, changes?: Partial<Deal>) => {
-    const target = deals.find(d => d.id === id);
-    onApprove(id, changes);
-    if (target) {
-      setUndoState({
-        deal: target,
-        prevStatus: target.status,
-        action: "approved",
-        expiresAt: Date.now() + 5000,
-      });
-    }
-  };
-
-  const handleRejectWithUndo = (id: string) => {
-    const target = deals.find(d => d.id === id);
-    onReject(id);
-    if (target) {
-      setUndoState({
-        deal: target,
-        prevStatus: target.status,
-        action: "rejected",
-        expiresAt: Date.now() + 5000,
-      });
-    }
-  };
-
-  const handlePerformUndo = () => {
-    if (!undoState) return;
-    const { deal, prevStatus } = undoState;
-    playUndo();
-    onApprove(deal.id, { status: prevStatus });
-    toast.info(`↩️ Reverted action on "${deal.title.slice(0, 24)}..."`);
-    setUndoState(null);
-  };
 
   // Cmd+K / Ctrl+K Universal Command Palette
   useEffect(() => {
@@ -2131,47 +2226,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     .filter(ch => Boolean(ch) && ch.toLowerCase() !== "unknown" && ch.toLowerCase() !== "dh")
     .sort();
 
-  // Linear/Gmail-Style Power Operator Search Parser
-  const parseSearchQuery = (query: string) => {
-    const tokens = query.trim().split(/\s+/);
-    const ops: {
-      maxPrice?: number;
-      minPrice?: number;
-      minDiscount?: number;
-      store?: string;
-      channel?: string;
-      isGlitch?: boolean;
-      isSuper?: boolean;
-      textWords: string[];
-    } = { textWords: [] };
-
-    for (const token of tokens) {
-      if (!token) continue;
-      const lower = token.toLowerCase();
-      if (lower.startsWith("p:<")) {
-        const val = parseFloat(lower.replace("p:<", ""));
-        if (!isNaN(val)) ops.maxPrice = val;
-      } else if (lower.startsWith("p:>")) {
-        const val = parseFloat(lower.replace("p:>", ""));
-        if (!isNaN(val)) ops.minPrice = val;
-      } else if (lower.startsWith("d:>")) {
-        const val = parseFloat(lower.replace("d:>", ""));
-        if (!isNaN(val)) ops.minDiscount = val;
-      } else if (lower.startsWith("s:")) {
-        ops.store = lower.replace("s:", "");
-      } else if (lower.startsWith("ch:")) {
-        ops.channel = lower.replace("ch:", "");
-      } else if (lower === "is:glitch" || lower === "glitch:true") {
-        ops.isGlitch = true;
-      } else if (lower === "is:super" || lower === "super:true") {
-        ops.isSuper = true;
-      } else {
-        ops.textWords.push(lower);
-      }
-    }
-    return ops;
-  };
-
   let visible = deals.filter(d => {
     if (selectedChannel !== "All" && d.channel !== selectedChannel) return false;
     if (selectedStore !== "All") {
@@ -2180,31 +2234,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     }
     if (filter !== "all" && filter !== "promos" && d.status !== filter) return false;
     if (search.trim() && !isSearchUrl) {
-      const ops = parseSearchQuery(search);
-      if (ops.maxPrice !== undefined && d.price > ops.maxPrice) return false;
-      if (ops.minPrice !== undefined && d.price < ops.minPrice) return false;
-      if (ops.minDiscount !== undefined && d.discount < ops.minDiscount) return false;
-      if (ops.store) {
-        const store = getStoreBadge(d.platforms, d.affText);
-        if (!store.tag.toLowerCase().includes(ops.store)) return false;
-      }
-      if (ops.channel) {
-        if (!(d.channel || "").toLowerCase().includes(ops.channel)) return false;
-      }
-      if (ops.isGlitch) {
-        const savings = d.mrp > d.price ? d.mrp - d.price : 0;
-        const isGlitch = (d.discount >= 80 && d.mrp >= 1000) || (d.price > 0 && d.price <= 99 && d.mrp >= 999) || (savings >= 3500);
-        if (!isGlitch) return false;
-      }
-      if (ops.isSuper) {
-        const isSuper = (d.discount >= 70) || (d.mrp - d.price >= 1500);
-        if (!isSuper) return false;
-      }
-      if (ops.textWords.length > 0) {
-        const searchable = `${d.title} ${d.channel} ${d.category} ${d.originalText}`.toLowerCase();
-        const allMatch = ops.textWords.every(w => searchable.includes(w));
-        if (!allMatch) return false;
-      }
+      const q = search.trim().toLowerCase();
+      const searchable = `${d.title} ${d.channel} ${d.category} ${d.originalText}`.toLowerCase();
+      if (!searchable.includes(q)) return false;
     }
     if (smartPreset === "super_loot") {
       const isSuper = (d.discount >= 70) || (d.mrp - d.price >= 1500);
@@ -2225,7 +2257,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   });
 
   if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
+  else if (sort === "yield_desc") visible = [...visible].sort((a, b) => calculateCommissionYield(b).estYieldPerSale - calculateCommissionYield(a).estYieldPerSale);
   else if (sort === "discount") visible = [...visible].sort((a, b) => b.discount - a.discount);
+  else if (sort === "atl") visible = [...visible].sort((a, b) => ((b.discount >= 70 || (b.mrp > 0 && b.price <= b.mrp * 0.35)) ? 1 : 0) - ((a.discount >= 70 || (a.mrp > 0 && a.price <= a.mrp * 0.35)) ? 1 : 0));
   else if (sort === "price_asc") visible = [...visible].sort((a, b) => (a.price || 999999) - (b.price || 999999));
   else if (sort === "price_desc") visible = [...visible].sort((a, b) => (b.price || 0) - (a.price || 0));
 
@@ -2282,150 +2316,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const totalQueueSavings = visible.reduce((acc, d) => acc + (d.mrp > d.price ? d.mrp - d.price : 0), 0);
   const avgDiscount = visible.length > 0 ? Math.round(visible.reduce((acc, d) => acc + (d.discount || 0), 0) / visible.length) : 0;
 
-  // Telemetry Store Share Calculations
-  const storeCounts = visible.reduce((acc, d) => {
-    const store = getStoreBadge(d.platforms, d.affText).tag.toLowerCase();
-    acc[store] = (acc[store] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const totalVisible = Math.max(1, visible.length);
-  const storeColors: Record<string, { label: string; bg: string; text: string }> = {
-    amazon: { label: "Amazon", bg: "bg-[#FF9900]", text: "text-[#FF9900]" },
-    flipkart: { label: "Flipkart", bg: "bg-[#2874F0]", text: "text-[#2874F0]" },
-    myntra: { label: "Myntra", bg: "bg-[#FF3F6C]", text: "text-[#FF3F6C]" },
-    desidime: { label: "DesiDime", bg: "bg-[#E53935]", text: "text-[#E53935]" },
-    ajio: { label: "AJIO", bg: "bg-[#00B4D8]", text: "text-[#00B4D8]" },
-    other: { label: "Other", bg: "bg-[#8B5CF6]", text: "text-[#8B5CF6]" },
-  };
-
-  const handleExportCSV = () => {
-    if (visible.length === 0) {
-      toast.info("No deals in current view to export");
-      return;
-    }
-    const headers = ["ID", "Title", "Price (INR)", "MRP (INR)", "Discount (%)", "Store", "Channel", "Status", "Date", "Affiliate Link"];
-    const rows = visible.map(d => {
-      const store = getStoreBadge(d.platforms, d.affText);
-      const linkMatch = (d.affText || d.originalText || "").match(/https?:\/\/\S+/);
-      const link = linkMatch ? linkMatch[0] : "";
-      const dateStr = new Date(d.ts * 1000).toISOString();
-      return [
-        `"${d.id}"`,
-        `"${(d.title || "").replace(/"/g, '""')}"`,
-        d.price || 0,
-        d.mrp || 0,
-        Math.round(d.discount || 0),
-        `"${store.tag}"`,
-        `"${(d.channel || "").replace(/"/g, '""')}"`,
-        `"${d.status}"`,
-        `"${dateStr}"`,
-        `"${link}"`,
-      ].join(",");
-    });
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `dealflow_deals_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`📊 Exported ${visible.length} deals to CSV!`);
-  };
-
-  const handleExportJSON = () => {
-    if (visible.length === 0) {
-      toast.info("No deals in current view to export");
-      return;
-    }
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(visible, null, 2));
-    const link = document.createElement("a");
-    link.setAttribute("href", dataStr);
-    link.setAttribute("download", `dealflow_deals_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`📥 Exported ${visible.length} deals to JSON!`);
-  };
-
-  useEffect(() => {
-    setActiveIndex(-1);
-  }, [page, smartPreset, filter, selectedChannel, selectedStore]);
-
-  // Pro Curation Keyboard Shortcuts: J, K, A, X, E, C, O, Ctrl+Z
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
-        return;
-      }
-      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
-        if (undoState) {
-          e.preventDefault();
-          handlePerformUndo();
-          return;
-        }
-      }
-      if (e.key === "j" || e.key === "ArrowDown") {
-        e.preventDefault();
-        setActiveIndex(prev => {
-          const next = Math.min(pagedVisible.length - 1, prev + 1);
-          playTick();
-          return next;
-        });
-      } else if (e.key === "k" || e.key === "ArrowUp") {
-        e.preventDefault();
-        setActiveIndex(prev => {
-          const next = Math.max(0, prev - 1);
-          playTick();
-          return next;
-        });
-      } else if (e.key.toLowerCase() === "a") {
-        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
-          e.preventDefault();
-          const targetDeal = pagedVisible[activeIndex];
-          if (targetDeal.status === "pending") {
-            playApprove();
-            handleApproveWithUndo(targetDeal.id);
-          }
-        }
-      } else if (e.key.toLowerCase() === "x") {
-        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
-          e.preventDefault();
-          const targetDeal = pagedVisible[activeIndex];
-          if (targetDeal.status === "pending") {
-            playReject();
-            handleRejectWithUndo(targetDeal.id);
-          }
-        }
-      } else if (e.key.toLowerCase() === "e") {
-        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
-          e.preventDefault();
-          onEdit(pagedVisible[activeIndex]);
-        }
-      } else if (e.key.toLowerCase() === "c") {
-        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
-          e.preventDefault();
-          const d = pagedVisible[activeIndex];
-          const postText = d.affText || d.originalText || `${d.title} @ ₹${d.price}`;
-          navigator.clipboard.writeText(postText);
-          playCopy();
-          toast.success("📋 Deal post copied!");
-        }
-      } else if (e.key.toLowerCase() === "o") {
-        if (activeIndex >= 0 && activeIndex < pagedVisible.length) {
-          e.preventDefault();
-          const d = pagedVisible[activeIndex];
-          const urlMatch = (d.affText || d.originalText || "").match(/https?:\/\/\S+/);
-          if (urlMatch) window.open(urlMatch[0], "_blank");
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIndex, pagedVisible, onApprove, onReject, onEdit, undoState]);
-
   const storeOptions: DropdownOption[] = [
     { value: "All", label: "All Stores", icon: "🛍️" },
     { value: "amazon", label: "Amazon", icon: "📦" },
@@ -2446,9 +2336,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 
   const sortOptions: DropdownOption[] = [
     { value: "latest", label: "Newest First", icon: "⏰" },
+    { value: "yield_desc", label: "Highest Yield (₹/sale)", icon: "💎" },
     { value: "discount", label: "Highest % Off", icon: "🔥" },
+    { value: "atl", label: "All-Time Low (ATL)", icon: "🏆" },
     { value: "price_asc", label: "Price: Low to High", icon: "🏷️" },
-    { value: "price_desc", label: "Price: High to Low", icon: "💎" },
+    { value: "price_desc", label: "Price: High to Low", icon: "💰" },
   ];
 
   const pageSizeOptions: DropdownOption[] = [
@@ -2549,32 +2441,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
               <span className="hidden lg:inline">{soundMuted ? "Muted" : "Audio"}</span>
             </button>
           </div>
-        </div>
-
-        {/* Linear-Style Power Operator Suggestion Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 text-[10.5px]">
-          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-wider flex-shrink-0">⚡ Operators:</span>
-          {[
-            { label: "p:<500", desc: "< ₹500" },
-            { label: "d:>70", desc: ">70% Off" },
-            { label: "is:glitch", desc: "Price Error" },
-            { label: "s:amazon", desc: "Amazon" },
-            { label: "s:flipkart", desc: "Flipkart" },
-            { label: "ch:genie", desc: "Genie" },
-          ].map(op => (
-            <button
-              key={op.label}
-              type="button"
-              onClick={() => {
-                setSearch(prev => (prev ? `${prev.trim()} ${op.label}` : op.label));
-                setPage(1);
-              }}
-              className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/10 font-mono flex-shrink-0 cursor-pointer active:scale-95 transition-all flex items-center gap-1"
-            >
-              <span className="text-indigo-400 font-bold">{op.label}</span>
-              <span className="text-zinc-500 hidden sm:inline font-sans">({op.desc})</span>
-            </button>
-          ))}
         </div>
 
         {/* ─── MOBILE CONTROLS (2-Tier High-Efficiency Layout on sm:hidden) ─── */}
@@ -2804,101 +2670,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
               </button>
             ))}
           </div>
-
-          <button
-            type="button"
-            onClick={() => setShowTelemetry(!showTelemetry)}
-            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 active:scale-95 border ${
-              showTelemetry
-                ? "bg-indigo-500/25 text-indigo-300 border-indigo-400/50 shadow-md shadow-indigo-500/20"
-                : "bg-white/[0.03] text-zinc-400 hover:text-white border-white/10"
-            }`}
-            title="Toggle Queue Telemetry & Store Share Breakdown"
-          >
-            <BarChart3 size={12} className="text-indigo-400" />
-            <span className="hidden sm:inline">Telemetry</span>
-            {showTelemetry ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-          </button>
         </div>
       </div>
-
-      {/* ─── COLLAPSIBLE STREAM HEALTH & STORE SHARE TELEMETRY DRAWER ─── */}
-      <AnimatePresence>
-        {showTelemetry && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex-shrink-0 px-3 sm:px-6 py-3 bg-[#080912]/95 border-b border-white/10 overflow-hidden relative z-20"
-          >
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2 font-mono text-[11px] text-zinc-400">
-                  <span className="font-bold text-white uppercase tracking-wider">Queue Distribution</span>
-                  <span>•</span>
-                  <span>{visible.length} deals in view</span>
-                  <span>•</span>
-                  <span>₹{totalQueueSavings.toLocaleString("en-IN")} potential customer savings</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleExportCSV}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-sm"
-                  >
-                    <Download size={11} />
-                    <span>Export CSV</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExportJSON}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all shadow-sm"
-                  >
-                    <Download size={11} />
-                    <span>Export JSON</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Visual Stacked Multi-Store Distribution Bar */}
-              <div className="w-full h-3 rounded-full bg-white/5 border border-white/10 overflow-hidden flex">
-                {Object.entries(storeCounts).map(([sKey, count]) => {
-                  const pct = Math.round((count / totalVisible) * 100);
-                  const color = storeColors[sKey] || storeColors.other;
-                  return (
-                    <div
-                      key={sKey}
-                      style={{ width: `${(count / totalVisible) * 100}%` }}
-                      className={`h-full ${color.bg} transition-all duration-300 hover:brightness-125`}
-                      title={`${color.label}: ${count} deals (${pct}%)`}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Store Share Breakdown Chips */}
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 text-[11px]">
-                {Object.entries(storeCounts).map(([sKey, count]) => {
-                  const pct = Math.round((count / totalVisible) * 100);
-                  const color = storeColors[sKey] || storeColors.other;
-                  return (
-                    <button
-                      key={sKey}
-                      type="button"
-                      onClick={() => { setSelectedStore(sKey); setPage(1); }}
-                      className="px-2 py-0.5 rounded-md bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all flex-shrink-0"
-                    >
-                      <span className={`w-2 h-2 rounded-full ${color.bg}`} />
-                      <span className="text-zinc-300 font-medium">{color.label}</span>
-                      <span className="font-mono text-zinc-400 font-bold">{pct}% ({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Deals Card Grid / Linear Table / Split Inspector */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 pb-28 md:pb-8">
@@ -3046,9 +2819,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                     const target = deals.find(d => d.id === id);
                     if (target) Object.assign(target, customChanges);
                   }
-                  handleApproveWithUndo(id, customChanges);
+                  onApprove(id, customChanges);
                 }}
-                onReject={handleRejectWithUndo}
+                onReject={onReject}
                 onUpdateDeal={(id, changes) => {
                   const target = deals.find(d => d.id === id);
                   if (target) Object.assign(target, changes);
@@ -3077,8 +2850,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
-                  onApprove={handleApproveWithUndo}
-                  onReject={handleRejectWithUndo}
+                  onApprove={onApprove}
+                  onReject={onReject}
                   onEdit={onEdit}
                 />
               ))}
@@ -3092,13 +2865,12 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                 <DealCard
                   key={d.id}
                   deal={d}
-                  onApprove={handleApproveWithUndo}
-                  onReject={handleRejectWithUndo}
+                  onApprove={onApprove}
+                  onReject={onReject}
                   onEdit={onEdit}
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
-                  isActive={pagedVisible[activeIndex]?.id === d.id}
                 />
               ))}
             </AnimatePresence>
@@ -3245,55 +3017,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
         </div>
       )}
 
-      {/* ─── 5-SECOND FLOATING UNDO BUFFER (Ctrl+Z) ─── */}
-      <AnimatePresence>
-        {undoState && (
-          <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 24, scale: 0.95 }}
-            className="fixed bottom-24 md:bottom-12 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-[#090B16]/95 border border-indigo-500/40 shadow-2xl shadow-indigo-500/20 backdrop-blur-2xl"
-          >
-            <div className="flex items-center gap-2 text-xs">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span className="text-zinc-300">
-                Deal <span className="font-bold text-white max-w-[160px] truncate inline-block align-bottom">{undoState.deal.title}</span> marked as{" "}
-                <span className={undoState.action === "approved" ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
-                  {undoState.action === "approved" ? "Approved" : "Skipped"}
-                </span>
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={handlePerformUndo}
-              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-md shadow-indigo-600/30"
-            >
-              <Undo2 size={13} />
-              <span>Undo (Ctrl+Z)</span>
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Floating Keyboard Navigation HUD (Desktop Pro Mode) */}
-      <div className="hidden lg:flex fixed bottom-4 right-6 z-40 items-center gap-2 px-3 py-1.5 rounded-full bg-slate-950/90 border border-emerald-500/30 shadow-2xl backdrop-blur-xl text-[11px] font-mono text-zinc-300 pointer-events-none">
-        <div className="flex items-center gap-1 text-emerald-400 font-bold">
-          <Keyboard size={13} />
-          <span>Pro</span>
-        </div>
-        <span className="text-zinc-600">•</span>
-        <span className="text-zinc-400"><kbd className="px-1 py-0.5 rounded bg-white/10 text-white text-[10px]">J</kbd>/<kbd className="px-1 py-0.5 rounded bg-white/10 text-white text-[10px]">K</kbd> Nav</span>
-        <span className="text-zinc-600">•</span>
-        <span className="text-emerald-300"><kbd className="px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">A</kbd> Post</span>
-        <span className="text-zinc-600">•</span>
-        <span className="text-rose-300"><kbd className="px-1 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px]">X</kbd> Skip</span>
-        <span className="text-zinc-600">•</span>
-        <span className="text-amber-300"><kbd className="px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[10px]">E</kbd> Tune</span>
-        <span className="text-zinc-600">•</span>
-        <span className="text-cyan-300"><kbd className="px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px]">C</kbd> Copy</span>
-        <span className="text-zinc-600">•</span>
-        <span className="text-indigo-300"><kbd className="px-1 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px]">Ctrl+Z</kbd> Undo</span>
-      </div>
     </div>
   );
 }
