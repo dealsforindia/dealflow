@@ -589,6 +589,75 @@ async function fetchPromos(): Promise<any[]> {
   } catch { return []; }
 }
 
+export interface PriceIntelligenceData {
+  canonical_id: string;
+  recorded_points: number;
+  lowest_30d: number;
+  avg_30d: number;
+  is_historical_low: boolean;
+  mrp_inflated: boolean;
+  historical_avg_mrp?: number;
+  history_sparkline?: number[];
+}
+
+async function apiGenerateBanner(id: string): Promise<{ banner_url: string; img_path: string } | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/generate-banner`, { method: "POST" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function apiGetPriceHistory(id: string): Promise<PriceIntelligenceData | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/price-history`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.price_intelligence || null;
+  } catch {
+    return null;
+  }
+}
+
+function playGlitchChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    if (ctx.state === "suspended") {
+      ctx.resume();
+    }
+    const now = ctx.currentTime;
+    
+    // Pleasant dual-tone chime (587.33Hz D5 -> 880Hz A5)
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(587.33, now);
+    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(880, now);
+    osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.25);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc1.start(now);
+    osc2.start(now + 0.08);
+    osc1.stop(now + 0.5);
+    osc2.stop(now + 0.5);
+  } catch {}
+}
+
 
 // ─── Image Lightbox (Mounted via Portal outside 3D Card CSS Transforms) ─────
 function ImageLightbox({ src, onClose }: { src: string; onClose: () => void }) {
@@ -1842,6 +1911,34 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [prev, setPrev] = useState<string | null>(null);
   const [retryingAffiliate, setRetryingAffiliate] = useState(false);
   const [scrapingImage, setScrapingImage] = useState(false);
+  const [generatingBanner, setGeneratingBanner] = useState(false);
+  const [priceIntel, setPriceIntel] = useState<PriceIntelligenceData | null>(null);
+
+  useEffect(() => {
+    apiGetPriceHistory(deal.id).then(intel => {
+      if (intel) setPriceIntel(intel);
+    });
+  }, [deal.id]);
+
+  const doGenerateBanner = async () => {
+    setGeneratingBanner(true);
+    try {
+      const res = await apiGenerateBanner(deal.id);
+      if (res && res.banner_url) {
+        setImgUrl(res.banner_url);
+        setUploadedImg(res.banner_url);
+        setImgFile(null);
+        onToast("🎨 Branded 1080x1080 deal card generated!", "success");
+      } else {
+        onToast("Banner generation failed", "error");
+      }
+    } catch {
+      onToast("Error generating banner", "error");
+    } finally {
+      setGeneratingBanner(false);
+    }
+  };
+
   const fileRef = useRef<HTMLInputElement>(null);
   const previewSrc = imgFile || imgUrl || null;
   const isDirty = title !== deal.title || price !== String(deal.price || "") || mrp !== String(deal.mrp || "") || coupon !== (deal.coupon || "") || imgUrl !== deal.imgUrl || text !== deal.affText || imgFile !== null;
@@ -2062,6 +2159,33 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               );
             })()}
 
+            {/* 30-Day Historical Price Intelligence & Fake Discount Buster */}
+            {priceIntel && priceIntel.recorded_points > 0 && (
+              <div className="p-3 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-between flex-wrap gap-2 text-xs shadow-inner">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-zinc-400 font-mono text-[11px]">
+                    30D Low: <strong className="text-emerald-400">{fmt(priceIntel.lowest_30d)}</strong>
+                  </span>
+                  <span className="text-zinc-600">·</span>
+                  <span className="text-zinc-400 font-mono text-[11px]">
+                    30D Avg: <strong className="text-zinc-300">{fmt(priceIntel.avg_30d)}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                  {priceIntel.is_historical_low && (
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                      <span>📉</span> 30D Record Low
+                    </span>
+                  )}
+                  {priceIntel.mrp_inflated && (
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1" title="Current MRP is significantly higher than historical average">
+                      <span>⚠️</span> Inflated MRP
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Dual Image Choice Selector + Download Action */}
             {(telegramImg || storeImg || uploadedImg || imgFile) && (
               <div className="flex flex-col gap-2 p-3 rounded-2xl bg-slate-950/80 border border-white/8 shadow-inner">
@@ -2178,6 +2302,11 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               <button onClick={doRetryAffiliate} disabled={retryingAffiliate}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-40 transition-colors cursor-pointer">
                 <Zap size={12} /> Refresh Affiliate
+              </button>
+              <button onClick={doGenerateBanner} disabled={generatingBanner}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 disabled:opacity-40 transition-colors cursor-pointer"
+                title="Generate 1080x1080 branded social deal card">
+                <span>🎨</span> {generatingBanner ? "Generating..." : "Generate Branded Banner"}
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             </div>
@@ -3698,8 +3827,9 @@ const NAV: { id: Tab; icon: React.ElementType; label: string }[] = [
   { id: "Settings", icon: Settings2, label: "Settings" },
 ];
 
-function Sidebar({ tab, setTab, pending, dark, setDark }: {
+function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAlerts }: {
   tab: Tab; setTab: (t: Tab) => void; pending: number; dark: boolean; setDark: (v: boolean) => void;
+  soundAlerts: boolean; setSoundAlerts: (v: boolean) => void;
 }) {
   return (
     <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-white/8 glass-panel" style={{ width: 220, background: "rgba(9, 10, 16, 0.85)" }}>
@@ -3743,6 +3873,28 @@ function Sidebar({ tab, setTab, pending, dark, setDark }: {
       </nav>
 
       <div className="p-4 border-t border-white/8 flex flex-col gap-2.5">
+        <button
+          type="button"
+          onClick={() => {
+            const next = !soundAlerts;
+            setSoundAlerts(next);
+            try { localStorage.setItem("dealflow_sound_alerts", String(next)); } catch {}
+            if (next) playGlitchChime();
+          }}
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+            soundAlerts
+              ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/15 shadow-sm"
+              : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
+          }`}
+          title="Toggle instant audio chime when an 80%+ price glitch is detected"
+        >
+          <span className="flex items-center gap-1.5">
+            <span>{soundAlerts ? "🔔" : "🔕"}</span>
+            <span>Glitch Chime</span>
+          </span>
+          <span className="text-[10px] font-mono font-bold uppercase">{soundAlerts ? "ON" : "OFF"}</span>
+        </button>
+
         <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
           <span>Engine VM</span>
           <span className="text-emerald-400 font-bold flex items-center gap-1">
@@ -3770,6 +3922,24 @@ export default function App() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [dark, setDark] = useState(true);
+  const [soundAlerts, setSoundAlerts] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem("dealflow_sound_alerts") !== "false";
+    } catch {
+      return true;
+    }
+  });
+
+  // Telegram Mini App (TMA) detection & initialization
+  useEffect(() => {
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg) {
+        tg.ready();
+        tg.expand();
+      }
+    } catch {}
+  }, []);
 
   const loadDeals = useCallback(async () => {
     try {
@@ -3797,6 +3967,15 @@ export default function App() {
           try {
             const data = JSON.parse(e.data);
             if (data.event === "new_deal" || data.event === "deal_approved") {
+              if (data.event === "new_deal" && soundAlerts) {
+                const p = data.deal?.prices || {};
+                const disc = p.discount_pct || 0;
+                const sale = p.sale || 0;
+                if (disc >= 80 || (sale > 0 && sale <= 99)) {
+                  playGlitchChime();
+                  toast("⚡ Flash Price Drop Detected!", { icon: "🔥" });
+                }
+              }
               // 1,500ms sliding debounce: coalesces deal bursts into a single clean background sync
               clearTimeout(debounceTimer);
               debounceTimer = setTimeout(() => {
@@ -3813,10 +3992,16 @@ export default function App() {
       clearTimeout(debounceTimer);
       ws?.close();
     };
-  }, [loadDeals]);
+  }, [loadDeals, soundAlerts]);
 
   const handleApprove = async (id: string, changes?: Partial<Deal>) => {
     triggerApproveConfetti();
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg?.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred("medium");
+      }
+    } catch {}
     setDeals(prev => prev.map(d => d.id === id ? { ...d, ...(changes || {}), status: "approved" } : d));
     toast.success("Deal approved & broadcasted!");
     await apiApprove(id, changes);
@@ -3844,7 +4029,7 @@ export default function App() {
     <div className="flex h-screen w-screen overflow-hidden bg-[#07080E] text-white relative">
       <div className="ambient-mesh" />
       <Toaster position="top-right" richColors theme="dark" />
-      <Sidebar tab={tab} setTab={setTab} pending={pendingCount} dark={dark} setDark={setDark} />
+      <Sidebar tab={tab} setTab={setTab} pending={pendingCount} dark={dark} setDark={setDark} soundAlerts={soundAlerts} setSoundAlerts={setSoundAlerts} />
 
       <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0 relative z-10">
         {tab === "Review" && (
