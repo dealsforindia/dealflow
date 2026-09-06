@@ -10,7 +10,7 @@ import {
   Maximize2, Copy, Link as LinkIcon, FileText,
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
-  LayoutGrid, List, Columns, Smartphone, Layers, CornerDownLeft, Command,
+  LayoutGrid, Columns, Smartphone, Layers, CornerDownLeft, Command,
   Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History
 } from "lucide-react";
 import {
@@ -1198,133 +1198,6 @@ function DealCard({
   );
 }
 
-// ─── Linear-Style High-Density Table Row Component ───
-function DealTableRow({
-  deal, selected, bulkMode, isActive,
-  onApprove, onReject, onEdit, onToggleSelect,
-}: {
-  deal: Deal;
-  selected?: boolean;
-  bulkMode?: boolean;
-  isActive?: boolean;
-  onApprove: (id: string, changes?: Partial<Deal>) => void;
-  onReject: (id: string) => void;
-  onEdit: (deal: Deal) => void;
-  onToggleSelect?: (id: string) => void;
-}) {
-  const store = getStoreBadge(deal.platforms, deal.affText);
-  const comm = calculateCommissionYield(deal);
-  const isATL = (deal.discount >= 70 && deal.price > 0) || (Boolean(deal.bestPrice) && deal.price <= (deal.bestPrice || 0) && deal.discount >= 55) || (deal.price > 0 && deal.price <= deal.mrp * 0.35);
-
-  return (
-    <div
-      onClick={() => onEdit(deal)}
-      className={`pro-table-row px-4 py-2 flex items-center gap-3.5 cursor-pointer group select-none ${
-        isActive ? "pro-table-row-active" : ""
-      } ${selected ? "bg-emerald-500/10" : ""}`}
-    >
-      {/* Checkbox */}
-      {bulkMode && (
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={(e) => {
-            e.stopPropagation();
-            onToggleSelect?.(deal.id);
-          }}
-          className="w-4 h-4 rounded border-white/20 bg-slate-900 text-emerald-500 focus:ring-0 cursor-pointer flex-shrink-0"
-        />
-      )}
-
-      {/* Thumbnail */}
-      <div className="w-10 h-10 rounded-lg bg-[#080911] border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-        {deal.imgUrl ? (
-          <img src={deal.imgUrl} alt={deal.title} className="w-full h-full object-contain p-0.5" />
-        ) : (
-          <Category3DIcon category={deal.category} size={18} />
-        )}
-      </div>
-
-      {/* Store */}
-      <div className="w-20 flex-shrink-0">
-        <Store3DBadge store={store.tag} />
-      </div>
-
-      {/* Product Title */}
-      <div className="flex-1 min-w-0">
-        <span className="pro-title truncate block text-xs sm:text-[13px] group-hover:text-emerald-300 transition-colors">
-          {deal.title}
-        </span>
-      </div>
-
-      {/* Price & Discount & Commission */}
-      <div className="w-32 sm:w-36 flex-shrink-0 text-right flex flex-col items-end">
-        <div className="flex items-center gap-1.5">
-          <span className="pro-price text-sm font-bold text-emerald-300">
-            {fmt(deal.price)}
-          </span>
-          {isATL ? (
-            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 shadow-sm">
-              ATL
-            </span>
-          ) : deal.discount > 0 ? (
-            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-              {Math.round(deal.discount)}%
-            </span>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          {deal.mrp > 0 && deal.mrp > deal.price && (
-            <span className="text-[10px] text-zinc-500 line-through font-mono">
-              {fmt(deal.mrp)}
-            </span>
-          )}
-          {deal.price > 0 && comm.estYieldPerSale > 0 && (
-            <span className="text-[9px] font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1 rounded" title={`${comm.categoryTier} (${comm.ratePct}%)`}>
-              💎 ₹{comm.estYieldPerSale}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Channel Source & Time */}
-      <div className="hidden md:flex w-36 flex-shrink-0 items-center gap-1.5 text-xs text-zinc-400">
-        <div className="w-3.5 h-3.5 rounded-full bg-slate-800 text-[8px] font-bold text-white flex items-center justify-center">
-          {deal.channel[0]}
-        </div>
-        <span className="truncate flex-1 text-[11px]">{deal.channel}</span>
-        <span className="text-[10px] text-zinc-500 font-mono">{fmtAgo(deal.ts)}</span>
-      </div>
-
-      {/* Quick Action Buttons */}
-      <div className="w-20 sm:w-24 flex-shrink-0 flex items-center justify-end gap-1" onClick={e => e.stopPropagation()}>
-        {deal.status === "pending" ? (
-          <>
-            <button
-              onClick={() => onReject(deal.id)}
-              className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 transition-all active:scale-95 cursor-pointer"
-              title="Skip"
-            >
-              <X size={13} />
-            </button>
-            <button
-              onClick={() => onApprove(deal.id)}
-              className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 transition-all active:scale-95 shadow-sm cursor-pointer"
-              title="Approve"
-            >
-              <Check size={13} strokeWidth={2.5} />
-            </button>
-          </>
-        ) : (
-          <span className={`text-[11px] font-semibold ${deal.status === "approved" ? "text-emerald-300" : "text-slate-400"}`}>
-            {deal.status === "approved" ? "✓ Posted" : "✕ Skipped"}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── 3-Pane Split Inspector Desk (Zero-Modal Workflow) ─────────────────────────
 interface SplitPaneInspectorProps {
   deal: Deal | null;
@@ -2221,7 +2094,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [isDropping, setIsDropping] = useState(false);
   const [quickDropModal, setQuickDropModal] = useState(false);
   const [modalUrl, setModalUrl] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "table" | "split">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "split">("grid");
   const [mobileMode, setMobileMode] = useState<"stream" | "swipe">("stream");
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedSplitId, setSelectedSplitId] = useState<string | null>(null);
@@ -2552,30 +2425,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                 align="right"
               />
             </div>
-
-            {/* View Switcher Pill */}
-            <div className="flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-full transition-all flex items-center justify-center cursor-pointer ${
-                  viewMode === "grid" ? "bg-white/20 text-white shadow-sm border border-white/25" : "text-zinc-400"
-                }`}
-                title="Cards View"
-              >
-                <LayoutGrid size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-full transition-all flex items-center justify-center cursor-pointer ${
-                  viewMode === "table" ? "bg-white/20 text-white shadow-sm border border-white/25" : "text-zinc-400"
-                }`}
-                title="List View"
-              >
-                <List size={13} />
-              </button>
-            </div>
           </div>
 
           {/* Mobile Tier 2: Status Tabs Horizontal Scroll Strip */}
@@ -2616,19 +2465,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
               >
                 <LayoutGrid size={13} />
                 <span className="text-[11px] font-bold">Cards</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
-                    : "text-zinc-400 hover:text-zinc-200"
-                }`}
-                title="Dense List View"
-              >
-                <List size={13} />
-                <span className="text-[11px] font-bold">List</span>
               </button>
               <button
                 type="button"
@@ -2909,33 +2745,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                 }}
                 onToast={toast as any}
               />
-            </div>
-          </div>
-        ) : viewMode === "table" ? (
-          /* Linear-Style High-Density Table View */
-          <div className="rounded-2xl border border-white/8 bg-gradient-to-b from-[#111320]/90 to-[#0A0C16]/90 backdrop-blur-xl overflow-hidden shadow-2xl">
-            <div className="px-4 py-2.5 bg-white/[0.03] border-b border-white/8 flex items-center gap-3.5 text-[11px] font-mono font-bold uppercase tracking-wider text-zinc-400">
-              {bulkMode && <div className="w-4 flex-shrink-0" />}
-              <div className="w-10 flex-shrink-0 text-center">Media</div>
-              <div className="w-20 flex-shrink-0">Store</div>
-              <div className="flex-1">Product Title</div>
-              <div className="w-28 sm:w-32 text-right">Price / Off</div>
-              <div className="hidden md:block w-36">Channel</div>
-              <div className="w-20 sm:w-24 text-right">Actions</div>
-            </div>
-            <div className="divide-y divide-white/[0.04]">
-              {pagedVisible.map((d) => (
-                <DealTableRow
-                  key={d.id}
-                  deal={d}
-                  selected={selectedIds.has(d.id)}
-                  onToggleSelect={toggleSelect}
-                  bulkMode={bulkMode}
-                  onApprove={onApprove}
-                  onReject={onReject}
-                  onEdit={onEdit}
-                />
-              ))}
             </div>
           </div>
         ) : (
