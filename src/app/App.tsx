@@ -637,6 +637,7 @@ function DealCard({
 }) {
   const [lightbox, setLightbox] = useState(false);
   const [imgErr, setImgErr] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyPlatform, setCopyPlatform] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
@@ -754,7 +755,18 @@ function DealCard({
           onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
         >
           {deal.imgUrl && !imgErr ? (
-            <img src={deal.imgUrl} alt="" className="w-full h-full object-contain" onError={() => setImgErr(true)} />
+            <>
+              {!imgLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] via-white/[0.08] to-white/[0.03] animate-pulse" />
+              )}
+              <img
+                src={deal.imgUrl}
+                alt=""
+                className={`w-full h-full object-contain transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgErr(true)}
+              />
+            </>
           ) : (
             <Category3DPlaceholder category={deal.category} />
           )}
@@ -930,7 +942,17 @@ function DealCard({
         >
           {deal.imgUrl && !imgErr ? (
             <>
-              <img src={deal.imgUrl} alt={deal.title} className="max-h-full max-w-full object-contain filter drop-shadow-md group-hover/img:scale-105 transition-transform duration-200 ease-out" loading="lazy" onError={() => setImgErr(true)} />
+              {!imgLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] via-white/[0.08] to-white/[0.03] animate-pulse" />
+              )}
+              <img
+                src={deal.imgUrl}
+                alt={deal.title}
+                className={`max-h-full max-w-full object-contain filter drop-shadow-md group-hover/img:scale-105 transition-all duration-200 ease-out ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                loading="lazy"
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgErr(true)}
+              />
               <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
                 <div className="p-2 rounded-lg bg-slate-900/90 text-white border border-white/20 shadow-xl">
                   <Maximize2 size={14} />
@@ -3350,11 +3372,21 @@ function PostedDealCard({ deal }: { deal: Deal }) {
 }
 
 function PostedView({ deals }: { deals: Deal[] }) {
+  const [search, setSearch] = useState("");
   const postedDeals = deals.filter(d => d.status === "approved");
+  const filtered = postedDeals.filter(d => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      (d.title || "").toLowerCase().includes(q) ||
+      (d.channel || "").toLowerCase().includes(q) ||
+      (d.category || "").toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-6 max-w-4xl mx-auto flex flex-col gap-4">
-      <div className="p-5 rounded-3xl glass-panel border border-white/10 flex items-center justify-between">
+      <div className="p-5 rounded-3xl glass-panel border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <RocketBroadcast3D size={36} />
           <div>
@@ -3364,13 +3396,39 @@ function PostedView({ deals }: { deals: Deal[] }) {
             <p className="text-xs text-slate-400 mt-0.5">Live timeline of deals sent to Telegram & X</p>
           </div>
         </div>
+
+        {/* Search Past Broadcasts */}
+        <div className="relative w-full sm:w-64">
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search broadcast history..."
+            className="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-slate-950/80 border border-white/10 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50 transition-colors"
+          />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        {postedDeals.map(d => (
-          <PostedDealCard key={d.id} deal={d} />
-        ))}
-      </div>
+      {filtered.length === 0 ? (
+        <div className="p-12 text-center rounded-3xl glass-card border border-white/8 flex flex-col items-center justify-center gap-2">
+          <p className="text-xs text-slate-400">No matching broadcasted deals found.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {filtered.map(d => (
+            <PostedDealCard key={d.id} deal={d} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -3555,6 +3613,7 @@ export default function App() {
 
   useEffect(() => {
     let ws: WebSocket;
+    let debounceTimer: ReturnType<typeof setTimeout>;
     const connect = () => {
       try {
         ws = new WebSocket(WS_URL);
@@ -3562,14 +3621,23 @@ export default function App() {
         ws.onmessage = (e) => {
           try {
             const data = JSON.parse(e.data);
-            if (data.event === "new_deal" || data.event === "deal_approved") loadDeals();
+            if (data.event === "new_deal" || data.event === "deal_approved") {
+              // 1,500ms sliding debounce: coalesces deal bursts into a single clean background sync
+              clearTimeout(debounceTimer);
+              debounceTimer = setTimeout(() => {
+                loadDeals();
+              }, 1500);
+            }
           } catch {}
         };
         ws.onclose = () => setTimeout(connect, 3000);
       } catch {}
     };
     connect();
-    return () => { ws?.close(); };
+    return () => {
+      clearTimeout(debounceTimer);
+      ws?.close();
+    };
   }, [loadDeals]);
 
   const handleApprove = async (id: string, changes?: Partial<Deal>) => {
