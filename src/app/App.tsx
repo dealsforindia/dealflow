@@ -35,7 +35,10 @@ interface Deal {
   id: string; title: string; price: number; mrp: number; discount: number;
   category: string; catEmoji: string; channel: string; channelRaw: string;
   score: number; ts: number; status: DealStatus; dealType: DealType;
-  affiliate: boolean; coupon: string | null; imgUrl: string;
+  affiliate: boolean; coupon: string | null;
+  couponDiscount?: number | null;
+  effectivePrice?: number | null;
+  imgUrl: string;
   telegramImgUrl?: string;
   storeImgUrl?: string;
   uploadedImgUrl?: string;
@@ -51,6 +54,8 @@ interface Deal {
 interface RawDeal {
   aff_text: string; prices: { mrp: number | null; sale: number | null; discount_pct: number | null };
   prod_name: string; category: string; platforms: string[]; coupon: string | null;
+  coupon_discount?: number | null;
+  effective_price?: number | null;
   bank_offers: string[]; flash: unknown; img_path: string | null; ts: number;
   original_text: string; source_channel: string; affiliate_applied: boolean;
   original_msg_link: string; deal_type: string; score: number | null;
@@ -359,7 +364,10 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
     ts: Math.floor(d.ts), status: "pending" as DealStatus,
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
-    affiliate: d.affiliate_applied, coupon: d.coupon,
+    affiliate: d.affiliate_applied,
+    coupon: d.coupon || null,
+    couponDiscount: d.coupon_discount ?? (d as any).coupon_discount ?? null,
+    effectivePrice: d.effective_price ?? (d as any).effective_price ?? null,
     imgUrl: (() => {
       const u = d.img_url;
       if (u && !u.includes("74.225.250.0")) return u;
@@ -533,6 +541,9 @@ interface ScrapedProductData {
   price?: number | null;
   mrp?: number | null;
   affText?: string | null;
+  coupon?: string | null;
+  coupon_discount?: number | null;
+  effective_price?: number | null;
 }
 
 async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
@@ -549,6 +560,9 @@ async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
       category: data.category || null,
       price: data.prices?.sale || data.price || null,
       mrp: data.prices?.mrp || data.mrp || null,
+      coupon: data.coupon || null,
+      coupon_discount: data.coupon_discount || null,
+      effective_price: data.effective_price || null,
       affText: data.aff_text || data.ai_formatted_text || null,
     };
   } catch { return null; }
@@ -947,6 +961,19 @@ function DealCard({
                 )}
               </div>
             </div>
+
+            {deal.coupon && (
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-[8.5px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded flex items-center gap-1 truncate max-w-[130px]" title={deal.coupon}>
+                  <span>🎟️</span> {deal.coupon}
+                </span>
+                {deal.effectivePrice && deal.effectivePrice < deal.price && (
+                  <span className="text-[9px] font-mono font-black text-emerald-300 whitespace-nowrap">
+                    Eff: ₹{deal.effectivePrice}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Inline Touch Buttons (Thumb-friendly, 28px height) */}
@@ -1085,6 +1112,12 @@ function DealCard({
                 {Math.round(deal.discount)}% OFF
               </span>
             )}
+            {deal.coupon && (
+              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/30 via-orange-500/25 to-amber-500/30 border border-amber-400/50 text-amber-200 font-mono text-[9.5px] font-bold shadow-md flex items-center gap-1 backdrop-blur-md">
+                <span>🎟️</span>
+                <span className="truncate max-w-[120px]">{deal.coupon}</span>
+              </span>
+            )}
             {deal.imgUrl && (
               <button
                 type="button"
@@ -1189,6 +1222,28 @@ function DealCard({
                 <span className="text-xs font-black text-amber-400 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg"><span>⚡</span> Freebie Loot</span>
               )}
             </div>
+
+            {/* Coupon & Effective Price Strip */}
+            {deal.coupon && (
+              <div className="mt-2 flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-amber-500/[0.08] border border-amber-500/25 text-[11px] shadow-sm">
+                <div className="flex items-center gap-1.5 font-medium text-amber-300">
+                  <span className="text-xs">🎟️</span>
+                  <span className="font-semibold text-zinc-300">Coupon:</span>
+                  <span className="font-bold text-amber-200 font-mono">{deal.coupon}</span>
+                  {deal.couponDiscount ? (
+                    <span className="text-[10px] text-amber-400/80 font-mono">(-₹{deal.couponDiscount})</span>
+                  ) : null}
+                </div>
+                {deal.effectivePrice && deal.effectivePrice < deal.price ? (
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <span className="text-[10px] text-zinc-400">Effective:</span>
+                    <span className="font-black text-emerald-300 text-xs bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                      ₹{deal.effectivePrice}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             {/* Affiliate Monetization Yield Breakdown */}
             {deal.price > 0 && (
@@ -1756,6 +1811,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [title, setTitle] = useState(deal.title);
   const [price, setPrice] = useState(String(deal.price || ""));
   const [mrp, setMrp] = useState(String(deal.mrp || ""));
+  const [coupon, setCoupon] = useState(deal.coupon || "");
   
   const getInitialText = () => {
     const raw = (deal.affText || "").trim();
@@ -1788,7 +1844,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [scrapingImage, setScrapingImage] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const previewSrc = imgFile || imgUrl || null;
-  const isDirty = title !== deal.title || price !== String(deal.price || "") || imgUrl !== deal.imgUrl || text !== deal.affText || imgFile !== null;
+  const isDirty = title !== deal.title || price !== String(deal.price || "") || mrp !== String(deal.mrp || "") || coupon !== (deal.coupon || "") || imgUrl !== deal.imgUrl || text !== deal.affText || imgFile !== null;
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -1868,6 +1924,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
         if (result.title) setTitle(result.title);
         if (result.price) setPrice(String(result.price));
         if (result.mrp) setMrp(String(result.mrp));
+        if (result.coupon) setCoupon(result.coupon);
         if (result.affText) {
           setText(result.affText);
         } else if (result.title) {
@@ -1896,6 +1953,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     uploadedImgUrl: uploadedImg,
     price: Number(price) || deal.price,
     mrp: Number(mrp) || deal.mrp,
+    coupon: coupon.trim() ? coupon.trim() : null,
     affText: text,
   };
 
@@ -1932,8 +1990,8 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-950/80 border border-white/10 text-white focus:outline-none focus:border-emerald-500/50" />
             </div>
 
-            {/* Price Inputs */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Price & Coupon Inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Sale Price (₹)</label>
                 <input type="number" value={price} onChange={e => setPrice(e.target.value)}
@@ -1943,6 +2001,14 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">MRP Price (₹)</label>
                 <input type="number" value={mrp} onChange={e => setMrp(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-950/80 border border-white/10 text-slate-400 focus:outline-none focus:border-white/20" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center justify-between">
+                  <span>🎟️ Coupon</span>
+                  {coupon && <button type="button" onClick={() => setCoupon("")} className="text-[9px] text-rose-400 hover:underline">Clear</button>}
+                </label>
+                <input type="text" value={coupon} placeholder="e.g. 10% coupon" onChange={e => setCoupon(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-950/80 border border-white/10 text-amber-300 focus:outline-none focus:border-amber-500/50" />
               </div>
             </div>
 
@@ -3453,8 +3519,18 @@ function PostedDealCard({ deal }: { deal: Deal }) {
       )}
       <div className="flex-1 min-w-0">
         <h4 className="text-xs font-bold text-white truncate" title={deal.title}>{deal.title}</h4>
-        <div className="flex items-center gap-3 mt-1 text-[11px]">
+        <div className="flex items-center gap-2 mt-1 text-[11px] flex-wrap">
           <span className="font-bold font-mono text-emerald-400">{fmt(deal.price)}</span>
+          {deal.coupon && (
+            <span className="text-[10px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded flex items-center gap-1 font-mono">
+              🎟️ {deal.coupon}
+            </span>
+          )}
+          {deal.effectivePrice && deal.effectivePrice < deal.price && (
+            <span className="text-[10px] font-bold text-emerald-300 font-mono">
+              Eff: ₹{deal.effectivePrice}
+            </span>
+          )}
           <span className="text-slate-500 font-mono">{fmtAgo(deal.ts)}</span>
           <span className="text-slate-400 font-semibold">{deal.channel}</span>
         </div>
