@@ -21,6 +21,7 @@ import {
   Category3DPlaceholder, StudioWand3D, AllCaughtUp3D, EmptyFilter3D
 } from "./components/Iconscout3DAssets";
 import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
+import { ChannelPerformanceHeatmap } from "./components/ChannelPerformanceHeatmap";
 import {
   playApprove, playReject, playCopy, playTick, playGlitch, playUndo,
   isSoundMuted, toggleSound
@@ -46,9 +47,17 @@ interface Deal {
   verdict: string; signals: string[];
   clusterCount?: number;
   clusterChannels?: { name: string; channel: string; price?: number; ts?: number }[];
+  clusterId?: string;
+  isClusterHead?: boolean;
   bestPrice?: number;
   bestChannel?: string;
   affiliateWarn?: string;
+  stockVerified?: boolean;
+  inStock?: boolean;
+  stockStatusText?: string;
+  livePrice?: number | null;
+  priceChanged?: boolean;
+  priceDiff?: number;
 }
 
 interface RawDeal {
@@ -63,11 +72,21 @@ interface RawDeal {
   telegram_img_url?: string;
   store_img_url?: string;
   uploaded_img_url?: string;
+  cluster_id?: string;
   cluster_count?: number;
+  cluster_size?: number;
+  is_cluster_head?: boolean;
   cluster_channels?: { name: string; channel: string; price?: number; ts?: number }[];
+  cluster_sources?: { name: string; channel: string; price?: number; ts?: number }[];
   best_price?: number;
   best_channel?: string;
   affiliate_warn?: string;
+  stock_verified?: boolean;
+  in_stock?: boolean;
+  stock_status_text?: string;
+  live_price?: number | null;
+  price_changed?: boolean;
+  price_diff?: number;
 }
 
 interface AppSettings {
@@ -410,17 +429,25 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     originalText: d.original_text || "",
     affText: (d as any).ai_formatted_text || d.aff_text || d.original_text || "",
     verdict: "", signals: [],
-    clusterCount: d.cluster_count || 1,
-    clusterChannels: d.cluster_channels || [],
+    clusterId: d.cluster_id,
+    clusterCount: d.cluster_size || d.cluster_count || (d.cluster_channels?.length ? d.cluster_channels.length + 1 : 1),
+    isClusterHead: d.is_cluster_head !== false,
+    clusterChannels: d.cluster_sources || d.cluster_channels || [],
     bestPrice: d.best_price,
     bestChannel: d.best_channel,
     affiliateWarn: d.affiliate_warn,
+    stockVerified: Boolean(d.stock_verified),
+    inStock: d.in_stock !== false,
+    stockStatusText: d.stock_status_text || "",
+    livePrice: d.live_price ?? null,
+    priceChanged: Boolean(d.price_changed),
+    priceDiff: d.price_diff ?? 0,
   };
 }
 
 async function fetchPendingDeals(): Promise<Deal[]> {
   const [pendingRes, recentRes] = await Promise.all([
-    fetch(`${API_BASE}/api/v1/deals/pending?limit=1000`).catch(() => null),
+    fetch(`${API_BASE}/api/v1/deals/pending?limit=1000&cluster=true`).catch(() => null),
     fetch(`${API_BASE}/api/v1/deals/recent?limit=300`).catch(() => null),
   ]);
 
@@ -621,6 +648,108 @@ async function apiGetPriceHistory(id: string): Promise<PriceIntelligenceData | n
   }
 }
 
+interface StockVerificationResult {
+  verified: boolean;
+  in_stock: boolean;
+  status_text: string;
+  current_price?: number | null;
+  price_changed?: boolean;
+  price_diff?: number;
+  store?: string;
+  url?: string;
+}
+
+async function apiVerifyStock(id: string): Promise<StockVerificationResult | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/verify-stock`, { method: "POST" });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+interface BroadcastQueueItem {
+  fp_hash: string;
+  title: string;
+  sale_price: number | null;
+  mrp: number | null;
+  channel: string;
+  img_url: string | null;
+  scheduled_at: number;
+  eta_sec: number;
+  interval_sec: number;
+}
+
+interface BroadcastQueueResponse {
+  items: BroadcastQueueItem[];
+  total_pending: number;
+  next_eta_sec: number;
+}
+
+async function apiGetBroadcastQueue(): Promise<BroadcastQueueResponse | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/broadcast/queue`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function apiQueueDeal(id: string, intervalSec: number = 180, changes?: Record<string, unknown>): Promise<boolean> {
+  try {
+    const payload = changes ? { ...mapChangesToBackend(changes), interval_sec: intervalSec } : { interval_sec: intervalSec };
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/queue`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function apiFlushBroadcastQueue(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/broadcast/queue/flush`, { method: "POST" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function apiDeleteQueueItem(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/broadcast/queue/${id}`, { method: "DELETE" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+interface ChannelAnalyticsItem {
+  channel: string;
+  total_24h: number;
+  approved_24h: number;
+  rejected_24h: number;
+  conversion_pct: number;
+  avg_discount_pct: number;
+  last_active_sec_ago: number;
+}
+
+async function apiGetChannelsAnalytics(): Promise<ChannelAnalyticsItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/channels/analytics`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.channels) ? data.channels : [];
+  } catch {
+    return [];
+  }
+}
+
 function playGlitchChime() {
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -799,7 +928,7 @@ export function calculateCommissionYield(deal: Deal): {
 
 // ─── Senior Pro Deal Card (Responsive Mobile Horizontal + Desktop Specular Grid) ───
 function DealCard({
-  deal, onApprove, onReject, onEdit,
+  deal, onApprove, onReject, onEdit, onQueue,
   selected = false, onToggleSelect, bulkMode = false,
   isActive = false,
 }: {
@@ -807,6 +936,7 @@ function DealCard({
   onApprove: (id: string, changes?: Partial<Deal>) => void;
   onReject: (id: string) => void;
   onEdit: (deal: Deal) => void;
+  onQueue?: (id: string) => void;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
   bulkMode?: boolean;
@@ -819,6 +949,43 @@ function DealCard({
   const [copyPlatform, setCopyPlatform] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [showArbitrage, setShowArbitrage] = useState(false);
+  const [stockInfo, setStockInfo] = useState<{ verified: boolean; inStock: boolean; statusText: string; price?: number | null } | null>(
+    deal.stockVerified ? { verified: true, inStock: deal.inStock !== false, statusText: deal.stockStatusText || (deal.inStock !== false ? "In Stock" : "Out of Stock"), price: deal.livePrice } : null
+  );
+  const [checkingStock, setCheckingStock] = useState(false);
+
+  const handleProbeStock = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (checkingStock) return;
+    setCheckingStock(true);
+    toast.loading("🔍 Probing live store availability...", { id: `stock-${deal.id}` });
+    const res = await apiVerifyStock(deal.id);
+    setCheckingStock(false);
+    if (res) {
+      setStockInfo({
+        verified: true,
+        inStock: res.in_stock,
+        statusText: res.status_text,
+        price: res.current_price,
+      });
+      if (res.in_stock) {
+        toast.success(`🟢 Live Verified: In Stock! (${res.status_text})`, { id: `stock-${deal.id}` });
+      } else {
+        toast.error(`🔴 Warning: Out of Stock (${res.status_text})`, { id: `stock-${deal.id}` });
+      }
+      if (res.price_changed && res.current_price) {
+        toast.info(`⚠️ Live price is now ₹${res.current_price}`, { id: `stock-price-${deal.id}` });
+      }
+    } else {
+      toast.error("Stock check unavailable", { id: `stock-${deal.id}` });
+    }
+  };
+
+  const handleQueueWithSound = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    playTick();
+    onQueue?.(deal.id);
+  };
 
   const store = getStoreBadge(deal.platforms, deal.affText);
   const savings = deal.mrp > deal.price ? deal.mrp - deal.price : 0;
@@ -1063,6 +1230,15 @@ function DealCard({
                 >
                   <PenLine size={11} /> <span>Tune</span>
                 </button>
+                {onQueue && (
+                  <button
+                    onClick={handleQueueWithSound}
+                    className="h-7 px-2 rounded-lg flex items-center justify-center bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 active:scale-95 text-[11px] font-bold cursor-pointer"
+                    title="Add to Anti-Spam Broadcast Queue (Next in 3 mins)"
+                  >
+                    <Clock size={11} />
+                  </button>
+                )}
                 {isGlitch && (
                   <button
                     onClick={handlePostGlitch}
@@ -1415,8 +1591,41 @@ function DealCard({
                   <X size={14} strokeWidth={2.5} /><span className="ml-1">Skip</span>
                 </button>
                 <button onClick={() => onEdit(deal)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer flex-1" title="Edit & Tune">
-                  <PenLine size={13} /><span className="ml-1.5">Edit & Tune</span>
+                  <PenLine size={13} /><span className="ml-1.5">Tune</span>
                 </button>
+                {stockInfo ? (
+                  <span
+                    className={`h-9 px-2.5 rounded-xl text-[10.5px] font-bold border flex items-center gap-1 font-mono ${
+                      stockInfo.inStock
+                        ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                        : "bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse"
+                    }`}
+                    title={stockInfo.statusText}
+                  >
+                    <span>{stockInfo.inStock ? "🟢 In Stock" : "🔴 OOS"}</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleProbeStock}
+                    disabled={checkingStock}
+                    className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 active:scale-95 transition-all text-xs font-semibold cursor-pointer"
+                    title="Probe live store availability & price"
+                  >
+                    {checkingStock ? <span className="animate-spin text-xs">⏳</span> : <span>🔍 Stock</span>}
+                  </button>
+                )}
+                {onQueue && (
+                  <button
+                    type="button"
+                    onClick={handleQueueWithSound}
+                    className="h-9 px-3 rounded-xl flex items-center justify-center bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/35 active:scale-95 transition-all text-xs font-bold cursor-pointer"
+                    title="Add to Anti-Spam Broadcast Queue (Next in 3 mins)"
+                  >
+                    <Clock size={13} />
+                    <span className="ml-1 hidden xl:inline">Queue</span>
+                  </button>
+                )}
                 <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-1 transition-all" title="Approve & Broadcast">
                   <Check size={15} strokeWidth={3} /><span>Approve</span>
                 </button>
@@ -1873,10 +2082,11 @@ interface EditModalProps {
   onClose: () => void;
   onSaveDraft: (changes: Partial<Deal>) => void;
   onSaveApprove: (changes: Partial<Deal>) => void;
+  onSaveQueue?: (changes: Partial<Deal>) => void;
   onToast: (msg: string, type?: "success" | "error" | "info") => void;
 }
 
-function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditModalProps) {
+function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onSaveQueue, onToast }: EditModalProps) {
   const [title, setTitle] = useState(deal.title);
   const [price, setPrice] = useState(String(deal.price || ""));
   const [mrp, setMrp] = useState(String(deal.mrp || ""));
@@ -1913,6 +2123,36 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [scrapingImage, setScrapingImage] = useState(false);
   const [generatingBanner, setGeneratingBanner] = useState(false);
   const [priceIntel, setPriceIntel] = useState<PriceIntelligenceData | null>(null);
+  const [stockInfo, setStockInfo] = useState<{ verified: boolean; inStock: boolean; statusText: string; price?: number | null } | null>(
+    deal.stockVerified ? { verified: true, inStock: deal.inStock !== false, statusText: deal.stockStatusText || (deal.inStock !== false ? "In Stock" : "Out of Stock"), price: deal.livePrice } : null
+  );
+  const [verifyingStock, setVerifyingStock] = useState(false);
+
+  const doVerifyStock = async () => {
+    setVerifyingStock(true);
+    onToast("🔍 Probing live store availability...", "info");
+    const res = await apiVerifyStock(deal.id);
+    setVerifyingStock(false);
+    if (res) {
+      setStockInfo({
+        verified: true,
+        inStock: res.in_stock,
+        statusText: res.status_text,
+        price: res.current_price,
+      });
+      if (res.in_stock) {
+        onToast(`🟢 In Stock! (${res.status_text})`, "success");
+      } else {
+        onToast(`🔴 Out of Stock (${res.status_text})`, "error");
+      }
+      if (res.price_changed && res.current_price) {
+        setPrice(String(res.current_price));
+        onToast(`⚠️ Live price updated to ₹${res.current_price}`, "info");
+      }
+    } else {
+      onToast("Stock verification unavailable", "error");
+    }
+  };
 
   useEffect(() => {
     apiGetPriceHistory(deal.id).then(intel => {
@@ -2271,13 +2511,15 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 </button>
               </div>
 
-              {/* Quick AI Presets */}
+              {/* Quick AI Presets (Dynamic AI Templates) */}
               <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {[
-                  { label: "🔥 Add Urgency", prompt: "make it punchy with limited time urgency" },
-                  { label: "✂️ Make Concise", prompt: "make it short, clean and highly readable" },
-                  { label: "💰 Highlight Discount", prompt: "highlight the highest discount and price drop" },
-                  { label: "✨ Add Clean Formatting", prompt: "clean emojis and format bullet points" }
+                  { label: "⚡ Flash Urgency", prompt: "format as an urgent flash price drop loot with countdown emojis, MRP discount breakdown, and grab link" },
+                  { label: "🎟️ Coupon Math", prompt: "break down the exact net price with coupon applied: MRP vs Sale vs Coupon savings and final effective price" },
+                  { label: "✨ Minimalist Tech", prompt: "clean 2-line minimalist post with bold product title, discounted price, and direct clean link" },
+                  { label: "🔥 Urgency", prompt: "make it punchy with limited time urgency" },
+                  { label: "✂️ Concise", prompt: "make it short, clean and highly readable" },
+                  { label: "💰 Discount", prompt: "highlight the highest discount and price drop" },
                 ].map(chip => (
                   <button key={chip.label} type="button" onClick={() => { setInstruction(chip.prompt); }}
                     className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 hover:border-emerald-500/40 transition-all cursor-pointer">
@@ -2294,6 +2536,11 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               <button onClick={() => fileRef.current?.click()}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors cursor-pointer">
                 <Upload size={12} /> Upload Image
+              </button>
+              <button onClick={doVerifyStock} disabled={verifyingStock}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors cursor-pointer"
+                title="Probe live store inventory & price">
+                <span>🔍</span> {verifyingStock ? "Probing..." : stockInfo ? (stockInfo.inStock ? "🟢 In Stock" : "🔴 Out of Stock") : "Probe Live Stock"}
               </button>
               <button onClick={doScrapeImage} disabled={scrapingImage}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors cursor-pointer">
@@ -2379,6 +2626,12 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer">
               Save Draft
             </button>
+            {onSaveQueue && (
+              <button onClick={() => { onSaveQueue(changes); onClose(); }}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-indigo-200 bg-indigo-500/20 border border-indigo-500/35 hover:bg-indigo-500/30 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-md">
+                <Clock size={14} /> Add to Queue
+              </button>
+            )}
             <button onClick={() => { onSaveApprove(changes); onClose(); }}
               className="px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-2 cursor-pointer">
               <RocketBroadcast3D size={16} /> Save & Broadcast
@@ -2390,11 +2643,158 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   );
 }
 
+// ─── Broadcast Drip Queue Drawer (Anti-Spam Curation Deck) ────────────────────
+function BroadcastQueueDrawer({
+  isOpen,
+  onClose,
+  onFlush,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onFlush: () => void;
+}) {
+  const [queue, setQueue] = useState<BroadcastQueueItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [flushing, setFlushing] = useState(false);
+
+  const loadQueue = useCallback(async () => {
+    setLoading(true);
+    const res = await apiGetBroadcastQueue();
+    if (res) {
+      setQueue(res.items || []);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadQueue();
+      const interval = setInterval(loadQueue, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [isOpen, loadQueue]);
+
+  const handleFlushNext = async () => {
+    setFlushing(true);
+    toast.loading("Publishing next queued deal immediately...", { id: "flush" });
+    const ok = await apiFlushBroadcastQueue();
+    setFlushing(false);
+    if (ok) {
+      toast.success("⚡ Published next queued deal!", { id: "flush" });
+      onFlush();
+      loadQueue();
+    } else {
+      toast.error("Failed to flush queue or queue is empty", { id: "flush" });
+    }
+  };
+
+  const handleDeleteItem = async (fpHash: string) => {
+    const ok = await apiDeleteQueueItem(fpHash);
+    if (ok) {
+      toast.success("Removed from broadcast queue");
+      setQueue(prev => prev.filter(item => item.fp_hash !== fpHash));
+    } else {
+      toast.error("Failed to remove item");
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/75 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div
+        className="w-full max-w-md h-full bg-[#0A0C16] border-l border-white/10 p-5 flex flex-col justify-between shadow-2xl overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between pb-4 border-b border-white/10">
+          <div className="flex items-center gap-2">
+            <Clock size={18} className="text-amber-400" />
+            <h3 className="text-sm font-bold text-white">Broadcast Drip Queue</h3>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              {queue.length} Scheduled
+            </span>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 cursor-pointer">
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-3 flex flex-col gap-2.5">
+          {loading && queue.length === 0 ? (
+            <div className="flex items-center justify-center h-48 text-slate-400 text-xs">
+              <RefreshCw size={14} className="animate-spin mr-2" /> Loading scheduled queue...
+            </div>
+          ) : queue.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 text-slate-500 text-center gap-2.5">
+              <Clock size={36} className="opacity-30 text-amber-400" />
+              <p className="text-xs font-semibold text-slate-300">Broadcast Queue is Empty</p>
+              <p className="text-[11px] max-w-xs text-slate-500 leading-relaxed">
+                Deals queued with "Add to Queue (3m)" drip-feed Telegram and X at calculated intervals to prevent subscriber notification fatigue.
+              </p>
+            </div>
+          ) : (
+            queue.map((item, idx) => (
+              <div key={item.fp_hash || idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/8 flex flex-col gap-2 relative group hover:border-amber-500/30 transition-all">
+                <div className="flex items-center gap-2.5">
+                  {item.img_url ? (
+                    <img src={item.img_url} alt="" className="w-12 h-12 rounded-lg object-contain bg-black/40 border border-white/10 p-0.5 flex-shrink-0" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center text-xs flex-shrink-0">🛍️</div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-white line-clamp-1">{item.title || "Untitled Deal"}</p>
+                    <div className="flex items-center gap-2 mt-1 font-mono text-[10px]">
+                      {item.sale_price && <span className="text-emerald-400 font-black">₹{item.sale_price}</span>}
+                      {item.mrp && item.mrp > (item.sale_price || 0) && (
+                        <span className="text-slate-500 line-through">₹{item.mrp}</span>
+                      )}
+                      <span className="text-slate-400">· {toChName(item.channel)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] font-mono">
+                  <span className="text-amber-300 flex items-center gap-1 font-bold">
+                    <span>⏱️</span> ETA: {Math.max(0, item.eta_sec)}s ({Math.ceil(item.eta_sec / 60)}m)
+                  </span>
+                  <button
+                    onClick={() => handleDeleteItem(item.fp_hash)}
+                    className="text-rose-400 hover:text-rose-300 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-colors cursor-pointer"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
+          <button
+            onClick={loadQueue}
+            className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1.5 cursor-pointer"
+          >
+            <RefreshCw size={12} className={loading ? "animate-spin" : ""} /> Refresh
+          </button>
+          <button
+            onClick={handleFlushNext}
+            disabled={flushing || queue.length === 0}
+            className="flex-1 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-105 disabled:opacity-40 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+          >
+            <Zap size={13} className="fill-slate-950" />
+            <span>{flushing ? "Publishing..." : "Publish Next Now"}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Review View ──────────────────────────────────────────────────────────────
-// ─── Review View ──────────────────────────────────────────────────────────────
-function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, dark }: {
+function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, onRefresh, dark }: {
   deals: Deal[]; onApprove: (id: string, changes?: Partial<Deal>) => void;
   onReject: (id: string) => void; onEdit: (d: Deal) => void;
+  onQueue?: (id: string, intervalSec?: number, changes?: Partial<Deal>) => void;
   onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
@@ -2417,6 +2817,23 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [smartPreset, setSmartPreset] = useState<string>("all");
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [soundMuted, setSoundMutedState] = useState<boolean>(isSoundMuted());
+  const [groupDuplicates, setGroupDuplicates] = useState(true);
+  const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
+  const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
+  const [queueMeta, setQueueMeta] = useState<{ count: number; nextEta: number }>({ count: 0, nextEta: 0 });
+
+  const refreshQueueMeta = useCallback(async () => {
+    const q = await apiGetBroadcastQueue();
+    if (q) {
+      setQueueMeta({ count: q.total_pending, nextEta: q.next_eta_sec });
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshQueueMeta();
+    const interval = setInterval(refreshQueueMeta, 10000);
+    return () => clearInterval(interval);
+  }, [refreshQueueMeta]);
 
   const handleToggleSound = () => {
     const next = toggleSound();
@@ -2502,6 +2919,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
       const store = getStoreBadge(d.platforms, d.affText);
       if (store.tag !== selectedStore) return false;
     }
+    if (groupDuplicates && d.isClusterHead === false) return false;
     if (filter !== "all" && filter !== "promos" && d.status !== filter) return false;
     if (search.trim() && !isSearchUrl) {
       const q = search.trim().toLowerCase();
@@ -2903,6 +3321,52 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
               </button>
             ))}
           </div>
+
+          {/* Queue Drawer Button */}
+          <button
+            onClick={() => setQueueDrawerOpen(true)}
+            className={`px-3 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border ${
+              queueMeta.count > 0
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm"
+                : "bg-white/[0.04] text-slate-300 border-white/10 hover:bg-white/[0.08]"
+            }`}
+            title="Open Anti-Spam Broadcast Drip Queue"
+          >
+            <Clock size={12} className={queueMeta.count > 0 ? "text-amber-400" : "text-slate-400"} />
+            <span>Queue</span>
+            {queueMeta.count > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-amber-400 text-slate-950">
+                {queueMeta.count}
+              </span>
+            )}
+          </button>
+
+          {/* Duplicate Cluster Toggle */}
+          <button
+            onClick={() => setGroupDuplicates(prev => !prev)}
+            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border ${
+              groupDuplicates
+                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
+                : "bg-white/[0.04] text-slate-400 border-white/10 hover:text-slate-200"
+            }`}
+            title="Cluster duplicate cross-channel posts into a single card with source channels"
+          >
+            <Layers size={12} />
+            <span className="hidden sm:inline">Clusters</span>
+            <span className={`text-[9px] font-mono px-1 rounded ${groupDuplicates ? "bg-indigo-400 text-slate-950 font-black" : "bg-white/10 text-slate-400"}`}>
+              {groupDuplicates ? "ON" : "OFF"}
+            </span>
+          </button>
+
+          {/* Channel Velocity Heatmap Modal Button */}
+          <button
+            onClick={() => setHeatmapModalOpen(true)}
+            className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-white/[0.04] text-slate-300 border-white/10 hover:bg-white/[0.08] hover:text-amber-300"
+            title="Open 24-Hour Channel Velocity Heatmap & Yield Matrix"
+          >
+            <Flame size={12} className="text-amber-400 fill-amber-400/20" />
+            <span className="hidden sm:inline">Heatmap</span>
+          </button>
         </div>
       </div>
 
@@ -3074,6 +3538,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                   onApprove={onApprove}
                   onReject={onReject}
                   onEdit={onEdit}
+                  onQueue={onQueue}
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
@@ -3223,6 +3688,42 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
         </div>
       )}
 
+      {/* Anti-Spam Broadcast Drip Queue Drawer */}
+      <BroadcastQueueDrawer
+        isOpen={queueDrawerOpen}
+        onClose={() => setQueueDrawerOpen(false)}
+        onFlush={() => {
+          onRefresh?.();
+          refreshQueueMeta();
+        }}
+      />
+
+      {/* 24-Hour Channel Velocity Heatmap Modal */}
+      {heatmapModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in"
+          onClick={() => setHeatmapModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-[#090b14] border border-white/15 rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col gap-5"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <Flame size={20} className="text-amber-400 fill-amber-400/20" />
+                <h3 className="text-base font-bold text-white">Channel Performance & 24H Velocity Heatmap</h3>
+              </div>
+              <button
+                onClick={() => setHeatmapModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <ChannelPerformanceHeatmap apiBase={API_BASE} onRefreshChannels={onRefresh} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3231,6 +3732,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 function ChannelsView() {
   const [chs, setChs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [channelSubTab, setChannelSubTab] = useState<"heatmap" | "directory">("heatmap");
   const [showAdd, setShowAdd] = useState(false);
   const [newChannelInput, setNewChannelInput] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -3430,24 +3932,55 @@ function ChannelsView() {
         </div>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between p-5 rounded-3xl glass-panel border border-white/10">
-        <div className="flex items-center gap-3.5">
-          <Satellite3D size={42} />
-          <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              Listening Channels ({chs.length})
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {chs.filter(c => c.active).length} listening · {chs.filter(c => !c.active).length} paused · Real-time Telegram scrape
-            </p>
-          </div>
-        </div>
-        <button onClick={() => setShowAdd(!showAdd)}
-          className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-2xl text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all shadow-md">
-          <Plus size={14} /> {showAdd ? "Close" : "Add Channel"}
+      {/* Sub-Tab Navigation Switcher */}
+      <div className="flex items-center gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-2xl w-fit">
+        <button
+          onClick={() => setChannelSubTab("heatmap")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            channelSubTab === "heatmap"
+              ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <Flame size={14} className="text-amber-400 fill-amber-400/20" />
+          <span>24H Velocity Heatmap & Yield Matrix</span>
+          <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-white text-[9px] font-mono font-bold">LIVE</span>
+        </button>
+        <button
+          onClick={() => setChannelSubTab("directory")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            channelSubTab === "directory"
+              ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <Radio size={14} className="text-emerald-400" />
+          <span>Channel Directory & Stream Config ({chs.length})</span>
         </button>
       </div>
+
+      {channelSubTab === "heatmap" ? (
+        <ChannelPerformanceHeatmap apiBase={API_BASE} onRefreshChannels={fetchChannels} />
+      ) : (
+        <>
+          {/* Header */}
+          <div className="flex items-center justify-between p-5 rounded-3xl glass-panel border border-white/10">
+            <div className="flex items-center gap-3.5">
+              <Satellite3D size={42} />
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  Listening Channels ({chs.length})
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {chs.filter(c => c.active).length} listening · {chs.filter(c => !c.active).length} paused · Real-time Telegram scrape
+                </p>
+              </div>
+            </div>
+            <button onClick={() => setShowAdd(!showAdd)}
+              className="flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-2xl text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all shadow-md">
+              <Plus size={14} /> {showAdd ? "Close" : "Add Channel"}
+            </button>
+          </div>
 
       {showAdd && (
         <div className="flex items-center gap-2 p-3.5 rounded-2xl glass-panel border border-primary/30 animate-slide-up">
@@ -3561,6 +4094,8 @@ function ChannelsView() {
           ))
         )}
       </div>
+      </>
+      )}
 
       {/* Update Channel Invite Link Modal */}
       {updatingChannel && (
@@ -4019,6 +4554,25 @@ export default function App() {
     await apiReject(id);
   };
 
+  const handleQueue = async (id: string, intervalSec: number = 180, changes?: Partial<Deal>) => {
+    try {
+      const tg = (window as any).Telegram?.WebApp;
+      if (tg?.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred("light");
+      }
+    } catch {}
+    if (changes) {
+      await apiUpdateDeal(id, changes);
+      setDeals(prev => prev.map(d => d.id === id ? { ...d, ...changes } : d));
+    }
+    const res = await apiQueueDeal(id, intervalSec);
+    if (res) {
+      toast.success(`⏰ Queued! Will broadcast in ~${Math.ceil(res.eta_seconds / 60)}m (pos #${res.queue_position})`);
+    } else {
+      toast.error("Failed to queue deal for broadcast");
+    }
+  };
+
   const handleAddDeal = (deal: Deal) => {
     setDeals(prev => [deal, ...prev]);
   };
@@ -4033,7 +4587,7 @@ export default function App() {
 
       <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0 relative z-10">
         {tab === "Review" && (
-          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onAddDeal={handleAddDeal} onRefresh={loadDeals} dark={dark} />
+          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onQueue={handleQueue} onAddDeal={handleAddDeal} onRefresh={loadDeals} dark={dark} />
         )}
         {tab === "Posted" && <PostedView deals={deals} />}
         {tab === "Channels" && <ChannelsView />}
@@ -4072,6 +4626,10 @@ export default function App() {
           }}
           onSaveApprove={async (chg) => {
             await handleApprove(editing.id, chg);
+            setEditing(null);
+          }}
+          onSaveQueue={async (chg) => {
+            await handleQueue(editing.id, 180, chg);
             setEditing(null);
           }}
           onToast={(msg, type) => {
