@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Flame, Clock, Zap, TrendingUp, AlertTriangle, Radio,
   RefreshCw, CheckCircle2, ChevronDown, Filter, ExternalLink,
-  Shield, BarChart3, LayoutGrid, Calendar, Info
+  Shield, BarChart3, LayoutGrid, Calendar, Info, Link as LinkIcon,
+  PenLine, Check, X
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -75,6 +76,89 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
   const [hoveredCell, setHoveredCell] = useState<{ channelName: string; hour: number; count: number } | null>(null);
 
   const currentHour = new Date().getHours();
+
+  // Channel inline management states
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [updatingChannel, setUpdatingChannel] = useState<{ id: string; name: string; link: string } | null>(null);
+  const [newLinkInput, setNewLinkInput] = useState("");
+  const [isUpdatingLink, setIsUpdatingLink] = useState(false);
+
+  const saveAlias = async (id: string, newName: string) => {
+    const trimmed = newName.trim();
+    if (!trimmed) { setEditingId(null); return; }
+    setData(prev => prev.map(c => c.channel === id ? { ...c, name: trimmed } : c));
+    setEditingId(null);
+    try {
+      const res = await fetch(`${apiBase}/api/v1/channels/alias`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: trimmed })
+      });
+      if (res.ok) {
+        toast.success(`Channel renamed to "${trimmed}"`);
+        fetchAnalytics();
+        onRefreshChannels?.();
+      } else {
+        toast.error("Failed to rename channel");
+      }
+    } catch {
+      toast.error("Network error saving alias");
+    }
+  };
+
+  const handleUpdateLink = async () => {
+    if (!updatingChannel || !newLinkInput.trim()) return;
+    setIsUpdatingLink(true);
+    try {
+      const res = await fetch(`${apiBase}/api/v1/channels/update-link`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          old_channel: updatingChannel.id,
+          new_channel: newLinkInput.trim(),
+          name: updatingChannel.name,
+        }),
+      });
+      if (res.ok) {
+        toast.success(`Invite link updated for ${updatingChannel.name}!`);
+        setUpdatingChannel(null);
+        setNewLinkInput("");
+        fetchAnalytics();
+        onRefreshChannels?.();
+      } else {
+        toast.error("Failed to update channel link");
+      }
+    } catch {
+      toast.error("Network error updating channel link");
+    } finally {
+      setIsUpdatingLink(false);
+    }
+  };
+
+  const toggleAutoApprove = async (id: string, current: boolean) => {
+    setData(prev => prev.map(c => c.channel === id ? { ...c, auto_approve: !current } : c));
+    try {
+      const res = await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve`, { method: "PUT" });
+      if (res.ok) {
+        toast.success(`Auto-Post ${!current ? "Enabled" : "Disabled"}`);
+        onRefreshChannels?.();
+      }
+    } catch {
+      toast.error("Failed to toggle auto-post");
+    }
+  };
+
+  const toggleChannel = async (id: string, current: boolean) => {
+    setData(prev => prev.map(c => c.channel === id ? { ...c, active: !current } : c));
+    try {
+      await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { method: "PUT" });
+      toast.success(`Channel ${!current ? "resumed" : "paused"}`);
+      onRefreshChannels?.();
+    } catch {
+      toast.error("Failed to toggle channel");
+    }
+  };
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -363,23 +447,77 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                     return (
                       <tr key={ch.channel} className="hover:bg-white/[0.02] transition-colors group">
                         {/* Channel Header (Sticky Left) */}
-                        <td className="py-2.5 px-4 sticky left-0 z-10 bg-[#090b14] border-r border-white/10 backdrop-blur-sm group-hover:bg-[#0d101c]">
+                        <td className="py-2.5 px-3.5 sticky left-0 z-10 bg-[#090b14] border-r border-white/10 backdrop-blur-sm group-hover:bg-[#0d101c]">
                           <div className="flex items-center justify-between gap-2">
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                    ch.active ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" : "bg-slate-600"
-                                  }`}
-                                  title={ch.active ? "Actively Listening" : "Stream Paused"}
-                                />
-                                <span className="font-bold text-white truncate max-w-[150px]" title={ch.name}>
-                                  {ch.name}
+                              {editingId === ch.channel ? (
+                                <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    autoFocus
+                                    value={editName}
+                                    onChange={e => setEditName(e.target.value)}
+                                    onKeyDown={e => {
+                                      if (e.key === "Enter") saveAlias(ch.channel, editName);
+                                      if (e.key === "Escape") setEditingId(null);
+                                    }}
+                                    onBlur={() => saveAlias(ch.channel, editName)}
+                                    className="px-2 py-0.5 rounded text-xs font-bold text-white bg-slate-900 border border-primary/50 focus:outline-none w-32"
+                                  />
+                                  <button onClick={() => saveAlias(ch.channel, editName)} className="text-emerald-400 hover:text-emerald-300 cursor-pointer">
+                                    <Check size={13} />
+                                  </button>
+                                  <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-white cursor-pointer">
+                                    <X size={13} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    onClick={() => toggleChannel(ch.channel, ch.active)}
+                                    title={ch.active ? "Listening (Click to pause)" : "Paused (Click to resume)"}
+                                    className="cursor-pointer"
+                                  >
+                                    <span
+                                      className={`w-2.5 h-2.5 rounded-full block flex-shrink-0 transition-transform active:scale-75 ${
+                                        ch.active ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" : "bg-slate-600"
+                                      }`}
+                                    />
+                                  </button>
+                                  <span
+                                    className="font-bold text-white truncate max-w-[130px] cursor-pointer hover:text-indigo-400 transition-colors flex items-center gap-1 group/name"
+                                    title="Click to rename channel"
+                                    onClick={() => { setEditingId(ch.channel); setEditName(ch.name); }}
+                                  >
+                                    {ch.name}
+                                    <PenLine size={10} className="opacity-0 group-hover/name:opacity-100 text-slate-400" />
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[10px] font-mono text-slate-500 block truncate max-w-[110px]">
+                                  {ch.channel.startsWith("http") ? ch.channel.split("/").pop() : ch.channel}
                                 </span>
+                                <button
+                                  onClick={() => {
+                                    setUpdatingChannel({ id: ch.channel, name: ch.name, link: ch.channel });
+                                    setNewLinkInput("");
+                                  }}
+                                  className="text-[9px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5 hover:underline cursor-pointer"
+                                  title="Update Invite Link"
+                                >
+                                  <LinkIcon size={9} />
+                                  <span>Link</span>
+                                </button>
+                                <button
+                                  onClick={() => toggleAutoApprove(ch.channel, ch.auto_approve)}
+                                  className={`text-[8.5px] px-1 py-0.2 rounded font-bold transition-all cursor-pointer ${
+                                    ch.auto_approve ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-white/5 text-slate-500 hover:text-slate-300"
+                                  }`}
+                                  title="Toggle Auto-Post"
+                                >
+                                  {ch.auto_approve ? "AUTO" : "MAN"}
+                                </button>
                               </div>
-                              <span className="text-[10px] font-mono text-slate-500 block truncate max-w-[170px]">
-                                {ch.channel.startsWith("http") ? ch.channel.split("/").pop() : ch.channel}
-                              </span>
                             </div>
                             <span
                               className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold flex-shrink-0 border ${getTierColor(
@@ -484,23 +622,80 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
               {/* Card Header */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                        ch.active ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-slate-600"
-                      }`}
-                    />
-                    <h4 className="text-sm font-bold text-white truncate" title={ch.name}>
-                      {ch.name}
-                    </h4>
+                  {editingId === ch.channel ? (
+                    <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                      <input
+                        autoFocus
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") saveAlias(ch.channel, editName);
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        onBlur={() => saveAlias(ch.channel, editName)}
+                        className="px-2 py-0.5 rounded text-xs font-bold text-white bg-slate-900 border border-primary/50 focus:outline-none w-36"
+                      />
+                      <button onClick={() => saveAlias(ch.channel, editName)} className="text-emerald-400 hover:text-emerald-300 cursor-pointer">
+                        <Check size={14} />
+                      </button>
+                      <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-white cursor-pointer">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => toggleChannel(ch.channel, ch.active)}
+                        title={ch.active ? "Listening (Click to pause)" : "Paused (Click to resume)"}
+                        className="cursor-pointer"
+                      >
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full block flex-shrink-0 transition-transform active:scale-75 ${
+                            ch.active ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-slate-600"
+                          }`}
+                        />
+                      </button>
+                      <h4
+                        className="text-sm font-bold text-white truncate cursor-pointer hover:text-indigo-400 transition-colors flex items-center gap-1 group/name"
+                        title="Click to rename"
+                        onClick={() => { setEditingId(ch.channel); setEditName(ch.name); }}
+                      >
+                        {ch.name}
+                        <PenLine size={11} className="opacity-0 group-hover/name:opacity-100 text-slate-400" />
+                      </h4>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-[10px] font-mono text-slate-400 truncate max-w-[130px]">
+                      {ch.channel.startsWith("http") ? ch.channel.split("/").pop() : ch.channel}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setUpdatingChannel({ id: ch.channel, name: ch.name, link: ch.channel });
+                        setNewLinkInput("");
+                      }}
+                      className="text-[9.5px] font-bold text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5 hover:underline cursor-pointer"
+                      title="Update Invite Link"
+                    >
+                      <LinkIcon size={10} />
+                      <span>Link</span>
+                    </button>
                   </div>
-                  <p className="text-[10px] font-mono text-slate-400 truncate mt-0.5">
-                    {ch.channel.startsWith("http") ? ch.channel.split("/").pop() : ch.channel}
-                  </p>
                 </div>
-                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border ${getTierColor(ch.quality_tier)}`}>
-                  {ch.quality_tier}
-                </span>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() => toggleAutoApprove(ch.channel, ch.auto_approve)}
+                    className={`text-[9px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                      ch.auto_approve ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-white/5 text-slate-500 hover:text-slate-300 border border-white/10"
+                    }`}
+                    title="Toggle Auto-Post"
+                  >
+                    {ch.auto_approve ? "⚡ Auto" : "Manual"}
+                  </button>
+                  <span className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border ${getTierColor(ch.quality_tier)}`}>
+                    {ch.quality_tier}
+                  </span>
+                </div>
               </div>
 
               {/* Sparkline Visual (24-hour distribution) */}
@@ -571,6 +766,67 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Update Channel Invite Link Modal */}
+      {updatingChannel && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in" onClick={() => setUpdatingChannel(null)}>
+          <div className="w-full max-w-md p-6 rounded-3xl glass-panel border border-cyan-500/30 shadow-2xl flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                  <LinkIcon size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Update Invite Link</h3>
+                  <p className="text-[11px] text-slate-400">{updatingChannel.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setUpdatingChannel(null)} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer">
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1.5 text-xs">
+              <label className="text-[11px] font-semibold text-slate-400">Current Channel / ID</label>
+              <div className="px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-white/10 font-mono text-[11px] text-slate-400 truncate">
+                {updatingChannel.id}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 text-xs">
+              <label className="text-[11px] font-semibold text-cyan-300">New Invite Link or Username</label>
+              <input
+                autoFocus
+                value={newLinkInput}
+                onChange={e => setNewLinkInput(e.target.value)}
+                placeholder="https://t.me/+... or @username"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-cyan-500/40 text-white placeholder:text-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-400"
+                onKeyDown={e => e.key === "Enter" && handleUpdateLink()}
+              />
+              <p className="text-[10px] text-slate-500">
+                Paste the new active Telegram invite link if the old link expired or was revoked.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
+              <button
+                onClick={() => setUpdatingChannel(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateLink}
+                disabled={isUpdatingLink || !newLinkInput.trim()}
+                className="px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-400 hover:brightness-105 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 cursor-pointer"
+              >
+                <LinkIcon size={12} />
+                <span>{isUpdatingLink ? "Reconnecting..." : "Save & Reconnect"}</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

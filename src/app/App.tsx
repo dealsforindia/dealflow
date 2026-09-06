@@ -52,9 +52,6 @@ interface Deal {
   bestPrice?: number;
   bestChannel?: string;
   affiliateWarn?: string;
-  stockVerified?: boolean;
-  inStock?: boolean;
-  stockStatusText?: string;
   livePrice?: number | null;
   priceChanged?: boolean;
   priceDiff?: number;
@@ -81,9 +78,6 @@ interface RawDeal {
   best_price?: number;
   best_channel?: string;
   affiliate_warn?: string;
-  stock_verified?: boolean;
-  in_stock?: boolean;
-  stock_status_text?: string;
   live_price?: number | null;
   price_changed?: boolean;
   price_diff?: number;
@@ -151,9 +145,19 @@ function parseCategory(raw?: string): { name: string; emoji: string } {
   return { name: cleanName, emoji: "🛍️" };
 }
 
+// Global Custom Channel Aliases Registry (Synced from MongoDB channels_config.aliases)
+const customChannelAliases: Record<string, string> = {};
+export const setCustomChannelAlias = (id: string, name: string) => {
+  if (id && name) customChannelAliases[id] = name;
+};
+
 const toChName = (ch?: string): string => {
   if (!ch) return "Unknown";
+  if (customChannelAliases[ch]) return customChannelAliases[ch];
   const clean = ch.toLowerCase();
+  for (const [key, val] of Object.entries(customChannelAliases)) {
+    if (ch.includes(key) || clean.includes(key.toLowerCase())) return val;
+  }
   
   // User Channel Mappings (Numeric IDs + Invite links + Usernames)
   if (ch.includes("1837130426") || ch.includes("emveIa6ZQxoxYjAx")) return "Crazy Deals";
@@ -436,9 +440,6 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     bestPrice: d.best_price,
     bestChannel: d.best_channel,
     affiliateWarn: d.affiliate_warn,
-    stockVerified: Boolean(d.stock_verified),
-    inStock: d.in_stock !== false,
-    stockStatusText: d.stock_status_text || "",
     livePrice: d.live_price ?? null,
     priceChanged: Boolean(d.price_changed),
     priceDiff: d.price_diff ?? 0,
@@ -648,86 +649,6 @@ async function apiGetPriceHistory(id: string): Promise<PriceIntelligenceData | n
   }
 }
 
-interface StockVerificationResult {
-  verified: boolean;
-  in_stock: boolean;
-  status_text: string;
-  current_price?: number | null;
-  price_changed?: boolean;
-  price_diff?: number;
-  store?: string;
-  url?: string;
-}
-
-async function apiVerifyStock(id: string): Promise<StockVerificationResult | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/verify-stock`, { method: "POST" });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-interface BroadcastQueueItem {
-  fp_hash: string;
-  title: string;
-  sale_price: number | null;
-  mrp: number | null;
-  channel: string;
-  img_url: string | null;
-  scheduled_at: number;
-  eta_sec: number;
-  interval_sec: number;
-}
-
-interface BroadcastQueueResponse {
-  items: BroadcastQueueItem[];
-  total_pending: number;
-  next_eta_sec: number;
-}
-
-async function apiGetBroadcastQueue(): Promise<BroadcastQueueResponse | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/broadcast/queue`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-async function apiQueueDeal(id: string, intervalSec: number = 180, changes?: Record<string, unknown>): Promise<boolean> {
-  try {
-    const payload = changes ? { ...mapChangesToBackend(changes), interval_sec: intervalSec } : { interval_sec: intervalSec };
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/queue`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-async function apiFlushBroadcastQueue(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/broadcast/queue/flush`, { method: "POST" });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-async function apiDeleteQueueItem(id: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/broadcast/queue/${id}`, { method: "DELETE" });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
 
 interface ChannelAnalyticsItem {
   channel: string;
@@ -928,7 +849,7 @@ export function calculateCommissionYield(deal: Deal): {
 
 // ─── Senior Pro Deal Card (Responsive Mobile Horizontal + Desktop Specular Grid) ───
 function DealCard({
-  deal, onApprove, onReject, onEdit, onQueue,
+  deal, onApprove, onReject, onEdit,
   selected = false, onToggleSelect, bulkMode = false,
   isActive = false,
 }: {
@@ -936,7 +857,6 @@ function DealCard({
   onApprove: (id: string, changes?: Partial<Deal>) => void;
   onReject: (id: string) => void;
   onEdit: (deal: Deal) => void;
-  onQueue?: (id: string) => void;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
   bulkMode?: boolean;
@@ -949,43 +869,6 @@ function DealCard({
   const [copyPlatform, setCopyPlatform] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [showArbitrage, setShowArbitrage] = useState(false);
-  const [stockInfo, setStockInfo] = useState<{ verified: boolean; inStock: boolean; statusText: string; price?: number | null } | null>(
-    deal.stockVerified ? { verified: true, inStock: deal.inStock !== false, statusText: deal.stockStatusText || (deal.inStock !== false ? "In Stock" : "Out of Stock"), price: deal.livePrice } : null
-  );
-  const [checkingStock, setCheckingStock] = useState(false);
-
-  const handleProbeStock = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (checkingStock) return;
-    setCheckingStock(true);
-    toast.loading("🔍 Probing live store availability...", { id: `stock-${deal.id}` });
-    const res = await apiVerifyStock(deal.id);
-    setCheckingStock(false);
-    if (res) {
-      setStockInfo({
-        verified: true,
-        inStock: res.in_stock,
-        statusText: res.status_text,
-        price: res.current_price,
-      });
-      if (res.in_stock) {
-        toast.success(`🟢 Live Verified: In Stock! (${res.status_text})`, { id: `stock-${deal.id}` });
-      } else {
-        toast.error(`🔴 Warning: Out of Stock (${res.status_text})`, { id: `stock-${deal.id}` });
-      }
-      if (res.price_changed && res.current_price) {
-        toast.info(`⚠️ Live price is now ₹${res.current_price}`, { id: `stock-price-${deal.id}` });
-      }
-    } else {
-      toast.error("Stock check unavailable", { id: `stock-${deal.id}` });
-    }
-  };
-
-  const handleQueueWithSound = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    playTick();
-    onQueue?.(deal.id);
-  };
 
   const store = getStoreBadge(deal.platforms, deal.affText);
   const savings = deal.mrp > deal.price ? deal.mrp - deal.price : 0;
@@ -1230,15 +1113,6 @@ function DealCard({
                 >
                   <PenLine size={11} /> <span>Tune</span>
                 </button>
-                {onQueue && (
-                  <button
-                    onClick={handleQueueWithSound}
-                    className="h-7 px-2 rounded-lg flex items-center justify-center bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 active:scale-95 text-[11px] font-bold cursor-pointer"
-                    title="Add to Anti-Spam Broadcast Queue (Next in 3 mins)"
-                  >
-                    <Clock size={11} />
-                  </button>
-                )}
                 {isGlitch && (
                   <button
                     onClick={handlePostGlitch}
@@ -1593,39 +1467,6 @@ function DealCard({
                 <button onClick={() => onEdit(deal)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer flex-1" title="Edit & Tune">
                   <PenLine size={13} /><span className="ml-1.5">Tune</span>
                 </button>
-                {stockInfo ? (
-                  <span
-                    className={`h-9 px-2.5 rounded-xl text-[10.5px] font-bold border flex items-center gap-1 font-mono ${
-                      stockInfo.inStock
-                        ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-                        : "bg-rose-500/20 text-rose-300 border-rose-500/40 animate-pulse"
-                    }`}
-                    title={stockInfo.statusText}
-                  >
-                    <span>{stockInfo.inStock ? "🟢 In Stock" : "🔴 OOS"}</span>
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleProbeStock}
-                    disabled={checkingStock}
-                    className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 active:scale-95 transition-all text-xs font-semibold cursor-pointer"
-                    title="Probe live store availability & price"
-                  >
-                    {checkingStock ? <span className="animate-spin text-xs">⏳</span> : <span>🔍 Stock</span>}
-                  </button>
-                )}
-                {onQueue && (
-                  <button
-                    type="button"
-                    onClick={handleQueueWithSound}
-                    className="h-9 px-3 rounded-xl flex items-center justify-center bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/35 active:scale-95 transition-all text-xs font-bold cursor-pointer"
-                    title="Add to Anti-Spam Broadcast Queue (Next in 3 mins)"
-                  >
-                    <Clock size={13} />
-                    <span className="ml-1 hidden xl:inline">Queue</span>
-                  </button>
-                )}
                 <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-1 transition-all" title="Approve & Broadcast">
                   <Check size={15} strokeWidth={3} /><span>Approve</span>
                 </button>
@@ -2082,11 +1923,10 @@ interface EditModalProps {
   onClose: () => void;
   onSaveDraft: (changes: Partial<Deal>) => void;
   onSaveApprove: (changes: Partial<Deal>) => void;
-  onSaveQueue?: (changes: Partial<Deal>) => void;
   onToast: (msg: string, type?: "success" | "error" | "info") => void;
 }
 
-function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onSaveQueue, onToast }: EditModalProps) {
+function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditModalProps) {
   const [title, setTitle] = useState(deal.title);
   const [price, setPrice] = useState(String(deal.price || ""));
   const [mrp, setMrp] = useState(String(deal.mrp || ""));
@@ -2123,36 +1963,6 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onSaveQueue, onT
   const [scrapingImage, setScrapingImage] = useState(false);
   const [generatingBanner, setGeneratingBanner] = useState(false);
   const [priceIntel, setPriceIntel] = useState<PriceIntelligenceData | null>(null);
-  const [stockInfo, setStockInfo] = useState<{ verified: boolean; inStock: boolean; statusText: string; price?: number | null } | null>(
-    deal.stockVerified ? { verified: true, inStock: deal.inStock !== false, statusText: deal.stockStatusText || (deal.inStock !== false ? "In Stock" : "Out of Stock"), price: deal.livePrice } : null
-  );
-  const [verifyingStock, setVerifyingStock] = useState(false);
-
-  const doVerifyStock = async () => {
-    setVerifyingStock(true);
-    onToast("🔍 Probing live store availability...", "info");
-    const res = await apiVerifyStock(deal.id);
-    setVerifyingStock(false);
-    if (res) {
-      setStockInfo({
-        verified: true,
-        inStock: res.in_stock,
-        statusText: res.status_text,
-        price: res.current_price,
-      });
-      if (res.in_stock) {
-        onToast(`🟢 In Stock! (${res.status_text})`, "success");
-      } else {
-        onToast(`🔴 Out of Stock (${res.status_text})`, "error");
-      }
-      if (res.price_changed && res.current_price) {
-        setPrice(String(res.current_price));
-        onToast(`⚠️ Live price updated to ₹${res.current_price}`, "info");
-      }
-    } else {
-      onToast("Stock verification unavailable", "error");
-    }
-  };
 
   useEffect(() => {
     apiGetPriceHistory(deal.id).then(intel => {
@@ -2537,11 +2347,6 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onSaveQueue, onT
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 transition-colors cursor-pointer">
                 <Upload size={12} /> Upload Image
               </button>
-              <button onClick={doVerifyStock} disabled={verifyingStock}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors cursor-pointer"
-                title="Probe live store inventory & price">
-                <span>🔍</span> {verifyingStock ? "Probing..." : stockInfo ? (stockInfo.inStock ? "🟢 In Stock" : "🔴 Out of Stock") : "Probe Live Stock"}
-              </button>
               <button onClick={doScrapeImage} disabled={scrapingImage}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-40 transition-colors cursor-pointer">
                 <Globe size={12} /> {scrapingImage ? "Fetching..." : "Fetch Store Details"}
@@ -2626,12 +2431,6 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onSaveQueue, onT
               className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer">
               Save Draft
             </button>
-            {onSaveQueue && (
-              <button onClick={() => { onSaveQueue(changes); onClose(); }}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-indigo-200 bg-indigo-500/20 border border-indigo-500/35 hover:bg-indigo-500/30 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-md">
-                <Clock size={14} /> Add to Queue
-              </button>
-            )}
             <button onClick={() => { onSaveApprove(changes); onClose(); }}
               className="px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-2 cursor-pointer">
               <RocketBroadcast3D size={16} /> Save & Broadcast
@@ -2643,158 +2442,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onSaveQueue, onT
   );
 }
 
-// ─── Broadcast Drip Queue Drawer (Anti-Spam Curation Deck) ────────────────────
-function BroadcastQueueDrawer({
-  isOpen,
-  onClose,
-  onFlush,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onFlush: () => void;
-}) {
-  const [queue, setQueue] = useState<BroadcastQueueItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [flushing, setFlushing] = useState(false);
-
-  const loadQueue = useCallback(async () => {
-    setLoading(true);
-    const res = await apiGetBroadcastQueue();
-    if (res) {
-      setQueue(res.items || []);
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      loadQueue();
-      const interval = setInterval(loadQueue, 4000);
-      return () => clearInterval(interval);
-    }
-  }, [isOpen, loadQueue]);
-
-  const handleFlushNext = async () => {
-    setFlushing(true);
-    toast.loading("Publishing next queued deal immediately...", { id: "flush" });
-    const ok = await apiFlushBroadcastQueue();
-    setFlushing(false);
-    if (ok) {
-      toast.success("⚡ Published next queued deal!", { id: "flush" });
-      onFlush();
-      loadQueue();
-    } else {
-      toast.error("Failed to flush queue or queue is empty", { id: "flush" });
-    }
-  };
-
-  const handleDeleteItem = async (fpHash: string) => {
-    const ok = await apiDeleteQueueItem(fpHash);
-    if (ok) {
-      toast.success("Removed from broadcast queue");
-      setQueue(prev => prev.filter(item => item.fp_hash !== fpHash));
-    } else {
-      toast.error("Failed to remove item");
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/75 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-      <div
-        className="w-full max-w-md h-full bg-[#0A0C16] border-l border-white/10 p-5 flex flex-col justify-between shadow-2xl overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between pb-4 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <Clock size={18} className="text-amber-400" />
-            <h3 className="text-sm font-bold text-white">Broadcast Drip Queue</h3>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              {queue.length} Scheduled
-            </span>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 cursor-pointer">
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto py-3 flex flex-col gap-2.5">
-          {loading && queue.length === 0 ? (
-            <div className="flex items-center justify-center h-48 text-slate-400 text-xs">
-              <RefreshCw size={14} className="animate-spin mr-2" /> Loading scheduled queue...
-            </div>
-          ) : queue.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-slate-500 text-center gap-2.5">
-              <Clock size={36} className="opacity-30 text-amber-400" />
-              <p className="text-xs font-semibold text-slate-300">Broadcast Queue is Empty</p>
-              <p className="text-[11px] max-w-xs text-slate-500 leading-relaxed">
-                Deals queued with "Add to Queue (3m)" drip-feed Telegram and X at calculated intervals to prevent subscriber notification fatigue.
-              </p>
-            </div>
-          ) : (
-            queue.map((item, idx) => (
-              <div key={item.fp_hash || idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/8 flex flex-col gap-2 relative group hover:border-amber-500/30 transition-all">
-                <div className="flex items-center gap-2.5">
-                  {item.img_url ? (
-                    <img src={item.img_url} alt="" className="w-12 h-12 rounded-lg object-contain bg-black/40 border border-white/10 p-0.5 flex-shrink-0" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center text-xs flex-shrink-0">🛍️</div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-white line-clamp-1">{item.title || "Untitled Deal"}</p>
-                    <div className="flex items-center gap-2 mt-1 font-mono text-[10px]">
-                      {item.sale_price && <span className="text-emerald-400 font-black">₹{item.sale_price}</span>}
-                      {item.mrp && item.mrp > (item.sale_price || 0) && (
-                        <span className="text-slate-500 line-through">₹{item.mrp}</span>
-                      )}
-                      <span className="text-slate-400">· {toChName(item.channel)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-white/5 text-[10px] font-mono">
-                  <span className="text-amber-300 flex items-center gap-1 font-bold">
-                    <span>⏱️</span> ETA: {Math.max(0, item.eta_sec)}s ({Math.ceil(item.eta_sec / 60)}m)
-                  </span>
-                  <button
-                    onClick={() => handleDeleteItem(item.fp_hash)}
-                    className="text-rose-400 hover:text-rose-300 px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-colors cursor-pointer"
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
-          <button
-            onClick={loadQueue}
-            className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1.5 cursor-pointer"
-          >
-            <RefreshCw size={12} className={loading ? "animate-spin" : ""} /> Refresh
-          </button>
-          <button
-            onClick={handleFlushNext}
-            disabled={flushing || queue.length === 0}
-            className="flex-1 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-105 disabled:opacity-40 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-          >
-            <Zap size={13} className="fill-slate-950" />
-            <span>{flushing ? "Publishing..." : "Publish Next Now"}</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Review View ──────────────────────────────────────────────────────────────
-function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, onRefresh, dark }: {
+function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, dark }: {
   deals: Deal[]; onApprove: (id: string, changes?: Partial<Deal>) => void;
   onReject: (id: string) => void; onEdit: (d: Deal) => void;
-  onQueue?: (id: string, intervalSec?: number, changes?: Partial<Deal>) => void;
   onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
@@ -2818,22 +2469,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, on
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [soundMuted, setSoundMutedState] = useState<boolean>(isSoundMuted());
   const [groupDuplicates, setGroupDuplicates] = useState(true);
-  const [queueDrawerOpen, setQueueDrawerOpen] = useState(false);
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
-  const [queueMeta, setQueueMeta] = useState<{ count: number; nextEta: number }>({ count: 0, nextEta: 0 });
-
-  const refreshQueueMeta = useCallback(async () => {
-    const q = await apiGetBroadcastQueue();
-    if (q) {
-      setQueueMeta({ count: q.total_pending, nextEta: q.next_eta_sec });
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshQueueMeta();
-    const interval = setInterval(refreshQueueMeta, 10000);
-    return () => clearInterval(interval);
-  }, [refreshQueueMeta]);
 
   const handleToggleSound = () => {
     const next = toggleSound();
@@ -3001,7 +2637,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, on
   const superLootCount = deals.filter(d => (filter === "all" || d.status === filter) && ((d.discount >= 70) || (d.mrp - d.price >= 1500))).length;
   const under499Count = deals.filter(d => (filter === "all" || d.status === filter) && d.price > 0 && d.price <= 499).length;
   const approvedToday = deals.filter(d => d.status === "approved" && (Date.now() / 1000 - d.ts) < 86400).length;
-  const totalQueueSavings = visible.reduce((acc, d) => acc + (d.mrp > d.price ? d.mrp - d.price : 0), 0);
+  const totalSavings = visible.reduce((acc, d) => acc + (d.mrp > d.price ? d.mrp - d.price : 0), 0);
   const avgDiscount = visible.length > 0 ? Math.round(visible.reduce((acc, d) => acc + (d.discount || 0), 0) / visible.length) : 0;
 
   const storeOptions: DropdownOption[] = [
@@ -3279,10 +2915,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, on
             <TrendingUp size={12} className="text-emerald-400" />
             <span>{approvedToday} Approved Today</span>
           </div>
-          {totalQueueSavings > 0 && (
+          {totalSavings > 0 && (
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium">
               <span>💰</span>
-              <span>₹{totalQueueSavings.toLocaleString("en-IN")} Savings In View</span>
+              <span>₹{totalSavings.toLocaleString("en-IN")} Savings In View</span>
             </div>
           )}
           {avgDiscount > 0 && (
@@ -3321,25 +2957,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, on
               </button>
             ))}
           </div>
-
-          {/* Queue Drawer Button */}
-          <button
-            onClick={() => setQueueDrawerOpen(true)}
-            className={`px-3 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border ${
-              queueMeta.count > 0
-                ? "bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-sm"
-                : "bg-white/[0.04] text-slate-300 border-white/10 hover:bg-white/[0.08]"
-            }`}
-            title="Open Anti-Spam Broadcast Drip Queue"
-          >
-            <Clock size={12} className={queueMeta.count > 0 ? "text-amber-400" : "text-slate-400"} />
-            <span>Queue</span>
-            {queueMeta.count > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-black bg-amber-400 text-slate-950">
-                {queueMeta.count}
-              </span>
-            )}
-          </button>
 
           {/* Duplicate Cluster Toggle */}
           <button
@@ -3538,7 +3155,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, on
                   onApprove={onApprove}
                   onReject={onReject}
                   onEdit={onEdit}
-                  onQueue={onQueue}
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
@@ -3688,15 +3304,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, on
         </div>
       )}
 
-      {/* Anti-Spam Broadcast Drip Queue Drawer */}
-      <BroadcastQueueDrawer
-        isOpen={queueDrawerOpen}
-        onClose={() => setQueueDrawerOpen(false)}
-        onFlush={() => {
-          onRefresh?.();
-          refreshQueueMeta();
-        }}
-      />
+
 
       {/* 24-Hour Channel Velocity Heatmap Modal */}
       {heatmapModalOpen && (
@@ -3732,23 +3340,30 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onQueue, onAddDeal, on
 function ChannelsView() {
   const [chs, setChs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [channelSubTab, setChannelSubTab] = useState<"heatmap" | "directory">("heatmap");
+  const [channelSubTab, setChannelSubTab] = useState<"directory" | "heatmap">("directory");
   const [showAdd, setShowAdd] = useState(false);
   const [newChannelInput, setNewChannelInput] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
 
   const saveAlias = async (id: string, newName: string) => {
-    if (!newName.trim()) { setEditingId(null); return; }
-    setChs(prev => prev.map(c => c.id === id ? { ...c, name: newName } : c));
+    const trimmed = newName.trim();
+    if (!trimmed) { setEditingId(null); return; }
+    setCustomChannelAlias(id, trimmed);
+    setChs(prev => prev.map(c => c.id === id ? { ...c, name: trimmed } : c));
     setEditingId(null);
     try {
-      await fetch(`${API_BASE}/api/v1/channels/alias`, {
+      const res = await fetch(`${API_BASE}/api/v1/channels/alias`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, name: newName })
+        body: JSON.stringify({ id, name: trimmed })
       });
-      toast.success("Channel name saved!");
+      if (res.ok) {
+        toast.success(`Channel name saved: "${trimmed}"`);
+        fetchChannels();
+      } else {
+        toast.error("Failed to save alias");
+      }
     } catch {
       toast.error("Failed to save alias");
     }
@@ -3767,9 +3382,13 @@ function ChannelsView() {
           const mapped = filtered.map((c: any) => {
             const fallback = c.id.split('/').pop() || c.id;
             const pretty = toChName(c.id);
+            const isCustom = c.name && c.name !== c.id && c.name !== fallback;
+            const finalName = isCustom ? c.name : (pretty !== fallback && pretty !== "Unknown") ? pretty : (c.name || c.id);
+            setCustomChannelAlias(c.id, finalName);
+            if (c.channel) setCustomChannelAlias(c.channel, finalName);
             return {
               ...c,
-              name: (pretty !== fallback && pretty !== "Unknown") ? pretty : c.name
+              name: finalName
             };
           });
           setChs(mapped);
@@ -3935,6 +3554,17 @@ function ChannelsView() {
       {/* Sub-Tab Navigation Switcher */}
       <div className="flex items-center gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-2xl w-fit">
         <button
+          onClick={() => setChannelSubTab("directory")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            channelSubTab === "directory"
+              ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <Radio size={14} className="text-emerald-400" />
+          <span>Channel Directory & Stream Config ({chs.length})</span>
+        </button>
+        <button
           onClick={() => setChannelSubTab("heatmap")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             channelSubTab === "heatmap"
@@ -3945,17 +3575,6 @@ function ChannelsView() {
           <Flame size={14} className="text-amber-400 fill-amber-400/20" />
           <span>24H Velocity Heatmap & Yield Matrix</span>
           <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-white text-[9px] font-mono font-bold">LIVE</span>
-        </button>
-        <button
-          onClick={() => setChannelSubTab("directory")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            channelSubTab === "directory"
-              ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <Radio size={14} className="text-emerald-400" />
-          <span>Channel Directory & Stream Config ({chs.length})</span>
         </button>
       </div>
 
@@ -4554,25 +4173,6 @@ export default function App() {
     await apiReject(id);
   };
 
-  const handleQueue = async (id: string, intervalSec: number = 180, changes?: Partial<Deal>) => {
-    try {
-      const tg = (window as any).Telegram?.WebApp;
-      if (tg?.HapticFeedback) {
-        tg.HapticFeedback.impactOccurred("light");
-      }
-    } catch {}
-    if (changes) {
-      await apiUpdateDeal(id, changes);
-      setDeals(prev => prev.map(d => d.id === id ? { ...d, ...changes } : d));
-    }
-    const res = await apiQueueDeal(id, intervalSec);
-    if (res) {
-      toast.success(`⏰ Queued! Will broadcast in ~${Math.ceil(res.eta_seconds / 60)}m (pos #${res.queue_position})`);
-    } else {
-      toast.error("Failed to queue deal for broadcast");
-    }
-  };
-
   const handleAddDeal = (deal: Deal) => {
     setDeals(prev => [deal, ...prev]);
   };
@@ -4587,7 +4187,7 @@ export default function App() {
 
       <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0 relative z-10">
         {tab === "Review" && (
-          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onQueue={handleQueue} onAddDeal={handleAddDeal} onRefresh={loadDeals} dark={dark} />
+          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onAddDeal={handleAddDeal} onRefresh={loadDeals} dark={dark} />
         )}
         {tab === "Posted" && <PostedView deals={deals} />}
         {tab === "Channels" && <ChannelsView />}
@@ -4626,10 +4226,6 @@ export default function App() {
           }}
           onSaveApprove={async (chg) => {
             await handleApprove(editing.id, chg);
-            setEditing(null);
-          }}
-          onSaveQueue={async (chg) => {
-            await handleQueue(editing.id, 180, chg);
             setEditing(null);
           }}
           onToast={(msg, type) => {
