@@ -513,26 +513,63 @@ const getStoreAura = (tag: string) => {
 };
 
 // ─── Mathematical Affiliate Commission Yield Engine ───
+export function checkMonetization(text: string = ""): {
+  isMonetized: boolean;
+  isCompetitor: boolean;
+  label: string;
+} {
+  const clean = text.toLowerCase();
+  if (clean.includes("ambhedeal.in.net")) {
+    return { isMonetized: false, isCompetitor: true, label: "Competitor Preview Link" };
+  }
+  const hasTag = clean.includes("tag=") || 
+    clean.includes("earnkaro") || 
+    clean.includes("ekaro.in") || 
+    clean.includes("extrape") || 
+    clean.includes("bitli.in") || 
+    clean.includes("linkredirect.in") || 
+    clean.includes("inr.deals") || 
+    clean.includes("openinapp.co");
+  
+  if (hasTag) {
+    return { isMonetized: true, isCompetitor: false, label: "Monetized" };
+  }
+  return { isMonetized: false, isCompetitor: false, label: "Generic / Unmonetized" };
+}
+
 export function calculateCommissionYield(deal: Deal): {
   ratePct: number;
   estYieldPerSale: number;
   categoryTier: string;
+  isMonetized: boolean;
+  isCompetitor: boolean;
 } {
+  const text = deal.affText || deal.originalText || "";
+  const monStatus = checkMonetization(text);
+
   const store = getStoreBadge(deal.platforms, deal.affText).tag.toLowerCase();
   const cat = (deal.category || "").toLowerCase();
+  const title = (deal.title || "").toLowerCase();
   let rate = 5.0; // default 5%
   let tier = "General";
 
+  // Check cookware & kitchen keywords across title and category
+  const isHomeKitchen = cat.includes("home") || cat.includes("kitchen") || 
+    title.includes("cookware") || title.includes("kadai") || title.includes("frypan") || 
+    title.includes("pan") || title.includes("pot") || title.includes("dinner set") || 
+    title.includes("tiffin") || title.includes("utensil") || title.includes("knife") ||
+    title.includes("stainless steel") || title.includes("cooker") || title.includes("kadhai");
+
   if (store.includes("amazon")) {
-    if (cat.includes("fashion") || cat.includes("apparel") || cat.includes("clothing") || cat.includes("footwear") || cat.includes("shoes") || cat.includes("watch") || cat.includes("jewelry")) {
+    if (isHomeKitchen) {
+      rate = 6.0;
+      tier = "Home & Kitchen (6%)";
+    } else if (cat.includes("fashion") || cat.includes("apparel") || cat.includes("clothing") || cat.includes("footwear") || cat.includes("shoes") || cat.includes("watch") || cat.includes("jewelry")) {
       rate = 9.0;
       tier = "Fashion & Apparel (9%)";
     } else if (cat.includes("beauty") || cat.includes("personal") || cat.includes("health")) {
       rate = 8.0;
       tier = "Beauty & Personal (8%)";
-    } else if (cat.includes("home") || cat.includes("kitchen")) {
-      rate = 6.0;
-      tier = "Home & Kitchen (6%)";
     } else if (cat.includes("grocery") || cat.includes("food") || cat.includes("pantry")) {
       rate = 5.0;
       tier = "Grocery (5%)";
@@ -544,12 +581,12 @@ export function calculateCommissionYield(deal: Deal): {
       tier = "Electronics & Tech (4%)";
     }
   } else if (store.includes("flipkart")) {
-    if (cat.includes("fashion") || cat.includes("footwear")) {
-      rate = 8.5;
-      tier = "Fashion (8.5%)";
-    } else if (cat.includes("home") || cat.includes("kitchen")) {
+    if (isHomeKitchen) {
       rate = 6.0;
       tier = "Home & Kitchen (6%)";
+    } else if (cat.includes("fashion") || cat.includes("footwear")) {
+      rate = 8.5;
+      tier = "Fashion (8.5%)";
     } else if (cat.includes("electronics") || cat.includes("mobile")) {
       rate = 2.5;
       tier = "Electronics (2.5%)";
@@ -562,8 +599,25 @@ export function calculateCommissionYield(deal: Deal): {
     tier = "Fashion & Lifestyle (8%)";
   }
 
+  // If link is unmonetized or competitor preview bridge, yield is strictly ₹0
+  if (!monStatus.isMonetized) {
+    return {
+      ratePct: 0,
+      estYieldPerSale: 0,
+      categoryTier: monStatus.isCompetitor ? "⚠️ Competitor Link (₹0 Yield)" : "⚠️ Unmonetized Link (₹0 Yield)",
+      isMonetized: false,
+      isCompetitor: monStatus.isCompetitor,
+    };
+  }
+
   const estYield = deal.price > 0 ? Math.round((deal.price * rate) / 100) : 0;
-  return { ratePct: rate, estYieldPerSale: estYield, categoryTier: tier };
+  return { 
+    ratePct: rate, 
+    estYieldPerSale: estYield, 
+    categoryTier: tier,
+    isMonetized: true,
+    isCompetitor: false,
+  };
 }
 
 // ─── Senior Pro Deal Card (Responsive Mobile Horizontal + Desktop Specular Grid) ───
@@ -595,8 +649,9 @@ function DealCard({
   const isFresh = (Date.now() / 1000 - deal.ts) < 900;
   const isGlitch = (deal.discount >= 80 && deal.mrp >= 1000) || (deal.price > 0 && deal.price <= 99 && deal.mrp >= 999) || (savings >= 3500);
   const comm = calculateCommissionYield(deal);
+  const monStatus = checkMonetization(deal.affText || deal.originalText);
   const isATL = (deal.discount >= 70 && deal.price > 0) || (Boolean(deal.bestPrice) && deal.price <= (deal.bestPrice || 0) && deal.discount >= 55) || (deal.price > 0 && deal.price <= deal.mrp * 0.35);
-  const hasAffTag = deal.affText.includes("tag=") || deal.affText.includes("earnkaro") || deal.affText.includes("extrape") || deal.affText.includes("bitli") || deal.affText.includes("linkredirect") || deal.affiliate;
+  const hasAffTag = monStatus.isMonetized;
 
   const handleCopyPost = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -842,14 +897,18 @@ function DealCard({
             <Store3DBadge store={store.tag} />
             <Category3DIcon category={deal.category} size={15} />
             <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]">{deal.channel}</span>
-            {hasAffTag ? (
+            {monStatus.isMonetized ? (
               <span className="flex items-center gap-1 text-[9.5px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded-md font-mono" title="Affiliate tracking tag verified active">
                 <Shield size={10} className="text-emerald-400" />
                 <span>Monetized</span>
               </span>
+            ) : monStatus.isCompetitor ? (
+              <span className="flex items-center gap-1 text-[9.5px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.2 rounded-md font-mono" title="Competitor preview bridge detected - zero commission yield">
+                <span>⚠️ Competitor</span>
+              </span>
             ) : (
               <span className="flex items-center gap-1 text-[9.5px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-md font-mono" title="Generic store link detected - unmonetized">
-                <span>⚠️ Generic</span>
+                <span>⚠️ Unmonetized</span>
               </span>
             )}
           </div>
@@ -900,9 +959,9 @@ function DealCard({
                 <span>🔥</span> SUPER LOOT
               </span>
             )}
-            {isUnder299 && !isSuperLoot && !isGlitch && (
-              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-mono text-[9px] font-black shadow-md shadow-cyan-500/30 flex items-center gap-1">
-                <span>⚡</span> UNDER ₹299
+            {isUnder299 && !isGlitch && !isATL && !isSuperLoot && (
+              <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 font-mono text-[9px] font-bold">
+                UNDER ₹299
               </span>
             )}
             {deal.discount > 0 && (
@@ -1017,12 +1076,22 @@ function DealCard({
 
             {/* Affiliate Monetization Yield Breakdown */}
             {deal.price > 0 && (
-              <div className="mt-2 flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-emerald-500/[0.07] border border-emerald-500/20 text-[11px] shadow-sm">
-                <div className="flex items-center gap-1.5 text-emerald-300 font-medium">
-                  <span className="text-xs">💎</span>
+              <div className={`mt-2 flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[11px] shadow-sm ${
+                comm.isMonetized 
+                  ? "bg-emerald-500/[0.07] border border-emerald-500/20" 
+                  : comm.isCompetitor 
+                    ? "bg-rose-500/10 border border-rose-500/30" 
+                    : "bg-amber-500/10 border border-amber-500/20"
+              }`}>
+                <div className={`flex items-center gap-1.5 font-medium ${
+                  comm.isMonetized ? "text-emerald-300" : comm.isCompetitor ? "text-rose-400" : "text-amber-300"
+                }`}>
+                  <span className="text-xs">{comm.isMonetized ? "💎" : comm.isCompetitor ? "⚠️" : "⏳"}</span>
                   <span className="font-semibold text-zinc-300">Est. Yield:</span>
-                  <span className="font-mono font-bold text-emerald-300 text-xs">₹{comm.estYieldPerSale}</span>
-                  <span className="text-emerald-400/80 text-[10px]">/sale ({comm.ratePct}%)</span>
+                  <span className={`font-mono font-bold text-xs ${comm.isMonetized ? "text-emerald-300" : comm.isCompetitor ? "text-rose-400" : "text-amber-400"}`}>
+                    ₹{comm.estYieldPerSale}
+                  </span>
+                  <span className="text-[10px] opacity-80">/sale ({comm.ratePct}%)</span>
                 </div>
                 <span className="text-[10px] text-zinc-400 truncate max-w-[130px] font-mono">{comm.categoryTier}</span>
               </div>
@@ -1891,13 +1960,21 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               const simulatedDeal: Deal = { ...deal, price: currentPrice, mrp: currentMrp, discount: currentDiscount, affText: text };
               const modalComm = calculateCommissionYield(simulatedDeal);
               const modalIsATL = (currentDiscount >= 70 && currentPrice > 0) || (Boolean(deal.bestPrice) && currentPrice <= (deal.bestPrice || 0) && currentDiscount >= 55) || (currentPrice > 0 && currentPrice <= currentMrp * 0.35);
-              const modalHasAff = text.includes("tag=") || text.includes("earnkaro") || text.includes("extrape") || text.includes("bitli") || text.includes("linkredirect") || deal.affiliate;
+              const modalMon = checkMonetization(text);
 
               return (
-                <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/10 flex items-center justify-between gap-3 text-xs flex-wrap">
+                <div className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs flex-wrap ${
+                  modalComm.isMonetized 
+                    ? "bg-slate-950/80 border-white/10" 
+                    : modalComm.isCompetitor 
+                      ? "bg-rose-950/20 border-rose-500/30" 
+                      : "bg-amber-950/20 border-amber-500/30"
+                }`}>
                   <div className="flex items-center gap-2">
-                    <span className="text-emerald-400 font-bold flex items-center gap-1 font-mono">
-                      <span>💎</span> Est. Yield: ₹{modalComm.estYieldPerSale}
+                    <span className={`font-bold flex items-center gap-1 font-mono ${
+                      modalComm.isMonetized ? "text-emerald-400" : modalComm.isCompetitor ? "text-rose-400" : "text-amber-400"
+                    }`}>
+                      <span>{modalComm.isMonetized ? "💎" : modalComm.isCompetitor ? "⚠️" : "⏳"}</span> Est. Yield: ₹{modalComm.estYieldPerSale}
                     </span>
                     <span className="text-slate-400 text-[11px] font-mono">({modalComm.ratePct}% · {modalComm.categoryTier})</span>
                   </div>
@@ -1907,13 +1984,17 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                         <span>🏆</span> ATL ({currentDiscount}% Off)
                       </span>
                     )}
-                    {modalHasAff ? (
+                    {modalMon.isMonetized ? (
                       <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1">
                         <Shield size={10} /> Monetized
                       </span>
+                    ) : modalMon.isCompetitor ? (
+                      <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold flex items-center gap-1">
+                        ⚠️ Competitor Link (₹0)
+                      </span>
                     ) : (
                       <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1">
-                        ⚠️ Generic Link
+                        ⚠️ Unmonetized Link (₹0)
                       </span>
                     )}
                   </div>
