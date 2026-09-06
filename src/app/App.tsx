@@ -190,14 +190,32 @@ const getStoreBadge = (platforms: string[] = [], url: string = "") => {
   if (platStr.includes("amazon") || platStr.includes("amzn") || platStr.includes("amazn")) {
     return { name: "Amazon", bg: "from-amber-500/20 to-orange-500/20", border: "border-amber-500/30", text: "text-amber-300", tag: "amazon" };
   }
-  if (platStr.includes("flipkart") || platStr.includes("fkrt") || platStr.includes("fpkrt") || platStr.includes("shopsy")) {
+  if (platStr.includes("flipkart") || platStr.includes("fkrt") || platStr.includes("fpkrt")) {
     return { name: "Flipkart", bg: "from-blue-500/20 to-cyan-500/20", border: "border-blue-500/30", text: "text-blue-300", tag: "flipkart" };
+  }
+  if (platStr.includes("shopsy")) {
+    return { name: "Shopsy", bg: "from-teal-500/20 to-emerald-500/20", border: "border-teal-500/30", text: "text-teal-300", tag: "shopsy" };
   }
   if (platStr.includes("myntra") || platStr.includes("myntr")) {
     return { name: "Myntra", bg: "from-pink-500/20 to-rose-500/20", border: "border-pink-500/30", text: "text-pink-300", tag: "myntra" };
   }
   if (platStr.includes("ajio") || platStr.includes("ajiio")) {
     return { name: "AJIO", bg: "from-purple-500/20 to-indigo-500/20", border: "border-purple-500/30", text: "text-purple-300", tag: "ajio" };
+  }
+  if (platStr.includes("meesho")) {
+    return { name: "Meesho", bg: "from-fuchsia-500/20 to-pink-500/20", border: "border-fuchsia-500/30", text: "text-fuchsia-300", tag: "meesho" };
+  }
+  if (platStr.includes("tatacliq") || platStr.includes("cliq")) {
+    return { name: "Tata CLiQ", bg: "from-rose-500/20 to-red-500/20", border: "border-rose-500/30", text: "text-rose-300", tag: "tatacliq" };
+  }
+  if (platStr.includes("croma")) {
+    return { name: "Croma", bg: "from-cyan-500/20 to-teal-500/20", border: "border-cyan-500/30", text: "text-cyan-300", tag: "croma" };
+  }
+  if (platStr.includes("jiomart")) {
+    return { name: "JioMart", bg: "from-blue-600/20 to-indigo-500/20", border: "border-blue-500/30", text: "text-blue-300", tag: "jiomart" };
+  }
+  if (platStr.includes("digihaat")) {
+    return { name: "Digihaat", bg: "from-emerald-500/20 to-teal-500/20", border: "border-emerald-500/30", text: "text-emerald-300", tag: "digihaat" };
   }
   if (platStr.includes("udemy")) {
     return { name: "Udemy", bg: "from-purple-500/20 to-indigo-500/20", border: "border-purple-500/30", text: "text-purple-300", tag: "udemy" };
@@ -223,43 +241,119 @@ const getStoreBadge = (platforms: string[] = [], url: string = "") => {
   if (platStr.includes("boat")) {
     return { name: "boAt", bg: "from-red-500/20 to-slate-500/20", border: "border-red-500/30", text: "text-red-300", tag: "boat" };
   }
-  const cleanName = (platforms[0] && platforms[0].toLowerCase() !== "other") ? platforms[0] : "Loot Deal";
+  const cleanName = (platforms[0] && platforms[0].toLowerCase() !== "other" && platforms[0].toLowerCase() !== "loot deal") ? platforms[0] : "Direct Store";
   return { name: cleanName, bg: "from-slate-500/20 to-slate-600/20", border: "border-slate-500/30", text: "text-slate-300", tag: cleanName };
 };
 
-const aiRewriteSim = (text: string, inst: string): string => {
-  const i = inst.toLowerCase();
-  if (i.includes("short") || i.includes("concise")) return text.split("\n").slice(0, 8).join("\n");
-  if (i.includes("emoji")) return "🔥 " + text;
-  if (i.includes("clean")) return text.replace(/#\S+/g, "").replace(/\n{3,}/g, "\n\n").trim();
-  return text + "\n\n⚡ Limited time — grab it fast!";
-};
+const INVALID_TITLE_TERMS = [
+  "site maintenance", "maintenance", "access denied", "just a moment",
+  "security check", "robot or human", "are you a human", "attention required",
+  "403 forbidden", "404 not found", "page not found", "myntra new", "amazon.in",
+  "flipkart.com", "online shopping", "loading...", "error", "we could not locate"
+];
 
-function cleanDealTitle(prodName?: string, originalText?: string): string {
-  let title = (prodName || "").trim();
-  if (!title || /^(?:👉|🔥|⚡|🛍️|🔗|▶️)?\s*https?:\/\//i.test(title) || /https?:\/\/|www\.|\.com|\.in|\.ltd|\.cc|\.co|\.it|\.club|t\.me\//i.test(title)) {
-    if (originalText) {
-      const lines = originalText.split("\n").map(l => l.trim()).filter(Boolean);
-      for (const line of lines) {
-        const clean = line.replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡*_\-•—\s"']+/g, "").trim();
-        if (clean.length > 3 && !/https?:\/\/|www\.|\.com|\.in|\.ltd|\.cc|\.co|\.it|\.club|t\.me\//i.test(clean) && !/^(?:loot|price|deal|buy|grab|offer|shop|mrp|rs\.?|inr|₹|use\s+code)[\s:@₹\d,/\-%]+$/i.test(clean)) {
-          return clean.slice(0, 120);
-        }
+function isInvalidTitle(name: string): boolean {
+  if (!name || name.trim().length < 5) return true;
+  const clean = name.replace(/[*_~`#\[\]\(\)]/g, "").replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡•—\-\s"':]+/g, "").trim().toLowerCase();
+  if (clean.length < 4) return true;
+  if (INVALID_TITLE_TERMS.some(t => clean.includes(t))) return true;
+  if (/^[\d\s.,₹\-/\\():\[\]\(\)\|\+kK%]+$/.test(clean)) return true;
+  if (/^(?:₹|rs\.?|inr|lowest|loot|regular|fast|mrp|deal|steal|final|only|price)\b/i.test(clean)) return true;
+  if (/\b(?:regular:\s*[\d.kK]+|lowest\s*price\s*:\s*₹?\d+|apply\s+coupon)\b/i.test(clean)) return true;
+  return false;
+}
+
+function extractSlugTitle(url?: string): string | null {
+  if (!url) return null;
+  try {
+    const decoded = decodeURIComponent(url);
+    // Flipkart / Shopsy: /(?:flipkart\.com|shopsy\.in)(?:\/dl)?\/([^/?#]+)/i
+    const fk = decoded.match(/(?:flipkart\.com|shopsy\.in)(?:\/dl)?\/([^/?#]+)/i);
+    if (fk && fk[1]) {
+      const slug = fk[1].replace(/[-_]+/g, " ").trim();
+      if (slug.length > 5 && !/^(?:itm|dl|p|buy|product)/i.test(slug)) {
+        return slug.replace(/\b\w/g, c => c.toUpperCase()).slice(0, 100);
       }
     }
-    return "Loot Deal";
+    // Myntra: myntra.com/.../slug/id/buy
+    const my = decoded.match(/myntra\.com\/(?:[a-z0-9\-]+\/)?([^/?#]+)\/\d+\/buy/i);
+    if (my && my[1]) {
+      const slug = my[1].replace(/[-_]+/g, " ").trim();
+      if (slug.length > 4 && !/^\d+$/.test(slug) && slug.toLowerCase() !== "p") {
+        return slug.replace(/\b\w/g, c => c.toUpperCase()).slice(0, 100);
+      }
+    }
+    // Amazon dp: amazon.in/slug/dp/ASIN
+    const amz = decoded.match(/amazon\.in\/([^/?#]+)\/dp\/[A-Z0-9]{10}/i);
+    if (amz && amz[1]) {
+      const slug = amz[1].replace(/[-_]+/g, " ").trim();
+      if (slug.length > 4 && !slug.toLowerCase().startsWith("gp")) {
+        return slug.replace(/\b\w/g, c => c.toUpperCase()).slice(0, 100);
+      }
+    }
+  } catch {}
+  return null;
+}
+
+function cleanDealTitle(prodName?: string, originalText?: string, affText?: string): string {
+  let raw = (prodName || "").trim();
+  // Strip hidden markdown links e.g. [ ](https://...)
+  raw = raw.replace(/\[.*?\]\(.*?\)/g, "").replace(/\[.*?\]/g, "").trim();
+  let clean = raw.replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡*_\-•—\s"']+/g, "").replace(/\s*@\s*[\d,₹Rs.]+\s*.*$/, "").trim();
+
+  if (clean && !isInvalidTitle(clean)) {
+    return clean.slice(0, 120);
   }
-  return title.replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡*_\-•—\s"']+/g, "").trim() || "Loot Deal";
+
+  // 1. Scan originalText lines for real product name
+  if (originalText) {
+    const lines = originalText.split("\n").map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      let lClean = line.replace(/\[.*?\]\(.*?\)/g, "").replace(/\[.*?\]/g, "").trim();
+      lClean = lClean.replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡*_\-•—\s"']+/g, "").replace(/\s*@\s*[\d,₹Rs.]+\s*.*$/, "").trim();
+      if (lClean.length >= 6 && !isInvalidTitle(lClean) && !/https?:\/\//i.test(lClean)) {
+        return lClean.slice(0, 120);
+      }
+    }
+  }
+
+  // 2. Scan URLs for canonical slugs
+  const allText = `${prodName || ""} ${originalText || ""} ${affText || ""}`;
+  const urls = allText.match(/https?:\/\/[^\s"'<>]+/g) || [];
+  for (const u of urls) {
+    const slug = extractSlugTitle(u);
+    if (slug && !isInvalidTitle(slug)) {
+      return slug;
+    }
+  }
+
+  // 3. Fallback to clean merchant curated title
+  const textLower = allText.toLowerCase();
+  if (textLower.includes("myntra") || textLower.includes("myntr")) return "Myntra Curated Fashion Deal";
+  if (textLower.includes("flipkart") || textLower.includes("fkrt")) return "Flipkart Super Deal";
+  if (textLower.includes("amazon") || textLower.includes("amzn")) return "Amazon Prime Special";
+  if (textLower.includes("ajio")) return "AJIO Trends Offer";
+  if (textLower.includes("desidime")) return "DesiDime Handpicked Deal";
+  return "Curated Special Deal";
 }
 
 // ─── API Helpers ──────────────────────────────────────────────────────────────
 function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): Deal {
   const id = d.fp_hash ?? fallbackId ?? String(d.ts);
   const { name: catName, emoji: catEmoji } = parseCategory(d.category);
+  const salePrice = d.prices?.sale ?? 0;
+  let mrpPrice = d.prices?.mrp ?? 0;
+  if (mrpPrice <= 10 && salePrice > 10) {
+    mrpPrice = 0;
+  }
+  let disc = d.prices?.discount_pct ?? 0;
+  if (!disc && mrpPrice > salePrice && salePrice > 0) {
+    disc = Math.round((1 - salePrice / mrpPrice) * 100);
+  }
   return {
-    id, title: cleanDealTitle(d.prod_name, d.original_text),
-    price: d.prices.sale ?? 0, mrp: d.prices.mrp ?? 0,
-    discount: d.prices.discount_pct ?? 0,
+    id, title: cleanDealTitle(d.prod_name, d.original_text, d.aff_text),
+    price: salePrice, mrp: mrpPrice,
+    discount: disc,
     category: catName, catEmoji: catEmoji,
     channel: toChName(d.source_channel), channelRaw: d.source_channel,
     score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
@@ -1739,7 +1833,12 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     setRewriting(true);
     setPrev(text);
     const result = await apiAiRewrite(deal.id, instruction);
-    setText(result ?? aiRewriteSim(text, instruction));
+    if (result) {
+      setText(result);
+      onToast("✨ AI post rewritten successfully!", "success");
+    } else {
+      onToast("AI rewrite unavailable, keeping original post", "error");
+    }
     setInstruction("");
     setRewriting(false);
   };
@@ -2051,7 +2150,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                     </div>
                   )}
                   <div className="tg-bubble-text">
-                    {text.split("\n").slice(0, 14).join("\n")
+                    {text
                       .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
                       .split(/(https?:\/\/\S+)/g)
                       .map((part, i) =>

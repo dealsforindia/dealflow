@@ -249,7 +249,73 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
       </motion.div>
     );
   }
-  const clean = store && store.toLowerCase() !== "other" ? store : "Loot Deal";
+  if (s.includes("shopsy")) {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.06, y: -1 }}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-teal-500/25 via-emerald-600/20 to-teal-500/25 border border-teal-400/40 text-teal-300 backdrop-blur-xl shadow-sm"
+      >
+        <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(20,184,166,0.5)]">🛍️</span>
+        <span className="text-[11px] font-black tracking-tight">Shopsy</span>
+      </motion.div>
+    );
+  }
+  if (s.includes("meesho")) {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.06, y: -1 }}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-fuchsia-500/25 via-pink-600/20 to-fuchsia-500/25 border border-fuchsia-400/40 text-fuchsia-300 backdrop-blur-xl shadow-sm"
+      >
+        <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(217,70,239,0.5)]">👗</span>
+        <span className="text-[11px] font-black tracking-tight">Meesho</span>
+      </motion.div>
+    );
+  }
+  if (s.includes("tatacliq") || s.includes("cliq")) {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.06, y: -1 }}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-red-600/25 via-rose-600/20 to-red-600/25 border border-red-500/40 text-rose-300 backdrop-blur-xl shadow-sm"
+      >
+        <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(225,29,72,0.5)]">💎</span>
+        <span className="text-[11px] font-black tracking-tight">Tata CLiQ</span>
+      </motion.div>
+    );
+  }
+  if (s.includes("croma")) {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.06, y: -1 }}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-teal-500/25 via-cyan-600/20 to-teal-500/25 border border-teal-400/40 text-teal-300 backdrop-blur-xl shadow-sm"
+      >
+        <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(20,184,166,0.5)]">📺</span>
+        <span className="text-[11px] font-black tracking-tight">Croma</span>
+      </motion.div>
+    );
+  }
+  if (s.includes("jiomart")) {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.06, y: -1 }}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-blue-600/25 border border-blue-500/40 text-blue-300 backdrop-blur-xl shadow-sm"
+      >
+        <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(37,99,235,0.5)]">🛒</span>
+        <span className="text-[11px] font-black tracking-tight">JioMart</span>
+      </motion.div>
+    );
+  }
+  if (s.includes("digihaat")) {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.06, y: -1 }}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-500/25 via-green-600/20 to-emerald-500/25 border border-emerald-400/40 text-emerald-300 backdrop-blur-xl shadow-sm"
+      >
+        <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(16,185,129,0.5)]">🌾</span>
+        <span className="text-[11px] font-black tracking-tight">Digihaat</span>
+      </motion.div>
+    );
+  }
+  const clean = store && store.toLowerCase() !== "other" && store.toLowerCase() !== "loot deal" ? store : "Direct Store";
   return (
     <motion.div
       whileHover={{ scale: 1.06, y: -1 }}
