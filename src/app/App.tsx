@@ -3313,6 +3313,42 @@ function ChannelsView() {
 }
 
 // ─── Posted Deals View ────────────────────────────────────────────────────────
+function PostedDealCard({ deal }: { deal: Deal }) {
+  const [imgErr, setImgErr] = useState(false);
+
+  return (
+    <div className="p-4 rounded-2xl glass-card flex items-center gap-4 border border-white/8 hover:border-white/15 transition-colors">
+      {deal.imgUrl && !imgErr ? (
+        <img
+          src={deal.imgUrl}
+          alt=""
+          onError={() => setImgErr(true)}
+          className="w-14 h-14 rounded-xl object-contain bg-slate-950/80 p-1 border border-white/10 flex-shrink-0"
+        />
+      ) : (
+        <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0">
+          <Category3DIcon category={deal.category} size={28} />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <h4 className="text-xs font-bold text-white truncate" title={deal.title}>{deal.title}</h4>
+        <div className="flex items-center gap-3 mt-1 text-[11px]">
+          <span className="font-bold font-mono text-emerald-400">{fmt(deal.price)}</span>
+          <span className="text-slate-500 font-mono">{fmtAgo(deal.ts)}</span>
+          <span className="text-slate-400 font-semibold">{deal.channel}</span>
+        </div>
+      </div>
+      <button
+        onClick={() => { navigator.clipboard.writeText(deal.affText); toast.success("Copied post text!"); }}
+        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10 cursor-pointer active:scale-95"
+        title="Copy Post"
+      >
+        <Copy size={14} />
+      </button>
+    </div>
+  );
+}
+
 function PostedView({ deals }: { deals: Deal[] }) {
   const postedDeals = deals.filter(d => d.status === "approved");
 
@@ -3332,27 +3368,7 @@ function PostedView({ deals }: { deals: Deal[] }) {
 
       <div className="flex flex-col gap-3">
         {postedDeals.map(d => (
-          <div key={d.id} className="p-4 rounded-2xl glass-card flex items-center gap-4 border border-white/8 hover:border-white/15">
-            {d.imgUrl ? (
-              <img src={d.imgUrl} alt="" className="w-14 h-14 rounded-xl object-contain bg-slate-950/80 p-1 border border-white/10 flex-shrink-0" />
-            ) : (
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 flex-shrink-0">
-                <Category3DIcon category={d.category} size={28} />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <h4 className="text-xs font-bold text-white truncate">{d.title}</h4>
-              <div className="flex items-center gap-3 mt-1 text-[11px]">
-                <span className="font-bold font-mono text-emerald-400">{fmt(d.price)}</span>
-                <span className="text-slate-500 font-mono">{fmtAgo(d.ts)}</span>
-                <span className="text-slate-400 font-semibold">{d.channel}</span>
-              </div>
-            </div>
-            <button onClick={() => { navigator.clipboard.writeText(d.affText); toast.success("Copied post text!"); }}
-              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10" title="Copy Post">
-              <Copy size={14} />
-            </button>
-          </div>
+          <PostedDealCard key={d.id} deal={d} />
         ))}
       </div>
     </div>
