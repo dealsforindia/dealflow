@@ -10,7 +10,7 @@ import {
   Maximize2, Copy, Link as LinkIcon, FileText,
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
-  LayoutGrid, Columns, Smartphone, Layers, CornerDownLeft, Command,
+  LayoutGrid, Columns, Smartphone, CornerDownLeft, Command,
   Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History
 } from "lucide-react";
 import {
@@ -23,7 +23,7 @@ import {
 import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
 import { ChannelPerformanceHeatmap } from "./components/ChannelPerformanceHeatmap";
 import {
-  playApprove, playReject, playCopy, playTick, playGlitch, playUndo,
+  playApprove, playReject, playCopy, playTick, playUndo,
   isSoundMuted, toggleSound
 } from "./utils/soundFX";
 
@@ -671,7 +671,7 @@ async function apiGetChannelsAnalytics(): Promise<ChannelAnalyticsItem[]> {
   }
 }
 
-function playGlitchChime() {
+function playAlertChime() {
   try {
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
@@ -739,113 +739,7 @@ const getStoreAura = (tag: string) => {
   return "from-emerald-500/70 via-teal-500/40 to-transparent";
 };
 
-// ─── Mathematical Affiliate Commission Yield Engine ───
-export function checkMonetization(text: string = ""): {
-  isMonetized: boolean;
-  isCompetitor: boolean;
-  label: string;
-} {
-  const clean = text.toLowerCase();
-  if (clean.includes("ambhedeal.in.net")) {
-    return { isMonetized: false, isCompetitor: true, label: "Competitor Preview Link" };
-  }
-  const hasTag = clean.includes("tag=") || 
-    clean.includes("earnkaro") || 
-    clean.includes("ekaro.in") || 
-    clean.includes("extrape") || 
-    clean.includes("bitli.in") || 
-    clean.includes("linkredirect.in") || 
-    clean.includes("inr.deals") || 
-    clean.includes("openinapp.co");
-  
-  if (hasTag) {
-    return { isMonetized: true, isCompetitor: false, label: "Monetized" };
-  }
-  return { isMonetized: false, isCompetitor: false, label: "Generic / Unmonetized" };
-}
 
-export function calculateCommissionYield(deal: Deal): {
-  ratePct: number;
-  estYieldPerSale: number;
-  categoryTier: string;
-  isMonetized: boolean;
-  isCompetitor: boolean;
-} {
-  const text = deal.affText || deal.originalText || "";
-  const monStatus = checkMonetization(text);
-
-  const store = getStoreBadge(deal.platforms, deal.affText).tag.toLowerCase();
-  const cat = (deal.category || "").toLowerCase();
-  const title = (deal.title || "").toLowerCase();
-  let rate = 5.0; // default 5%
-  let tier = "General";
-
-  // Check cookware & kitchen keywords across title and category
-  const isHomeKitchen = cat.includes("home") || cat.includes("kitchen") || 
-    title.includes("cookware") || title.includes("kadai") || title.includes("frypan") || 
-    title.includes("pan") || title.includes("pot") || title.includes("dinner set") || 
-    title.includes("tiffin") || title.includes("utensil") || title.includes("knife") ||
-    title.includes("stainless steel") || title.includes("cooker") || title.includes("kadhai");
-
-  if (store.includes("amazon")) {
-    if (isHomeKitchen) {
-      rate = 6.0;
-      tier = "Home & Kitchen (6%)";
-    } else if (cat.includes("fashion") || cat.includes("apparel") || cat.includes("clothing") || cat.includes("footwear") || cat.includes("shoes") || cat.includes("watch") || cat.includes("jewelry")) {
-      rate = 9.0;
-      tier = "Fashion & Apparel (9%)";
-    } else if (cat.includes("beauty") || cat.includes("personal") || cat.includes("health")) {
-      rate = 8.0;
-      tier = "Beauty & Personal (8%)";
-    } else if (cat.includes("grocery") || cat.includes("food") || cat.includes("pantry")) {
-      rate = 5.0;
-      tier = "Grocery (5%)";
-    } else if (cat.includes("phone") || cat.includes("mobile")) {
-      rate = 1.5;
-      tier = "Mobiles (1.5%)";
-    } else if (cat.includes("electronics") || cat.includes("audio") || cat.includes("computer") || cat.includes("gaming")) {
-      rate = 4.0;
-      tier = "Electronics & Tech (4%)";
-    }
-  } else if (store.includes("flipkart")) {
-    if (isHomeKitchen) {
-      rate = 6.0;
-      tier = "Home & Kitchen (6%)";
-    } else if (cat.includes("fashion") || cat.includes("footwear")) {
-      rate = 8.5;
-      tier = "Fashion (8.5%)";
-    } else if (cat.includes("electronics") || cat.includes("mobile")) {
-      rate = 2.5;
-      tier = "Electronics (2.5%)";
-    } else {
-      rate = 4.0;
-      tier = "General (4%)";
-    }
-  } else if (store.includes("myntra") || store.includes("ajio")) {
-    rate = 8.0;
-    tier = "Fashion & Lifestyle (8%)";
-  }
-
-  // If link is unmonetized or competitor preview bridge, yield is strictly ₹0
-  if (!monStatus.isMonetized) {
-    return {
-      ratePct: 0,
-      estYieldPerSale: 0,
-      categoryTier: monStatus.isCompetitor ? "⚠️ Competitor Link (₹0 Yield)" : "⚠️ Unmonetized Link (₹0 Yield)",
-      isMonetized: false,
-      isCompetitor: monStatus.isCompetitor,
-    };
-  }
-
-  const estYield = deal.price > 0 ? Math.round((deal.price * rate) / 100) : 0;
-  return { 
-    ratePct: rate, 
-    estYieldPerSale: estYield, 
-    categoryTier: tier,
-    isMonetized: true,
-    isCompetitor: false,
-  };
-}
 
 // ─── Senior Pro Deal Card (Responsive Mobile Horizontal + Desktop Specular Grid) ───
 function DealCard({
@@ -868,18 +762,10 @@ function DealCard({
   const [copied, setCopied] = useState(false);
   const [copyPlatform, setCopyPlatform] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
-  const [showArbitrage, setShowArbitrage] = useState(false);
-
   const store = getStoreBadge(deal.platforms, deal.affText);
   const savings = deal.mrp > deal.price ? deal.mrp - deal.price : 0;
-  const isSuperLoot = (deal.discount >= 70) || (savings >= 1500);
   const isUnder299 = deal.price > 0 && deal.price <= 299;
   const isFresh = (Date.now() / 1000 - deal.ts) < 900;
-  const isGlitch = (deal.discount >= 80 && deal.mrp >= 1000) || (deal.price > 0 && deal.price <= 99 && deal.mrp >= 999) || (savings >= 3500);
-  const comm = calculateCommissionYield(deal);
-  const monStatus = checkMonetization(deal.affText || deal.originalText);
-  const isATL = (deal.discount >= 70 && deal.price > 0) || (Boolean(deal.bestPrice) && deal.price <= (deal.bestPrice || 0) && deal.discount >= 55) || (deal.price > 0 && deal.price <= deal.mrp * 0.35);
-  const hasAffTag = monStatus.isMonetized;
 
   const handleCopyPost = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -916,14 +802,6 @@ function DealCard({
     setTimeout(() => setCopyPlatform(null), 2000);
   };
 
-  const handlePostGlitch = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    playGlitch();
-    const glitchHeader = `🚨 *PRICE ERROR / LOOT GLITCH DETECTED!* 🚨\n⚡ *MRP ₹${deal.mrp} dropped to ₹${deal.price}! (${Math.round(deal.discount)}% OFF)*\n\n`;
-    const updatedAffText = `${glitchHeader}${deal.affText || deal.originalText}\n\n⚠️ *Hurry! Price glitch may get corrected anytime!*`;
-    onApprove(deal.id, { affText: updatedAffText });
-    toast.success("🚨 Posted as Price Error Glitch!");
-  };
 
   const handleOpenStore = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -1004,17 +882,7 @@ function DealCard({
             </span>
           )}
 
-          {isGlitch && (
-            <span className="absolute bottom-1 left-1 px-1 rounded-md bg-red-600 text-white font-mono text-[8px] font-black shadow-sm animate-pulse">
-              🚨 GLITCH
-            </span>
-          )}
 
-          {isATL && !isGlitch && (
-            <span className="absolute bottom-1 left-1 px-1 rounded-md bg-amber-400 text-slate-950 font-mono text-[8px] font-black shadow-sm">
-              🏆 ATL
-            </span>
-          )}
 
           {deal.imgUrl && (
             <button
@@ -1073,11 +941,6 @@ function DealCard({
               </div>
               <div className="flex items-center gap-1">
                 {savings > 0 && <SavingsPill3D amount={savings} />}
-                {deal.price > 0 && comm.estYieldPerSale > 0 && (
-                  <span className="text-[9px] font-mono font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-1 py-0.2 rounded" title={comm.categoryTier}>
-                    💎 ₹{comm.estYieldPerSale}
-                  </span>
-                )}
               </div>
             </div>
 
@@ -1113,15 +976,7 @@ function DealCard({
                 >
                   <PenLine size={11} /> <span>Tune</span>
                 </button>
-                {isGlitch && (
-                  <button
-                    onClick={handlePostGlitch}
-                    className="h-7 px-2 rounded-lg text-[10px] font-black text-white flex items-center justify-center gap-1 bg-red-600 hover:bg-red-500 active:scale-95 shadow-sm shadow-red-600/30 cursor-pointer"
-                    title="Post Glitch"
-                  >
-                    <span>🚨</span>
-                  </button>
-                )}
+
                 <button
                   onClick={() => handleApproveWithSound(deal.id)}
                   className="h-7 px-3 rounded-lg text-[11px] font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-sm shadow-emerald-500/20 cursor-pointer flex-1"
@@ -1149,20 +1004,7 @@ function DealCard({
             <Store3DBadge store={store.tag} />
             <Category3DIcon category={deal.category} size={15} />
             <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]">{deal.channel}</span>
-            {monStatus.isMonetized ? (
-              <span className="flex items-center gap-1 text-[9.5px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded-md font-mono" title="Affiliate tracking tag verified active">
-                <Shield size={10} className="text-emerald-400" />
-                <span>Monetized</span>
-              </span>
-            ) : monStatus.isCompetitor ? (
-              <span className="flex items-center gap-1 text-[9.5px] font-bold text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.2 rounded-md font-mono" title="Competitor preview bridge detected - zero commission yield">
-                <span>⚠️ Competitor</span>
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-[9.5px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-md font-mono" title="Generic store link detected - unmonetized">
-                <span>⚠️ Unmonetized</span>
-              </span>
-            )}
+
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {isFresh && (
@@ -1205,23 +1047,7 @@ function DealCard({
 
           {/* Loot Badges in Media Box */}
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 flex-wrap justify-end">
-            {isGlitch && (
-              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 text-white font-mono text-[9px] font-black shadow-lg shadow-red-600/40 flex items-center gap-1 border border-red-400/50 animate-pulse">
-                <AlertTriangle size={10} className="text-amber-200 fill-amber-200" />
-                <span>🚨 GLITCH</span>
-              </span>
-            )}
-            {isATL && !isGlitch && (
-              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 font-mono text-[9px] font-black shadow-lg shadow-amber-500/30 flex items-center gap-1 border border-amber-300/60">
-                <span>🏆</span> ALL-TIME LOW
-              </span>
-            )}
-            {isSuperLoot && !isGlitch && !isATL && (
-              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-red-500 to-amber-500 text-white font-mono text-[9px] font-black shadow-md shadow-red-500/30 flex items-center gap-1">
-                <span>🔥</span> SUPER LOOT
-              </span>
-            )}
-            {isUnder299 && !isGlitch && !isATL && !isSuperLoot && (
+            {isUnder299 && (
               <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 font-mono text-[9px] font-bold">
                 UNDER ₹299
               </span>
@@ -1254,16 +1080,7 @@ function DealCard({
             className="absolute bottom-2 inset-x-2 z-30 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto flex-wrap"
             onClick={e => e.stopPropagation()}
           >
-            {isGlitch && deal.status === "pending" && (
-              <button
-                type="button"
-                onClick={handlePostGlitch}
-                className="px-2.5 py-1 rounded-lg text-[10.5px] font-black bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white hover:brightness-110 border border-red-400/60 shadow-xl shadow-red-600/40 flex items-center gap-1 cursor-pointer active:scale-95 transition-all animate-pulse"
-                title="1-Click Post as Price Error Glitch"
-              >
-                <span>🚨 Post Glitch</span>
-              </button>
-            )}
+
             <button
               type="button"
               onClick={handleCopyPost}
@@ -1364,97 +1181,7 @@ function DealCard({
               </div>
             )}
 
-            {/* Affiliate Monetization Yield Breakdown */}
-            {deal.price > 0 && (
-              <div className={`mt-2 flex items-center justify-between px-2.5 py-1.5 rounded-xl text-[11px] shadow-sm ${
-                comm.isMonetized 
-                  ? "bg-emerald-500/[0.07] border border-emerald-500/20" 
-                  : comm.isCompetitor 
-                    ? "bg-rose-500/10 border border-rose-500/30" 
-                    : "bg-amber-500/10 border border-amber-500/20"
-              }`}>
-                <div className={`flex items-center gap-1.5 font-medium ${
-                  comm.isMonetized ? "text-emerald-300" : comm.isCompetitor ? "text-rose-400" : "text-amber-300"
-                }`}>
-                  <span className="text-xs">{comm.isMonetized ? "💎" : comm.isCompetitor ? "⚠️" : "⏳"}</span>
-                  <span className="font-semibold text-zinc-300">Est. Yield:</span>
-                  <span className={`font-mono font-bold text-xs ${comm.isMonetized ? "text-emerald-300" : comm.isCompetitor ? "text-rose-400" : "text-amber-400"}`}>
-                    ₹{comm.estYieldPerSale}
-                  </span>
-                  <span className="text-[10px] opacity-80">/sale ({comm.ratePct}%)</span>
-                </div>
-                <span className="text-[10px] text-zinc-400 truncate max-w-[130px] font-mono">{comm.categoryTier}</span>
-              </div>
-            )}
 
-            {/* ─── CROSS-CHANNEL DUPLICATE ARBITRAGE & PRICE MATRIX DRAWER ─── */}
-            {((deal.clusterCount && deal.clusterCount > 1) || (deal.clusterChannels && deal.clusterChannels.length > 1)) && (
-              <div className="mt-2.5 pt-2 border-t border-white/6">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setShowArbitrage(!showArbitrage); }}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-[10.5px] text-indigo-300 font-semibold cursor-pointer transition-all"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Layers size={12} className="text-indigo-400" />
-                    <span>Cross-Channel: {deal.clusterCount || deal.clusterChannels?.length} Sources</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-mono text-[10px]">
-                    {deal.bestPrice && deal.bestPrice < deal.price && (
-                      <span className="text-emerald-400 font-bold bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 rounded-md">
-                        Best ₹{deal.bestPrice}
-                      </span>
-                    )}
-                    {showArbitrage ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                  </div>
-                </button>
-
-                <AnimatePresence>
-                  {showArbitrage && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mt-1.5 p-2 rounded-xl bg-black/50 border border-white/10 flex flex-col gap-1.5 text-[10px]"
-                    >
-                      <div className="text-[9px] uppercase tracking-wider text-zinc-500 font-mono flex items-center justify-between px-1">
-                        <span>Channel Source</span>
-                        <span>Price Logged</span>
-                      </div>
-                      {(deal.clusterChannels || []).map((c, i) => {
-                        const isLowest = deal.bestPrice && c.price === deal.bestPrice;
-                        return (
-                          <div key={i} className="flex items-center justify-between px-1 py-1 rounded-lg bg-white/[0.02]">
-                            <span className="truncate max-w-[140px] text-zinc-300 font-medium">{toChName(c.channel || c.name)}</span>
-                            <span className="font-mono font-bold text-white flex items-center gap-1">
-                              {c.price ? `₹${c.price}` : "—"}
-                              {isLowest && (
-                                <span className="text-emerald-400 text-[9px] font-bold bg-emerald-500/20 border border-emerald-500/30 px-1 rounded">
-                                  ★ Lowest
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {deal.bestPrice && deal.bestPrice < deal.price && deal.status === "pending" && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onApprove(deal.id, { price: deal.bestPrice });
-                            toast.success(`Adopted lower price: ₹${deal.bestPrice}`);
-                          }}
-                          className="mt-1 w-full py-1 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-[10.5px] font-bold text-center cursor-pointer transition-all"
-                        >
-                          ✨ Adopt Lowest Price (₹{deal.bestPrice})
-                        </button>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
           </div>
 
           {/* Footer Buttons */}
@@ -2159,55 +1886,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </div>
             </div>
 
-            {/* Live Financial Yield & All-Time Low Calculations */}
-            {(() => {
-              const currentPrice = Number(price) || deal.price;
-              const currentMrp = Number(mrp) || deal.mrp;
-              const currentDiscount = currentMrp > currentPrice && currentMrp > 0 ? Math.round(((currentMrp - currentPrice) / currentMrp) * 100) : deal.discount;
-              const simulatedDeal: Deal = { ...deal, price: currentPrice, mrp: currentMrp, discount: currentDiscount, affText: text };
-              const modalComm = calculateCommissionYield(simulatedDeal);
-              const modalIsATL = (currentDiscount >= 70 && currentPrice > 0) || (Boolean(deal.bestPrice) && currentPrice <= (deal.bestPrice || 0) && currentDiscount >= 55) || (currentPrice > 0 && currentPrice <= currentMrp * 0.35);
-              const modalMon = checkMonetization(text);
 
-              return (
-                <div className={`p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs flex-wrap ${
-                  modalComm.isMonetized 
-                    ? "bg-slate-950/80 border-white/10" 
-                    : modalComm.isCompetitor 
-                      ? "bg-rose-950/20 border-rose-500/30" 
-                      : "bg-amber-950/20 border-amber-500/30"
-                }`}>
-                  <div className="flex items-center gap-2">
-                    <span className={`font-bold flex items-center gap-1 font-mono ${
-                      modalComm.isMonetized ? "text-emerald-400" : modalComm.isCompetitor ? "text-rose-400" : "text-amber-400"
-                    }`}>
-                      <span>{modalComm.isMonetized ? "💎" : modalComm.isCompetitor ? "⚠️" : "⏳"}</span> Est. Yield: ₹{modalComm.estYieldPerSale}
-                    </span>
-                    <span className="text-slate-400 text-[11px] font-mono">({modalComm.ratePct}% · {modalComm.categoryTier})</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                    {modalIsATL && (
-                      <span className="px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/30 font-bold flex items-center gap-1">
-                        <span>🏆</span> ATL ({currentDiscount}% Off)
-                      </span>
-                    )}
-                    {modalMon.isMonetized ? (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold flex items-center gap-1">
-                        <Shield size={10} /> Monetized
-                      </span>
-                    ) : modalMon.isCompetitor ? (
-                      <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold flex items-center gap-1">
-                        ⚠️ Competitor Link (₹0)
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold flex items-center gap-1">
-                        ⚠️ Unmonetized Link (₹0)
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* 30-Day Historical Price Intelligence & Fake Discount Buster */}
             {priceIntel && priceIntel.recorded_points > 0 && (
@@ -2449,7 +2128,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"latest" | "yield_desc" | "discount" | "atl" | "price_asc" | "price_desc">("latest");
+  const [sort, setSort] = useState<"latest" | "discount" | "price_asc" | "price_desc">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "promos" | "all">("pending");
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
   const [selectedStore, setSelectedStore] = useState<string>("All");
@@ -2468,7 +2147,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [smartPreset, setSmartPreset] = useState<string>("all");
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [soundMuted, setSoundMutedState] = useState<boolean>(isSoundMuted());
-  const [groupDuplicates, setGroupDuplicates] = useState(true);
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
 
   const handleToggleSound = () => {
@@ -2555,17 +2233,13 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
       const store = getStoreBadge(d.platforms, d.affText);
       if (store.tag !== selectedStore) return false;
     }
-    if (groupDuplicates && d.isClusterHead === false) return false;
     if (filter !== "all" && filter !== "promos" && d.status !== filter) return false;
     if (search.trim() && !isSearchUrl) {
       const q = search.trim().toLowerCase();
       const searchable = `${d.title} ${d.channel} ${d.category} ${d.originalText}`.toLowerCase();
       if (!searchable.includes(q)) return false;
     }
-    if (smartPreset === "super_loot") {
-      const isSuper = (d.discount >= 70) || (d.mrp - d.price >= 1500);
-      if (!isSuper) return false;
-    } else if (smartPreset === "under_499") {
+    if (smartPreset === "under_499") {
       if (!(d.price > 0 && d.price <= 499)) return false;
     } else if (smartPreset === "electronics") {
       const cat = d.category.toLowerCase();
@@ -2581,9 +2255,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   });
 
   if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
-  else if (sort === "yield_desc") visible = [...visible].sort((a, b) => calculateCommissionYield(b).estYieldPerSale - calculateCommissionYield(a).estYieldPerSale);
   else if (sort === "discount") visible = [...visible].sort((a, b) => b.discount - a.discount);
-  else if (sort === "atl") visible = [...visible].sort((a, b) => ((b.discount >= 70 || (b.mrp > 0 && b.price <= b.mrp * 0.35)) ? 1 : 0) - ((a.discount >= 70 || (a.mrp > 0 && a.price <= a.mrp * 0.35)) ? 1 : 0));
   else if (sort === "price_asc") visible = [...visible].sort((a, b) => (a.price || 999999) - (b.price || 999999));
   else if (sort === "price_desc") visible = [...visible].sort((a, b) => (b.price || 0) - (a.price || 0));
 
@@ -2634,7 +2306,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const rejected = deals.filter(d => d.status === "rejected").length;
 
   // Velocity and Smart Curation Telemetry
-  const superLootCount = deals.filter(d => (filter === "all" || d.status === filter) && ((d.discount >= 70) || (d.mrp - d.price >= 1500))).length;
   const under499Count = deals.filter(d => (filter === "all" || d.status === filter) && d.price > 0 && d.price <= 499).length;
   const approvedToday = deals.filter(d => d.status === "approved" && (Date.now() / 1000 - d.ts) < 86400).length;
   const totalSavings = visible.reduce((acc, d) => acc + (d.mrp > d.price ? d.mrp - d.price : 0), 0);
@@ -2660,9 +2331,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 
   const sortOptions: DropdownOption[] = [
     { value: "latest", label: "Newest First", icon: "⏰" },
-    { value: "yield_desc", label: "Highest Yield (₹/sale)", icon: "💎" },
     { value: "discount", label: "Highest % Off", icon: "🔥" },
-    { value: "atl", label: "All-Time Low (ATL)", icon: "🏆" },
     { value: "price_asc", label: "Price: Low to High", icon: "🏷️" },
     { value: "price_desc", label: "Price: High to Low", icon: "💰" },
   ];
@@ -2935,7 +2604,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
             {[
               { id: "all", label: "All Deals" },
-              { id: "super_loot", label: "🔥 Super Loot", count: superLootCount },
               { id: "under_499", label: "⚡ Under ₹499", count: under499Count },
               { id: "electronics", label: "📱 Tech" },
               { id: "fashion", label: "👗 Fashion" },
@@ -2958,28 +2626,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             ))}
           </div>
 
-          {/* Duplicate Cluster Toggle */}
-          <button
-            onClick={() => setGroupDuplicates(prev => !prev)}
-            className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border ${
-              groupDuplicates
-                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
-                : "bg-white/[0.04] text-slate-400 border-white/10 hover:text-slate-200"
-            }`}
-            title="Cluster duplicate cross-channel posts into a single card with source channels"
-          >
-            <Layers size={12} />
-            <span className="hidden sm:inline">Clusters</span>
-            <span className={`text-[9px] font-mono px-1 rounded ${groupDuplicates ? "bg-indigo-400 text-slate-950 font-black" : "bg-white/10 text-slate-400"}`}>
-              {groupDuplicates ? "ON" : "OFF"}
-            </span>
-          </button>
-
           {/* Channel Velocity Heatmap Modal Button */}
           <button
             onClick={() => setHeatmapModalOpen(true)}
             className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-white/[0.04] text-slate-300 border-white/10 hover:bg-white/[0.08] hover:text-amber-300"
-            title="Open 24-Hour Channel Velocity Heatmap & Yield Matrix"
+            title="Open 24-Hour Channel Velocity Heatmap"
           >
             <Flame size={12} className="text-amber-400 fill-amber-400/20" />
             <span className="hidden sm:inline">Heatmap</span>
@@ -3573,7 +3224,7 @@ function ChannelsView() {
           }`}
         >
           <Flame size={14} className="text-amber-400 fill-amber-400/20" />
-          <span>24H Velocity Heatmap & Yield Matrix</span>
+          <span>24H Channel Velocity Heatmap</span>
           <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-white text-[9px] font-mono font-bold">LIVE</span>
         </button>
       </div>
@@ -4033,18 +3684,18 @@ function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAle
             const next = !soundAlerts;
             setSoundAlerts(next);
             try { localStorage.setItem("dealflow_sound_alerts", String(next)); } catch {}
-            if (next) playGlitchChime();
+            if (next) playAlertChime();
           }}
           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
             soundAlerts
               ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/15 shadow-sm"
               : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
           }`}
-          title="Toggle instant audio chime when an 80%+ price glitch is detected"
+          title="Toggle audio alert chime for incoming deals"
         >
           <span className="flex items-center gap-1.5">
             <span>{soundAlerts ? "🔔" : "🔕"}</span>
-            <span>Glitch Chime</span>
+            <span>Sound Alerts</span>
           </span>
           <span className="text-[10px] font-mono font-bold uppercase">{soundAlerts ? "ON" : "OFF"}</span>
         </button>
@@ -4122,13 +3773,8 @@ export default function App() {
             const data = JSON.parse(e.data);
             if (data.event === "new_deal" || data.event === "deal_approved") {
               if (data.event === "new_deal" && soundAlerts) {
-                const p = data.deal?.prices || {};
-                const disc = p.discount_pct || 0;
-                const sale = p.sale || 0;
-                if (disc >= 80 || (sale > 0 && sale <= 99)) {
-                  playGlitchChime();
-                  toast("⚡ Flash Price Drop Detected!", { icon: "🔥" });
-                }
+                playAlertChime();
+                toast("⚡ New Deal Received!", { icon: "🔥" });
               }
               // 1,500ms sliding debounce: coalesces deal bursts into a single clean background sync
               clearTimeout(debounceTimer);
