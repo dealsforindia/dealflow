@@ -387,7 +387,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
     ts: Math.floor(d.ts), status: "pending" as DealStatus,
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
-    affiliate: d.affiliate_applied,
+    affiliate: Boolean(d.affiliate_applied || (d as any).affiliate),
     coupon: d.coupon || null,
     couponDiscount: d.coupon_discount ?? (d as any).coupon_discount ?? null,
     effectivePrice: d.effective_price ?? (d as any).effective_price ?? null,
@@ -741,6 +741,30 @@ const getStoreAura = (tag: string) => {
 
 
 
+// ─── Affiliate Verification Badge ─────────────────────────────────────────────
+function AffiliateMark({ applied }: { applied: boolean }) {
+  if (applied) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex-shrink-0"
+        title="Affiliate converted link"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        ⚡ Affiliated
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-zinc-500/15 text-zinc-400 border border-zinc-500/30 flex-shrink-0"
+      title="Direct store link (Non-affiliated)"
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
+      🔗 Direct
+    </span>
+  );
+}
+
 // ─── Senior Pro Deal Card (Responsive Mobile Horizontal + Desktop Specular Grid) ───
 function DealCard({
   deal, onApprove, onReject, onEdit,
@@ -919,6 +943,7 @@ function DealCard({
                 <Store3DBadge store={store.tag} />
                 <Category3DIcon category={deal.category} size={13} />
                 <span className="text-[10px] text-slate-400 truncate max-w-[80px]">{deal.channel}</span>
+                <AffiliateMark applied={deal.affiliate} />
               </div>
               <span className="text-[9px] text-slate-500 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
             </div>
@@ -1004,7 +1029,7 @@ function DealCard({
             <Store3DBadge store={store.tag} />
             <Category3DIcon category={deal.category} size={15} />
             <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]">{deal.channel}</span>
-
+            <AffiliateMark applied={deal.affiliate} />
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {isFresh && (
@@ -1843,9 +1868,12 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             <StudioWand3D size={36} />
             <div className="min-w-0">
               <h2 className="text-sm font-bold text-white tracking-wide truncate">Edit &amp; Tune Deal</h2>
-              <p className="text-[11px] text-slate-400 truncate">
-                {deal.channel ? `${deal.channel} · ` : ""}Source: {deal.channelRaw || "Direct"}
-              </p>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <p className="text-[11px] text-slate-400 truncate">
+                  {deal.channel ? `${deal.channel} · ` : ""}Source: {deal.channelRaw || "Direct"}
+                </p>
+                <AffiliateMark applied={deal.affiliate} />
+              </div>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0">
@@ -3467,6 +3495,7 @@ function PostedDealCard({ deal }: { deal: Deal }) {
           )}
           <span className="text-slate-500 font-mono">{fmtAgo(deal.ts)}</span>
           <span className="text-slate-400 font-semibold">{deal.channel}</span>
+          <AffiliateMark applied={deal.affiliate} />
         </div>
       </div>
       <button
