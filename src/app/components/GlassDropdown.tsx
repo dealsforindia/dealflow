@@ -159,7 +159,7 @@ export function GlassDropdown({
           {selectedOption.icon && (
             <span className="flex-shrink-0 text-xs sm:text-sm">{selectedOption.icon}</span>
           )}
-          <span className="truncate max-w-[110px] sm:max-w-[130px] font-medium">
+          <span className="truncate flex-1 font-medium text-left">
             {selectedOption.label}
           </span>
         </div>

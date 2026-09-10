@@ -876,88 +876,90 @@ function DealCard({
 
       <AnimatePresence>{lightbox && deal.imgUrl && <ImageLightbox src={deal.imgUrl} onClose={() => setLightbox(false)} />}</AnimatePresence>
 
-      {/* ─── MOBILE LAYOUT: Compact Modern Split Specimen (sm:hidden) ─── */}
-      <div className="flex sm:hidden p-2.5 gap-2.5 items-center relative z-20">
-        {/* Left: Square Media Box */}
-        <div
-          className="relative w-24 h-24 rounded-xl bg-[#080911] border border-white/8 flex items-center justify-center p-1.5 flex-shrink-0 cursor-zoom-in overflow-hidden"
-          onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
-        >
-          {deal.imgUrl && !imgErr ? (
-            <>
-              {!imgLoaded && (
-                <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] via-white/[0.08] to-white/[0.03] animate-pulse" />
-              )}
-              <img
-                src={deal.imgUrl}
-                alt=""
-                className={`w-full h-full object-contain transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
-                onLoad={() => setImgLoaded(true)}
-                onError={() => setImgErr(true)}
-              />
-            </>
-          ) : (
-            <Category3DPlaceholder category={deal.category} />
-          )}
+      {/* ─── MOBILE LAYOUT: Clean Spacious Specimen (sm:hidden) ─── */}
+      <div className="flex sm:hidden flex-col p-3 gap-2.5 relative z-20">
+        {/* Top Specimen Row: Left Image + Right Info */}
+        <div className="flex gap-3 items-start">
+          {/* Left: Square Media Box */}
+          <div
+            className="relative w-24 h-24 rounded-xl bg-[#080911] border border-white/10 flex items-center justify-center p-1.5 flex-shrink-0 cursor-zoom-in overflow-hidden shadow-inner"
+            onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
+          >
+            {deal.imgUrl && !imgErr ? (
+              <>
+                {!imgLoaded && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] via-white/[0.08] to-white/[0.03] animate-pulse" />
+                )}
+                <img
+                  src={deal.imgUrl}
+                  alt=""
+                  className={`w-full h-full object-contain transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgErr(true)}
+                />
+              </>
+            ) : (
+              <Category3DPlaceholder category={deal.category} />
+            )}
 
-          {deal.discount > 0 && (
-            <span className="absolute top-1 left-1 px-1.5 py-0.2 rounded-md bg-amber-400 text-slate-950 font-mono text-[9px] font-black shadow-sm">
-              {Math.round(deal.discount)}%
-            </span>
-          )}
+            {deal.discount > 0 && (
+              <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 font-mono text-[9px] font-black shadow-sm">
+                {Math.round(deal.discount)}%
+              </span>
+            )}
 
+            {deal.imgUrl && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  downloadImage(deal.imgUrl, `${deal.title.slice(0, 20)}.jpg`);
+                }}
+                className="absolute bottom-1 right-1 w-5 h-5 rounded-md bg-black/70 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-md active:scale-90 transition-transform"
+                title="Download"
+              >
+                <Download size={10} />
+              </button>
+            )}
 
+            {(bulkMode || selected) && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onToggleSelect?.(deal.id); }}
+                className={`absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center ${
+                  selected ? "bg-indigo-500 text-white" : "bg-black/80 border border-white/20 text-white/40"
+                }`}
+              >
+                {selected ? <Check size={10} strokeWidth={3} /> : null}
+              </button>
+            )}
+          </div>
 
-          {deal.imgUrl && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                downloadImage(deal.imgUrl, `${deal.title.slice(0, 20)}.jpg`);
-              }}
-              className="absolute bottom-1 right-1 w-5 h-5 rounded-md bg-black/70 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-md"
-              title="Download"
-            >
-              <Download size={10} />
-            </button>
-          )}
-
-          {(bulkMode || selected) && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onToggleSelect?.(deal.id); }}
-              className={`absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center ${
-                selected ? "bg-indigo-500 text-white" : "bg-black/80 border border-white/20 text-white/40"
-              }`}
-            >
-              {selected ? <Check size={10} strokeWidth={3} /> : null}
-            </button>
-          )}
-        </div>
-
-        {/* Right: Content & Inline Action Strip */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between h-24">
-          <div>
-            <div className="flex items-center gap-1.5 justify-between">
-              <div className="flex items-center gap-1 min-w-0">
-                <Store3DBadge store={store.tag} />
-                <Category3DIcon category={deal.category} size={13} />
-                <span className="text-[10px] text-slate-400 truncate max-w-[80px]">{deal.channel}</span>
-                <AffiliateMark applied={deal.affiliate} />
+          {/* Right: Info Column */}
+          <div className="flex-1 min-w-0 flex flex-col justify-between min-h-[96px] py-0.5">
+            <div>
+              {/* Header: Store + Channel + Affiliate + Time */}
+              <div className="flex items-center justify-between gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Store3DBadge store={store.tag} />
+                  <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[110px]">{deal.channel}</span>
+                  <AffiliateMark applied={deal.affiliate} />
+                </div>
+                <span className="text-[9.5px] text-slate-500 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
               </div>
-              <span className="text-[9px] text-slate-500 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
+
+              {/* Title: 2 lines with comfortable leading */}
+              <h4
+                className="font-heading text-xs font-bold text-slate-100 line-clamp-2 leading-snug mt-1 hover:text-indigo-300 transition-colors cursor-pointer tracking-tight"
+                onClick={() => onEdit(deal)}
+                title={deal.title}
+              >
+                {deal.title}
+              </h4>
             </div>
 
-            <h4
-              className="font-heading text-xs font-bold text-slate-100 line-clamp-1 leading-snug mt-1 hover:text-indigo-300 transition-colors cursor-pointer tracking-tight"
-              onClick={() => onEdit(deal)}
-              title={deal.title}
-            >
-              {deal.title}
-            </h4>
-
-            {/* Price Row */}
-            <div className="flex items-center justify-between gap-1 mt-0.5">
+            {/* Price & Savings */}
+            <div className="flex items-center justify-between gap-1 mt-1.5">
               <div className="flex items-baseline gap-1.5">
                 <span className="pro-price text-sm font-black text-emerald-300 tabular-nums">{fmt(deal.price)}</span>
                 {deal.mrp > deal.price && (
@@ -971,7 +973,7 @@ function DealCard({
 
             {deal.coupon && (
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-[8.5px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded flex items-center gap-1 truncate max-w-[130px]" title={deal.coupon}>
+                <span className="text-[8.5px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 truncate max-w-[140px]" title={deal.coupon}>
                   <span>🎟️</span> {deal.coupon}
                 </span>
                 {deal.effectivePrice && deal.effectivePrice < deal.price && (
@@ -982,42 +984,66 @@ function DealCard({
               </div>
             )}
           </div>
+        </div>
 
-          {/* Inline Touch Buttons (Thumb-friendly, 28px height) */}
-          <div className="flex items-center gap-1.5 mt-auto" onClick={e => e.stopPropagation()}>
-            {deal.status === "pending" ? (
-              <>
-                <button
-                  onClick={() => handleRejectWithSound(deal.id)}
-                  className="h-7 px-2 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer"
-                  title="Skip"
-                >
+        {/* Bottom Touch Actions Bar: Full Width, Ergonomic, Thumb-Friendly */}
+        <div className="flex items-center gap-2 pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
+          {deal.status === "pending" ? (
+            <>
+              <button
+                onClick={() => handleRejectWithSound(deal.id)}
+                className="h-8 px-3 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/10 active:scale-95 text-xs font-semibold cursor-pointer transition-colors"
+                title="Skip Deal"
+              >
+                <X size={13} strokeWidth={2.5} />
+                <span>Skip</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenStore}
+                className="h-8 px-2.5 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-blue-500/15 text-slate-300 hover:text-blue-300 border border-white/10 active:scale-95 text-xs font-medium cursor-pointer transition-colors"
+                title="Open Store Link"
+              >
+                <ExternalLink size={12} />
+                <span className="hidden min-[380px]:inline">Store</span>
+              </button>
+
+              <button
+                onClick={() => onEdit(deal)}
+                className="h-8 px-3 rounded-xl flex items-center justify-center gap-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/10 active:scale-95 text-xs font-bold cursor-pointer flex-1 transition-colors"
+                title="Edit & Tune Post"
+              >
+                <PenLine size={12} />
+                <span>Tune</span>
+              </button>
+
+              <button
+                onClick={() => handleApproveWithSound(deal.id)}
+                className="h-8 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[1.4] transition-all"
+                title="Approve & Broadcast"
+              >
+                <Check size={14} strokeWidth={3} />
+                <span>Post</span>
+              </button>
+            </>
+          ) : (
+            <div className={`text-[11px] font-bold py-1 px-3 rounded-xl border flex-1 flex items-center justify-center gap-1.5 ${
+              deal.status === "approved" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-slate-800/80 text-slate-400 border-white/10"
+            }`}>
+              {deal.status === "approved" ? (
+                <>
+                  <Check size={12} strokeWidth={2.5} />
+                  <span>Broadcasted to Telegram & X</span>
+                </>
+              ) : (
+                <>
                   <X size={12} strokeWidth={2.5} />
-                </button>
-                <button
-                  onClick={() => onEdit(deal)}
-                  className="h-7 px-2 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 active:scale-95 text-[11px] font-bold cursor-pointer flex-1 gap-1"
-                  title="Edit & Tune"
-                >
-                  <PenLine size={11} /> <span>Tune</span>
-                </button>
-
-                <button
-                  onClick={() => handleApproveWithSound(deal.id)}
-                  className="h-7 px-3 rounded-lg text-[11px] font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-sm shadow-emerald-500/20 cursor-pointer flex-1"
-                  title="Approve"
-                >
-                  <Check size={13} strokeWidth={3} /> <span>Post</span>
-                </button>
-              </>
-            ) : (
-              <span className={`text-[10px] font-bold py-0.5 px-2 rounded-md border flex-1 text-center ${
-                deal.status === "approved" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-slate-800 text-slate-400 border-white/10"
-              }`}>
-                {deal.status === "approved" ? "✓ Posted" : "✕ Skipped"}
-              </span>
-            )}
-          </div>
+                  <span>Skipped Deal</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -2418,10 +2444,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             ) : null}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
             <button
               onClick={() => setQuickDropModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:border-indigo-400 active:scale-95 cursor-pointer shadow-sm"
+              className="h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:border-indigo-400 active:scale-95 cursor-pointer shadow-sm"
               title="Quick Drop"
             >
               <Zap size={13} className="fill-indigo-400 text-indigo-400" />
@@ -2429,7 +2455,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             </button>
             <button
               onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border ${
                 bulkMode
                   ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-500/25"
                   : "bg-white/[0.04] border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.08]"
@@ -2451,7 +2477,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             </button>
             <button
               onClick={handleToggleSound}
-              className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 ${
+              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 ${
                 soundMuted
                   ? "bg-white/[0.04] border-white/10 text-slate-400 opacity-60 hover:opacity-100"
                   : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 shadow-sm"
@@ -2464,54 +2490,55 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           </div>
         </div>
 
-        {/* ─── MOBILE CONTROLS (2-Tier High-Efficiency Layout on sm:hidden) ─── */}
+        {/* ─── MOBILE CONTROLS (Ergonomic 2-Row High-Efficiency Layout on sm:hidden) ─── */}
         <div className="flex sm:hidden flex-col gap-2">
-          {/* Mobile Tier 1: Quick Filter Dropdowns + View Switcher */}
-          <div className="flex items-center justify-between gap-1.5 overflow-visible">
-            <div className="flex items-center gap-1.5 overflow-visible flex-1 min-w-0">
-              <GlassDropdown
-                value={selectedStore}
-                onChange={val => { setSelectedStore(val); setPage(1); }}
-                options={storeOptions}
-                placeholder="Store"
-                className="flex-1 min-w-0"
-              />
-              <GlassDropdown
-                value={selectedChannel}
-                onChange={val => { setSelectedChannel(val); setPage(1); }}
-                options={channelOptions}
-                placeholder="Channel"
-                searchable={true}
-                className="flex-1 min-w-0"
-              />
-              <GlassDropdown
-                value={sort}
-                onChange={val => { setSort(val as any); setPage(1); }}
-                options={sortOptions}
-                placeholder="Sort"
-                align="right"
-              />
-            </div>
+          {/* Mobile Row 1: Store & Channel Dropdown Filters (Ample width for channel names) */}
+          <div className="flex items-center gap-1.5 overflow-visible">
+            <GlassDropdown
+              value={selectedStore}
+              onChange={val => { setSelectedStore(val); setPage(1); }}
+              options={storeOptions}
+              placeholder="Store"
+              className="w-28 flex-shrink-0"
+            />
+            <GlassDropdown
+              value={selectedChannel}
+              onChange={val => { setSelectedChannel(val); setPage(1); }}
+              options={channelOptions}
+              placeholder="Channel"
+              searchable={true}
+              className="flex-1 min-w-0"
+            />
           </div>
 
-          {/* Mobile Tier 2: Status Tabs Horizontal Scroll Strip */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {[
-              { id: "pending", label: "Pending", count: pending },
-              { id: "approved", label: "Approved", count: approved },
-              { id: "rejected", label: "Rejected", count: rejected },
-              { id: "promos", label: "Promos", count: promos.length },
-              { id: "all", label: "All", count: deals.length },
-            ].map(tab => (
-              <Stat3DPill
-                key={tab.id}
-                id={tab.id}
-                label={tab.label}
-                count={tab.count}
-                active={filter === tab.id}
-                onClick={() => { setFilter(tab.id as any); setPage(1); }}
-              />
-            ))}
+          {/* Mobile Row 2: Status Tabs Horizontal Scroll + Sort Dropdown */}
+          <div className="flex items-center gap-1.5 overflow-visible">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0 py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              {[
+                { id: "pending", label: "Pending", count: pending },
+                { id: "approved", label: "Approved", count: approved },
+                { id: "rejected", label: "Rejected", count: rejected },
+                { id: "promos", label: "Promos", count: promos.length },
+                { id: "all", label: "All", count: deals.length },
+              ].map(tab => (
+                <Stat3DPill
+                  key={tab.id}
+                  id={tab.id}
+                  label={tab.label}
+                  count={tab.count}
+                  active={filter === tab.id}
+                  onClick={() => { setFilter(tab.id as any); setPage(1); }}
+                />
+              ))}
+            </div>
+            <GlassDropdown
+              value={sort}
+              onChange={val => { setSort(val as any); setPage(1); }}
+              options={sortOptions}
+              placeholder="Sort"
+              align="right"
+              className="flex-shrink-0"
+            />
           </div>
         </div>
 
@@ -2605,12 +2632,12 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
       </div>
 
       {/* ─── CURATOR VELOCITY & SMART PRESET PULSE BAR ─── */}
-      <div className="flex-shrink-0 px-3 sm:px-6 py-2 bg-[#090B14]/90 border-b border-white/6 flex items-center justify-between gap-3 flex-wrap relative z-30">
+      <div className="flex-shrink-0 px-3 sm:px-6 py-1.5 sm:py-2 bg-[#090B14]/90 border-b border-white/6 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar flex-nowrap relative z-30">
         {/* Left: Velocity Metrics */}
-        <div className="flex items-center gap-2 font-mono text-[11px]">
+        <div className="flex items-center gap-2 font-mono text-[11px] flex-shrink-0">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-bold">
             <TrendingUp size={12} className="text-emerald-400" />
-            <span>{approvedToday} Approved Today</span>
+            <span>{approvedToday} <span className="hidden min-[360px]:inline">Approved</span> Today</span>
           </div>
           {totalSavings > 0 && (
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium">
@@ -2627,12 +2654,12 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
         </div>
 
         {/* Right: Smart Filter Presets & Telemetry Toggle */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+        <div className="flex items-center gap-1.5 flex-nowrap flex-shrink-0">
+          <div className="flex items-center gap-1.5 py-0.5">
             <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
             {[
-              { id: "all", label: "All Deals" },
-              { id: "under_499", label: "⚡ Under ₹499", count: under499Count },
+              { id: "all", label: "All" },
+              { id: "under_499", label: "⚡ <₹499", count: under499Count },
               { id: "electronics", label: "📱 Tech" },
               { id: "fashion", label: "👗 Fashion" },
               { id: "grocery", label: "🛒 Grocery" },
@@ -2657,7 +2684,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           {/* Channel Velocity Heatmap Modal Button */}
           <button
             onClick={() => setHeatmapModalOpen(true)}
-            className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-white/[0.04] text-slate-300 border-white/10 hover:bg-white/[0.08] hover:text-amber-300"
+            className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-white/[0.04] text-slate-300 border-white/10 hover:bg-white/[0.08] hover:text-amber-300 flex-shrink-0"
             title="Open 24-Hour Channel Velocity Heatmap"
           >
             <Flame size={12} className="text-amber-400 fill-amber-400/20" />
@@ -2957,26 +2984,26 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 
       {/* Floating Bulk Action Bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl glass-panel border border-primary/40 shadow-2xl bg-slate-950/95 animate-slide-up backdrop-blur-2xl">
-          <span className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+        <div className="fixed bottom-20 md:bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 sm:gap-3 px-3.5 sm:px-5 py-2 sm:py-3 rounded-2xl glass-panel border border-primary/40 shadow-2xl bg-slate-950/95 animate-slide-up backdrop-blur-2xl max-w-[94vw] w-max">
+          <span className="text-[11px] sm:text-xs font-bold text-white font-mono flex items-center gap-1.5 flex-shrink-0">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            {selectedIds.size} Selected
+            {selectedIds.size} <span className="hidden min-[360px]:inline">Selected</span>
           </span>
           <button
             onClick={handleBulkApprove}
-            className="flex items-center gap-1.5 text-xs font-black px-4 py-2 rounded-xl text-white glow-pill-success hover:opacity-95 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer"
+            className="flex items-center gap-1 text-[11px] sm:text-xs font-black px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-white glow-pill-success hover:opacity-95 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-shrink-0"
           >
-            <CheckCircle2 size={14} /> Approve All ({selectedIds.size})
+            <CheckCircle2 size={13} /> Approve ({selectedIds.size})
           </button>
           <button
             onClick={handleBulkReject}
-            className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl text-rose-300 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 active:scale-95 cursor-pointer"
+            className="flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-rose-300 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 active:scale-95 cursor-pointer flex-shrink-0"
           >
-            <Trash2 size={13} /> Skip All
+            <Trash2 size={12} /> Skip
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
-            className="text-xs text-slate-400 hover:text-white px-2 cursor-pointer font-medium"
+            className="text-[11px] sm:text-xs text-slate-400 hover:text-white px-1.5 sm:px-2 cursor-pointer font-medium flex-shrink-0"
           >
             Clear
           </button>
@@ -3174,7 +3201,7 @@ function ChannelsView() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6 max-w-5xl mx-auto flex flex-col gap-5">
+    <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 pb-28 md:pb-8 max-w-5xl mx-auto flex flex-col gap-5">
       {/* Live Worker Telemetry & Engine Health Deck */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-2xl glass-card border border-white/10 flex items-center gap-3">
@@ -3523,7 +3550,7 @@ function PostedView({ deals }: { deals: Deal[] }) {
   });
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6 max-w-4xl mx-auto flex flex-col gap-4">
+    <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 pb-28 md:pb-8 max-w-4xl mx-auto flex flex-col gap-4">
       <div className="p-5 rounded-3xl glass-panel border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <RocketBroadcast3D size={36} />
