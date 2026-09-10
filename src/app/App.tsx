@@ -387,7 +387,14 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
     ts: Math.floor(d.ts), status: "pending" as DealStatus,
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
-    affiliate: Boolean(d.affiliate_applied || (d as any).affiliate),
+    affiliate: (() => {
+      if (d.affiliate_applied === true || (d as any).affiliate === true) return true;
+      const combined = `${d.aff_text || ""} ${d.ai_formatted_text || ""} ${d.original_text || ""}`;
+      if (/tag=dealshare0b7-21|ekaro|earnkaro|bitli\.in|fkrt\.cc|amzn\.to|myntr\.it|ajiio\.in|app\.lehlah\.club/i.test(combined)) {
+        return true;
+      }
+      return false;
+    })(),
     coupon: d.coupon || null,
     couponDiscount: d.coupon_discount ?? (d as any).coupon_discount ?? null,
     effectivePrice: d.effective_price ?? (d as any).effective_price ?? null,
@@ -746,8 +753,8 @@ function AffiliateMark({ applied }: { applied: boolean }) {
   if (applied) {
     return (
       <span
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex-shrink-0"
-        title="Affiliate converted link"
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/35 flex-shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.15)]"
+        title="Affiliate converted link — Commission tracking active"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
         ⚡ Affiliated
@@ -756,11 +763,11 @@ function AffiliateMark({ applied }: { applied: boolean }) {
   }
   return (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-zinc-500/15 text-zinc-400 border border-zinc-500/30 flex-shrink-0"
-      title="Direct store link (Non-affiliated)"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/35 flex-shrink-0 shadow-[0_0_8px_rgba(245,158,11,0.15)]"
+      title="Direct store link — No affiliate tag detected (Click Tune to convert)"
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-zinc-500" />
-      🔗 Direct
+      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+      ⚠️ Direct
     </span>
   );
 }
