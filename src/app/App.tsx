@@ -365,14 +365,11 @@ function cleanDealTitle(prodName?: string, originalText?: string, affText?: stri
     }
   }
 
-  // 3. Fallback to clean merchant curated title
-  const textLower = allText.toLowerCase();
-  if (textLower.includes("myntra") || textLower.includes("myntr")) return "Myntra Curated Fashion Deal";
-  if (textLower.includes("flipkart") || textLower.includes("fkrt")) return "Flipkart Super Deal";
-  if (textLower.includes("amazon") || textLower.includes("amzn")) return "Amazon Prime Special";
-  if (textLower.includes("ajio")) return "AJIO Trends Offer";
-  if (textLower.includes("desidime")) return "DesiDime Handpicked Deal";
-  return "Curated Special Deal";
+  // 3. No fake mockups! If title cannot be resolved, return first readable line without inventing fake brand deals
+  if (clean && clean.length >= 4) {
+    return clean.slice(0, 100);
+  }
+  return "Unverified Deal";
 }
 
 // ─── API Helpers ──────────────────────────────────────────────────────────────
