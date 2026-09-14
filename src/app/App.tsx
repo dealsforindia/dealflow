@@ -55,6 +55,11 @@ interface Deal {
   livePrice?: number | null;
   priceChanged?: boolean;
   priceDiff?: number;
+  dealScore?: number;
+  dealTier?: string;
+  dealTierLabel?: string;
+  dealBadges?: string[];
+  isWorthPosting?: boolean;
 }
 
 interface RawDeal {
@@ -81,6 +86,11 @@ interface RawDeal {
   live_price?: number | null;
   price_changed?: boolean;
   price_diff?: number;
+  deal_score?: number;
+  deal_tier?: string;
+  deal_tier_label?: string;
+  deal_badges?: string[];
+  is_worth_posting?: boolean;
 }
 
 interface AppSettings {
@@ -450,6 +460,11 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     livePrice: d.live_price ?? null,
     priceChanged: Boolean(d.price_changed),
     priceDiff: d.price_diff ?? 0,
+    dealScore: (d as any).deal_score ?? (d.score !== null && d.score !== undefined ? Math.min(100, Math.round(d.score * 10)) : 50),
+    dealTier: (d as any).deal_tier || "GOOD_OFFER",
+    dealTierLabel: (d as any).deal_tier_label || "⚡ Good Offer",
+    dealBadges: (d as any).deal_badges || [],
+    isWorthPosting: (d as any).is_worth_posting ?? true,
   };
 }
 
@@ -651,6 +666,16 @@ async function apiGetPriceHistory(id: string): Promise<PriceIntelligenceData | n
     if (!res.ok) return null;
     const data = await res.json();
     return data.price_intelligence || null;
+  } catch {
+    return null;
+  }
+}
+
+async function apiPurgeNonDeals(): Promise<{ success: boolean; purged_count: number; total_scanned: number } | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/purge-non-deals`, { method: "POST" });
+    if (!res.ok) return null;
+    return await res.json();
   } catch {
     return null;
   }
@@ -915,6 +940,17 @@ function DealCard({
               </span>
             )}
 
+            {deal.dealScore !== undefined && deal.dealScore >= 80 && (
+              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-red-600 to-rose-500 text-white font-mono text-[8.5px] font-black shadow-sm flex items-center gap-0.5">
+                🔥 {deal.dealScore}
+              </span>
+            )}
+            {deal.dealScore !== undefined && deal.dealScore >= 60 && deal.dealScore < 80 && (
+              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-cyan-600 to-indigo-600 text-white font-mono text-[8.5px] font-black shadow-sm flex items-center gap-0.5">
+                💎 {deal.dealScore}
+              </span>
+            )}
+
             {deal.imgUrl && (
               <button
                 type="button"
@@ -1105,6 +1141,16 @@ function DealCard({
 
           {/* Loot Badges in Media Box */}
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 flex-wrap justify-end">
+            {deal.dealScore !== undefined && deal.dealScore >= 80 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 text-white font-mono text-[9.5px] font-black shadow-lg shadow-rose-500/30 flex items-center gap-1 border border-rose-400/40 animate-pulse" title={`AI Deal Intelligence Score: ${deal.dealScore}/100`}>
+                <span>🔥</span> LOOT DROP ({deal.dealScore})
+              </span>
+            )}
+            {deal.dealScore !== undefined && deal.dealScore >= 60 && deal.dealScore < 80 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-600 via-indigo-600 to-violet-600 text-white font-mono text-[9.5px] font-black shadow-md shadow-cyan-500/25 flex items-center gap-1 border border-cyan-400/30" title={`AI Deal Intelligence Score: ${deal.dealScore}/100`}>
+                <span>💎</span> STEAL DEAL ({deal.dealScore})
+              </span>
+            )}
             {isUnder299 && (
               <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/40 font-mono text-[9px] font-bold">
                 UNDER ₹299
@@ -2302,6 +2348,12 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     }
     if (smartPreset === "under_499") {
       if (!(d.price > 0 && d.price <= 499)) return false;
+    } else if (smartPreset === "loot_drops") {
+      const s = d.dealScore ?? d.score ?? 0;
+      if (s < 80) return false;
+    } else if (smartPreset === "steal_deals") {
+      const s = d.dealScore ?? d.score ?? 0;
+      if (s < 60) return false;
     } else if (smartPreset === "electronics") {
       const cat = d.category.toLowerCase();
       if (!cat.includes("electronics") && !cat.includes("audio") && !cat.includes("computer") && !cat.includes("gaming")) return false;
@@ -2368,6 +2420,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 
   // Velocity and Smart Curation Telemetry
   const under499Count = deals.filter(d => (filter === "all" || d.status === filter) && d.price > 0 && d.price <= 499).length;
+  const lootCount = deals.filter(d => (filter === "all" || d.status === filter) && ((d.dealScore ?? d.score ?? 0) >= 80)).length;
+  const stealCount = deals.filter(d => (filter === "all" || d.status === filter) && ((d.dealScore ?? d.score ?? 0) >= 60)).length;
   const approvedToday = deals.filter(d => d.status === "approved" && (Date.now() / 1000 - d.ts) < 86400).length;
   const totalSavings = visible.reduce((acc, d) => acc + (d.mrp > d.price ? d.mrp - d.price : 0), 0);
   const avgDiscount = visible.length > 0 ? Math.round(visible.reduce((acc, d) => acc + (d.discount || 0), 0) / visible.length) : 0;
@@ -2666,6 +2720,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
             {[
               { id: "all", label: "All" },
+              { id: "loot_drops", label: "🔥 Loot Drops (80+)", count: lootCount },
+              { id: "steal_deals", label: "💎 Steal Deals (60+)", count: stealCount },
               { id: "under_499", label: "⚡ <₹499", count: under499Count },
               { id: "electronics", label: "📱 Tech" },
               { id: "fashion", label: "👗 Fashion" },
@@ -2696,6 +2752,25 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           >
             <Flame size={12} className="text-amber-400 fill-amber-400/20" />
             <span className="hidden sm:inline">Heatmap</span>
+          </button>
+
+          {/* 1-Click Deal Intelligence Purge */}
+          <button
+            onClick={async () => {
+              toast.loading("Scanning and purging non-deals...", { id: "purge" });
+              const res = await apiPurgeNonDeals();
+              if (res && res.success) {
+                toast.success(`✨ Purged ${res.purged_count} non-deal financial leads!`, { id: "purge" });
+                if (onRefresh) onRefresh();
+              } else {
+                toast.error("Purge check complete. No junk found.", { id: "purge" });
+              }
+            }}
+            className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-rose-500/15 text-rose-300 border-rose-500/30 hover:bg-rose-500/25 hover:border-rose-400 flex-shrink-0"
+            title="Scan and auto-purge bank accounts, financial leads, credit cards & loan apps from pending queue"
+          >
+            <Sparkles size={12} className="text-rose-400" />
+            <span className="hidden sm:inline">Purge Non-Deals</span>
           </button>
         </div>
       </div>
