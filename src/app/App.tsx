@@ -11,7 +11,7 @@ import {
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
   LayoutGrid, Columns, Smartphone, CornerDownLeft, Command,
-  Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History
+  Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History, Network
 } from "lucide-react";
 import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
@@ -372,6 +372,50 @@ function cleanDealTitle(prodName?: string, originalText?: string, affText?: stri
   return "Unverified Deal";
 }
 
+export function cleanAffText(raw?: string | null, title?: string, price?: number | string): string {
+  if (!raw) return "";
+  let text = String(raw).trim();
+  if (!text) return "";
+
+  // Strip code fences
+  text = text.replace(/^```[a-zA-Z]*\n?/gm, "").replace(/\n?```$/gm, "").trim();
+
+  // Detect legacy format junk
+  const hasJunk = /🟡|🟢|🔴|\*[0-9]+\/10\*|\*AVERAGE\*|\*EXCELLENT\*|\*GOOD\*|🤖|_\(Profit links added\)_|\[Source\]|📢\s*#/i.test(text);
+
+  if (hasJunk) {
+    const lines = text.split("\n");
+    const cleanLines: string[] = [];
+    for (const l of lines) {
+      const line = l.trim();
+      if (!line) {
+        cleanLines.push("");
+        continue;
+      }
+      if (/^[🟡🟢🔴⚪]\s*\*?[0-9]+\/10\*?/i.test(line)) continue;
+      if (/^\*[0-9]+\/10\*\s*\*[A-Z]+\*/i.test(line)) continue;
+      if (/^🏪\s*(?:📦|🛍️)/i.test(line)) continue;
+      if (/^💵\s*₹/i.test(line)) continue;
+      if (/^📢\s*#/i.test(line)) continue;
+      if (/^💸\s*_\(Profit links added\)_/i.test(line)) continue;
+      if (/^🤖/i.test(line)) continue;
+      if (/^🔗\s*\[Source\]/i.test(line)) continue;
+      if (/^#[A-Za-z0-9_]+(?:\s+#[A-Za-z0-9_]+)*$/.test(line)) continue;
+      cleanLines.push(line);
+    }
+    text = cleanLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  // If text became empty or lost title/link, synthesize clean post
+  if (!text || (title && title.length > 5 && !text.toLowerCase().includes(title.toLowerCase().slice(0, 10)) && !/https?:\/\//i.test(text))) {
+    const urls = (String(raw).match(/https?:\/\/[^\s"'<>]+/g) || []);
+    const link = urls.length > 0 ? urls[0] : "";
+    const pStr = price ? ` @ ₹${price}` : "";
+    text = `${title || "Deal"}${pStr}\n\n${link}`.trim();
+  }
+  return text;
+}
+
 // ─── API Helpers ──────────────────────────────────────────────────────────────
 function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): Deal {
   const id = d.fp_hash ?? fallbackId ?? String(d.ts);
@@ -445,7 +489,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     })(),
     platforms: d.platforms || [],
     originalText: d.original_text || "",
-    affText: (d as any).ai_formatted_text || d.aff_text || d.original_text || "",
+    affText: cleanAffText((d as any).ai_formatted_text || d.aff_text || d.original_text || "", cleanDealTitle(d.prod_name, d.original_text, d.aff_text), salePrice),
     verdict: "", signals: [],
     clusterId: d.cluster_id,
     clusterCount: d.cluster_size || d.cluster_count || (d.cluster_channels?.length ? d.cluster_channels.length + 1 : 1),
@@ -1761,7 +1805,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [coupon, setCoupon] = useState(deal.coupon || "");
   
   const getInitialText = () => {
-    const raw = (deal.affText || "").trim();
+    const raw = cleanAffText(deal.affText || "", deal.title, deal.price).trim();
     const t = (deal.title || "").trim();
     if (!raw) return t ? `${t} @ ₹${deal.price || ""}` : "";
     
@@ -2252,6 +2296,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [activeIndex, setActiveIndex] = useState<number>(-1);
   const [soundMuted, setSoundMutedState] = useState<boolean>(isSoundMuted());
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
+  const [topologyModalOpen, setTopologyModalOpen] = useState(false);
 
   const handleToggleSound = () => {
     const next = toggleSound();
@@ -2751,6 +2796,16 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             <span className="hidden sm:inline">Heatmap</span>
           </button>
 
+          {/* Distributed Architecture & Topology Modal Button */}
+          <button
+            onClick={() => setTopologyModalOpen(true)}
+            className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25 hover:border-indigo-400 flex-shrink-0"
+            title="Inspect DealFlow Interactive Distributed Architecture & Pipeline Map"
+          >
+            <Network size={12} className="text-indigo-400" />
+            <span className="hidden sm:inline">Topology</span>
+          </button>
+
           {/* 1-Click Deal Intelligence Purge */}
           <button
             onClick={async () => {
@@ -3117,6 +3172,61 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           </div>
         </div>
       )}
+
+      {/* Interactive DealFlow Topology Modal */}
+      {topologyModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-black/85 backdrop-blur-md animate-fade-in"
+          onClick={() => setTopologyModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-7xl h-[92vh] bg-[#090b14] border border-white/15 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col gap-3"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <Network size={20} className="text-indigo-400" />
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>DealFlow Distributed Architecture</span>
+                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                      Live Showcase Verified
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    Interactive pipeline: 27 TG Channels → Redis Queue → Worker & Multi-LLM → MongoDB → FastAPI → Broadcaster
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/dealflow-architecture.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 text-xs font-semibold text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 rounded-lg hover:bg-indigo-500/25 transition-all flex items-center gap-1"
+                >
+                  <ExternalLink size={12} />
+                  <span>Open Fullscreen</span>
+                </a>
+                <button
+                  onClick={() => setTopologyModalOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-[#020617] relative">
+              <iframe
+                src="/dealflow-architecture.html"
+                title="DealFlow System Architecture"
+                className="w-full h-full border-0"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -3162,19 +3272,27 @@ function ChannelsView() {
         if (data.channels && Array.isArray(data.channels)) {
           const filtered = data.channels.filter((c: any) => {
             const id = (c.id || "").toLowerCase();
-            return id !== "dh" && id !== "unknown" && id !== "";
+            return id !== "dh" && id !== "unknown" && id !== "" && id !== "offerzone" && id !== "shopquest";
           });
-          const mapped = filtered.map((c: any) => {
+          const channelByCanonicalName: Record<string, any> = {};
+          for (const c of filtered) {
             const fallback = c.id.split('/').pop() || c.id;
             const pretty = toChName(c.id);
             const isCustom = c.name && c.name !== c.id && c.name !== fallback;
             const finalName = isCustom ? c.name : (pretty !== fallback && pretty !== "Unknown") ? pretty : (c.name || c.id);
-            setCustomChannelAlias(c.id, finalName);
-            if (c.channel) setCustomChannelAlias(c.channel, finalName);
-            return {
-              ...c,
-              name: finalName
-            };
+            
+            const existing = channelByCanonicalName[finalName];
+            if (!existing || (c.deals_24h || 0) > (existing.deals_24h || 0)) {
+              channelByCanonicalName[finalName] = {
+                ...c,
+                name: finalName
+              };
+            }
+          }
+          const mapped = Object.values(channelByCanonicalName);
+          mapped.forEach((c: any) => {
+            setCustomChannelAlias(c.id, c.name);
+            if (c.channel) setCustomChannelAlias(c.channel, c.name);
           });
           setChs(mapped);
         }
