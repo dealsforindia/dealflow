@@ -85,6 +85,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   };
 
   const spotlightScore = spotlightDeal ? calculateWorthScore(spotlightDeal) : null;
+  const spotlightDisplayTitle = spotlightDeal?.title
+    ? spotlightDeal.title.replace(/^[\s\u2700-\u27BF\uE000-\uF8FF\uD83C-\uDBFF\uDC00-\uDFFF\u2011-\u26FF\uFE0E-\uFE0F\u00A0-\u00BF👉⚡🔥✅🎁📦🚨📢🏷️💎⏰‼️💥]+\s*/gu, '').trim() || spotlightDeal.title
+    : 'Verified Retail Deal';
 
   return (
     <section className="relative pt-6 sm:pt-12 pb-10 sm:pb-16 overflow-hidden border-b border-white/[0.08]">
@@ -276,7 +279,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                           ? spotlightDeal.image.replace('http://74.225.250.0', 'https://api.rudranil.me')
                           : spotlightDeal.image
                       }
-                      alt={spotlightDeal.title}
+                      alt={spotlightDisplayTitle}
                       onLoad={() => setSpotlightImgLoaded(true)}
                       onError={() => {
                         setSpotlightImgError(true);
@@ -307,7 +310,7 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
                 {/* Title */}
                 <h3 className="font-bold text-white text-base sm:text-lg line-clamp-2 mb-3 leading-snug group-hover:text-emerald-300 transition-colors">
-                  {spotlightDeal.title}
+                  {spotlightDisplayTitle}
                 </h3>
 
                 {/* Price and Savings Row */}

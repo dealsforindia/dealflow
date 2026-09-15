@@ -187,6 +187,9 @@ export const PublicDealCard: React.FC<PublicDealCardProps> = ({
 
   const cleanImageUrl = sanitizeImageUrl(deal.image);
   const savings = (deal.mrp || 0) - (deal.price || 0);
+  const displayTitle = deal.title
+    ? deal.title.replace(/^[\s\u2700-\u27BF\uE000-\uF8FF\uD83C-\uDBFF\uDC00-\uDFFF\u2011-\u26FF\uFE0E-\uFE0F\u00A0-\u00BF👉⚡🔥✅🎁📦🚨📢🏷️💎⏰‼️💥]+\s*/gu, '').trim() || deal.title
+    : 'Verified Deal Drop';
 
   return (
     <article 
@@ -294,9 +297,9 @@ export const PublicDealCard: React.FC<PublicDealCardProps> = ({
         {/* Title */}
         <h3
           className="font-bold text-sm text-white line-clamp-2 mb-2 group-hover:text-emerald-300 transition-colors leading-snug"
-          title={deal.title}
+          title={displayTitle}
         >
-          {deal.title}
+          {displayTitle}
         </h3>
 
         {/* Pricing & Savings Hierarchy */}
