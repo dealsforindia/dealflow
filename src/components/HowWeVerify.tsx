@@ -27,14 +27,11 @@ export const HowWeVerify: React.FC<HowWeVerifyProps> = ({ onBackToHome, onNaviga
         <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
           How We Verify <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">Every Single Deal</span>
         </h1>
-        {/* Hidden purposely: 'fake MRPs' wording
+        {/* Hidden purposely: unverified 'fake MRPs' claim
         <p className="text-slate-300 text-base md:text-lg leading-relaxed">
           Over 90% of deals posted on social media are low-quality items with jacked-up fake MRPs. Here is our exact 5-layer pipeline that ensures only genuine, high-savings drops reach your feed.
         </p>
         */}
-        <p className="text-slate-300 text-base md:text-lg leading-relaxed">
-          Over 90% of deals posted on social media are low-quality items with inflated retail MRPs. Here is our exact 5-layer pipeline that ensures only genuine, high-savings drops reach your feed.
-        </p>
       </div>
 
       {/* 5-Step Pipeline Cards */}
