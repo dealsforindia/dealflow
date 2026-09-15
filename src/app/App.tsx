@@ -2039,27 +2039,41 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             {/* 30-Day Historical Price Intelligence & Fake Discount Buster */}
             {priceIntel && priceIntel.recorded_points > 0 && (
               <div className="p-3 rounded-2xl bg-slate-950/80 border border-white/10 flex items-center justify-between flex-wrap gap-2 text-xs shadow-inner">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-zinc-400 font-mono text-[11px]">
-                    30D Low: <strong className="text-emerald-400">{fmt(priceIntel.lowest_30d)}</strong>
-                  </span>
-                  <span className="text-zinc-600">·</span>
-                  <span className="text-zinc-400 font-mono text-[11px]">
-                    30D Avg: <strong className="text-zinc-300">{fmt(priceIntel.avg_30d)}</strong>
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                  {priceIntel.is_historical_low && (
-                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                      <span>📉</span> 30D Record Low
+                {priceIntel.recorded_points >= 3 ? (
+                  <>
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-zinc-400 font-mono text-[11px]">
+                        30D Low: <strong className="text-emerald-400">{fmt(priceIntel.lowest_30d)}</strong>
+                      </span>
+                      <span className="text-zinc-600">·</span>
+                      <span className="text-zinc-400 font-mono text-[11px]">
+                        30D Avg: <strong className="text-zinc-300">{fmt(priceIntel.avg_30d)}</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 font-mono text-[11px]">
+                      {priceIntel.is_historical_low && (
+                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                          <span>📉</span> 30D Record Low
+                        </span>
+                      )}
+                      {priceIntel.mrp_inflated && (
+                        <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1" title="Current MRP is significantly higher than historical average">
+                          <span>⚠️</span> Inflated MRP
+                        </span>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-between w-full text-zinc-400 font-mono text-[11px]">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      Live Store Price: <strong className="text-emerald-400">{fmt(priceIntel.lowest_30d)}</strong>
                     </span>
-                  )}
-                  {priceIntel.mrp_inflated && (
-                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1" title="Current MRP is significantly higher than historical average">
-                      <span>⚠️</span> Inflated MRP
+                    <span className="text-[10px] text-zinc-500 font-sans">
+                      (Telemetry tracking started · 30D history builds over time)
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
