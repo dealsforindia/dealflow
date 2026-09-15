@@ -37,6 +37,13 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
   const [inputVal, setInputVal] = useState(searchQuery);
   const [currentTime, setCurrentTime] = useState('');
+  const [spotlightImgLoaded, setSpotlightImgLoaded] = useState(false);
+  const [spotlightImgError, setSpotlightImgError] = useState(false);
+
+  useEffect(() => {
+    setSpotlightImgLoaded(false);
+    setSpotlightImgError(false);
+  }, [spotlightDeal?.id, spotlightDeal?.image]);
 
   useEffect(() => {
     setInputVal(searchQuery);
@@ -257,7 +264,12 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
 
                 {/* Product Image Stage with Aspect Ratio Lock & Soft Lighting */}
                 <div className="relative w-full aspect-[16/10] bg-white rounded-2xl p-4 flex items-center justify-center mb-4 overflow-hidden shadow-inner group-hover:scale-[1.01] transition-transform duration-300">
-                  {spotlightDeal.image ? (
+                  {/* Skeleton shimmer while loading */}
+                  {!spotlightImgLoaded && !spotlightImgError && spotlightDeal.image && (
+                    <div className="absolute inset-0 bg-slate-100 skeleton-loading" aria-hidden="true" />
+                  )}
+
+                  {spotlightDeal.image && !spotlightImgError ? (
                     <img
                       src={
                         spotlightDeal.image.startsWith('http://74.225.250.0')
@@ -265,13 +277,30 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
                           : spotlightDeal.image
                       }
                       alt={spotlightDeal.title}
-                      className="max-h-full max-w-full object-contain filter drop-shadow-md transition-transform duration-300 group-hover:scale-105"
-                      loading="lazy"
+                      onLoad={() => setSpotlightImgLoaded(true)}
+                      onError={() => {
+                        setSpotlightImgError(true);
+                        setSpotlightImgLoaded(true);
+                      }}
+                      className={`max-h-full max-w-full object-contain filter drop-shadow-md transition-all duration-300 group-hover:scale-105 ${
+                        spotlightImgLoaded ? 'opacity-100' : 'opacity-0'
+                      }`}
+                      loading="eager"
                     />
                   ) : (
-                    <div className="text-slate-400 text-sm font-semibold">Verified Retail Deal</div>
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 p-4 text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 shadow-sm">
+                        <Sparkles className="w-6 h-6 text-emerald-600" />
+                      </div>
+                      <span className="text-slate-800 font-black text-sm tracking-tight font-brand">
+                        Verified {spotlightDeal.store} Loot
+                      </span>
+                      <span className="text-emerald-600 text-[11px] font-bold uppercase tracking-wider">
+                        Curated Deal Drop
+                      </span>
+                    </div>
                   )}
-                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/80 text-white text-xs font-bold backdrop-blur-md shadow-sm border border-white/10">
+                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/80 text-white text-xs font-bold backdrop-blur-md shadow-sm border border-white/10 z-10">
                     {spotlightDeal.store}
                   </span>
                 </div>

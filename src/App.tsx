@@ -119,26 +119,56 @@ export const App: React.FC = () => {
     fetchDeals(0, false);
   }, [fetchDeals]);
 
-  // Spotlight Deal (Highest Rupee Savings Deal)
+  // Spotlight Deal (Highest Rupee Savings Deal with verified physical product heuristics)
   const spotlightDeal = useMemo(() => {
     if (!deals || deals.length === 0) return null;
-    const candidates = deals.filter(
-      (d) =>
-        Boolean(d.image) &&
-        (d.price || 0) >= 400 &&
-        (d.discount_pct || 0) >= 40 &&
-        !d.image?.includes('banner_') &&
-        !d.image?.includes('ytimg') &&
-        !d.image?.includes('youtube') &&
-        !d.title.toLowerCase().includes('short') &&
-        !d.title.toLowerCase().includes('bottle') &&
-        !d.title.toLowerCase().includes('party') &&
-        !d.title.toLowerCase().includes('watch video')
-    );
 
+    const spamPhrases = [
+      'lab test',
+      'test @',
+      'recharge',
+      'refer',
+      'loot -',
+      'loot alert',
+      'voucher',
+      'minutes',
+      'short',
+      'bottle',
+      'party',
+      'watch video',
+      'survey',
+      'claim free',
+    ];
+
+    const candidates = deals.filter((d) => {
+      if (!d.image || !d.price || d.price < 150) return false;
+      const lowerTitle = d.title.toLowerCase();
+      if (spamPhrases.some((phrase) => lowerTitle.includes(phrase))) return false;
+      if (d.image.includes('banner_') || d.image.includes('ytimg') || d.image.includes('youtube')) return false;
+      return true;
+    });
+
+    const calculateSavings = (deal: typeof deals[0]) => {
+      const price = deal.price || 0;
+      if (deal.mrp && deal.mrp > price) {
+        return deal.mrp - price;
+      }
+      if (deal.discount_pct && deal.discount_pct > 0 && price > 0) {
+        return (price / (1 - deal.discount_pct / 100)) - price;
+      }
+      return 0;
+    };
+
+    // Prefer deals with official high-res store images (e.g. Amazon, Flipkart, Myntra direct CDNs)
+    // and high discount / savings
     candidates.sort((a, b) => {
-      const saveA = (a.mrp || 0) - (a.price || 0);
-      const saveB = (b.mrp || 0) - (b.price || 0);
+      const aIsStoreCdn = a.image.includes('media-amazon.com') || a.image.includes('rukminim') || a.image.includes('myntassets');
+      const bIsStoreCdn = b.image.includes('media-amazon.com') || b.image.includes('rukminim') || b.image.includes('myntassets');
+      if (aIsStoreCdn && !bIsStoreCdn) return -1;
+      if (!aIsStoreCdn && bIsStoreCdn) return 1;
+
+      const saveA = calculateSavings(a);
+      const saveB = calculateSavings(b);
       return saveB - saveA;
     });
 
