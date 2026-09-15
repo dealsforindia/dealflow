@@ -9,6 +9,12 @@ interface ImageModalProps {
 }
 
 export const ImageModal: React.FC<ImageModalProps> = ({ deal, onClose }) => {
+  const [imageError, setImageError] = React.useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [deal?.id, deal?.image]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -51,16 +57,17 @@ export const ImageModal: React.FC<ImageModalProps> = ({ deal, onClose }) => {
           
           {/* Image */}
           <div className="w-full md:w-1/2 aspect-square bg-white rounded-2xl p-4 flex items-center justify-center border border-white/[0.06] overflow-hidden shadow-inner">
-            {deal.image ? (
+            {deal.image && !imageError ? (
               <img
                 src={deal.image.startsWith('http://74.225.250.0') ? deal.image.replace('http://74.225.250.0', 'https://api.rudranil.me') : deal.image}
                 alt={deal.title}
+                onError={() => setImageError(true)}
                 className="max-h-full max-w-full object-contain filter drop-shadow-xl"
               />
             ) : (
-              <div className="text-slate-400 flex flex-col items-center gap-2">
+              <div className="text-slate-400 flex flex-col items-center gap-2 p-4 text-center">
                 <ShoppingBag className="w-12 h-12 text-emerald-400" aria-hidden="true" />
-                <span className="text-xs font-semibold">Verified Loot Photo</span>
+                <span className="text-xs font-semibold text-slate-700">Verified {deal.store} Drop</span>
               </div>
             )}
           </div>

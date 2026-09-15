@@ -21,6 +21,7 @@ export const DealLookupModal: React.FC<DealLookupProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LookupResult | null>(null);
+  const [resultImgError, setResultImgError] = useState(false);
 
   useEffect(() => {
     if (initialUrl) {
@@ -63,6 +64,7 @@ export const DealLookupModal: React.FC<DealLookupProps> = ({
     setLoading(true);
     setError(null);
     setResult(null);
+    setResultImgError(false);
 
     try {
       const res = await fetch(`${API_BASE}/api/v1/deals/quick-drop`, {
@@ -241,16 +243,22 @@ export const DealLookupModal: React.FC<DealLookupProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
             
             {/* Product Photo with Aspect Ratio Lock */}
-            {result.image ? (
+            {result.image && !resultImgError ? (
               <div className="md:col-span-4 aspect-square rounded-2xl bg-white p-4 flex items-center justify-center overflow-hidden shadow-inner">
                 <img
                   src={result.image}
                   alt={result.title}
+                  onError={() => setResultImgError(true)}
                   className="max-h-full max-w-full object-contain filter drop-shadow"
                   loading="lazy"
                 />
               </div>
-            ) : null}
+            ) : (
+              <div className="md:col-span-4 aspect-square rounded-2xl bg-slate-900/90 border border-slate-800 p-4 flex flex-col items-center justify-center gap-2 text-center shadow-inner">
+                <ShieldCheck className="w-10 h-10 text-emerald-400" aria-hidden="true" />
+                <span className="text-xs font-bold text-slate-300">Verified {result.store} Item</span>
+              </div>
+            )}
 
             {/* Product Pricing & Analysis */}
             <div className={result.image ? 'md:col-span-8 flex flex-col justify-between' : 'md:col-span-12'}>
