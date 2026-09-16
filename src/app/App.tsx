@@ -546,8 +546,10 @@ function mapChangesToBackend(changes: Record<string, unknown>): Record<string, u
     };
   }
   if ("coupon" in changes) mapped.coupon = changes.coupon;
+  if ("effectivePrice" in changes) mapped.effective_price = changes.effectivePrice;
+  if ("couponDiscount" in changes) mapped.coupon_discount = changes.couponDiscount;
   if ("category" in changes) mapped.category = changes.category;
-  for (const k of ["prod_name", "aff_text", "img_url", "prices", "message"]) {
+  for (const k of ["prod_name", "aff_text", "img_url", "prices", "message", "coupon", "coupon_discount", "effective_price"]) {
     if (k in changes && !(k in mapped)) mapped[k] = changes[k];
   }
   return mapped;
@@ -1968,6 +1970,22 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     }
   };
 
+  const basePrice = Number(price) || deal.price;
+  let computedEff: number | null = null;
+  let computedCouponDisc: number | null = null;
+  if (coupon.trim()) {
+    const pctMatch = coupon.match(/(\d+)\s*%/);
+    const fixMatch = coupon.match(/(?:₹|rs\.?)\s*(\d+)/i);
+    if (pctMatch && basePrice > 0) {
+      const pct = Number(pctMatch[1]);
+      computedCouponDisc = Math.round(basePrice * (pct / 100));
+      computedEff = Math.max(0, basePrice - computedCouponDisc);
+    } else if (fixMatch && basePrice > 0) {
+      computedCouponDisc = Number(fixMatch[1]);
+      computedEff = Math.max(0, basePrice - computedCouponDisc);
+    }
+  }
+
   const changes: Partial<Deal> = {
     title,
     imgUrl: uploadedImg || imgFile || imgUrl,
@@ -1977,6 +1995,8 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     price: Number(price) || deal.price,
     mrp: Number(mrp) || deal.mrp,
     coupon: coupon.trim() ? coupon.trim() : null,
+    couponDiscount: computedCouponDisc ?? deal.couponDiscount,
+    effectivePrice: computedEff ?? deal.effectivePrice,
     affText: text,
   };
 
@@ -2046,32 +2066,54 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                   <span>Coupon: <strong>{coupon}</strong></span>
                 </span>
                 {(() => {
-                  const basePrice = deal.price || Number(price) || 0;
-                  const currentPrice = Number(price) || basePrice;
+                  const bPrice = deal.price || Number(price) || 0;
+                  const currentPrice = Number(price) || bPrice;
                   const pctMatch = coupon.match(/(\d+)\s*%/);
                   const fixMatch = coupon.match(/(?:₹|rs\.?)\s*(\d+)/i);
                   let eff: number | null = null;
-                  if (pctMatch && basePrice > 0) {
+                  let savings: number | null = null;
+                  if (pctMatch && bPrice > 0) {
                     const pct = Number(pctMatch[1]);
-                    eff = Math.round(basePrice * (1 - pct / 100));
-                  } else if (fixMatch && basePrice > 0) {
-                    eff = Math.max(0, basePrice - Number(fixMatch[1]));
+                    savings = Math.round(bPrice * (pct / 100));
+                    eff = Math.max(0, bPrice - savings);
+                  } else if (fixMatch && bPrice > 0) {
+                    savings = Number(fixMatch[1]);
+                    eff = Math.max(0, bPrice - savings);
                   }
-                  if (eff !== null && eff < currentPrice) {
-                    return (
-                      <div className="flex items-center gap-2">
-                        <span className="text-emerald-400 font-bold font-mono">
-                          Effective Price: ₹{eff}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setPrice(String(eff))}
-                          className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold hover:bg-emerald-500/30 cursor-pointer"
-                        >
-                          Apply ₹{eff} to Sale Price
-                        </button>
-                      </div>
-                    );
+                  if (eff !== null) {
+                    if (eff < currentPrice) {
+                      return (
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-400 font-bold font-mono">
+                            Effective Price: ₹{eff} {savings ? `(Saves ₹${savings})` : ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPrice(String(eff));
+                              if (text) {
+                                const newText = text.replace(/@\s*₹?\s*\d[\d,]*/, `@ ₹${eff}`);
+                                setText(newText);
+                              }
+                            }}
+                            className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold hover:bg-emerald-500/30 cursor-pointer transition-colors"
+                          >
+                            Apply ₹{eff} to Sale Price
+                          </button>
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-400 font-bold font-mono">
+                            Effective Price: ₹{eff} {savings ? `(Saves ₹${savings})` : ""}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">
+                            ✓ Applied to Price
+                          </span>
+                        </div>
+                      );
+                    }
                   }
                   return null;
                 })()}
