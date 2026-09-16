@@ -1800,7 +1800,7 @@ interface EditModalProps {
 
 function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditModalProps) {
   const [title, setTitle] = useState(deal.title);
-  const [price, setPrice] = useState(String(deal.price || ""));
+  const [price, setPrice] = useState(String(deal.effectivePrice && deal.effectivePrice < deal.price ? Math.round(deal.effectivePrice) : (deal.price || "")));
   const [mrp, setMrp] = useState(String(deal.mrp || ""));
   const [coupon, setCoupon] = useState(deal.coupon || "");
   
@@ -1941,7 +1941,11 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           setTelegramImg(result.telegram_img_url);
         }
         if (result.title) setTitle(result.title);
-        if (result.price) setPrice(String(result.price));
+        if (result.effective_price && result.effective_price < (result.price || 999999)) {
+          setPrice(String(Math.round(result.effective_price)));
+        } else if (result.price) {
+          setPrice(String(result.price));
+        }
         if (result.mrp) setMrp(String(result.mrp));
         if (result.coupon) setCoupon(result.coupon);
         if (result.affText) {
@@ -2033,6 +2037,46 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                   className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-950/80 border border-white/10 text-amber-300 focus:outline-none focus:border-amber-500/50" />
               </div>
             </div>
+
+            {/* Live Coupon Math Indicator */}
+            {coupon.trim() && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between flex-wrap gap-2 text-xs">
+                <span className="text-amber-300 font-semibold flex items-center gap-1.5">
+                  <span>🎟️</span>
+                  <span>Coupon: <strong>{coupon}</strong></span>
+                </span>
+                {(() => {
+                  const basePrice = deal.price || Number(price) || 0;
+                  const currentPrice = Number(price) || basePrice;
+                  const pctMatch = coupon.match(/(\d+)\s*%/);
+                  const fixMatch = coupon.match(/(?:₹|rs\.?)\s*(\d+)/i);
+                  let eff: number | null = null;
+                  if (pctMatch && basePrice > 0) {
+                    const pct = Number(pctMatch[1]);
+                    eff = Math.round(basePrice * (1 - pct / 100));
+                  } else if (fixMatch && basePrice > 0) {
+                    eff = Math.max(0, basePrice - Number(fixMatch[1]));
+                  }
+                  if (eff !== null && eff < currentPrice) {
+                    return (
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-400 font-bold font-mono">
+                          Effective Price: ₹{eff}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPrice(String(eff))}
+                          className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold hover:bg-emerald-500/30 cursor-pointer"
+                        >
+                          Apply ₹{eff} to Sale Price
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
 
 
 
