@@ -879,8 +879,17 @@ function DealCard({
   const [copyPlatform, setCopyPlatform] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const store = getStoreBadge(deal.platforms, deal.affText);
-  const savings = deal.mrp > deal.price ? deal.mrp - deal.price : 0;
-  const isUnder299 = deal.price > 0 && deal.price <= 299;
+  const isConsensus = Boolean(
+    (deal.clusterCount && deal.clusterCount >= 2) ||
+    (deal.clusterChannels && deal.clusterChannels.length >= 2) ||
+    (deal.dealBadges && deal.dealBadges.some(b => b.toLowerCase().includes("consensus") || b.toLowerCase().includes("spotted by")))
+  );
+  const clusterSize = deal.clusterCount && deal.clusterCount >= 2
+    ? deal.clusterCount
+    : (deal.clusterChannels?.length ? deal.clusterChannels.length : 1);
+  const displayPrice = deal.bestPrice && deal.bestPrice < deal.price ? deal.bestPrice : deal.price;
+  const savings = deal.mrp > displayPrice ? deal.mrp - displayPrice : 0;
+  const isUnder299 = displayPrice > 0 && displayPrice <= 299;
   const isFresh = (Date.now() / 1000 - deal.ts) < 900;
 
   const handleCopyPost = (e: React.MouseEvent) => {
@@ -950,11 +959,19 @@ function DealCard({
       }}
       onMouseLeave={() => setMousePos(null)}
       className={`pro-card rounded-2xl overflow-hidden flex flex-col group relative transition-all ${
-        selected ? "ring-2 ring-indigo-400 bg-indigo-500/10 border-indigo-400/50 shadow-lg shadow-indigo-500/20" : ""
+        isConsensus
+          ? "ring-2 ring-amber-400/90 shadow-[0_0_30px_rgba(245,158,11,0.3)] border-amber-400/60 bg-amber-500/[0.03]"
+          : selected
+          ? "ring-2 ring-indigo-400 bg-indigo-500/10 border-indigo-400/50 shadow-lg shadow-indigo-500/20"
+          : ""
       } ${isActive ? "ring-2 ring-emerald-400/90 shadow-[0_0_30px_rgba(16,185,129,0.35)] scale-[1.01] bg-emerald-500/[0.04]" : ""}`}>
 
-      {/* Brand-Reactive Top Border Accent Line */}
-      <div className={`absolute top-0 left-0 right-0 h-[2.5px] bg-gradient-to-r ${getStoreAura(store.tag)} z-30 opacity-90`} />
+      {/* Brand-Reactive or Gold Consensus Top Border Accent Line */}
+      <div className={`absolute top-0 left-0 right-0 h-[2.5px] ${
+        isConsensus
+          ? "bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 animate-pulse"
+          : `bg-gradient-to-r ${getStoreAura(store.tag)}`
+      } z-30 opacity-90`} />
 
       {/* Hardware-Accelerated Specular Cursor Light Cone */}
       {mousePos && (
@@ -997,6 +1014,12 @@ function DealCard({
             {deal.discount > 0 && (
               <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 font-mono text-[9px] font-black shadow-sm">
                 {Math.round(deal.discount)}%
+              </span>
+            )}
+
+            {isConsensus && (
+              <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-mono text-[8.5px] font-black shadow-sm flex items-center gap-0.5 border border-amber-300 animate-pulse">
+                🔥 {clusterSize} CH
               </span>
             )}
 
@@ -1091,10 +1114,15 @@ function DealCard({
             </div>
 
             {/* Price & Savings */}
-            <div className="flex items-center justify-between gap-1 mt-1.5">
-              <div className="flex items-baseline gap-1.5">
-                <span className="pro-price text-sm font-black text-emerald-300 tabular-nums">{fmt(deal.price)}</span>
-                {deal.mrp > deal.price && (
+            <div className="flex items-center justify-between gap-1 mt-1.5 flex-wrap">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="pro-price text-sm font-black text-emerald-300 tabular-nums">{fmt(displayPrice)}</span>
+                {deal.bestPrice && deal.bestPrice < deal.price && (
+                  <span className="text-[8.5px] text-amber-300 font-mono font-bold bg-amber-500/15 border border-amber-500/30 px-1 py-0.2 rounded">
+                    Best of {clusterSize}
+                  </span>
+                )}
+                {deal.mrp > displayPrice && (
                   <span className="text-[10px] text-slate-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>
                 )}
               </div>
@@ -1112,6 +1140,21 @@ function DealCard({
                   <span className="text-[9px] font-mono font-black text-emerald-300 whitespace-nowrap">
                     Eff: ₹{deal.effectivePrice}
                   </span>
+                )}
+              </div>
+            )}
+
+            {/* Multi-Channel Consensus Attribution Pills on Mobile */}
+            {isConsensus && deal.clusterChannels && deal.clusterChannels.length > 0 && (
+              <div className="mt-1 flex items-center gap-1 flex-wrap">
+                <span className="text-[8.5px] font-bold text-amber-300">📡 Spotted by:</span>
+                {deal.clusterChannels.slice(0, 3).map((cc, i) => (
+                  <span key={i} className="text-[8px] font-medium px-1.5 py-0.2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-200">
+                    {cc.name || cc.channel}
+                  </span>
+                ))}
+                {deal.clusterChannels.length > 3 && (
+                  <span className="text-[8px] text-amber-400 font-mono font-bold">+{deal.clusterChannels.length - 3}</span>
                 )}
               </div>
             )}
@@ -1263,6 +1306,11 @@ function DealCard({
 
           {/* Loot Badges in Media Box */}
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 flex-wrap justify-end">
+            {isConsensus && (
+              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-slate-950 font-mono text-[9.5px] font-black shadow-lg shadow-amber-500/30 flex items-center gap-1 border border-amber-300 animate-pulse" title={`Spotted across ${clusterSize} competitor channels!`}>
+                <span>🔥</span> SPOTTED BY {clusterSize} CHANNELS
+              </span>
+            )}
             {deal.desidimeTemperature !== undefined && deal.desidimeTemperature > 0 && (
               <span className={`px-2.5 py-0.5 rounded-full font-mono text-[9.5px] font-black shadow-md flex items-center gap-1 border backdrop-blur-md ${
                 deal.isCommunityVerified || deal.desidimeTemperature >= 200
@@ -1381,11 +1429,16 @@ function DealCard({
               {deal.title}
             </h4>
             <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
-              {deal.price > 0 ? (
+              {displayPrice > 0 ? (
                 <>
-                  <div className="flex items-baseline gap-2">
-                    <span className="pro-price text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-400 tabular-nums">{fmt(deal.price)}</span>
-                    {deal.mrp > deal.price && <span className="text-xs text-zinc-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>}
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="pro-price text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-400 tabular-nums">{fmt(displayPrice)}</span>
+                    {deal.bestPrice && deal.bestPrice < deal.price && (
+                      <span className="text-xs text-amber-400 font-mono font-bold bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                        Best of {clusterSize} channels (₹{deal.price})
+                      </span>
+                    )}
+                    {deal.mrp > displayPrice && <span className="text-xs text-zinc-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>}
                   </div>
                   {savings > 0 && <SavingsPill3D amount={savings} />}
                 </>
@@ -1415,6 +1468,27 @@ function DealCard({
                     </span>
                   </div>
                 ) : null}
+              </div>
+            )}
+
+            {/* Multi-Channel Consensus Attribution Pills */}
+            {isConsensus && deal.clusterChannels && deal.clusterChannels.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-amber-500/15 flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                  <span>📡</span> Spotted on:
+                </span>
+                {deal.clusterChannels.map((cc, i) => (
+                  <span
+                    key={i}
+                    className="text-[9.5px] font-medium px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/25 text-amber-200 flex items-center gap-1"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-amber-400" />
+                    {cc.name || cc.channel}
+                    {cc.price && cc.price !== displayPrice ? (
+                      <span className="font-mono text-zinc-400 font-normal">(₹{cc.price})</span>
+                    ) : null}
+                  </span>
+                ))}
               </div>
             )}
 
@@ -2779,11 +2853,22 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
       if (!cat.includes("grocery") && !cat.includes("food")) return false;
     } else if (smartPreset === "desidime_hot") {
       if (!((d.desidimeTemperature || 0) >= 100 || d.isCommunityVerified)) return false;
+    } else if (smartPreset === "consensus") {
+      const isC = (d.clusterCount && d.clusterCount >= 2) || (d.clusterChannels && d.clusterChannels.length >= 2) || (d.dealBadges && d.dealBadges.some(b => b.toLowerCase().includes("consensus") || b.toLowerCase().includes("spotted by")));
+      if (!isC) return false;
     }
     return true;
   });
 
-  if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
+  if (sort === "latest") {
+    visible = [...visible].sort((a, b) => {
+      const aCons = ((a.clusterCount && a.clusterCount >= 2) || (a.clusterChannels && a.clusterChannels.length >= 2)) ? 1 : 0;
+      const bCons = ((b.clusterCount && b.clusterCount >= 2) || (b.clusterChannels && b.clusterChannels.length >= 2)) ? 1 : 0;
+      if (aCons !== bCons) return bCons - aCons;
+      return b.ts - a.ts;
+    });
+  }
+  else if (sort === "consensus") visible = [...visible].sort((a, b) => (b.clusterCount || 0) - (a.clusterCount || 0) || b.ts - a.ts);
   else if (sort === "temperature") visible = [...visible].sort((a, b) => (b.desidimeTemperature || 0) - (a.desidimeTemperature || 0));
   else if (sort === "discount") visible = [...visible].sort((a, b) => b.discount - a.discount);
   else if (sort === "price_asc") visible = [...visible].sort((a, b) => (a.price || 999999) - (b.price || 999999));
@@ -2837,6 +2922,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const rejected = deals.filter(d => d.status === "rejected").length;
 
   // Velocity and Smart Curation Telemetry
+  const consensusDealsCount = deals.filter(d => (filter === "all" || d.status === filter) && ((d.clusterCount && d.clusterCount >= 2) || (d.clusterChannels && d.clusterChannels.length >= 2))).length;
   const under499Count = deals.filter(d => (filter === "all" || d.status === filter) && d.price > 0 && d.price <= 499).length;
   const lootCount = deals.filter(d => (filter === "all" || d.status === filter) && ((d.dealScore ?? d.score ?? 0) >= 80)).length;
   const stealCount = deals.filter(d => (filter === "all" || d.status === filter) && ((d.dealScore ?? d.score ?? 0) >= 60)).length;
@@ -2851,6 +2937,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     { value: "myntra", label: "Myntra", icon: "👗" },
     { value: "desidime", label: "DesiDime", icon: "🔥" },
     { value: "ajio", label: "AJIO", icon: "✨" },
+    { value: "blinkit", label: "Blinkit", icon: "⚡" },
+    { value: "zepto", label: "Zepto", icon: "⚡" },
+    { value: "swiggy", label: "Swiggy", icon: "🍔" },
   ];
 
   const channelOptions: DropdownOption[] = [
@@ -2863,7 +2952,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   ];
 
   const sortOptions: DropdownOption[] = [
-    { value: "latest", label: "Newest First", icon: "⏰" },
+    { value: "latest", label: "Newest (Consensus First)", icon: "⏰" },
+    { value: "consensus", label: "Consensus (Multi-Channel)", icon: "🔥" },
     { value: "temperature", label: "DesiDime Heat (°)", icon: "🔥" },
     { value: "discount", label: "Highest % Off", icon: "⚡" },
     { value: "price_asc", label: "Price: Low to High", icon: "🏷️" },
@@ -3144,6 +3234,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
             {[
               { id: "all", label: "All" },
+              { id: "consensus", label: "🔥 Consensus Drops", count: consensusDealsCount },
               { id: "desidime_hot", label: "🔥 Community Heat", count: deals.filter(d => (d.desidimeTemperature || 0) >= 100 || d.isCommunityVerified).length },
               { id: "loot_drops", label: "⚡ Loot Drops (80+)", count: lootCount },
               { id: "steal_deals", label: "💎 Steal Deals (60+)", count: stealCount },
