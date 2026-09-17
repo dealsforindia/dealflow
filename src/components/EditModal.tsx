@@ -48,6 +48,12 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
   const [retryingAffiliate, setRetryingAffiliate] = useState(false);
   const [scrapingImage, setScrapingImage] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
+  const [destinations, setDestinations] = useState<string[]>(
+    (deal as any).destinations && (deal as any).destinations.length > 0
+      ? (deal as any).destinations
+      : ["@dealsforindiachannel"]
+  );
   const fileRef = useRef<HTMLInputElement>(null);
   const previewSrc = imgFile || imgUrl || null;
   const accent = catColor[deal.category] || "#9496B8";
@@ -119,12 +125,13 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
     }
   };
 
-  const changes: Partial<Deal> = {
+  const changes: Partial<Deal> & { destinations?: string[] } = {
     title,
     imgUrl: imgFile || imgUrl,
     price: Number(price) || deal.price,
     mrp: Number(mrp) || deal.mrp,
     affText: text,
+    destinations: destinations.length > 0 ? destinations : ["storefront_only"],
   };
 
   const previewPrice = Number(price) || deal.price;
@@ -271,9 +278,81 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
                 {/* AI Rewrite */}
                 <div>
                   <div className="flex items-end justify-between mb-1.5">
-                    <label className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Post Text (Affiliate)</label>
+                    <div className="flex items-center gap-2">
+                      <label className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Post Text (Affiliate)</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowDiff(!showDiff)}
+                        className={`px-2 py-0.5 rounded-lg text-[9px] font-bold transition-all border flex items-center gap-1 cursor-pointer ${
+                          showDiff
+                            ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/50 shadow-sm"
+                            : "bg-white/5 text-slate-400 border-white/10 hover:text-white"
+                        }`}
+                      >
+                        <Zap size={9} /> {showDiff ? "Hide Diff" : "🔍 Diff vs Raw"}
+                      </button>
+                    </div>
                     <span className="text-[9px] font-mono" style={{ color: "var(--text-dim)", fontFamily: "'JetBrains Mono',monospace" }}>{text.length} chars</span>
                   </div>
+
+                  {/* Side-by-Side Raw vs AI Post Diff Viewer (Feature 8) */}
+                  {showDiff && (
+                    <div className="mb-3 p-2.5 rounded-xl border border-white/10 bg-slate-950/80 font-mono text-[11px] leading-relaxed max-h-60 overflow-y-auto">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-rose-400/90 mb-1.5 flex items-center justify-between pb-1 border-b border-rose-500/20">
+                            <span>Raw Channel Post</span>
+                            <button
+                              type="button"
+                              onClick={() => { setText(deal.originalText); onToast("Restored original text into editor", "info"); }}
+                              className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 hover:bg-white/20 text-slate-200 font-sans normal-case cursor-pointer"
+                            >
+                              Restore Raw
+                            </button>
+                          </div>
+                          {(deal.originalText || "No original text recorded").split("\n").map((line, idx) => {
+                            const trimmed = line.trim();
+                            const isRemoved = trimmed && !text.includes(trimmed);
+                            return (
+                              <div
+                                key={idx}
+                                className={`px-1.5 py-0.5 rounded break-all ${
+                                  isRemoved
+                                    ? "bg-rose-500/20 text-rose-300 border-l-2 border-rose-500 font-semibold"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {isRemoved && <span className="text-rose-400 mr-1 select-none">-</span>}
+                                {line || "\u00A0"}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="space-y-1 md:border-l md:border-white/10 md:pl-3">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/90 mb-1.5 pb-1 border-b border-emerald-500/20">
+                            AI Formatted Post
+                          </div>
+                          {(text || "").split("\n").map((line, idx) => {
+                            const trimmed = line.trim();
+                            const isAdded = trimmed && !(deal.originalText || "").includes(trimmed);
+                            return (
+                              <div
+                                key={idx}
+                                className={`px-1.5 py-0.5 rounded break-all ${
+                                  isAdded
+                                    ? "bg-emerald-500/20 text-emerald-300 border-l-2 border-emerald-500 font-semibold"
+                                    : "text-slate-300"
+                                }`}
+                              >
+                                {isAdded && <span className="text-emerald-400 mr-1 select-none">+</span>}
+                                {line || "\u00A0"}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Quick AI Presets */}
                   <div className="flex items-center gap-1.5 flex-wrap mb-2">
@@ -463,6 +542,63 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
                 <AlertTriangle size={9} /> Mark Spam
               </button>
             </div>
+
+            {/* Broadcast Destinations Selector (Feature 18) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 border-b text-xs" style={{ borderColor: "var(--border)", background: "rgba(0,0,0,0.2)" }}>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Broadcast Targets:
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium text-slate-300 hover:text-white cursor-pointer select-none" style={{ background: "var(--bg-secondary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={destinations.includes("@dealsforindiachannel")}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setDestinations(prev => [...prev.filter(d => d !== "storefront_only"), "@dealsforindiachannel"]);
+                      } else {
+                        setDestinations(prev => prev.filter(d => d !== "@dealsforindiachannel"));
+                      }
+                    }}
+                    className="accent-emerald-500 rounded cursor-pointer"
+                  />
+                  <span className="text-emerald-400 font-semibold">@dealsforindiachannel</span>
+                </label>
+
+                <label className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium text-slate-300 hover:text-white cursor-pointer select-none" style={{ background: "var(--bg-secondary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={destinations.includes("@bestindiandeals2025")}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setDestinations(prev => [...prev.filter(d => d !== "storefront_only"), "@bestindiandeals2025"]);
+                      } else {
+                        setDestinations(prev => prev.filter(d => d !== "@bestindiandeals2025"));
+                      }
+                    }}
+                    className="accent-cyan-500 rounded cursor-pointer"
+                  />
+                  <span className="text-cyan-400 font-semibold">@bestindiandeals2025</span>
+                </label>
+
+                <label className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium text-slate-300 hover:text-white cursor-pointer select-none" style={{ background: "var(--bg-secondary)" }}>
+                  <input
+                    type="checkbox"
+                    checked={destinations.includes("storefront_only") || destinations.length === 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setDestinations(["storefront_only"]);
+                      } else {
+                        setDestinations(["@dealsforindiachannel"]);
+                      }
+                    }}
+                    className="accent-purple-500 rounded cursor-pointer"
+                  />
+                  <span className="text-purple-400 font-semibold">Web Storefront Only</span>
+                </label>
+              </div>
+            </div>
+
             {/* Primary actions */}
             <div className="flex items-center gap-2.5 px-5 py-3.5">
               <button

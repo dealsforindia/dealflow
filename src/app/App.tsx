@@ -28,7 +28,7 @@ import {
 } from "./utils/soundFX";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type DealStatus = "pending" | "approved" | "rejected" | "draft";
+type DealStatus = "pending" | "approved" | "rejected" | "draft" | "auto_posted";
 type DealType = "product" | "trick";
 type Tab = "Review" | "Posted" | "Channels" | "Settings";
 
@@ -60,6 +60,9 @@ interface Deal {
   dealTierLabel?: string;
   dealBadges?: string[];
   isWorthPosting?: boolean;
+  destinations?: string[];
+  liveOnWeb?: boolean;
+  liveOnTelegram?: boolean;
 }
 
 interface RawDeal {
@@ -91,6 +94,10 @@ interface RawDeal {
   deal_tier_label?: string;
   deal_badges?: string[];
   is_worth_posting?: boolean;
+  destinations?: string[];
+  live_on_web?: boolean;
+  live_on_telegram?: boolean;
+  broadcast_destinations?: string[];
 }
 
 interface AppSettings {
@@ -506,6 +513,9 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     dealTierLabel: (d as any).deal_tier_label || "⚡ Good Offer",
     dealBadges: (d as any).deal_badges || [],
     isWorthPosting: (d as any).is_worth_posting ?? true,
+    destinations: d.destinations || d.broadcast_destinations || [],
+    liveOnWeb: d.live_on_web ?? (d.status === "auto_posted" || d.status === "approved" || Boolean(d.broadcast_destinations?.length)),
+    liveOnTelegram: d.live_on_telegram ?? ((d.status === "approved" || Boolean(d.broadcast_destinations?.length)) && !d.broadcast_destinations?.includes("storefront_only") && !d.destinations?.includes("storefront_only")),
   };
 }
 
@@ -524,7 +534,7 @@ async function fetchPendingDeals(): Promise<Deal[]> {
   if (recentRes?.ok) {
     const data = await recentRes.json();
     const list = Array.isArray(data?.deals) ? data.deals : Array.isArray(data) ? data : [];
-    rows = rows.concat(list.map((d: any) => ({ ...d, _forceStatus: "approved" as DealStatus })));
+    rows = rows.concat(list.map((d: any) => ({ ...d, _forceStatus: (d.status === "auto_posted" ? "auto_posted" : "approved") as DealStatus })));
   }
 
   return rows.map((d, i) => {
@@ -549,7 +559,8 @@ function mapChangesToBackend(changes: Record<string, unknown>): Record<string, u
   if ("effectivePrice" in changes) mapped.effective_price = changes.effectivePrice;
   if ("couponDiscount" in changes) mapped.coupon_discount = changes.couponDiscount;
   if ("category" in changes) mapped.category = changes.category;
-  for (const k of ["prod_name", "aff_text", "img_url", "prices", "message", "coupon", "coupon_discount", "effective_price"]) {
+  if ("destinations" in changes) mapped.destinations = changes.destinations;
+  for (const k of ["prod_name", "aff_text", "img_url", "prices", "message", "coupon", "coupon_discount", "effective_price", "destinations"]) {
     if (k in changes && !(k in mapped)) mapped[k] = changes[k];
   }
   return mapped;
@@ -913,9 +924,9 @@ function DealCard({
     }
   };
 
-  const handleApproveWithSound = (id: string) => {
+  const handleApproveWithSound = (id: string, changes?: Partial<Deal>) => {
     playApprove();
-    onApprove(id);
+    onApprove(id, changes);
   };
 
   const handleRejectWithSound = (id: string) => {
@@ -1024,14 +1035,34 @@ function DealCard({
           {/* Right: Info Column */}
           <div className="flex-1 min-w-0 flex flex-col justify-between min-h-[96px] py-0.5">
             <div>
-              {/* Header: Store + Channel + Affiliate + Time */}
-              <div className="flex items-center justify-between gap-1.5">
+              {/* Header: Store + Channel + Distribution Pill + Time */}
+              <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <Store3DBadge store={store.tag} />
-                  <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[110px]">{deal.channel}</span>
+                  <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[90px]">{deal.channel}</span>
                   <AffiliateMark applied={deal.affiliate} />
                 </div>
-                <span className="text-[9.5px] text-slate-500 font-mono flex-shrink-0">{fmtAgo(deal.ts)}</span>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {deal.status === "auto_posted" ? (
+                    <span className="px-1.5 py-0.2 rounded-md bg-purple-500/20 border border-purple-500/35 text-[9px] font-bold text-purple-300 flex items-center gap-0.5">
+                      <span className="w-1 h-1 rounded-full bg-purple-400 animate-ping" />
+                      ⚡ Auto-Web
+                    </span>
+                  ) : deal.liveOnWeb && deal.liveOnTelegram ? (
+                    <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-[9px] font-bold text-emerald-300">
+                      🌐✈️ Live
+                    </span>
+                  ) : deal.liveOnWeb ? (
+                    <span className="px-1.5 py-0.2 rounded-md bg-purple-500/20 border border-purple-500/40 text-[9px] font-bold text-purple-300">
+                      🌐 On Web
+                    </span>
+                  ) : deal.liveOnTelegram ? (
+                    <span className="px-1.5 py-0.2 rounded-md bg-sky-500/20 border border-sky-500/40 text-[9px] font-bold text-sky-300">
+                      ✈️ On TG
+                    </span>
+                  ) : null}
+                  <span className="text-[9.5px] text-slate-500 font-mono">{fmtAgo(deal.ts)}</span>
+                </div>
               </div>
 
               {/* Title: 2 lines with comfortable leading */}
@@ -1073,12 +1104,12 @@ function DealCard({
         </div>
 
         {/* Bottom Touch Actions Bar: Full Width, Ergonomic, Thumb-Friendly */}
-        <div className="flex items-center gap-2 pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-1.5 pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
           {deal.status === "pending" ? (
             <>
               <button
                 onClick={() => handleRejectWithSound(deal.id)}
-                className="h-8 px-3 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/10 active:scale-95 text-xs font-semibold cursor-pointer transition-colors"
+                className="h-8 px-2.5 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/10 active:scale-95 text-xs font-semibold cursor-pointer transition-colors"
                 title="Skip Deal"
               >
                 <X size={13} strokeWidth={2.5} />
@@ -1086,18 +1117,8 @@ function DealCard({
               </button>
 
               <button
-                type="button"
-                onClick={handleOpenStore}
-                className="h-8 px-2.5 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-blue-500/15 text-slate-300 hover:text-blue-300 border border-white/10 active:scale-95 text-xs font-medium cursor-pointer transition-colors"
-                title="Open Store Link"
-              >
-                <ExternalLink size={12} />
-                <span className="hidden min-[380px]:inline">Store</span>
-              </button>
-
-              <button
                 onClick={() => onEdit(deal)}
-                className="h-8 px-3 rounded-xl flex items-center justify-center gap-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/10 active:scale-95 text-xs font-bold cursor-pointer flex-1 transition-colors"
+                className="h-8 px-2.5 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 active:scale-95 text-xs font-semibold cursor-pointer transition-colors"
                 title="Edit & Tune Post"
               >
                 <PenLine size={12} />
@@ -1105,29 +1126,74 @@ function DealCard({
               </button>
 
               <button
-                onClick={() => handleApproveWithSound(deal.id)}
-                className="h-8 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[1.4] transition-all"
-                title="Approve & Broadcast"
+                onClick={() => handleApproveWithSound(deal.id, { destinations: ["storefront_only"] })}
+                className="h-8 px-2.5 rounded-xl text-xs font-bold text-purple-200 flex items-center justify-center gap-1 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 active:scale-95 cursor-pointer flex-1 transition-all shadow-sm"
+                title="Publish directly to IndiaDealHunts Web Storefront (Skip Telegram)"
               >
-                <Check size={14} strokeWidth={3} />
-                <span>Post</span>
+                <span>🌐</span>
+                <span className="truncate">Web Only</span>
+              </button>
+
+              <button
+                onClick={() => handleApproveWithSound(deal.id)}
+                className="h-8 px-3 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[1.3] transition-all"
+                title="Approve & Broadcast to Telegram and Web"
+              >
+                <Check size={13} strokeWidth={3} />
+                <span className="truncate">Post All</span>
               </button>
             </>
           ) : (
-            <div className={`text-[11px] font-bold py-1 px-3 rounded-xl border flex-1 flex items-center justify-center gap-1.5 ${
-              deal.status === "approved" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-slate-800/80 text-slate-400 border-white/10"
-            }`}>
-              {deal.status === "approved" ? (
-                <>
-                  <Check size={12} strokeWidth={2.5} />
-                  <span>Broadcasted to Telegram & X</span>
-                </>
-              ) : (
-                <>
-                  <X size={12} strokeWidth={2.5} />
-                  <span>Skipped Deal</span>
-                </>
+            <div className="flex items-center justify-between w-full gap-2">
+              <div className={`text-[11px] font-bold py-1 px-2.5 rounded-xl border flex-1 flex items-center justify-center gap-1.5 ${
+                deal.status === "approved" || deal.status === "auto_posted"
+                  ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                  : "bg-slate-800/80 text-slate-400 border-white/10"
+              }`}>
+                {deal.status === "auto_posted" ? (
+                  <span>⚡ Auto-Posted to Web</span>
+                ) : deal.liveOnWeb && deal.liveOnTelegram ? (
+                  <>
+                    <Check size={12} strokeWidth={2.5} />
+                    <span>Live on Web & TG</span>
+                  </>
+                ) : deal.liveOnWeb ? (
+                  <>
+                    <Check size={12} strokeWidth={2.5} />
+                    <span>Live on Web Storefront</span>
+                  </>
+                ) : deal.status === "approved" ? (
+                  <>
+                    <Check size={12} strokeWidth={2.5} />
+                    <span>Broadcasted to TG</span>
+                  </>
+                ) : (
+                  <>
+                    <X size={12} strokeWidth={2.5} />
+                    <span>Skipped Deal</span>
+                  </>
+                )}
+              </div>
+
+              {/* Quick Push to Telegram if deal is currently Web-Only */}
+              {((deal.liveOnWeb && !deal.liveOnTelegram) || deal.status === "auto_posted") && (
+                <button
+                  onClick={() => handleApproveWithSound(deal.id, { destinations: ["@dealsforindiachannel", "@bestindiandeals2025"] })}
+                  className="h-8 px-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-200 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                  title="Push this web deal to Telegram Channel Subscribers"
+                >
+                  <span>✈️</span>
+                  <span>Push TG</span>
+                </button>
               )}
+
+              <button
+                onClick={() => onEdit(deal)}
+                className="h-8 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs font-medium cursor-pointer"
+                title="View & Edit Deal"
+              >
+                <PenLine size={12} />
+              </button>
             </div>
           )}
         </div>
@@ -1143,13 +1209,30 @@ function DealCard({
             <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]">{deal.channel}</span>
             <AffiliateMark applied={deal.affiliate} />
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {isFresh && (
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {deal.status === "auto_posted" ? (
+              <span className="flex items-center gap-1 text-[9px] font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
+                ⚡ AUTO-WEB
+              </span>
+            ) : deal.liveOnWeb && deal.liveOnTelegram ? (
+              <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                🌐✈️ WEB + TG
+              </span>
+            ) : deal.liveOnWeb ? (
+              <span className="flex items-center gap-1 text-[9px] font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded-full">
+                🌐 ON WEB
+              </span>
+            ) : deal.liveOnTelegram ? (
+              <span className="flex items-center gap-1 text-[9px] font-bold text-sky-300 bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 rounded-full">
+                ✈️ ON TG
+              </span>
+            ) : isFresh ? (
               <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
                 LIVE
               </span>
-            )}
+            ) : null}
             <span className="text-[10px] text-zinc-400 font-mono">{fmtAgo(deal.ts)}</span>
           </div>
         </div>
@@ -1334,22 +1417,55 @@ function DealCard({
           {/* Footer Buttons */}
           <div className="pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
             {deal.status === "pending" ? (
-              <div className="flex items-center gap-2">
-                <button onClick={() => handleRejectWithSound(deal.id)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Skip">
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => handleRejectWithSound(deal.id)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Skip">
                   <X size={14} strokeWidth={2.5} /><span className="ml-1">Skip</span>
                 </button>
-                <button onClick={() => onEdit(deal)} className="h-9 px-3 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer flex-1" title="Edit & Tune">
+                <button onClick={() => onEdit(deal)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Edit & Tune">
                   <PenLine size={13} /><span className="ml-1.5">Tune</span>
                 </button>
-                <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-1 transition-all" title="Approve & Broadcast">
-                  <Check size={15} strokeWidth={3} /><span>Approve</span>
+                <button
+                  onClick={() => handleApproveWithSound(deal.id, { destinations: ["storefront_only"] })}
+                  className="h-9 px-3 rounded-xl text-xs font-bold text-purple-200 flex items-center justify-center gap-1 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 active:scale-95 cursor-pointer flex-1 transition-all shadow-sm"
+                  title="Approve to IndiaDealHunts Web Storefront Only"
+                >
+                  <span>🌐</span><span>Web Only</span>
+                </button>
+                <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-3.5 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[1.2] transition-all" title="Approve & Broadcast to Telegram and Web">
+                  <Check size={14} strokeWidth={3} /><span>Post All</span>
                 </button>
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
-                <div className={`flex-1 text-center text-xs font-bold py-1.5 rounded-xl border ${deal.status === "approved" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : "bg-slate-800/80 text-slate-300 border-white/10"}`}>
-                  {deal.status === "approved" ? "✓ Broadcasted to Telegram" : "✕ Deal Skipped"}
+                <div className={`flex-1 text-center text-xs font-bold py-1.5 px-2 rounded-xl border flex items-center justify-center gap-1.5 ${
+                  deal.status === "approved" || deal.status === "auto_posted"
+                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                    : "bg-slate-800/80 text-slate-300 border-white/10"
+                }`}>
+                  {deal.status === "auto_posted" ? (
+                    <span>⚡ Auto-Posted to Web</span>
+                  ) : deal.liveOnWeb && deal.liveOnTelegram ? (
+                    <span>✓ Live on Web & TG</span>
+                  ) : deal.liveOnWeb ? (
+                    <span>✓ Live on Storefront</span>
+                  ) : deal.status === "approved" ? (
+                    <span>✓ Broadcasted to TG</span>
+                  ) : (
+                    <span>✕ Deal Skipped</span>
+                  )}
                 </div>
+
+                {((deal.liveOnWeb && !deal.liveOnTelegram) || deal.status === "auto_posted") && (
+                  <button
+                    onClick={() => handleApproveWithSound(deal.id, { destinations: ["@dealsforindiachannel", "@bestindiandeals2025"] })}
+                    className="h-8 px-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-200 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                    title="Push this web deal to Telegram Channel Subscribers"
+                  >
+                    <span>✈️</span>
+                    <span>Push TG</span>
+                  </button>
+                )}
+
                 <button onClick={() => onEdit(deal)} className="h-8 px-3 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-zinc-400 hover:text-white text-xs font-medium cursor-pointer">
                   <PenLine size={12} className="mr-1" /> View
                 </button>
@@ -1579,9 +1695,26 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
       <div className="p-3 border-t border-white/8 bg-slate-950/90 flex items-center gap-2">
         <button
           onClick={() => onReject(deal.id)}
-          className="px-3 py-2.5 rounded-xl text-xs font-bold bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+          className="px-3 py-2.5 rounded-xl text-xs font-bold bg-white/[0.04] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/10 flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
         >
           <X size={14} /> Skip
+        </button>
+        <button
+          onClick={() => {
+            onApprove(deal.id, {
+              title,
+              price: Number(price) || deal.price,
+              mrp: Number(mrp) || deal.mrp,
+              affText: text,
+              imgUrl,
+              destinations: ["storefront_only"],
+            });
+            triggerApproveConfetti();
+          }}
+          className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-sm"
+          title="Approve to IndiaDealHunts Web Storefront Only"
+        >
+          <span>🌐</span> Web Only
         </button>
         <button
           onClick={() => {
@@ -1596,7 +1729,7 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
           }}
           className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 hover:from-emerald-300 hover:to-teal-300 flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/30 active:scale-95 transition-all cursor-pointer"
         >
-          <Check size={15} strokeWidth={3} /> Broadcast Deal Now
+          <Check size={15} strokeWidth={3} /> Post All
         </button>
       </div>
     </div>
@@ -1837,6 +1970,9 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [scrapingImage, setScrapingImage] = useState(false);
   const [generatingBanner, setGeneratingBanner] = useState(false);
   const [priceIntel, setPriceIntel] = useState<PriceIntelligenceData | null>(null);
+  const [destinations, setDestinations] = useState<string[]>(
+    deal.destinations && deal.destinations.length > 0 ? deal.destinations : ["@dealsforindiachannel"]
+  );
 
   useEffect(() => {
     apiGetPriceHistory(deal.id).then(intel => {
@@ -1998,6 +2134,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     couponDiscount: computedCouponDisc ?? deal.couponDiscount,
     effectivePrice: computedEff ?? deal.effectivePrice,
     affText: text,
+    destinations: destinations.length > 0 ? destinations : ["storefront_only"],
   };
 
   return (
@@ -2031,7 +2168,12 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           <div className="md:col-span-7 p-4 sm:p-6 flex flex-col gap-4 border-r border-white/10">
             {/* Title */}
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Product Title</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <span>🌐 Product Title</span>
+                  <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-semibold lowercase">displays on web storefront</span>
+                </label>
+              </div>
               <input type="text" value={title} onChange={e => setTitle(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-slate-950/80 border border-white/10 text-white focus:outline-none focus:border-emerald-500/50" />
             </div>
@@ -2232,7 +2374,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             {/* Affiliate Text */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Affiliate Post Text</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                  <span>✈️ Telegram Post Text</span>
+                  <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 font-semibold lowercase">markdown &amp; affiliate links</span>
+                </label>
                 <span className="text-[10px] text-slate-400 font-mono">{text.length} chars</span>
               </div>
 
@@ -2347,20 +2492,95 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           </div>
         </div>
 
+        {/* Broadcast Destinations Selector (Feature 18) */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 sm:px-6 py-2.5 bg-[#080B14] border-t border-white/10 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" /> Broadcast Destinations:
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <label className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 cursor-pointer text-slate-300 hover:text-white transition-all select-none">
+              <input
+                type="checkbox"
+                checked={destinations.includes("@dealsforindiachannel")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setDestinations(prev => [...prev.filter(d => d !== "storefront_only"), "@dealsforindiachannel"]);
+                  } else {
+                    setDestinations(prev => prev.filter(d => d !== "@dealsforindiachannel"));
+                  }
+                }}
+                className="accent-emerald-500 rounded cursor-pointer"
+              />
+              <span className="text-[11px] font-semibold text-emerald-300">@dealsforindiachannel</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold">Primary</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 cursor-pointer text-slate-300 hover:text-white transition-all select-none">
+              <input
+                type="checkbox"
+                checked={destinations.includes("@bestindiandeals2025")}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setDestinations(prev => [...prev.filter(d => d !== "storefront_only"), "@bestindiandeals2025"]);
+                  } else {
+                    setDestinations(prev => prev.filter(d => d !== "@bestindiandeals2025"));
+                  }
+                }}
+                className="accent-cyan-500 rounded cursor-pointer"
+              />
+              <span className="text-[11px] font-semibold text-cyan-300">@bestindiandeals2025</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-400 font-bold">Secondary</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 cursor-pointer text-slate-300 hover:text-white transition-all select-none">
+              <input
+                type="checkbox"
+                checked={destinations.includes("storefront_only") || destinations.length === 0}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setDestinations(["storefront_only"]);
+                  } else {
+                    setDestinations(["@dealsforindiachannel"]);
+                  }
+                }}
+                className="accent-purple-500 rounded cursor-pointer"
+              />
+              <span className="text-[11px] font-semibold text-purple-300">Web Storefront Only</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/20 text-purple-400 font-bold">Skip TG</span>
+            </label>
+          </div>
+        </div>
+
         {/* Sticky Footer Actions with 3D Rocket */}
-        <div className="sticky bottom-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3 border-t border-white/10 bg-[#060810]/95 backdrop-blur-xl">
+        <div className="sticky bottom-0 z-30 flex items-center justify-between px-3 sm:px-6 py-3 border-t border-white/10 bg-[#060810]/95 backdrop-blur-xl gap-2">
           <button onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors cursor-pointer">
+            className="px-3 sm:px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors cursor-pointer">
             Cancel
           </button>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             <button onClick={() => { onSaveDraft(changes); onClose(); }} disabled={!isDirty}
-              className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer">
+              className="hidden sm:inline-flex px-3 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer">
               Save Draft
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                onSaveApprove({ ...changes, destinations: ["storefront_only"] });
+                onClose();
+              }}
+              className="px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-purple-500/20"
+              title="Publish directly to IndiaDealHunts website only (skip Telegram)"
+            >
+              <span>🌐</span>
+              <span>Web Only</span>
+            </button>
             <button onClick={() => { onSaveApprove(changes); onClose(); }}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-2 cursor-pointer">
-              <RocketBroadcast3D size={16} /> Save & Broadcast
+              className="px-3.5 sm:px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-1.5 cursor-pointer">
+              <RocketBroadcast3D size={15} />
+              <span className="hidden min-[400px]:inline">Save &amp; Broadcast</span>
+              <span className="min-[400px]:hidden">Post All</span>
             </button>
           </div>
         </div>
@@ -2377,7 +2597,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 }) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"latest" | "discount" | "price_asc" | "price_desc">("latest");
-  const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "promos" | "all">("pending");
+  const [filter, setFilter] = useState<"pending" | "approved" | "web_live" | "rejected" | "promos" | "all">("pending");
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
   const [selectedStore, setSelectedStore] = useState<string>("All");
   const [pageSize, setPageSize] = useState<number>(40);
@@ -2482,7 +2702,16 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
       const store = getStoreBadge(d.platforms, d.affText);
       if (store.tag !== selectedStore) return false;
     }
-    if (filter !== "all" && filter !== "promos" && d.status !== filter) return false;
+    if (filter !== "all" && filter !== "promos") {
+      if (filter === "approved") {
+        if (d.status !== "approved" && d.status !== "auto_posted") return false;
+      } else if (filter === "web_live") {
+        const onWeb = d.liveOnWeb || d.status === "auto_posted" || (d.status === "approved" && (d.destinations?.includes("storefront_only")));
+        if (!onWeb) return false;
+      } else if (d.status !== filter) {
+        return false;
+      }
+    }
     if (search.trim() && !isSearchUrl) {
       const q = search.trim().toLowerCase();
       const searchable = `${d.title} ${d.channel} ${d.category} ${d.originalText}`.toLowerCase();
@@ -2557,7 +2786,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const selectedSplitDeal = pagedVisible.find(d => d.id === selectedSplitId) || pagedVisible[0] || null;
 
   const pending = deals.filter(d => d.status === "pending").length;
-  const approved = deals.filter(d => d.status === "approved").length;
+  const approved = deals.filter(d => d.status === "approved" || d.status === "auto_posted").length;
+  const webLiveCount = deals.filter(d => d.liveOnWeb || d.status === "auto_posted" || (d.status === "approved" && (d.destinations?.includes("storefront_only")))).length;
   const rejected = deals.filter(d => d.status === "rejected").length;
 
   // Velocity and Smart Curation Telemetry
@@ -2719,7 +2949,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0 py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               {[
                 { id: "pending", label: "Pending", count: pending },
-                { id: "approved", label: "Approved", count: approved },
+                { id: "approved", label: "Live / All", count: approved },
+                { id: "web_live", label: "🌐 On Web", count: webLiveCount },
                 { id: "rejected", label: "Rejected", count: rejected },
                 { id: "promos", label: "Promos", count: promos.length },
                 { id: "all", label: "All", count: deals.length },
@@ -2816,7 +3047,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
             {[
               { id: "pending", label: "Pending", count: pending },
-              { id: "approved", label: "Approved", count: approved },
+              { id: "approved", label: "Live / All", count: approved },
+              { id: "web_live", label: "🌐 On Web", count: webLiveCount },
               { id: "rejected", label: "Rejected", count: rejected },
               { id: "promos", label: "Promos", count: promos.length },
               { id: "all", label: "All", count: deals.length },
@@ -3820,22 +4052,45 @@ function PostedDealCard({ deal }: { deal: Deal }) {
           <span className="text-slate-500 font-mono">{fmtAgo(deal.ts)}</span>
           <span className="text-slate-400 font-semibold">{deal.channel}</span>
           <AffiliateMark applied={deal.affiliate} />
+
+          {/* Distribution Badge */}
+          {deal.status === "auto_posted" ? (
+            <span className="px-1.5 py-0.2 rounded-md bg-purple-500/20 border border-purple-500/40 text-[9.5px] font-bold text-purple-300 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-purple-400 animate-ping" />
+              ⚡ Auto-Web
+            </span>
+          ) : deal.liveOnWeb && deal.liveOnTelegram ? (
+            <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-[9.5px] font-bold text-emerald-300">
+              🌐✈️ Web + TG
+            </span>
+          ) : deal.liveOnWeb ? (
+            <span className="px-1.5 py-0.2 rounded-md bg-purple-500/20 border border-purple-500/40 text-[9.5px] font-bold text-purple-300">
+              🌐 Web Storefront
+            </span>
+          ) : deal.liveOnTelegram ? (
+            <span className="px-1.5 py-0.2 rounded-md bg-sky-500/20 border border-sky-500/40 text-[9.5px] font-bold text-sky-300">
+              ✈️ Telegram
+            </span>
+          ) : null}
         </div>
       </div>
-      <button
-        onClick={() => { navigator.clipboard.writeText(deal.affText); toast.success("Copied post text!"); }}
-        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10 cursor-pointer active:scale-95"
-        title="Copy Post"
-      >
-        <Copy size={14} />
-      </button>
+
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        <button
+          onClick={() => { navigator.clipboard.writeText(deal.affText); toast.success("Copied post text!"); }}
+          className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10 cursor-pointer active:scale-95"
+          title="Copy Post"
+        >
+          <Copy size={14} />
+        </button>
+      </div>
     </div>
   );
 }
 
 function PostedView({ deals }: { deals: Deal[] }) {
   const [search, setSearch] = useState("");
-  const postedDeals = deals.filter(d => d.status === "approved");
+  const postedDeals = deals.filter(d => d.status === "approved" || d.status === "auto_posted");
   const filtered = postedDeals.filter(d => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
@@ -4147,6 +4402,8 @@ export default function App() {
     };
   }, [loadDeals, soundAlerts]);
 
+  const undoTimers = useRef<Record<string, any>>({});
+
   const handleApprove = async (id: string, changes?: Partial<Deal>) => {
     triggerApproveConfetti();
     try {
@@ -4155,9 +4412,52 @@ export default function App() {
         tg.HapticFeedback.impactOccurred("medium");
       }
     } catch {}
-    setDeals(prev => prev.map(d => d.id === id ? { ...d, ...(changes || {}), status: "approved" } : d));
-    toast.success("Deal approved & broadcasted!");
-    await apiApprove(id, changes);
+
+    const previousDeal = deals.find(d => d.id === id);
+    const resolvedChanges: any = {
+      ...(changes || {}),
+      destinations: (changes as any)?.destinations || (sendTG ? ["@dealsforindiachannel"] : ["storefront_only"]),
+    };
+    const isStorefrontOnly = resolvedChanges.destinations?.length === 1 && resolvedChanges.destinations[0] === "storefront_only";
+    setDeals(prev => prev.map(d => d.id === id ? {
+      ...d,
+      ...resolvedChanges,
+      status: "approved",
+      liveOnWeb: true,
+      liveOnTelegram: !isStorefrontOnly,
+    } : d));
+
+    if (undoTimers.current[id]) {
+      clearTimeout(undoTimers.current[id]);
+    }
+
+    let isCancelled = false;
+    const toastMsg = isStorefrontOnly
+      ? "🌐 Deal approved — Live on IndiaDealHunts storefront in 5s..."
+      : "🚀 Deal approved — Broadcasting to Telegram & Web in 5s...";
+    toast.success(toastMsg, {
+      duration: 5000,
+      action: {
+        label: "↩️ Undo",
+        onClick: () => {
+          isCancelled = true;
+          if (undoTimers.current[id]) {
+            clearTimeout(undoTimers.current[id]);
+            delete undoTimers.current[id];
+          }
+          playUndo();
+          setDeals(prev => prev.map(d => d.id === id ? { ...d, status: previousDeal?.status || "pending" } : d));
+          toast.info("Approval undone — restored to review deck");
+        }
+      }
+    });
+
+    undoTimers.current[id] = setTimeout(async () => {
+      delete undoTimers.current[id];
+      if (!isCancelled) {
+        await apiApprove(id, resolvedChanges);
+      }
+    }, 5000);
   };
 
   const handleSaveDraft = async (id: string, changes: Partial<Deal>) => {
@@ -4167,9 +4467,37 @@ export default function App() {
   };
 
   const handleReject = async (id: string) => {
+    const previousDeal = deals.find(d => d.id === id);
     setDeals(prev => prev.map(d => d.id === id ? { ...d, status: "rejected" } : d));
-    toast.info("Deal skipped");
-    await apiReject(id);
+
+    if (undoTimers.current[id]) {
+      clearTimeout(undoTimers.current[id]);
+    }
+
+    let isCancelled = false;
+    toast.info("Deal skipped", {
+      duration: 5000,
+      action: {
+        label: "↩️ Undo",
+        onClick: () => {
+          isCancelled = true;
+          if (undoTimers.current[id]) {
+            clearTimeout(undoTimers.current[id]);
+            delete undoTimers.current[id];
+          }
+          playUndo();
+          setDeals(prev => prev.map(d => d.id === id ? { ...d, status: previousDeal?.status || "pending" } : d));
+          toast.success("Deal restored to review deck!");
+        }
+      }
+    });
+
+    undoTimers.current[id] = setTimeout(async () => {
+      delete undoTimers.current[id];
+      if (!isCancelled) {
+        await apiReject(id);
+      }
+    }, 5000);
   };
 
   const handleAddDeal = (deal: Deal) => {
