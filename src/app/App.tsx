@@ -3708,17 +3708,31 @@ function ChannelsView() {
     }
   };
 
-  const toggleAutoApprove = async (id: string, current: boolean) => {
-    setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve: !current } : c)));
+  const toggleAutoApproveTg = async (id: string, current: boolean) => {
+    setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve_tg: !current, auto_approve: !current } : c)));
     try {
-      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve`, { method: "PUT" });
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-tg`, { method: "PUT" });
       if (res.ok) {
-        toast.success(`Auto-Post ${!current ? "Enabled" : "Disabled"}`);
+        toast.success(`Telegram Auto-Post ${!current ? "Enabled" : "Disabled"}`);
       } else {
-        toast.error("Failed to update auto-post");
+        toast.error("Failed to update Telegram auto-post");
       }
     } catch {
-      toast.error("Failed to toggle auto-post");
+      toast.error("Failed to toggle Telegram auto-post");
+    }
+  };
+
+  const toggleAutoApproveWeb = async (id: string, current: boolean) => {
+    setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve_web: !current } : c)));
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-web`, { method: "PUT" });
+      if (res.ok) {
+        toast.success(`Website Auto-Post ${!current ? "Enabled (Image Required)" : "Disabled"}`);
+      } else {
+        toast.error("Failed to update Website auto-post");
+      }
+    } catch {
+      toast.error("Failed to toggle Website auto-post");
     }
   };
 
@@ -3984,12 +3998,36 @@ function ChannelsView() {
                     <LinkIcon size={12} />
                   </button>
 
-                  {/* Auto-Post Toggle */}
-                  <button onClick={() => toggleAutoApprove(ch.id, ch.auto_approve)}
-                    className={`text-[10px] font-bold px-3 py-1 rounded-lg border transition-all flex items-center gap-1.5 ${ch.auto_approve ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm" : "bg-white/5 text-slate-500 border-white/10"}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${ch.auto_approve ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
-                    Auto-Post {ch.auto_approve ? "ON" : "OFF"}
-                  </button>
+                  {/* Dual Independent Auto-Post: Telegram & Website */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* 1. Telegram Auto-Post Toggle */}
+                    <button
+                      onClick={() => toggleAutoApproveTg(ch.id, Boolean(ch.auto_approve_tg ?? ch.auto_approve))}
+                      className={`text-[9.5px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+                        Boolean(ch.auto_approve_tg ?? ch.auto_approve)
+                          ? "bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-sm"
+                          : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
+                      }`}
+                      title="Toggle automatic broadcast to Telegram Channel (@dealsforindiachannel)"
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "bg-sky-400 animate-pulse" : "bg-slate-600"}`} />
+                      <span>✈️ TG {Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "ON" : "OFF"}</span>
+                    </button>
+
+                    {/* 2. Website Auto-Post Toggle */}
+                    <button
+                      onClick={() => toggleAutoApproveWeb(ch.id, Boolean(ch.auto_approve_web))}
+                      className={`text-[9.5px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
+                        Boolean(ch.auto_approve_web)
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm"
+                          : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
+                      }`}
+                      title="Toggle automatic publishing to Website (Strictly requires verified product image)"
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${Boolean(ch.auto_approve_web) ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
+                      <span>🌐 Web {Boolean(ch.auto_approve_web) ? "ON" : "OFF"}</span>
+                    </button>
+                  </div>
                   <button onClick={() => toggleChannel(ch.id, ch.active)}
                     className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${ch.active ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white"}`} title={ch.active ? "Pause" : "Resume"}>
                     {ch.active ? <Check size={12} /> : <X size={12} />}

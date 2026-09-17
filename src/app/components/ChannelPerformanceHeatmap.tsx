@@ -20,6 +20,8 @@ export interface ChannelAnalytics {
   quality_tier: "S-Tier" | "A-Tier" | "B-Tier" | "C-Tier" | "Dormant";
   active: boolean;
   auto_approve: boolean;
+  auto_approve_tg?: boolean;
+  auto_approve_web?: boolean;
   last_active_sec_ago: number;
 }
 
@@ -136,16 +138,29 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
     }
   };
 
-  const toggleAutoApprove = async (id: string, current: boolean) => {
-    setData(prev => prev.map(c => c.channel === id ? { ...c, auto_approve: !current } : c));
+  const toggleAutoApproveTg = async (id: string, current: boolean) => {
+    setData(prev => prev.map(c => c.channel === id ? { ...c, auto_approve_tg: !current, auto_approve: !current } : c));
     try {
-      const res = await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve`, { method: "PUT" });
+      const res = await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-tg`, { method: "PUT" });
       if (res.ok) {
-        toast.success(`Auto-Post ${!current ? "Enabled" : "Disabled"}`);
+        toast.success(`Telegram Auto-Post ${!current ? "Enabled" : "Disabled"}`);
         onRefreshChannels?.();
       }
     } catch {
-      toast.error("Failed to toggle auto-post");
+      toast.error("Failed to toggle Telegram auto-post");
+    }
+  };
+
+  const toggleAutoApproveWeb = async (id: string, current: boolean) => {
+    setData(prev => prev.map(c => c.channel === id ? { ...c, auto_approve_web: !current } : c));
+    try {
+      const res = await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-web`, { method: "PUT" });
+      if (res.ok) {
+        toast.success(`Website Auto-Post ${!current ? "Enabled (Image Required)" : "Disabled"}`);
+        onRefreshChannels?.();
+      }
+    } catch {
+      toast.error("Failed to toggle Website auto-post");
     }
   };
 
@@ -509,13 +524,22 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                                   <span>Link</span>
                                 </button>
                                 <button
-                                  onClick={() => toggleAutoApprove(ch.channel, ch.auto_approve)}
-                                  className={`text-[8.5px] px-1 py-0.2 rounded font-bold transition-all cursor-pointer ${
-                                    ch.auto_approve ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-white/5 text-slate-500 hover:text-slate-300"
+                                  onClick={() => toggleAutoApproveTg(ch.channel, Boolean(ch.auto_approve_tg ?? ch.auto_approve))}
+                                  className={`text-[8px] px-1 py-0.2 rounded font-bold transition-all cursor-pointer ${
+                                    Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "bg-sky-500/20 text-sky-300 border border-sky-500/40" : "bg-white/5 text-slate-500 hover:text-slate-300"
                                   }`}
-                                  title="Toggle Auto-Post"
+                                  title="Telegram Auto-Post: Automatically broadcasts to Telegram Channel"
                                 >
-                                  {ch.auto_approve ? "AUTO" : "MAN"}
+                                  {Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "✈️ TG" : "TG off"}
+                                </button>
+                                <button
+                                  onClick={() => toggleAutoApproveWeb(ch.channel, Boolean(ch.auto_approve_web))}
+                                  className={`text-[8px] px-1 py-0.2 rounded font-bold transition-all cursor-pointer ${
+                                    Boolean(ch.auto_approve_web) ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-white/5 text-slate-500 hover:text-slate-300"
+                                  }`}
+                                  title="Website Auto-Post: Automatically publishes to Website (requires product image)"
+                                >
+                                  {Boolean(ch.auto_approve_web) ? "🌐 Web" : "Web off"}
                                 </button>
                               </div>
                             </div>
@@ -682,15 +706,24 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap">
                   <button
-                    onClick={() => toggleAutoApprove(ch.channel, ch.auto_approve)}
-                    className={`text-[9px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
-                      ch.auto_approve ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-white/5 text-slate-500 hover:text-slate-300 border border-white/10"
+                    onClick={() => toggleAutoApproveTg(ch.channel, Boolean(ch.auto_approve_tg ?? ch.auto_approve))}
+                    className={`text-[8.5px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                      Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "bg-sky-500/20 text-sky-300 border border-sky-500/40" : "bg-white/5 text-slate-500 hover:text-slate-300 border border-white/10"
                     }`}
-                    title="Toggle Auto-Post"
+                    title="Telegram Auto-Post"
                   >
-                    {ch.auto_approve ? "⚡ Auto" : "Manual"}
+                    {Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "✈️ TG Auto" : "TG off"}
+                  </button>
+                  <button
+                    onClick={() => toggleAutoApproveWeb(ch.channel, Boolean(ch.auto_approve_web))}
+                    className={`text-[8.5px] px-1.5 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                      Boolean(ch.auto_approve_web) ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" : "bg-white/5 text-slate-500 hover:text-slate-300 border border-white/10"
+                    }`}
+                    title="Website Auto-Post (Strictly requires product image)"
+                  >
+                    {Boolean(ch.auto_approve_web) ? "🌐 Web Auto" : "Web off"}
                   </button>
                   <span className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border ${getTierColor(ch.quality_tier)}`}>
                     {ch.quality_tier}
