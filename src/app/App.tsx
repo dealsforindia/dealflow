@@ -621,7 +621,7 @@ async function apiRetryAffiliate(id: string): Promise<string | null> {
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/retry-affiliate`, { method: "POST" });
     if (!res.ok) return null;
     const data = await res.json();
-    return data.text || data.affiliate_text || null;
+    return data.aff_text || data.ai_formatted_text || data.text || data.affiliate_text || null;
   } catch { return null; }
 }
 
