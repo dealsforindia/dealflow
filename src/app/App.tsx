@@ -2646,6 +2646,27 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     toast.info(next ? "🔇 Audio haptics muted" : "🔊 Audio haptics enabled");
   };
 
+  const [isRadarScanning, setIsRadarScanning] = useState(false);
+
+  const handleTriggerRadar = async () => {
+    setIsRadarScanning(true);
+    try {
+      toast.loading("⚡ Scanning D2C Brand Clearance Feeds...", { id: "d2c-radar" });
+      const res = await fetch("https://api.rudranil.me/api/v1/radar/d2c", { method: "POST" });
+      const data = await res.json();
+      if (data.status === "ok") {
+        toast.success(`⚡ D2C Radar: ${data.new_deals} drops found (${data.auto_posted} live on storefront!)`, { id: "d2c-radar" });
+        onRefresh?.();
+      } else {
+        toast.info("Radar sweep completed with no new drops", { id: "d2c-radar" });
+      }
+    } catch (e) {
+      toast.error("Failed to reach D2C Radar", { id: "d2c-radar" });
+    } finally {
+      setIsRadarScanning(false);
+    }
+  };
+
   useEffect(() => {
     fetchPromos().then(setPromos);
   }, []);
@@ -2904,6 +2925,19 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           </div>
 
           <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+            <button
+              onClick={handleTriggerRadar}
+              disabled={isRadarScanning}
+              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 shadow-sm ${
+                isRadarScanning
+                  ? "bg-amber-500/25 text-amber-300 border-amber-500/50 animate-pulse"
+                  : "bg-amber-500/15 text-amber-300 border-amber-500/30 hover:border-amber-400 hover:bg-amber-500/25"
+              }`}
+              title="Shopify D2C Brand Clearance Radar (Boat, Snitch, The Man Company, etc.)"
+            >
+              <Zap size={13} className={isRadarScanning ? "animate-spin text-amber-400" : "fill-amber-400 text-amber-400"} />
+              <span className="hidden md:inline">{isRadarScanning ? "Scanning..." : "D2C Radar"}</span>
+            </button>
             <button
               onClick={() => setQuickDropModal(true)}
               className="h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:border-indigo-400 active:scale-95 cursor-pointer shadow-sm"
