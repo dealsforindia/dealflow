@@ -63,6 +63,8 @@ interface Deal {
   destinations?: string[];
   liveOnWeb?: boolean;
   liveOnTelegram?: boolean;
+  desidimeTemperature?: number;
+  isCommunityVerified?: boolean;
 }
 
 interface RawDeal {
@@ -98,6 +100,8 @@ interface RawDeal {
   live_on_web?: boolean;
   live_on_telegram?: boolean;
   broadcast_destinations?: string[];
+  desidime_temperature?: number;
+  is_community_verified?: boolean;
 }
 
 interface AppSettings {
@@ -516,6 +520,8 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     destinations: d.destinations || d.broadcast_destinations || [],
     liveOnWeb: d.live_on_web ?? (d.status === "auto_posted" || d.status === "approved" || Boolean(d.broadcast_destinations?.length)),
     liveOnTelegram: d.live_on_telegram ?? ((d.status === "approved" || Boolean(d.broadcast_destinations?.length)) && !d.broadcast_destinations?.includes("storefront_only") && !d.destinations?.includes("storefront_only")),
+    desidimeTemperature: (d as any).desidime_temperature ?? (d as any).desidimeTemperature ?? undefined,
+    isCommunityVerified: Boolean((d as any).is_community_verified || (d as any).isCommunityVerified || ((d as any).desidime_temperature && (d as any).desidime_temperature >= 200)),
   };
 }
 
@@ -1037,10 +1043,19 @@ function DealCard({
             <div>
               {/* Header: Store + Channel + Distribution Pill + Time */}
               <div className="flex items-center justify-between gap-1">
-                <div className="flex items-center gap-1.5 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <Store3DBadge store={store.tag} />
                   <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[90px]">{deal.channel}</span>
                   <AffiliateMark applied={deal.affiliate} />
+                  {deal.desidimeTemperature !== undefined && deal.desidimeTemperature > 0 && (
+                    <span className={`px-1.5 py-0.2 rounded-md font-mono text-[8.5px] font-black flex items-center gap-0.5 ${
+                      deal.isCommunityVerified || deal.desidimeTemperature >= 200
+                        ? "bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-sm animate-pulse border border-amber-300/40"
+                        : "bg-orange-500/20 text-orange-300 border border-orange-500/30"
+                    }`} title={`DesiDime Community Heat: ${deal.desidimeTemperature}°`}>
+                      🔥 {deal.desidimeTemperature}°
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {deal.status === "auto_posted" ? (
@@ -1267,6 +1282,15 @@ function DealCard({
 
           {/* Loot Badges in Media Box */}
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 flex-wrap justify-end">
+            {deal.desidimeTemperature !== undefined && deal.desidimeTemperature > 0 && (
+              <span className={`px-2.5 py-0.5 rounded-full font-mono text-[9.5px] font-black shadow-md flex items-center gap-1 border backdrop-blur-md ${
+                deal.isCommunityVerified || deal.desidimeTemperature >= 200
+                  ? "bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-500 text-white border-amber-300/50 shadow-orange-500/30 animate-pulse"
+                  : "bg-orange-500/20 text-orange-300 border-orange-500/30"
+              }`} title={`DesiDime Community Heat: ${deal.desidimeTemperature}° (${deal.isCommunityVerified || deal.desidimeTemperature >= 200 ? 'Community Verified Fire' : 'Community Voted'})`}>
+                <span>🔥</span> {deal.desidimeTemperature}° {deal.isCommunityVerified || deal.desidimeTemperature >= 200 ? "VERIFIED" : "HEAT"}
+              </span>
+            )}
             {deal.dealScore !== undefined && deal.dealScore >= 80 && (
               <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 text-white font-mono text-[9.5px] font-black shadow-lg shadow-rose-500/30 flex items-center gap-1 border border-rose-400/40 animate-pulse" title={`AI Deal Intelligence Score: ${deal.dealScore}/100`}>
                 <span>🔥</span> LOOT DROP ({deal.dealScore})
@@ -1570,7 +1594,14 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
         <div className="flex items-center gap-2">
           <Store3DBadge store={store.tag} />
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-white truncate max-w-[200px]">{deal.channel}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-white truncate max-w-[200px]">{deal.channel}</span>
+              {deal.desidimeTemperature !== undefined && deal.desidimeTemperature > 0 && (
+                <span className="px-1.5 py-0.2 rounded font-mono text-[9px] font-black bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                  🔥 {deal.desidimeTemperature}°
+                </span>
+              )}
+            </div>
             <span className="text-[10px] text-zinc-500 font-mono">{fmtAgo(deal.ts)}</span>
           </div>
         </div>
@@ -1973,6 +2004,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [destinations, setDestinations] = useState<string[]>(
     deal.destinations && deal.destinations.length > 0 ? deal.destinations : ["@dealsforindiachannel"]
   );
+  const [previewTab, setPreviewTab] = useState<"telegram" | "diff">("telegram");
 
   useEffect(() => {
     apiGetPriceHistory(deal.id).then(intel => {
@@ -2436,59 +2468,156 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             </div>
           </div>
 
-          {/* Right Live Telegram Mockup */}
+          {/* Right Live Telegram Mockup & Diff Viewer (Feature 8) */}
           <div className="md:col-span-5 p-4 sm:p-5 flex flex-col gap-3 bg-slate-950/70 border-t md:border-t-0 border-white/10">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Telegram Post Preview</span>
-              <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Rendering
-              </span>
+            {/* Tab Switcher Header */}
+            <div className="flex items-center justify-between pb-1 border-b border-white/10">
+              <div className="flex items-center gap-1 bg-white/[0.04] p-0.5 rounded-xl border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setPreviewTab("telegram")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    previewTab === "telegram"
+                      ? "bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <span>📱 TG Preview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewTab("diff")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    previewTab === "diff"
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <FileText size={11} />
+                  <span>🔍 Raw vs AI Diff</span>
+                </button>
+              </div>
+
+              {previewTab === "telegram" ? (
+                <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Rendering
+                </span>
+              ) : (
+                <span className="text-[10px] text-indigo-300 font-semibold flex items-center gap-1">
+                  <span>⚖️ Verification</span>
+                </span>
+              )}
             </div>
 
-            <div className="tg-preview-wrap flex-1 flex flex-col justify-between">
-              <div className="flex flex-col gap-2.5">
-                <div className="tg-preview-header">
-                  <div className="tg-preview-avatar">
-                    {deal.channel ? deal.channel.charAt(0).toUpperCase() : "D"}
-                  </div>
-                  <div>
-                    <div className="tg-preview-name">
-                      {deal.channel} <CheckCheck size={12} className="text-blue-400" />
+            {previewTab === "telegram" ? (
+              <div className="tg-preview-wrap flex-1 flex flex-col justify-between">
+                <div className="flex flex-col gap-2.5">
+                  <div className="tg-preview-header">
+                    <div className="tg-preview-avatar">
+                      {deal.channel ? deal.channel.charAt(0).toUpperCase() : "D"}
                     </div>
-                    <div className="text-[10px] text-slate-400">
-                      {deal.channelRaw.startsWith("@") ? deal.channelRaw : `Telegram Channel · ${deal.channel}`}
+                    <div>
+                      <div className="tg-preview-name">
+                        {deal.channel} <CheckCheck size={12} className="text-blue-400" />
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        {deal.channelRaw.startsWith("@") ? deal.channelRaw : `Telegram Channel · ${deal.channel}`}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="tg-bubble">
+                    {previewSrc && (
+                      <div className="w-full rounded-lg mb-2.5 max-h-52 overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center">
+                        <img src={previewSrc} alt="" className="max-h-52 w-full object-contain p-1"
+                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      </div>
+                    )}
+                    <div className="tg-bubble-text">
+                      {text
+                        .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
+                        .split(/(https?:\/\/\S+)/g)
+                        .map((part, i) =>
+                          /^https?:\/\//.test(part)
+                            ? <a key={i} href={part} className="tg-bubble-link" target="_blank" rel="noreferrer">{part.length > 30 ? part.slice(0, 30) + "…" : part}</a>
+                            : <span key={i} dangerouslySetInnerHTML={{ __html: part }} />
+                        )
+                      }
+                    </div>
+                    <div className="tg-bubble-time">
+                      {new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} ✓✓
                     </div>
                   </div>
                 </div>
 
-                <div className="tg-bubble">
-                  {previewSrc && (
-                    <div className="w-full rounded-lg mb-2.5 max-h-52 overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center">
-                      <img src={previewSrc} alt="" className="max-h-52 w-full object-contain p-1"
-                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                    </div>
-                  )}
-                  <div className="tg-bubble-text">
-                    {text
-                      .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
-                      .split(/(https?:\/\/\S+)/g)
-                      .map((part, i) =>
-                        /^https?:\/\//.test(part)
-                          ? <a key={i} href={part} className="tg-bubble-link" target="_blank" rel="noreferrer">{part.length > 30 ? part.slice(0, 30) + "…" : part}</a>
-                          : <span key={i} dangerouslySetInnerHTML={{ __html: part }} />
-                      )
-                    }
+                <p className="text-[10px] text-slate-500 text-center mt-2">
+                  Exact message delivered to your Telegram subscribers.
+                </p>
+              </div>
+            ) : (
+              /* Raw vs AI Post Diff Viewer (Feature 8) */
+              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1">
+                {/* Diff Verification Badge Bar */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="p-2 rounded-xl bg-slate-900/80 border border-white/10 flex flex-col shadow-inner">
+                    <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Links Status</span>
+                    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 mt-0.5">
+                      {text.includes("http") ? "✓ Link Preserved" : "⚠️ Missing Link"}
+                    </span>
                   </div>
-                  <div className="tg-bubble-time">
-                    {new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} ✓✓
+                  <div className="p-2 rounded-xl bg-slate-900/80 border border-white/10 flex flex-col shadow-inner">
+                    <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Price In Body</span>
+                    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1 mt-0.5">
+                      {price && text.includes(price) ? `✓ ₹${price} present` : "Custom Pricing"}
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-900/80 border border-white/10 flex flex-col shadow-inner">
+                    <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Compactness</span>
+                    <span className="text-xs font-semibold text-indigo-300 flex items-center gap-1 mt-0.5">
+                      {text.length} chars ({text.split("\n").filter(Boolean).length}L)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Diff Stack Panes */}
+                <div className="flex flex-col gap-2.5">
+                  {/* Raw Pane */}
+                  <div className="p-3 rounded-xl bg-[#060810] border border-white/10 shadow-inner">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1">
+                        <span>📥 Original Scraped Message</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setText(deal.originalText || "")}
+                        className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold hover:underline cursor-pointer"
+                        title="Revert post text back to raw original"
+                      >
+                        ↩️ Revert to Raw
+                      </button>
+                    </div>
+                    <pre className="text-[11px] font-mono text-slate-400 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto bg-black/40 p-2.5 rounded-lg border border-white/5 select-text">
+                      {deal.originalText || "No original raw text recorded"}
+                    </pre>
+                  </div>
+
+                  {/* Clean AI Pane */}
+                  <div className="p-3 rounded-xl bg-[#060810] border border-emerald-500/25 shadow-inner">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
+                        <span>🤖 Active Broadcast Post</span>
+                      </span>
+                      <span className="text-[10px] text-emerald-400 font-mono">
+                        Clean AI Ready
+                      </span>
+                    </div>
+                    <pre className="text-[11px] font-mono text-emerald-200/90 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto bg-emerald-950/20 p-2.5 rounded-lg border border-emerald-500/20 select-text">
+                      {text}
+                    </pre>
                   </div>
                 </div>
               </div>
-
-              <p className="text-[10px] text-slate-500 text-center mt-2">
-                Exact message delivered to your Telegram subscribers.
-              </p>
-            </div>
+            )}
           </div>
         </div>
 
@@ -2596,7 +2725,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"latest" | "discount" | "price_asc" | "price_desc">("latest");
+  const [sort, setSort] = useState<"latest" | "temperature" | "discount" | "price_asc" | "price_desc">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "web_live" | "rejected" | "promos" | "all">("pending");
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
   const [selectedStore, setSelectedStore] = useState<string>("All");
@@ -2734,11 +2863,14 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     } else if (smartPreset === "grocery") {
       const cat = d.category.toLowerCase();
       if (!cat.includes("grocery") && !cat.includes("food")) return false;
+    } else if (smartPreset === "desidime_hot") {
+      if (!((d.desidimeTemperature || 0) >= 100 || d.isCommunityVerified)) return false;
     }
     return true;
   });
 
   if (sort === "latest") visible = [...visible].sort((a, b) => b.ts - a.ts);
+  else if (sort === "temperature") visible = [...visible].sort((a, b) => (b.desidimeTemperature || 0) - (a.desidimeTemperature || 0));
   else if (sort === "discount") visible = [...visible].sort((a, b) => b.discount - a.discount);
   else if (sort === "price_asc") visible = [...visible].sort((a, b) => (a.price || 999999) - (b.price || 999999));
   else if (sort === "price_desc") visible = [...visible].sort((a, b) => (b.price || 0) - (a.price || 0));
@@ -2818,7 +2950,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 
   const sortOptions: DropdownOption[] = [
     { value: "latest", label: "Newest First", icon: "⏰" },
-    { value: "discount", label: "Highest % Off", icon: "🔥" },
+    { value: "temperature", label: "DesiDime Heat (°)", icon: "🔥" },
+    { value: "discount", label: "Highest % Off", icon: "⚡" },
     { value: "price_asc", label: "Price: Low to High", icon: "🏷️" },
     { value: "price_desc", label: "Price: High to Low", icon: "💰" },
   ];
@@ -3094,9 +3227,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
             {[
               { id: "all", label: "All" },
-              { id: "loot_drops", label: "🔥 Loot Drops (80+)", count: lootCount },
+              { id: "desidime_hot", label: "🔥 Community Heat", count: deals.filter(d => (d.desidimeTemperature || 0) >= 100 || d.isCommunityVerified).length },
+              { id: "loot_drops", label: "⚡ Loot Drops (80+)", count: lootCount },
               { id: "steal_deals", label: "💎 Steal Deals (60+)", count: stealCount },
-              { id: "under_499", label: "⚡ <₹499", count: under499Count },
+              { id: "under_499", label: "🏷️ <₹499", count: under499Count },
               { id: "electronics", label: "📱 Tech" },
               { id: "fashion", label: "👗 Fashion" },
               { id: "grocery", label: "🛒 Grocery" },
@@ -3269,6 +3403,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                         {d.discount > 0 && (
                           <span className="text-[9px] font-bold px-1 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
                             {Math.round(d.discount)}%
+                          </span>
+                        )}
+                        {d.desidimeTemperature !== undefined && d.desidimeTemperature > 0 && (
+                          <span className="text-[9px] font-bold px-1 rounded bg-orange-500/15 text-orange-300 border border-orange-500/30">
+                            🔥 {d.desidimeTemperature}°
                           </span>
                         )}
                       </div>
