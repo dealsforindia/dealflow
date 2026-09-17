@@ -543,59 +543,19 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
               </button>
             </div>
 
-            {/* Broadcast Destinations Selector (Feature 18) */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 border-b text-xs" style={{ borderColor: "var(--border)", background: "rgba(0,0,0,0.2)" }}>
+
+            {/* Broadcast Destination Info */}
+            <div className="flex items-center justify-between gap-2 px-5 py-2.5 border-b text-xs" style={{ borderColor: "var(--border)", background: "rgba(0,0,0,0.2)" }}>
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Broadcast Targets:
               </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium text-slate-300 hover:text-white cursor-pointer select-none" style={{ background: "var(--bg-secondary)" }}>
-                  <input
-                    type="checkbox"
-                    checked={destinations.includes("@dealsforindiachannel")}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setDestinations(prev => [...prev.filter(d => d !== "storefront_only"), "@dealsforindiachannel"]);
-                      } else {
-                        setDestinations(prev => prev.filter(d => d !== "@dealsforindiachannel"));
-                      }
-                    }}
-                    className="accent-emerald-500 rounded cursor-pointer"
-                  />
-                  <span className="text-emerald-400 font-semibold">@dealsforindiachannel</span>
-                </label>
-
-                <label className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium text-slate-300 hover:text-white cursor-pointer select-none" style={{ background: "var(--bg-secondary)" }}>
-                  <input
-                    type="checkbox"
-                    checked={destinations.includes("@bestindiandeals2025")}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setDestinations(prev => [...prev.filter(d => d !== "storefront_only"), "@bestindiandeals2025"]);
-                      } else {
-                        setDestinations(prev => prev.filter(d => d !== "@bestindiandeals2025"));
-                      }
-                    }}
-                    className="accent-cyan-500 rounded cursor-pointer"
-                  />
-                  <span className="text-cyan-400 font-semibold">@bestindiandeals2025</span>
-                </label>
-
-                <label className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium text-slate-300 hover:text-white cursor-pointer select-none" style={{ background: "var(--bg-secondary)" }}>
-                  <input
-                    type="checkbox"
-                    checked={destinations.includes("storefront_only") || destinations.length === 0}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setDestinations(["storefront_only"]);
-                      } else {
-                        setDestinations(["@dealsforindiachannel"]);
-                      }
-                    }}
-                    className="accent-purple-500 rounded cursor-pointer"
-                  />
-                  <span className="text-purple-400 font-semibold">Web Storefront Only</span>
-                </label>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20">
+                  ✈️ @dealsforindiachannel
+                </span>
+                <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20">
+                  🌐 IndiaDealHunts Web
+                </span>
               </div>
             </div>
 
@@ -617,11 +577,11 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
                 Save Draft
               </button>
               <button
-                onClick={() => { onSaveApprove(changes); onClose(); }}
+                onClick={() => { onSaveApprove({ ...changes, destinations: ["@dealsforindiachannel"] }); onClose(); }}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-slate-950 transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 cursor-pointer"
                 style={{ background: "linear-gradient(135deg, #10B981 0%, #06B6D4 100%)" }}
               >
-                <Check size={16} strokeWidth={3} /> Save & Approve
+                <Check size={16} strokeWidth={3} /> Save & Broadcast
               </button>
             </div>
           </div>

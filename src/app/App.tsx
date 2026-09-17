@@ -1141,21 +1141,12 @@ function DealCard({
               </button>
 
               <button
-                onClick={() => handleApproveWithSound(deal.id, { destinations: ["storefront_only"] })}
-                className="h-8 px-2.5 rounded-xl text-xs font-bold text-purple-200 flex items-center justify-center gap-1 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 active:scale-95 cursor-pointer flex-1 transition-all shadow-sm"
-                title="Publish directly to IndiaDealHunts Web Storefront (Skip Telegram)"
-              >
-                <span>🌐</span>
-                <span className="truncate">Web Only</span>
-              </button>
-
-              <button
                 onClick={() => handleApproveWithSound(deal.id)}
-                className="h-8 px-3 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[1.3] transition-all"
-                title="Approve & Broadcast to Telegram and Web"
+                className="h-8 px-3.5 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all"
+                title="Approve — Goes live on IndiaDealHunts storefront"
               >
                 <Check size={13} strokeWidth={3} />
-                <span className="truncate">Post All</span>
+                <span className="truncate">Approve</span>
               </button>
             </>
           ) : (
@@ -1190,17 +1181,7 @@ function DealCard({
                 )}
               </div>
 
-              {/* Quick Push to Telegram if deal is currently Web-Only */}
-              {((deal.liveOnWeb && !deal.liveOnTelegram) || deal.status === "auto_posted") && (
-                <button
-                  onClick={() => handleApproveWithSound(deal.id, { destinations: ["@dealsforindiachannel", "@bestindiandeals2025"] })}
-                  className="h-8 px-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-200 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-                  title="Push this web deal to Telegram Channel Subscribers"
-                >
-                  <span>✈️</span>
-                  <span>Push TG</span>
-                </button>
-              )}
+
 
               <button
                 onClick={() => onEdit(deal)}
@@ -1450,15 +1431,8 @@ function DealCard({
                 <button onClick={() => onEdit(deal)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Edit & Tune">
                   <PenLine size={13} /><span className="ml-1.5">Tune</span>
                 </button>
-                <button
-                  onClick={() => handleApproveWithSound(deal.id, { destinations: ["storefront_only"] })}
-                  className="h-9 px-3 rounded-xl text-xs font-bold text-purple-200 flex items-center justify-center gap-1 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 active:scale-95 cursor-pointer flex-1 transition-all shadow-sm"
-                  title="Approve to IndiaDealHunts Web Storefront Only"
-                >
-                  <span>🌐</span><span>Web Only</span>
-                </button>
-                <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-3.5 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[1.2] transition-all" title="Approve & Broadcast to Telegram and Web">
-                  <Check size={14} strokeWidth={3} /><span>Post All</span>
+                <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all" title="Approve — Goes live on IndiaDealHunts storefront">
+                  <Check size={14} strokeWidth={3} /><span>Approve</span>
                 </button>
               </div>
             ) : (
@@ -1481,16 +1455,7 @@ function DealCard({
                   )}
                 </div>
 
-                {((deal.liveOnWeb && !deal.liveOnTelegram) || deal.status === "auto_posted") && (
-                  <button
-                    onClick={() => handleApproveWithSound(deal.id, { destinations: ["@dealsforindiachannel", "@bestindiandeals2025"] })}
-                    className="h-8 px-2.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-200 text-xs font-bold flex items-center gap-1 cursor-pointer transition-all active:scale-95"
-                    title="Push this web deal to Telegram Channel Subscribers"
-                  >
-                    <span>✈️</span>
-                    <span>Push TG</span>
-                  </button>
-                )}
+
 
                 <button onClick={() => onEdit(deal)} className="h-8 px-3 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-zinc-400 hover:text-white text-xs font-medium cursor-pointer">
                   <PenLine size={12} className="mr-1" /> View
@@ -1740,29 +1705,13 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
               mrp: Number(mrp) || deal.mrp,
               affText: text,
               imgUrl,
-              destinations: ["storefront_only"],
-            });
-            triggerApproveConfetti();
-          }}
-          className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer shadow-sm"
-          title="Approve to IndiaDealHunts Web Storefront Only"
-        >
-          <span>🌐</span> Web Only
-        </button>
-        <button
-          onClick={() => {
-            onApprove(deal.id, {
-              title,
-              price: Number(price) || deal.price,
-              mrp: Number(mrp) || deal.mrp,
-              affText: text,
-              imgUrl,
             });
             triggerApproveConfetti();
           }}
           className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-emerald-400 via-emerald-300 to-teal-400 hover:from-emerald-300 hover:to-teal-300 flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/30 active:scale-95 transition-all cursor-pointer"
+          title="Approve — Goes live on IndiaDealHunts storefront"
         >
-          <Check size={15} strokeWidth={3} /> Post All
+          <Check size={15} strokeWidth={3} /> Approve
         </button>
       </div>
     </div>
@@ -2623,68 +2572,23 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           </div>
         </div>
 
-        {/* Broadcast Destinations Selector (Feature 18) */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 px-4 sm:px-6 py-2.5 bg-[#080B14] border-t border-white/10 text-xs">
+        {/* Broadcast Destination Info */}
+        <div className="flex items-center justify-between gap-2.5 px-4 sm:px-6 py-2.5 bg-[#080B14] border-t border-white/10 text-xs">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" /> Broadcast Destinations:
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" /> Destination:
+            </span>
+            <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20">
+              ✈️ @dealsforindiachannel
+            </span>
+            <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20">
+              🌐 IndiaDealHunts Web
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <label className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 cursor-pointer text-slate-300 hover:text-white transition-all select-none">
-              <input
-                type="checkbox"
-                checked={destinations.includes("@dealsforindiachannel")}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setDestinations(prev => [...prev.filter(d => d !== "storefront_only"), "@dealsforindiachannel"]);
-                  } else {
-                    setDestinations(prev => prev.filter(d => d !== "@dealsforindiachannel"));
-                  }
-                }}
-                className="accent-emerald-500 rounded cursor-pointer"
-              />
-              <span className="text-[11px] font-semibold text-emerald-300">@dealsforindiachannel</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-bold">Primary</span>
-            </label>
-
-            <label className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 cursor-pointer text-slate-300 hover:text-white transition-all select-none">
-              <input
-                type="checkbox"
-                checked={destinations.includes("@bestindiandeals2025")}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setDestinations(prev => [...prev.filter(d => d !== "storefront_only"), "@bestindiandeals2025"]);
-                  } else {
-                    setDestinations(prev => prev.filter(d => d !== "@bestindiandeals2025"));
-                  }
-                }}
-                className="accent-cyan-500 rounded cursor-pointer"
-              />
-              <span className="text-[11px] font-semibold text-cyan-300">@bestindiandeals2025</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-400 font-bold">Secondary</span>
-            </label>
-
-            <label className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/5 cursor-pointer text-slate-300 hover:text-white transition-all select-none">
-              <input
-                type="checkbox"
-                checked={destinations.includes("storefront_only") || destinations.length === 0}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setDestinations(["storefront_only"]);
-                  } else {
-                    setDestinations(["@dealsforindiachannel"]);
-                  }
-                }}
-                className="accent-purple-500 rounded cursor-pointer"
-              />
-              <span className="text-[11px] font-semibold text-purple-300">Web Storefront Only</span>
-              <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/20 text-purple-400 font-bold">Skip TG</span>
-            </label>
-          </div>
+          <span className="text-[10px] text-slate-500 italic hidden sm:inline">Broadcasts to Telegram & Storefront</span>
         </div>
 
-        {/* Sticky Footer Actions with 3D Rocket */}
+        {/* Sticky Footer Actions */}
         <div className="sticky bottom-0 z-30 flex items-center justify-between px-3 sm:px-6 py-3 border-t border-white/10 bg-[#060810]/95 backdrop-blur-xl gap-2">
           <button onClick={onClose}
             className="px-3 sm:px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors cursor-pointer">
@@ -2695,23 +2599,11 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               className="hidden sm:inline-flex px-3 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer">
               Save Draft
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                onSaveApprove({ ...changes, destinations: ["storefront_only"] });
-                onClose();
-              }}
-              className="px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold text-purple-200 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-purple-500/20"
-              title="Publish directly to IndiaDealHunts website only (skip Telegram)"
-            >
-              <span>🌐</span>
-              <span>Web Only</span>
-            </button>
             <button onClick={() => { onSaveApprove(changes); onClose(); }}
               className="px-3.5 sm:px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-1.5 cursor-pointer">
               <RocketBroadcast3D size={15} />
               <span className="hidden min-[400px]:inline">Save &amp; Broadcast</span>
-              <span className="min-[400px]:hidden">Post All</span>
+              <span className="min-[400px]:hidden">Approve</span>
             </button>
           </div>
         </div>
@@ -2733,7 +2625,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [selectedStore, setSelectedStore] = useState<string>("All");
   const [pageSize, setPageSize] = useState<number>(40);
   const [page, setPage] = useState(1);
-  const [sendTG, setSendTG] = useState(true);
   const [sendX, setSendX] = useState(false);
   const [promos, setPromos] = useState<any[]>([]);
   const [isDropping, setIsDropping] = useState(false);
@@ -3032,16 +2923,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             >
               <CheckSquare size={13} />
               <span className="hidden md:inline">{bulkMode ? "Cancel" : "Select"}</span>
-            </button>
-            <button
-              onClick={() => setSendTG(!sendTG)}
-              className={`hidden sm:flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold transition-all border ${
-                sendTG
-                  ? "bg-emerald-600/90 text-white border-emerald-500 shadow-sm"
-                  : "bg-white/[0.04] border-white/10 text-slate-400 opacity-60"
-              }`}
-            >
-              <Send size={11} /> <span>TG</span>
             </button>
             <button
               onClick={handleToggleSound}
@@ -4476,6 +4357,7 @@ export default function App() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [dark, setDark] = useState(true);
+
   const [soundAlerts, setSoundAlerts] = useState<boolean>(() => {
     try {
       return localStorage.getItem("dealflow_sound_alerts") !== "false";
@@ -4495,10 +4377,33 @@ export default function App() {
     } catch {}
   }, []);
 
-  const loadDeals = useCallback(async () => {
+  const undoTimers = useRef<Record<string, any>>({});
+
+  const loadDeals = useCallback(async (opts?: { skipOptimistic?: boolean }) => {
     try {
       const apiDeals = await fetchPendingDeals();
-      setDeals(apiDeals);
+      setDeals(prev => {
+        // During undo windows, merge server data without overwriting optimistic status changes
+        const activeUndoIds = new Set(Object.keys(undoTimers.current));
+        if (activeUndoIds.size === 0 && !opts?.skipOptimistic) {
+          return apiDeals;
+        }
+        // Merge: keep optimistic state for deals with active undo timers
+        const serverMap = new Map(apiDeals.map(d => [d.id, d]));
+        const mergedIds = new Set<string>();
+        const merged = prev.map(d => {
+          mergedIds.add(d.id);
+          const serverDeal = serverMap.get(d.id);
+          if (!serverDeal) return d; // deal removed from server, keep local
+          if (activeUndoIds.has(d.id)) return d; // preserve optimistic state
+          return serverDeal;
+        });
+        // Add any new deals from server that weren't in local state
+        for (const sd of apiDeals) {
+          if (!mergedIds.has(sd.id)) merged.push(sd);
+        }
+        return merged.sort((a, b) => b.ts - a.ts);
+      });
     } catch (e) {
       console.error("Failed to load deals", e);
     }
@@ -4506,7 +4411,7 @@ export default function App() {
 
   useEffect(() => {
     loadDeals();
-    const timer = setInterval(loadDeals, 30000);
+    const timer = setInterval(() => loadDeals(), 30000);
     return () => clearInterval(timer);
   }, [loadDeals]);
 
@@ -4521,6 +4426,10 @@ export default function App() {
           try {
             const data = JSON.parse(e.data);
             if (data.event === "new_deal" || data.event === "deal_approved") {
+              // Skip self-triggered deal_approved events during undo window
+              if (data.event === "deal_approved" && data.fp_hash && undoTimers.current[data.fp_hash]) {
+                return; // We already have optimistic state for this deal
+              }
               if (data.event === "new_deal" && soundAlerts) {
                 playAlertChime();
                 toast("⚡ New Deal Received!", { icon: "🔥" });
@@ -4543,7 +4452,7 @@ export default function App() {
     };
   }, [loadDeals, soundAlerts]);
 
-  const undoTimers = useRef<Record<string, any>>({});
+
 
   const handleApprove = async (id: string, changes?: Partial<Deal>) => {
     triggerApproveConfetti();
@@ -4555,17 +4464,17 @@ export default function App() {
     } catch {}
 
     const previousDeal = deals.find(d => d.id === id);
+    // Manual dashboard approval broadcasts to Telegram (@dealsforindiachannel) and posts to IndiaDealHunts Web
     const resolvedChanges: any = {
       ...(changes || {}),
-      destinations: (changes as any)?.destinations || (sendTG ? ["@dealsforindiachannel"] : ["storefront_only"]),
+      destinations: (changes as any)?.destinations || ["@dealsforindiachannel"],
     };
-    const isStorefrontOnly = resolvedChanges.destinations?.length === 1 && resolvedChanges.destinations[0] === "storefront_only";
     setDeals(prev => prev.map(d => d.id === id ? {
       ...d,
       ...resolvedChanges,
       status: "approved",
       liveOnWeb: true,
-      liveOnTelegram: !isStorefrontOnly,
+      liveOnTelegram: true,
     } : d));
 
     if (undoTimers.current[id]) {
@@ -4573,10 +4482,7 @@ export default function App() {
     }
 
     let isCancelled = false;
-    const toastMsg = isStorefrontOnly
-      ? "🌐 Deal approved — Live on IndiaDealHunts storefront in 5s..."
-      : "🚀 Deal approved — Broadcasting to Telegram & Web in 5s...";
-    toast.success(toastMsg, {
+    toast.success("🚀 Deal approved — Broadcasting to Telegram & Web in 5s...", {
       duration: 5000,
       action: {
         label: "↩️ Undo",
