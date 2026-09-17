@@ -457,7 +457,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
       }
       return false;
     })(),
-    coupon: d.coupon || null,
+    coupon: (d.coupon && !d.coupon.includes("://") && !d.coupon.includes("/") && !d.coupon.toLowerCase().includes("http")) ? d.coupon : null,
     couponDiscount: d.coupon_discount ?? (d as any).coupon_discount ?? null,
     effectivePrice: d.effective_price ?? (d as any).effective_price ?? null,
     imgUrl: (() => {
@@ -1408,8 +1408,10 @@ function DealCard({
                   </div>
                   {savings > 0 && <SavingsPill3D amount={savings} />}
                 </>
-              ) : (
+              ) : (deal.mrp > 0 || deal.dealType === "trick" || /free|loot|₹0\b|rs\.?\s*0\b/i.test(deal.title)) ? (
                 <span className="text-xs font-black text-amber-400 flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg"><span>⚡</span> Freebie Loot</span>
+              ) : (
+                <span className="text-xs font-medium text-zinc-400 flex items-center gap-1 bg-zinc-800/60 border border-zinc-700/40 px-2 py-0.5 rounded-lg"><span>🏷️</span> Price at Store</span>
               )}
             </div>
 
