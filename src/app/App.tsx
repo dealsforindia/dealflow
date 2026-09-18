@@ -10,7 +10,7 @@ import {
   Maximize2, Copy, Link as LinkIcon, FileText,
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
-  LayoutGrid, Columns, Smartphone, CornerDownLeft, Command, List,
+  LayoutGrid, Columns, Smartphone, CornerDownLeft, Command,
   Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History, Network
 } from "lucide-react";
 import {
@@ -1540,17 +1540,14 @@ function DealCard({
           <div className="pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
             {deal.status === "pending" ? (
               <div className="flex items-center gap-1.5">
-                <button onClick={() => handleRejectWithSound(deal.id)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Skip [S]">
+                <button onClick={() => handleRejectWithSound(deal.id)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Skip">
                   <X size={14} strokeWidth={2.5} /><span className="ml-1">Skip</span>
-                  {isActive && <kbd className="ml-1.5 text-[9px] px-1 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono font-bold">S</kbd>}
                 </button>
-                <button onClick={() => onEdit(deal)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Edit & Tune [E]">
+                <button onClick={() => onEdit(deal)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Edit & Tune">
                   <PenLine size={13} /><span className="ml-1.5">Tune</span>
-                  {isActive && <kbd className="ml-1.5 text-[9px] px-1 py-0.2 rounded bg-white/10 text-amber-300 border border-white/10 font-mono font-bold">E</kbd>}
                 </button>
-                <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all" title="Approve [A] — Goes live on IndiaDealHunts storefront">
+                <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all" title="Approve — Goes live on IndiaDealHunts storefront">
                   <Check size={14} strokeWidth={3} /><span>Approve</span>
-                  {isActive && <kbd className="ml-1 text-[9px] px-1.5 py-0.2 rounded bg-slate-950/50 text-slate-950 border border-black/20 font-mono font-black">A</kbd>}
                 </button>
               </div>
             ) : (
@@ -2737,7 +2734,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
 }) {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<"latest" | "temperature" | "discount" | "price_asc" | "price_desc" | "consensus">("latest");
+  const [sort, setSort] = useState<"latest" | "temperature" | "discount" | "price_asc" | "price_desc">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "web_live" | "rejected" | "promos" | "all">("pending");
   const [selectedChannel, setSelectedChannel] = useState<string>("All");
   const [selectedStore, setSelectedStore] = useState<string>("All");
@@ -2757,7 +2754,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [soundMuted, setSoundMutedState] = useState<boolean>(isSoundMuted());
   const [heatmapModalOpen, setHeatmapModalOpen] = useState(false);
   const [topologyModalOpen, setTopologyModalOpen] = useState(false);
-  const [hotkeyModalOpen, setHotkeyModalOpen] = useState(false);
 
   const handleToggleSound = () => {
     const next = toggleSound();
@@ -2788,6 +2784,18 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 
   useEffect(() => {
     fetchPromos().then(setPromos);
+  }, []);
+
+  // Cmd+K / Ctrl+K Universal Command Palette
+  useEffect(() => {
+    const handleCmdK = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleCmdK);
+    return () => window.removeEventListener("keydown", handleCmdK);
   }, []);
 
   const handleQuickDrop = async (url: string) => {
@@ -2944,95 +2952,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const pagedVisible = pageSize === 9999 ? visible : visible.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const selectedSplitDeal = pagedVisible.find(d => d.id === selectedSplitId) || pagedVisible[0] || null;
 
-  // ─── Curator Velocity Turbo Hotkeys (J, K, A, W, S, X, E, ?, Cmd+K) ───
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) {
-        return;
-      }
-
-      if (commandPaletteOpen || quickDropModal || heatmapModalOpen || topologyModalOpen || hotkeyModalOpen) {
-        if (e.key === "Escape") {
-          setHotkeyModalOpen(false);
-        }
-        return;
-      }
-
-      // Universal Command Palette: Cmd+K / Ctrl+K
-      if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
-        e.preventDefault();
-        setCommandPaletteOpen(prev => !prev);
-        return;
-      }
-
-      // Hotkey Cheatsheet: '?'
-      if (e.key === "?") {
-        e.preventDefault();
-        setHotkeyModalOpen(prev => !prev);
-        return;
-      }
-
-      // Next Deal: J or ArrowDown
-      if (e.key === "j" || e.key === "J" || e.key === "ArrowDown") {
-        e.preventDefault();
-        setActiveIndex(prev => (prev < pagedVisible.length - 1 ? prev + 1 : 0));
-        return;
-      }
-
-      // Previous Deal: K or ArrowUp
-      if (e.key === "k" || e.key === "K" || e.key === "ArrowUp") {
-        e.preventDefault();
-        setActiveIndex(prev => (prev > 0 ? prev - 1 : pagedVisible.length - 1));
-        return;
-      }
-
-      const currentDeal = activeIndex >= 0 && activeIndex < pagedVisible.length ? pagedVisible[activeIndex] : null;
-
-      // 'A': Quick Approve (TG + Web)
-      if ((e.key === "a" || e.key === "A") && !e.ctrlKey && !e.metaKey) {
-        if (currentDeal && currentDeal.status === "pending") {
-          e.preventDefault();
-          onApprove(currentDeal.id);
-          toast.success(`🚀 [A] Approved: ${currentDeal.title.slice(0, 30)}...`);
-        }
-        return;
-      }
-
-      // 'W': Web-only Approve
-      if ((e.key === "w" || e.key === "W") && !e.ctrlKey && !e.metaKey) {
-        if (currentDeal && currentDeal.status === "pending") {
-          e.preventDefault();
-          onApprove(currentDeal.id, { destinations: ["storefront_only"] });
-          toast.success(`🌐 [W] Approved (Web Only): ${currentDeal.title.slice(0, 30)}...`);
-        }
-        return;
-      }
-
-      // 'S' or 'X': Skip / Reject
-      if ((e.key === "s" || e.key === "S" || e.key === "x" || e.key === "X") && !e.ctrlKey && !e.metaKey) {
-        if (currentDeal && currentDeal.status === "pending") {
-          e.preventDefault();
-          onReject(currentDeal.id);
-          toast.info(`🗑️ [S] Skipped: ${currentDeal.title.slice(0, 30)}...`);
-        }
-        return;
-      }
-
-      // 'E': Tune / Edit Modal
-      if ((e.key === "e" || e.key === "E") && !e.ctrlKey && !e.metaKey) {
-        if (currentDeal) {
-          e.preventDefault();
-          onEdit(currentDeal);
-        }
-        return;
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIndex, pagedVisible, commandPaletteOpen, quickDropModal, heatmapModalOpen, topologyModalOpen, hotkeyModalOpen, onApprove, onReject, onEdit]);
-
   const pending = deals.filter(d => d.status === "pending").length;
   const approved = deals.filter(d => d.status === "approved" || d.status === "auto_posted").length;
   const webLiveCount = deals.filter(d => d.liveOnWeb || d.status === "auto_posted" || (d.status === "approved" && (d.destinations?.includes("storefront_only")))).length;
@@ -3176,16 +3095,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             >
               {soundMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
               <span className="hidden lg:inline">{soundMuted ? "Muted" : "Audio"}</span>
-            </button>
-
-            {/* Turbo Hotkeys Guide Button */}
-            <button
-              onClick={() => setHotkeyModalOpen(true)}
-              className="h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border border-white/10 bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08] cursor-pointer active:scale-95"
-              title="Curator Turbo Hotkeys (?)"
-            >
-              <Keyboard size={13} className="text-emerald-400" />
-              <span className="hidden lg:inline">Hotkeys</span>
             </button>
           </div>
         </div>
@@ -3594,7 +3503,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           /* Gallery Grid View */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
             <AnimatePresence mode="popLayout">
-              {pagedVisible.map((d, idx) => (
+              {pagedVisible.map((d) => (
                 <DealCard
                   key={d.id}
                   deal={d}
@@ -3604,7 +3513,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                   selected={selectedIds.has(d.id)}
                   onToggleSelect={toggleSelect}
                   bulkMode={bulkMode}
-                  isActive={activeIndex === idx}
                 />
               ))}
             </AnimatePresence>
@@ -3830,84 +3738,6 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                 title="DealFlow System Architecture"
                 className="w-full h-full border-0"
               />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Curator Turbo Hotkeys Cheatsheet Modal */}
-      {hotkeyModalOpen && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-gradient-to-b from-[#0F1424] to-[#090C16] border border-emerald-500/30 rounded-3xl p-6 shadow-2xl text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-              <div className="flex items-center gap-2.5 font-black text-base text-white">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <Keyboard size={18} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-white">Curator Turbo Hotkeys</h3>
-                  <p className="text-[11px] text-slate-400 font-normal">Navigate and publish deals without touching the mouse</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setHotkeyModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                <span className="text-slate-300 font-medium">Select Next / Previous Deal</span>
-                <div className="flex items-center gap-1 font-mono font-bold text-[11px]">
-                  <kbd className="px-2 py-0.5 rounded bg-white/10 text-emerald-400 border border-white/10">J</kbd>
-                  <kbd className="px-2 py-0.5 rounded bg-white/10 text-emerald-400 border border-white/10">K</kbd>
-                  <span className="text-slate-500 text-[10px]">or</span>
-                  <kbd className="px-2 py-0.5 rounded bg-white/10 text-slate-300 border border-white/10">↓</kbd>
-                  <kbd className="px-2 py-0.5 rounded bg-white/10 text-slate-300 border border-white/10">↑</kbd>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                <span className="text-slate-300 font-medium">Approve & Broadcast (TG + Web)</span>
-                <kbd className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[11px]">A</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                <span className="text-slate-300 font-medium">Approve (Web Storefront Only)</span>
-                <kbd className="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-mono font-bold text-[11px]">W</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                <span className="text-slate-300 font-medium">Skip / Reject Deal</span>
-                <div className="flex items-center gap-1 font-mono font-bold text-[11px]">
-                  <kbd className="px-2.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">S</kbd>
-                  <span className="text-slate-500 text-[10px]">or</span>
-                  <kbd className="px-2.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">X</kbd>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                <span className="text-slate-300 font-medium">Tune / Open Edit Modal</span>
-                <kbd className="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono font-bold text-[11px]">E</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                <span className="text-slate-300 font-medium">Universal Command Palette</span>
-                <kbd className="px-2.5 py-0.5 rounded bg-white/10 text-slate-300 border border-white/10 font-mono font-bold text-[11px]">⌘K / Ctrl+K</kbd>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                <span className="text-slate-300 font-medium">Toggle This Cheatsheet</span>
-                <kbd className="px-2.5 py-0.5 rounded bg-white/10 text-slate-300 border border-white/10 font-mono font-bold text-[11px]">?</kbd>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-white/10 text-center">
-              <p className="text-[11px] text-slate-400">
-                Tip: Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-emerald-300 font-mono">J</kbd> to focus the first card, then tap <kbd className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">A</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono">S</kbd> to curate 3x faster.
-              </p>
             </div>
           </div>
         </div>
