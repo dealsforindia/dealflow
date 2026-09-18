@@ -11,7 +11,7 @@ import {
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
   LayoutGrid, Columns, Smartphone, CornerDownLeft, Command,
-  Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History, Network
+  Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History, Network, Cpu
 } from "lucide-react";
 import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
@@ -22,6 +22,7 @@ import {
 } from "./components/Iconscout3DAssets";
 import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
 import { ChannelPerformanceHeatmap } from "./components/ChannelPerformanceHeatmap";
+import { SmartAutoRulesDeck } from "./components/SmartAutoRulesDeck";
 import {
   playApprove, playReject, playCopy, playTick, playUndo,
   isSoundMuted, toggleSound
@@ -3750,7 +3751,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 function ChannelsView() {
   const [chs, setChs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [channelSubTab, setChannelSubTab] = useState<"directory" | "heatmap">("directory");
+  const [channelSubTab, setChannelSubTab] = useState<"directory" | "heatmap" | "auto_rules">("directory");
   const [showAdd, setShowAdd] = useState(false);
   const [newChannelInput, setNewChannelInput] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -4008,10 +4009,24 @@ function ChannelsView() {
           <span>24H Channel Velocity Heatmap</span>
           <span className="px-1.5 py-0.2 rounded-md bg-white/20 text-white text-[9px] font-mono font-bold">LIVE</span>
         </button>
+        <button
+          onClick={() => setChannelSubTab("auto_rules")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            channelSubTab === "auto_rules"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <Cpu size={14} className="text-emerald-300" />
+          <span>🤖 Smart Auto-Rules v2</span>
+          <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/30 text-emerald-200 text-[9px] font-mono font-bold">24/7 AUTO</span>
+        </button>
       </div>
 
       {channelSubTab === "heatmap" ? (
         <ChannelPerformanceHeatmap apiBase={API_BASE} onRefreshChannels={fetchChannels} />
+      ) : channelSubTab === "auto_rules" ? (
+        <SmartAutoRulesDeck apiBase={API_BASE} />
       ) : (
         <>
           {/* Header */}
