@@ -2976,7 +2976,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   ];
 
   const sortOptions: DropdownOption[] = [
-    { value: "latest", label: "Newest (Consensus First)", icon: "⏰" },
+    { value: "latest", label: "Newest Drops First", icon: "⏰" },
     { value: "consensus", label: "Consensus (Multi-Channel)", icon: "🔥" },
     { value: "temperature", label: "DesiDime Heat (°)", icon: "🔥" },
     { value: "discount", label: "Highest % Off", icon: "⚡" },
