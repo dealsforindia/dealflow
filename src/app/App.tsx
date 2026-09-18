@@ -505,7 +505,32 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     clusterId: d.cluster_id,
     clusterCount: d.cluster_size || d.cluster_count || (d.cluster_channels?.length ? d.cluster_channels.length + 1 : 1),
     isClusterHead: d.is_cluster_head !== false,
-    clusterChannels: d.cluster_sources || d.cluster_channels || [],
+    clusterChannels: (() => {
+      const raw = d.cluster_sources || d.cluster_channels || [];
+      const valid = raw
+        .map((c: any) => ({
+          name: (c.name || c.channel || "").trim(),
+          channel: (c.channel || c.name || "").trim(),
+          price: c.sale_price ?? c.price,
+          ts: c.created_at ?? c.ts
+        }))
+        .filter((c: any) => {
+          const n = c.name.toLowerCase();
+          return n && !n.includes("unknown") && n !== "null" && n !== "none";
+        });
+      
+      // Deduplicate by name
+      const seen = new Set<string>();
+      const deduped: any[] = [];
+      for (const item of valid) {
+        const key = item.name.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          deduped.push(item);
+        }
+      }
+      return deduped;
+    })(),
     bestPrice: d.best_price,
     bestChannel: d.best_channel,
     affiliateWarn: d.affiliate_warn,
@@ -880,13 +905,12 @@ function DealCard({
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const store = getStoreBadge(deal.platforms, deal.affText);
   const isConsensus = Boolean(
-    (deal.clusterCount && deal.clusterCount >= 2) ||
     (deal.clusterChannels && deal.clusterChannels.length >= 2) ||
     (deal.dealBadges && deal.dealBadges.some(b => b.toLowerCase().includes("consensus") || b.toLowerCase().includes("spotted by")))
   );
-  const clusterSize = deal.clusterCount && deal.clusterCount >= 2
-    ? deal.clusterCount
-    : (deal.clusterChannels?.length ? deal.clusterChannels.length : 1);
+  const clusterSize = deal.clusterChannels && deal.clusterChannels.length >= 2
+    ? deal.clusterChannels.length
+    : (deal.clusterCount && deal.clusterCount >= 2 ? deal.clusterCount : 1);
   const displayPrice = deal.bestPrice && deal.bestPrice < deal.price ? deal.bestPrice : deal.price;
   const savings = deal.mrp > displayPrice ? deal.mrp - displayPrice : 0;
   const isUnder299 = displayPrice > 0 && displayPrice <= 299;
@@ -1145,7 +1169,7 @@ function DealCard({
             )}
 
             {/* Multi-Channel Consensus Attribution Pills on Mobile */}
-            {isConsensus && deal.clusterChannels && deal.clusterChannels.length > 0 && (
+            {isConsensus && deal.clusterChannels && deal.clusterChannels.length >= 2 && (
               <div className="mt-1 flex items-center gap-1 flex-wrap">
                 <span className="text-[8.5px] font-bold text-amber-300">📡 Spotted by:</span>
                 {deal.clusterChannels.slice(0, 3).map((cc, i) => (
@@ -1472,12 +1496,12 @@ function DealCard({
             )}
 
             {/* Multi-Channel Consensus Attribution Pills */}
-            {isConsensus && deal.clusterChannels && deal.clusterChannels.length > 0 && (
+            {isConsensus && deal.clusterChannels && deal.clusterChannels.length >= 2 && (
               <div className="mt-2 pt-2 border-t border-amber-500/15 flex items-center gap-1.5 flex-wrap">
                 <span className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
                   <span>📡</span> Spotted on:
                 </span>
-                {deal.clusterChannels.map((cc, i) => (
+                {deal.clusterChannels.slice(0, 3).map((cc, i) => (
                   <span
                     key={i}
                     className="text-[9.5px] font-medium px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/25 text-amber-200 flex items-center gap-1"
@@ -1489,6 +1513,11 @@ function DealCard({
                     ) : null}
                   </span>
                 ))}
+                {deal.clusterChannels.length > 3 && (
+                  <span className="text-[8.5px] text-amber-400/80 font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/5 border border-amber-500/20">
+                    +{deal.clusterChannels.length - 3} more
+                  </span>
+                )}
               </div>
             )}
 
@@ -2861,12 +2890,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   });
 
   if (sort === "latest") {
-    visible = [...visible].sort((a, b) => {
-      const aCons = ((a.clusterCount && a.clusterCount >= 2) || (a.clusterChannels && a.clusterChannels.length >= 2)) ? 1 : 0;
-      const bCons = ((b.clusterCount && b.clusterCount >= 2) || (b.clusterChannels && b.clusterChannels.length >= 2)) ? 1 : 0;
-      if (aCons !== bCons) return bCons - aCons;
-      return b.ts - a.ts;
-    });
+    visible = [...visible].sort((a, b) => b.ts - a.ts);
   }
   else if (sort === "consensus") visible = [...visible].sort((a, b) => (b.clusterCount || 0) - (a.clusterCount || 0) || b.ts - a.ts);
   else if (sort === "temperature") visible = [...visible].sort((a, b) => (b.desidimeTemperature || 0) - (a.desidimeTemperature || 0));
