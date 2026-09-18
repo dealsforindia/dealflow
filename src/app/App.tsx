@@ -597,12 +597,21 @@ function mapChangesToBackend(changes: Record<string, unknown>): Record<string, u
   return mapped;
 }
 
+function getAdminHeaders(): Record<string, string> {
+  const token = typeof window !== "undefined" ? (localStorage.getItem("dealflow_admin_token") || "") : "";
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers["X-Admin-Token"] = token;
+  }
+  return headers;
+}
+
 async function apiApprove(id: string, changes?: Record<string, unknown>): Promise<boolean> {
   try {
     const payload = changes ? mapChangesToBackend(changes) : {};
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/approve`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminHeaders(),
       body: JSON.stringify(payload),
     });
     return res.ok;
@@ -614,7 +623,7 @@ async function apiUpdateDeal(id: string, changes: Record<string, unknown>): Prom
     const payload = mapChangesToBackend(changes);
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/edit`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminHeaders(),
       body: JSON.stringify(payload),
     });
     return res.ok;
@@ -623,7 +632,10 @@ async function apiUpdateDeal(id: string, changes: Record<string, unknown>): Prom
 
 async function apiReject(id: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/reject`, { method: "PUT" });
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/reject`, {
+      method: "PUT",
+      headers: getAdminHeaders(),
+    });
     return res.ok;
   } catch { return false; }
 }
