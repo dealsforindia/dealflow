@@ -77,6 +77,9 @@ interface Deal {
     roi_pct?: number;
     flip_guide?: string;
   };
+  hasVideo?: boolean;
+  videoStatus?: string;
+  videoUrl?: string;
 }
 
 interface RawDeal {
@@ -561,6 +564,9 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     isCommunityVerified: Boolean((d as any).is_community_verified || (d as any).isCommunityVerified || ((d as any).desidime_temperature && (d as any).desidime_temperature >= 200)),
     isArbitrage: Boolean((d as any).is_arbitrage || (d as any).isArbitrage),
     arbitrage: (d as any).arbitrage || null,
+    hasVideo: Boolean((d as any).has_video || (d as any).hasVideo),
+    videoStatus: (d as any).video_status || (d as any).videoStatus || null,
+    videoUrl: (d as any).video_url || (d as any).videoUrl || null,
   };
 }
 
@@ -780,6 +786,25 @@ async function apiGenerateBanner(id: string): Promise<{ banner_url: string; img_
     return await res.json();
   } catch {
     return null;
+  }
+}
+
+async function apiDispatchVideo(id: string): Promise<{ status: string; message?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/dispatch-video`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Token": localStorage.getItem("dealflow_admin_token") || "",
+      },
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      return { status: "error", message: errData.detail || `HTTP ${res.status}` };
+    }
+    return await res.json();
+  } catch (e: any) {
+    return { status: "error", message: e.message };
   }
 }
 
@@ -2137,6 +2162,25 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     }
   };
 
+  const [dispatchingVideo, setDispatchingVideo] = useState(false);
+  const doDispatchVideo = async () => {
+    setDispatchingVideo(true);
+    try {
+      const res = await apiDispatchVideo(deal.id);
+      if (res && res.status === "dispatched") {
+        onToast("🚀 Viral video generation dispatched to GitHub Actions runner! (0% VM CPU)", "success");
+      } else if (res && res.status === "ready_to_dispatch") {
+        onToast("⚡ Video dispatch payload generated (configure GITHUB_TOKEN to auto-trigger)", "info");
+      } else {
+        onToast(`Video dispatch status: ${res?.message || res?.status || "Unknown"}`, "error");
+      }
+    } catch (err: any) {
+      onToast(`Dispatch failed: ${err.message}`, "error");
+    } finally {
+      setDispatchingVideo(false);
+    }
+  };
+
   const fileRef = useRef<HTMLInputElement>(null);
   const previewSrc = imgFile || imgUrl || null;
   const isDirty = title !== deal.title || price !== String(deal.price || "") || mrp !== String(deal.mrp || "") || coupon !== (deal.coupon || "") || imgUrl !== deal.imgUrl || text !== deal.affText || imgFile !== null;
@@ -2573,6 +2617,11 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25 disabled:opacity-40 transition-colors cursor-pointer"
                 title="Generate 1080x1080 branded social deal card">
                 <span>🎨</span> {generatingBanner ? "Generating..." : "Generate Branded Banner"}
+              </button>
+              <button onClick={doDispatchVideo} disabled={dispatchingVideo}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 disabled:opacity-40 transition-colors cursor-pointer"
+                title="Offload 1080x1920 Viral Short Video render to GitHub Actions runner">
+                <span>🎬</span> {dispatchingVideo ? "Dispatching..." : "Generate 9:16 Viral Short"}
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
             </div>
