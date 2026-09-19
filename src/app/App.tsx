@@ -66,6 +66,17 @@ interface Deal {
   liveOnTelegram?: boolean;
   desidimeTemperature?: number;
   isCommunityVerified?: boolean;
+  isArbitrage?: boolean;
+  arbitrage?: {
+    canonical_model?: string;
+    brand?: string;
+    buyback_platform?: string;
+    buyback_price?: number;
+    sale_price?: number;
+    net_profit?: number;
+    roi_pct?: number;
+    flip_guide?: string;
+  };
 }
 
 interface RawDeal {
@@ -548,6 +559,8 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     liveOnTelegram: d.live_on_telegram ?? ((d.status === "approved" || Boolean(d.broadcast_destinations?.length)) && !d.broadcast_destinations?.includes("storefront_only") && !d.destinations?.includes("storefront_only")),
     desidimeTemperature: (d as any).desidime_temperature ?? (d as any).desidimeTemperature ?? undefined,
     isCommunityVerified: Boolean((d as any).is_community_verified || (d as any).isCommunityVerified || ((d as any).desidime_temperature && (d as any).desidime_temperature >= 200)),
+    isArbitrage: Boolean((d as any).is_arbitrage || (d as any).isArbitrage),
+    arbitrage: (d as any).arbitrage || null,
   };
 }
 
@@ -1075,6 +1088,12 @@ function DealCard({
               </span>
             )}
 
+            {deal.isArbitrage && deal.arbitrage && (
+              <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-mono text-[8.5px] font-black shadow-sm flex items-center gap-0.5 border border-amber-300 animate-pulse" title={deal.arbitrage.flip_guide}>
+                💰 ₹{deal.arbitrage.net_profit}
+              </span>
+            )}
+
             {deal.dealScore !== undefined && deal.dealScore >= 80 && (
               <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-red-600 to-rose-500 text-white font-mono text-[8.5px] font-black shadow-sm flex items-center gap-0.5">
                 🔥 {deal.dealScore}
@@ -1358,6 +1377,11 @@ function DealCard({
 
           {/* Loot Badges in Media Box */}
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1.5 flex-wrap justify-end">
+            {deal.isArbitrage && deal.arbitrage && (
+              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 via-amber-400 to-yellow-400 text-slate-950 font-mono text-[9.5px] font-black shadow-lg shadow-amber-500/30 flex items-center gap-1 border border-amber-300 animate-pulse" title={deal.arbitrage.flip_guide || "Guaranteed Cash Arbitrage"}>
+                <span>💰</span> ₹{deal.arbitrage.net_profit} PROFIT ({deal.arbitrage.roi_pct}%)
+              </span>
+            )}
             {isConsensus && (
               <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-slate-950 font-mono text-[9.5px] font-black shadow-lg shadow-amber-500/30 flex items-center gap-1 border border-amber-300 animate-pulse" title={`Spotted across ${clusterSize} competitor channels!`}>
                 <span>🔥</span> SPOTTED BY {clusterSize} CHANNELS
@@ -2917,6 +2941,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     } else if (smartPreset === "consensus") {
       const isC = (d.clusterCount && d.clusterCount >= 2) || (d.clusterChannels && d.clusterChannels.length >= 2) || (d.dealBadges && d.dealBadges.some(b => b.toLowerCase().includes("consensus") || b.toLowerCase().includes("spotted by")));
       if (!isC) return false;
+    } else if (smartPreset === "arbitrage") {
+      if (!d.isArbitrage) return false;
     }
     return true;
   });
@@ -3290,6 +3316,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
             {[
               { id: "all", label: "All" },
+              { id: "arbitrage", label: "💰 Cash Arbitrage", count: deals.filter(d => d.isArbitrage).length },
               { id: "consensus", label: "🔥 Consensus Drops", count: consensusDealsCount },
               { id: "desidime_hot", label: "🔥 Community Heat", count: deals.filter(d => (d.desidimeTemperature || 0) >= 100 || d.isCommunityVerified).length },
               { id: "loot_drops", label: "⚡ Loot Drops (80+)", count: lootCount },
