@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "DealFlow Distributed Architecture",
+    "output": "dealflow-architecture.html",
+    "visual_preset": "signal-flow",
+    "animation": "trace",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "ingest-and-process",
+        "label": "Ingestion & AI Pipeline",
+        "focus": ["scrapers", "listener", "queue", "worker", "llm", "mongo"],
+        "note": "Raw deals from 27 channels pass through deduplication, store scraping, and multi-LLM post generation."
+      },
+      {
+        "id": "curate-and-publish",
+        "label": "Curation Deck & Broadcast",
+        "focus": ["mongo", "api", "admin_ui", "pubsub", "broadcaster", "broadcast_channels"],
+        "note": "Admin reviews pending deals with 1-click approval, broadcasting instantly via Redis Pub/Sub."
+      },
+      {
+        "id": "consumer-storefront",
+        "label": "Public Deal Storefront",
+        "focus": ["consumer_ui", "api", "mongo"],
+        "note": "End-users explore live curated deals with Instant Link Lookup and Wall of Happiness."
+      }
+    ]
+  },
+  "components": [
+    { "id": "scrapers", "type": "external", "label": "Deal Sources", "sublabel": "27 TG + DesiDime", "pos": [40, 220], "size": [130, 60], "brand": "telegram" },
+    { "id": "listener", "type": "backend", "label": "Telethon Listener", "sublabel": "listener.py :PM2:2", "pos": [260, 220], "size": [130, 60], "brand": "python" },
+    { "id": "queue", "type": "messagebus", "label": "Redis Queue", "sublabel": "queue:deals :6379", "pos": [260, 390], "size": [130, 60], "brand": "redis" },
+    { "id": "llm", "type": "cloud", "label": "Multi-LLM Cascade", "sublabel": "Cerebras/Groq/Gemini", "pos": [500, 60], "size": [130, 60], "tag": "AI Cascade" },
+    { "id": "worker", "type": "backend", "label": "Pipeline Worker", "sublabel": "worker.py :PM2:3", "pos": [500, 220], "size": [130, 60], "brand": "python" },
+    { "id": "mongo", "type": "database", "label": "MongoDB 7.0", "sublabel": "UniqueDeals :27017", "pos": [500, 390], "size": [130, 60], "brand": "mongodb" },
+    { "id": "api", "type": "backend", "label": "FastAPI Engine", "sublabel": "api.rudranil.me :8000", "pos": [720, 220], "size": [130, 60], "brand": "fastapi" },
+    { "id": "pubsub", "type": "messagebus", "label": "Redis Pub/Sub", "sublabel": "deals:approved", "pos": [720, 390], "size": [130, 60], "brand": "redis" },
+    { "id": "broadcaster", "type": "backend", "label": "Broadcaster Bot", "sublabel": "bot.py :PM2:0", "pos": [720, 540], "size": [130, 60], "brand": "python" },
+    { "id": "admin_ui", "type": "frontend", "label": "Admin Dashboard", "sublabel": "React 18 / Vercel", "pos": [950, 140], "size": [130, 60], "brand": "vercel" },
+    { "id": "consumer_ui", "type": "frontend", "label": "Deals Web", "sublabel": "indiadealhunts.in", "pos": [950, 280], "size": [130, 60], "brand": "react" },
+    { "id": "broadcast_channels", "type": "external", "label": "Live Channels", "sublabel": "@dealsforindiachannel", "pos": [950, 540], "size": [130, 60], "brand": "telegram" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Scrapers & Ingestion Layer", "wraps": ["scrapers", "listener", "queue"], "pad": 16 },
+    { "kind": "region", "label": "DealFlow VM Infrastructure", "wraps": ["worker", "mongo", "pubsub", "api", "broadcaster"], "pad": 16 },
+    { "kind": "region", "label": "Client Apps & Social Broadcast", "wraps": ["admin_ui", "consumer_ui", "broadcast_channels"], "pad": 16 }
+  ],
+  "connections": [
+    { "from": "scrapers", "to": "listener", "label": "scraped msg", "fromSide": "right", "toSide": "left", "variant": "emphasis" },
+    { "from": "listener", "to": "queue", "label": "enqueue", "fromSide": "bottom", "toSide": "top", "labelDy": 55 },
+    { "from": "queue", "to": "worker", "label": "pop deal", "fromSide": "right", "toSide": "left" },
+    { "from": "worker", "to": "llm", "label": "AI rewrite", "fromSide": "top", "toSide": "bottom", "variant": "dashed", "labelDy": -50 },
+    { "from": "worker", "to": "mongo", "label": "store deal", "fromSide": "bottom", "toSide": "top", "labelDy": 55 },
+    { "from": "mongo", "to": "api", "label": "query deals", "fromSide": "right", "toSide": "left" },
+    { "from": "api", "to": "admin_ui", "label": "review", "fromSide": "right", "toSide": "left" },
+    { "from": "api", "to": "consumer_ui", "label": "public feed", "fromSide": "right", "toSide": "left" },
+    { "from": "api", "to": "pubsub", "label": "publish approved", "fromSide": "bottom", "toSide": "top", "labelDy": 55 },
+    { "from": "pubsub", "to": "broadcaster", "label": "subscribe", "fromSide": "bottom", "toSide": "top", "labelDy": 55 },
+    { "from": "broadcaster", "to": "broadcast_channels", "label": "broadcast", "fromSide": "right", "toSide": "left", "variant": "emphasis" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Scraping & Ingestion", "items": ["Telethon client listens across 27 active Telegram channels", "DesiDime scraper extracts live hot deals every 600s", "All incoming messages are normalized and queued in Redis"] },
+    { "dot": "emerald", "title": "Pipeline & AI Core", "items": ["Universal Store Scraper extracts canonical titles, images, and prices", "Multi-LLM cascade (Cerebras -> Groq -> Gemini) formats attractive posts", "De-duplication engine prevents repetitive affiliate drops"] },
+    { "dot": "violet", "title": "Curation & Edge Distribution", "items": ["React Admin Dashboard provides 1-click bulk approvals and AI tuning", "Redis Pub/Sub immediately dispatches approved deals to Telethon bot", "Public web storefront (indiadealhunts.in) offers Instant Deal Lookup"] }
+  ]
+}
