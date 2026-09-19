@@ -1,4 +1,4 @@
-name: Generate Viral Deal Short (1080x1920)
+name: Generate Viral Deal Short (1080x1920 Remotion Engine)
 
 on:
   workflow_dispatch:
@@ -35,6 +35,10 @@ on:
         description: "Product Image URL"
         required: true
         default: "https://m.media-amazon.com/images/I/71IkDIETLlL._AC_UF1000,1000_QL80_.jpg"
+      affiliate_url:
+        description: "Affiliate Destination URL (Optional)"
+        required: false
+        default: "https://indiadealhunts.in"
       fp_hash:
         description: "Deal Fingerprint Hash (Optional)"
         required: false
@@ -44,15 +48,20 @@ on:
     types: [generate_viral_short]
 
 jobs:
-  render_video:
+  render_remotion_short:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     timeout-minutes: 10
 
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       - name: Setup Python 3.10
         uses: actions/setup-python@v5
@@ -60,23 +69,39 @@ jobs:
           python-version: "3.10"
           cache: "pip"
 
-      - name: Install FFmpeg & Fonts
+      - name: Install System Graphics & FFmpeg
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-freefont-ttf fonts-noto-core fonts-indic
+          sudo apt-get install -y ffmpeg libasound2 libgbm1 libnss3 fonts-dejavu-core fonts-freefont-ttf fonts-noto-core fonts-indic fonts-noto-color-emoji
 
-      - name: Install Python Dependencies
+      - name: Install Edge-TTS for Neural Voiceover
         run: |
           pip install --upgrade pip
-          pip install -r dealflow/video-engine/requirements.txt
+          pip install edge-tts
 
-      - name: Prepare Deal Payload
+      - name: Cache Remotion Dependencies
+        id: remotion-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            dealflow/video-remotion/node_modules
+            ~/.cache/remotion
+          key: ${{ runner.os }}-remotion-v3-${{ hashFiles('dealflow/video-remotion/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-remotion-v3-
+
+      - name: Install Remotion Dependencies & Ensure Headless Chrome
+        run: |
+          cd dealflow/video-remotion
+          npm install --prefer-offline --no-audit
+          npx remotion browser ensure
+
+      - name: Prepare Dynamic Deal Payload
         id: payload
         run: |
           python - << 'EOF'
           import json, os
 
-          # Read from repository_dispatch payload or workflow_dispatch inputs
           event_path = os.environ.get("GITHUB_EVENT_PATH")
           deal = {}
 
@@ -97,19 +122,39 @@ jobs:
                   "store": os.environ.get("INPUT_STORE", "Amazon"),
                   "coupon": os.environ.get("INPUT_COUPON", ""),
                   "img_url": os.environ.get("INPUT_IMG_URL", ""),
+                  "affiliate_url": os.environ.get("INPUT_AFFILIATE_URL", "https://indiadealhunts.in"),
                   "fp_hash": os.environ.get("INPUT_FP_HASH", "manual")
               }
 
           fp = deal.get("fp_hash") or f"deal_{os.environ.get('GITHUB_RUN_ID')}"
-          with open("deal_payload.json", "w", encoding="utf-8") as out:
-              json.dump(deal, out, indent=2)
+          
+          # Map deal properties for Remotion CLI
+          remotion_props = {
+              "title": deal.get("prod_name") or deal.get("title", "Loot Deal"),
+              "brand": deal.get("brand") or (deal.get("prod_name", "").split()[0] if deal.get("prod_name") else "Brand"),
+              "salePrice": int(deal.get("sale_price") or deal.get("prices", {}).get("sale") or 0),
+              "mrp": int(deal.get("mrp") or deal.get("prices", {}).get("mrp") or 0),
+              "discountPct": int(deal.get("discount_pct") or deal.get("prices", {}).get("discount_pct") or 0),
+              "store": deal.get("store") or "Amazon",
+              "worthScore": int(deal.get("worth_score") or 94),
+              "imageUrl": deal.get("img_url", ""),
+              "coupon": deal.get("coupon", ""),
+              "handle": "@dealsforindia",
+              "verifiedAt": "Just Now • 0% Fake Deals",
+              "affiliateUrl": deal.get("affiliate_url") or deal.get("aff_url") or "https://indiadealhunts.in",
+              "enableAudio": True,
+              "themeName": (deal.get("store") or "amazon").lower()
+          }
+
+          with open("remotion_payload.json", "w", encoding="utf-8") as out:
+              json.dump(remotion_props, out, indent=2)
 
           github_output = os.environ.get("GITHUB_OUTPUT")
           if github_output:
               with open(github_output, "a", encoding="utf-8") as gf:
                   gf.write(f"fp_hash={fp}\n")
 
-          print(f"Prepared deal payload for {fp}: {deal.get('prod_name')}")
+          print(f"✅ Prepared Remotion payload for {fp}: {remotion_props['title']}")
           EOF
         env:
           INPUT_TITLE: ${{ github.event.inputs.title }}
@@ -120,27 +165,40 @@ jobs:
           INPUT_STORE: ${{ github.event.inputs.store }}
           INPUT_COUPON: ${{ github.event.inputs.coupon }}
           INPUT_IMG_URL: ${{ github.event.inputs.img_url }}
+          INPUT_AFFILIATE_URL: ${{ github.event.inputs.affiliate_url }}
           INPUT_FP_HASH: ${{ github.event.inputs.fp_hash }}
 
-      - name: Render 1080x1920 Viral Short Video
+      - name: Render 1080x1920 Remotion Short with AI Voiceover & QR Code
         run: |
-          python dealflow/video-engine/generator.py \
-            --json deal_payload.json \
-            --cover "viral_short_${{ github.run_id }}_cover.png" \
-            --output "viral_short_${{ github.run_id }}.mp4"
+          FP="${{ steps.payload.outputs.fp_hash }}"
+          cd dealflow/video-remotion
+          node render_deal.js --json "$(cat ../../remotion_payload.json)" --out "../../short_${FP}.mp4"
 
-      - name: Verify Video Artifact
+      - name: Extract Pristine Cover & Generate Animated WebP Preview
         run: |
-          ffprobe -v error -show_entries stream=width,height,codec_name,duration -of json "viral_short_${{ github.run_id }}.mp4"
+          FP="${{ steps.payload.outputs.fp_hash }}"
+          echo "Processing rendered video: short_${FP}.mp4"
 
-      - name: Upload Video Artifacts (MP4, Cover & Metadata)
+          # Extract Frame 100 cover snapshot (high resolution)
+          ffmpeg -y -ss 00:00:03.333 -i "short_${FP}.mp4" -vframes 1 -q:v 2 "short_${FP}_cover.png"
+
+          # Generate 4-second lightweight animated WebP sticker for instant preview
+          ffmpeg -y -ss 00:00:01 -t 4 -i "short_${FP}.mp4" -vf "fps=15,scale=360:640:flags=lanczos" -vcodec libwebp -lossless 0 -compression_level 4 -q:v 70 -loop 0 "short_${FP}_preview.webp"
+
+
+      - name: Verify Video Specs & Bitrate
+        run: |
+          FP="${{ steps.payload.outputs.fp_hash }}"
+          ffprobe -v error -show_entries format=duration,size,bit_rate:stream=width,height,codec_name -of json "short_${FP}.mp4"
+
+      - name: Upload Video Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: viral-short-${{ github.run_id }}
+          name: viral-short-${{ steps.payload.outputs.fp_hash }}
           path: |
-            viral_short_${{ github.run_id }}.mp4
-            viral_short_${{ github.run_id }}_cover.png
-            viral_short_${{ github.run_id }}.meta.json
+            short_*.mp4
+            short_*_cover.png
+            short_*_preview.webp
           retention-days: 30
 
       - name: Publish Video to GitHub Release CDN
@@ -149,32 +207,24 @@ jobs:
           GH_TOKEN: ${{ secrets.MEDIA_REPO_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           FP="${{ steps.payload.outputs.fp_hash }}"
-          echo "Publishing viral short for $FP to release CDN..."
-
-          cp "viral_short_${{ github.run_id }}.mp4" "short_${FP}.mp4"
-          cp "viral_short_${{ github.run_id }}_cover.png" "short_${FP}_cover.png"
-
-          # Target current repository by default (uses built-in GITHUB_TOKEN with zero token setup)
-          # Or target dealsforindia/deal-shorts if MEDIA_REPO_TOKEN is configured
           TARGET_REPO="${{ github.repository }}"
-          if [ -n "${{ secrets.MEDIA_REPO_TOKEN }}" ]; then
-            TARGET_REPO="dealsforindia/deal-shorts"
-          fi
-          echo "Target Release Repository: $TARGET_REPO"
+          echo "Publishing viral short for $FP to $TARGET_REPO release CDN..."
 
-          # Ensure the 'viral-shorts' release exists
+          # Ensure the 'viral-shorts' release tag exists
           gh release view viral-shorts --repo "$TARGET_REPO" || gh release create viral-shorts --repo "$TARGET_REPO" --title "Viral Shorts Media CDN" --notes "CDN hosting for DealFlow vertical video shorts"
 
-          # Upload MP4 and cover directly to GitHub Release (unlimited global Fastly/AWS CDN)
-          gh release upload viral-shorts "short_${FP}.mp4" "short_${FP}_cover.png" --repo "$TARGET_REPO" --clobber
+          # Upload MP4, Cover, and Animated WebP directly to Release CDN
+          gh release upload viral-shorts "short_${FP}.mp4" "short_${FP}_cover.png" "short_${FP}_preview.webp" --repo "$TARGET_REPO" --clobber
 
           VIDEO_URL="https://github.com/${TARGET_REPO}/releases/download/viral-shorts/short_${FP}.mp4"
           COVER_URL="https://github.com/${TARGET_REPO}/releases/download/viral-shorts/short_${FP}_cover.png"
+          PREVIEW_URL="https://github.com/${TARGET_REPO}/releases/download/viral-shorts/short_${FP}_preview.webp"
 
           echo "CDN Video URL: $VIDEO_URL"
           echo "CDN Cover URL: $COVER_URL"
+          echo "CDN Animated WebP: $PREVIEW_URL"
 
-          # Notify DealFlow API with only the CDN URL (0 MB disk on VM, saves URL to MongoDB)
+          # Callback to DealFlow API (Saves CDN URLs to MongoDB, zero VM disk usage)
           curl -s -X POST "https://api.rudranil.me/api/v1/deals/${FP}/video-ready" \
             -H "Content-Type: application/json" \
-            -d "{\"video_url\": \"${VIDEO_URL}\", \"cover_url\": \"${COVER_URL}\"}" || echo "API callback done"
+            -d "{\"video_url\": \"${VIDEO_URL}\", \"cover_url\": \"${COVER_URL}\", \"preview_url\": \"${PREVIEW_URL}\"}" || echo "API callback delivered"

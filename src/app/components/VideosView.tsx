@@ -20,6 +20,7 @@ export interface VideoDeal {
   imgUrl: string;
   videoUrl?: string;
   videoCover?: string;
+  previewUrl?: string;
   videoStatus?: string;
   hasVideo?: boolean;
   ts: number;
@@ -42,6 +43,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
   const [activePlayerDeal, setActivePlayerDeal] = useState<any | null>(null);
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [hoveredDealId, setHoveredDealId] = useState<string | null>(null);
 
   // Fetch all video deals from API
   const fetchVideos = async () => {
@@ -92,6 +94,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
           imgUrl: sv.img_url || "",
           videoUrl: sv.video_url,
           videoCover: sv.video_cover,
+          previewUrl: sv.video_preview || sv.preview_url,
           videoStatus: sv.video_status || (sv.video_url ? "ready" : "queued"),
           hasVideo: Boolean(sv.has_video || sv.video_url),
           ts: sv.video_ready_at || sv.video_dispatched_at || sv.ts || Date.now() / 1000,
@@ -102,10 +105,12 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
           ...existing,
           videoUrl: sv.video_url || existing.videoUrl,
           videoCover: sv.video_cover || existing.videoCover,
+          previewUrl: sv.video_preview || sv.preview_url || existing.previewUrl,
           videoStatus: sv.video_status || existing.videoStatus,
           hasVideo: Boolean(sv.has_video || sv.video_url || existing.hasVideo),
         });
       }
+
     }
 
     return Array.from(map.values()).sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -177,12 +182,13 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         toast.success("🗑️ Video short successfully removed from deal");
-        setAllVideoDeals(prev => prev.filter(d => d.id !== dealId));
+        setServerVideos(prev => prev.filter(d => (d.fp_hash || d.id) !== dealId));
         if (activePlayerDeal?.id === dealId) {
           setActivePlayerDeal(null);
         }
         onRefresh?.();
       } else {
+
         toast.error(`Delete failed: ${data.detail || data.message || "Unknown error"}`);
       }
     } catch (e: any) {
@@ -305,10 +311,19 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                 className="group relative rounded-3xl overflow-hidden glass-card border border-white/10 hover:border-indigo-500/40 transition-all flex flex-col bg-slate-950/80 shadow-xl"
               >
                 {/* 9:16 Visual Poster / Video Thumbnail Container */}
-                <div className="relative aspect-[9/16] w-full bg-slate-900 overflow-hidden flex items-center justify-center">
-                  {deal.videoCover || deal.imgUrl ? (
+                <div 
+                  className="relative aspect-[9/16] w-full bg-slate-900 overflow-hidden flex items-center justify-center cursor-pointer"
+                  onMouseEnter={() => setHoveredDealId(deal.id)}
+                  onMouseLeave={() => setHoveredDealId(null)}
+                  onClick={() => isReady && setActivePlayerDeal(deal)}
+                >
+                  {deal.videoCover || deal.previewUrl || deal.imgUrl ? (
                     <img
-                      src={deal.videoCover || deal.imgUrl}
+                      src={
+                        (hoveredDealId === deal.id && deal.previewUrl)
+                          ? deal.previewUrl
+                          : (deal.videoCover || deal.imgUrl)
+                      }
                       alt={deal.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -320,6 +335,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
 
                   {/* Dark Gradient Overlay for Readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-black/60 pointer-events-none" />
+
 
                   {/* Top Status & Store Badges */}
                   <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
