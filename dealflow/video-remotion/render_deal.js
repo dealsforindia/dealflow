@@ -81,6 +81,50 @@ async function main() {
     console.warn("QR code generation warning:", err.message);
   }
 
+  // Pre-fetch & embed product image as Base64 Data URI (or bulletproof SVG fallback)
+  // Completely eliminates Remotion CancelledError / 404 image load failures in headless Chrome
+  if (props.imageUrl && props.imageUrl.startsWith("http")) {
+    try {
+      console.log(`🖼️ Fetching & decoding product image: ${props.imageUrl}`);
+      const imgBuffer = await new Promise((resolve, reject) => {
+        const client = props.imageUrl.startsWith("https") ? require("https") : require("http");
+        client.get(props.imageUrl, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" }, timeout: 8000 }, (res) => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            const chunks = [];
+            res.on("data", chunk => chunks.push(chunk));
+            res.on("end", () => resolve(Buffer.concat(chunks)));
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}`));
+          }
+        }).on("error", reject);
+      });
+
+      if (imgBuffer && imgBuffer.length > 300) {
+        const mimeType = props.imageUrl.endsWith(".png") ? "image/png" : props.imageUrl.endsWith(".webp") ? "image/webp" : "image/jpeg";
+        props.imageUrl = `data:${mimeType};base64,${imgBuffer.toString("base64")}`;
+        console.log(`✅ Product image embedded as Base64 data URI (${Math.round(imgBuffer.length / 1024)} KB)`);
+      }
+    } catch (imgErr) {
+      console.warn(`⚠️ Remote image fetch failed (${imgErr.message}), falling back to verified aesthetic placeholder`);
+      props.imageUrl = "data:image/svg+xml;utf8," + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+          <rect width="600" height="600" fill="#0f172a" rx="40"/>
+          <circle cx="300" cy="300" r="140" fill="#6366f1" opacity="0.15"/>
+          <text x="300" y="290" font-size="100" text-anchor="middle" dominant-baseline="middle">🛍️</text>
+          <text x="300" y="420" font-size="34" font-family="sans-serif" font-weight="bold" fill="#f8fafc" text-anchor="middle">VERIFIED LOOT DROP</text>
+        </svg>
+      `);
+    }
+  } else if (!props.imageUrl || !props.imageUrl.startsWith("data:")) {
+    props.imageUrl = "data:image/svg+xml;utf8," + encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+        <rect width="600" height="600" fill="#0f172a" rx="40"/>
+        <text x="300" y="290" font-size="100" text-anchor="middle" dominant-baseline="middle">🛍️</text>
+        <text x="300" y="420" font-size="34" font-family="sans-serif" font-weight="bold" fill="#f8fafc" text-anchor="middle">VERIFIED LOOT DROP</text>
+      </svg>
+    `);
+  }
+
   const outDir = path.join(__dirname, "out");
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
