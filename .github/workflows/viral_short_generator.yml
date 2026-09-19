@@ -46,6 +46,8 @@ on:
 jobs:
   render_video:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     timeout-minutes: 10
 
     steps:
@@ -102,6 +104,11 @@ jobs:
           with open("deal_payload.json", "w", encoding="utf-8") as out:
               json.dump(deal, out, indent=2)
 
+          github_output = os.environ.get("GITHUB_OUTPUT")
+          if github_output:
+              with open(github_output, "a", encoding="utf-8") as gf:
+                  gf.write(f"fp_hash={fp}\n")
+
           print(f"Prepared deal payload for {fp}: {deal.get('prod_name')}")
           EOF
         env:
@@ -135,3 +142,39 @@ jobs:
             viral_short_${{ github.run_id }}_cover.png
             viral_short_${{ github.run_id }}.meta.json
           retention-days: 30
+
+      - name: Publish Video to GitHub Release CDN
+        id: publish_cdn
+        env:
+          GH_TOKEN: ${{ secrets.MEDIA_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          FP="${{ steps.payload.outputs.fp_hash }}"
+          echo "Publishing viral short for $FP to release CDN..."
+
+          cp "viral_short_${{ github.run_id }}.mp4" "short_${FP}.mp4"
+          cp "viral_short_${{ github.run_id }}_cover.png" "short_${FP}_cover.png"
+
+          # Target current repository by default (uses built-in GITHUB_TOKEN with zero token setup)
+          # Or target dealsforindia/deal-shorts if MEDIA_REPO_TOKEN is configured
+          TARGET_REPO="${{ github.repository }}"
+          if [ -n "${{ secrets.MEDIA_REPO_TOKEN }}" ]; then
+            TARGET_REPO="dealsforindia/deal-shorts"
+          fi
+          echo "Target Release Repository: $TARGET_REPO"
+
+          # Ensure the 'viral-shorts' release exists
+          gh release view viral-shorts --repo "$TARGET_REPO" || gh release create viral-shorts --repo "$TARGET_REPO" --title "Viral Shorts Media CDN" --notes "CDN hosting for DealFlow vertical video shorts"
+
+          # Upload MP4 and cover directly to GitHub Release (unlimited global Fastly/AWS CDN)
+          gh release upload viral-shorts "short_${FP}.mp4" "short_${FP}_cover.png" --repo "$TARGET_REPO" --clobber
+
+          VIDEO_URL="https://github.com/${TARGET_REPO}/releases/download/viral-shorts/short_${FP}.mp4"
+          COVER_URL="https://github.com/${TARGET_REPO}/releases/download/viral-shorts/short_${FP}_cover.png"
+
+          echo "CDN Video URL: $VIDEO_URL"
+          echo "CDN Cover URL: $COVER_URL"
+
+          # Notify DealFlow API with only the CDN URL (0 MB disk on VM, saves URL to MongoDB)
+          curl -s -X POST "https://api.rudranil.me/api/v1/deals/${FP}/video-ready" \
+            -H "Content-Type: application/json" \
+            -d "{\"video_url\": \"${VIDEO_URL}\", \"cover_url\": \"${COVER_URL}\"}" || echo "API callback done"

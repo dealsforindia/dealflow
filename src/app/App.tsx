@@ -11,7 +11,8 @@ import {
   Globe, ArrowUpDown, ShoppingCart, Percent,
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
   LayoutGrid, Columns, Smartphone, CornerDownLeft, Command,
-  Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History, Network, Cpu
+  Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History, Network, Cpu,
+  Video, Play, Film
 } from "lucide-react";
 import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
@@ -23,6 +24,7 @@ import {
 import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
 import { ChannelPerformanceHeatmap } from "./components/ChannelPerformanceHeatmap";
 import { SmartAutoRulesDeck } from "./components/SmartAutoRulesDeck";
+import { VideosView } from "./components/VideosView";
 import {
   playApprove, playReject, playCopy, playTick, playUndo,
   isSoundMuted, toggleSound
@@ -31,7 +33,7 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DealStatus = "pending" | "approved" | "rejected" | "draft" | "auto_posted";
 type DealType = "product" | "trick";
-type Tab = "Review" | "Posted" | "Channels" | "Settings";
+type Tab = "Review" | "Posted" | "Channels" | "Videos" | "Settings";
 
 interface Deal {
   id: string; title: string; price: number; mrp: number; discount: number;
@@ -80,6 +82,7 @@ interface Deal {
   hasVideo?: boolean;
   videoStatus?: string;
   videoUrl?: string;
+  videoCover?: string;
 }
 
 interface RawDeal {
@@ -567,6 +570,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     hasVideo: Boolean((d as any).has_video || (d as any).hasVideo),
     videoStatus: (d as any).video_status || (d as any).videoStatus || null,
     videoUrl: (d as any).video_url || (d as any).videoUrl || null,
+    videoCover: (d as any).video_cover || (d as any).videoCover || null,
   };
 }
 
@@ -4361,8 +4365,35 @@ function ChannelsView() {
 }
 
 // ─── Posted Deals View ────────────────────────────────────────────────────────
-function PostedDealCard({ deal }: { deal: Deal }) {
+function PostedDealCard({ deal, onPreviewVideo }: { deal: Deal; onPreviewVideo?: (deal: Deal) => void }) {
   const [imgErr, setImgErr] = useState(false);
+  const [videoStatus, setVideoStatus] = useState<string | null>(deal.videoStatus || (deal.hasVideo ? "ready" : null));
+  const [isDispatching, setIsDispatching] = useState(false);
+
+  useEffect(() => {
+    setVideoStatus(deal.videoStatus || (deal.hasVideo ? "ready" : null));
+  }, [deal.videoStatus, deal.hasVideo]);
+
+  const handleGenerateVideo = async () => {
+    setIsDispatching(true);
+    toast.info("⚡ Dispatching autonomous 9:16 viral short render...", { icon: "🎬" });
+    try {
+      const res = await apiDispatchVideo(deal.id);
+      if (res.status === "dispatched" || res.status === "ready_to_dispatch") {
+        setVideoStatus("queued");
+        toast.success("🚀 9:16 Short queued on GitHub Actions! Rendering in background.", { icon: "✅" });
+      } else {
+        toast.error(`Dispatch issue: ${res.message || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      toast.error(`Failed to dispatch video: ${e.message}`);
+    } finally {
+      setIsDispatching(false);
+    }
+  };
+
+  const isVideoReady = videoStatus === "ready" || Boolean(deal.videoUrl);
+  const isVideoProcessing = !isVideoReady && (videoStatus === "queued" || videoStatus === "dispatched" || videoStatus === "processing");
 
   return (
     <div className="p-4 rounded-2xl glass-card flex items-center gap-4 border border-white/8 hover:border-white/15 transition-colors">
@@ -4415,10 +4446,51 @@ function PostedDealCard({ deal }: { deal: Deal }) {
               ✈️ Telegram
             </span>
           ) : null}
+
+          {/* Video Badge */}
+          {isVideoReady && (
+            <span className="px-1.5 py-0.2 rounded-md bg-indigo-500/20 border border-indigo-500/40 text-[9.5px] font-bold text-indigo-300 flex items-center gap-1">
+              🎬 9:16 Short
+            </span>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-1.5 flex-shrink-0">
+        {isVideoReady ? (
+          <button
+            onClick={() => onPreviewVideo?.(deal)}
+            className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all active:scale-95"
+            title="Watch 9:16 Viral Short"
+          >
+            <Play size={12} className="fill-emerald-400 text-emerald-400" />
+            <span>Short</span>
+          </button>
+        ) : isVideoProcessing ? (
+          <button
+            disabled
+            className="px-2.5 py-1.5 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-bold flex items-center gap-1.5 opacity-80 cursor-wait"
+            title="Rendering video in background"
+          >
+            <RefreshCw size={11} className="animate-spin text-amber-400" />
+            <span>Rendering...</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleGenerateVideo}
+            disabled={isDispatching}
+            className="px-2.5 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+            title="Generate 1080x1920 Viral Short Video"
+          >
+            {isDispatching ? (
+              <RefreshCw size={11} className="animate-spin" />
+            ) : (
+              <Video size={12} />
+            )}
+            <span>Generate Video</span>
+          </button>
+        )}
+
         <button
           onClick={() => { navigator.clipboard.writeText(deal.affText); toast.success("Copied post text!"); }}
           className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10 cursor-pointer active:scale-95"
@@ -4433,6 +4505,7 @@ function PostedDealCard({ deal }: { deal: Deal }) {
 
 function PostedView({ deals }: { deals: Deal[] }) {
   const [search, setSearch] = useState("");
+  const [previewDeal, setPreviewDeal] = useState<Deal | null>(null);
   const postedDeals = deals.filter(d => d.status === "approved" || d.status === "auto_posted");
   const filtered = postedDeals.filter(d => {
     if (!search.trim()) return true;
@@ -4485,8 +4558,42 @@ function PostedView({ deals }: { deals: Deal[] }) {
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.map(d => (
-            <PostedDealCard key={d.id} deal={d} />
+            <PostedDealCard key={d.id} deal={d} onPreviewVideo={setPreviewDeal} />
           ))}
+        </div>
+      )}
+
+      {/* Video Preview Modal */}
+      {previewDeal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-fade-in"
+          onClick={() => setPreviewDeal(null)}
+        >
+          <div
+            className="relative max-h-[90vh] aspect-[9/16] w-full max-w-[400px] rounded-3xl overflow-hidden bg-black border border-white/20 shadow-2xl flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="absolute top-0 inset-x-0 z-20 p-4 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between">
+              <span className="text-xs font-bold text-white truncate max-w-[220px]">
+                {previewDeal.title}
+              </span>
+              <button
+                onClick={() => setPreviewDeal(null)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <video
+              src={previewDeal.videoUrl}
+              poster={previewDeal.videoCover || previewDeal.imgUrl}
+              controls
+              autoPlay
+              playsInline
+              loop
+              className="w-full h-full object-contain"
+            />
+          </div>
         </div>
       )}
     </div>
@@ -4580,6 +4687,7 @@ const NAV: { id: Tab; icon: React.ElementType; label: string }[] = [
   { id: "Review", icon: Flame, label: "Review Deck" },
   { id: "Posted", icon: CheckSquare, label: "Broadcasted" },
   { id: "Channels", icon: Radio, label: "Channels" },
+  { id: "Videos", icon: Video, label: "Viral Shorts" },
   { id: "Settings", icon: Settings2, label: "Settings" },
 ];
 
@@ -4607,7 +4715,7 @@ function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAle
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1.5">
         {NAV.map(({ id, label }) => {
           const active = tab === id;
-          const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : "settings";
+          const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : id === "Videos" ? "videos" : "settings";
           return (
             <button key={id} onClick={() => setTab(id)}
               className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
@@ -4616,7 +4724,7 @@ function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAle
                   : "text-slate-400 hover:text-white hover:bg-white/5"
               }`}>
               {active && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-full bg-indigo-500 shadow-md shadow-indigo-500" />}
-              <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "settings"} active={active} />
+              <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "videos" | "settings"} active={active} />
               <span className="tracking-tight">{label}</span>
               {id === "Review" && pending > 0 && (
                 <span className="ml-auto text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow-sm">
@@ -4746,6 +4854,13 @@ export default function App() {
         ws.onmessage = (e) => {
           try {
             const data = JSON.parse(e.data);
+            if (data.event === "deal_video_ready") {
+              toast.success("🎬 9:16 Viral Short ready for viewing!", { icon: "🎉" });
+              loadDeals();
+            }
+            if (data.event === "deal_video_queued") {
+              loadDeals();
+            }
             if (data.event === "new_deal" || data.event === "deal_approved") {
               // Skip self-triggered deal_approved events during undo window
               if (data.event === "deal_approved" && data.fp_hash && undoTimers.current[data.fp_hash]) {
@@ -4886,6 +5001,7 @@ export default function App() {
         )}
         {tab === "Posted" && <PostedView deals={deals} />}
         {tab === "Channels" && <ChannelsView />}
+        {tab === "Videos" && <VideosView deals={deals} apiBase={API_BASE} onRefresh={loadDeals} onEdit={setEditing} />}
         {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
       </main>
 
@@ -4893,13 +5009,13 @@ export default function App() {
       <nav className="md:hidden fixed bottom-1.5 left-2 right-2 z-40 px-2 py-1 bg-slate-950/92 border border-white/12 backdrop-blur-2xl rounded-2xl shadow-2xl flex items-center justify-around">
         {NAV.map(({ id, label }) => {
           const active = tab === id;
-          const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : "settings";
+          const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : id === "Videos" ? "videos" : "settings";
           return (
             <button key={id} onClick={() => setTab(id)}
               className={`relative flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-all ${
                 active ? "text-indigo-400 font-black" : "text-slate-400 hover:text-white"
               }`}>
-              <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "settings"} active={active} />
+              <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "videos" | "settings"} active={active} />
               <span className="text-[9.5px] tracking-tight">{label}</span>
               {id === "Review" && pendingCount > 0 && (
                 <span className="absolute -top-0.5 right-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
