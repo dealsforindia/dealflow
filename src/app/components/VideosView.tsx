@@ -44,6 +44,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [hoveredDealId, setHoveredDealId] = useState<string | null>(null);
+  const [batchLoading, setBatchLoading] = useState(false);
 
   // Fetch all video deals from API
   const fetchVideos = async () => {
@@ -198,6 +199,36 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
     }
   };
 
+  const handleBatchDispatchTopDeals = async () => {
+    setBatchLoading(true);
+    toast.info("⚡ Finding & queueing top 5 loot drops for 15s viral shorts...", { icon: "🎬" });
+    try {
+      const token = localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b";
+      const res = await fetch(`${apiBase}/api/v1/deals/batch-dispatch-video`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Token": token,
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ limit: 5 }),
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "batch_dispatched") {
+        toast.success(`🚀 Dispatched ${data.total} viral shorts to GitHub Actions!`);
+        fetchVideos();
+        onRefresh?.();
+      } else {
+        toast.error(`Batch dispatch: ${data.message || "No eligible deals found"}`);
+      }
+    } catch (e: any) {
+      toast.error(`Error: ${e.message}`);
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+
   return (
     <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 pb-28 md:pb-12 max-w-7xl mx-auto flex flex-col gap-6">
       {/* Header Banner */}
@@ -224,6 +255,16 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
+            <button
+              onClick={handleBatchDispatchTopDeals}
+              disabled={batchLoading}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 border border-indigo-400/40 shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+              title="Auto-dispatch 15s shorts for top 5 drops"
+            >
+              <Sparkles size={13} className={batchLoading ? "animate-spin text-white" : "text-amber-300"} />
+              <span>{batchLoading ? "Queueing..." : "⚡ Generate Top 5 Shorts"}</span>
+            </button>
+
             <button
               onClick={fetchVideos}
               disabled={loading}
