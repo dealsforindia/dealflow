@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Video, Play, RefreshCw, Copy, Download, ExternalLink,
-  Search, Check, Film, Clock, Sparkles, X, Volume2, VolumeX, AlertCircle
+  Search, Check, Film, Clock, Sparkles, X, Volume2, VolumeX, AlertCircle, Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { Category3DIcon, Store3DBadge } from "./Iconscout3DAssets";
@@ -41,6 +41,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
   const [search, setSearch] = useState("");
   const [activePlayerDeal, setActivePlayerDeal] = useState<any | null>(null);
   const [dispatchingId, setDispatchingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Fetch all video deals from API
   const fetchVideos = async () => {
@@ -157,6 +158,37 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
       toast.error(`Error: ${e.message}`);
     } finally {
       setDispatchingId(null);
+    }
+  };
+
+  const handleDeleteVideo = async (dealId: string) => {
+    if (!window.confirm("Are you sure you want to delete this viral short video from the deal?")) return;
+    setDeletingId(dealId);
+    try {
+      const token = localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b";
+      const res = await fetch(`${apiBase}/api/v1/deals/${dealId}/video`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Token": token,
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success("🗑️ Video short successfully removed from deal");
+        setAllVideoDeals(prev => prev.filter(d => d.id !== dealId));
+        if (activePlayerDeal?.id === dealId) {
+          setActivePlayerDeal(null);
+        }
+        onRefresh?.();
+      } else {
+        toast.error(`Delete failed: ${data.detail || data.message || "Unknown error"}`);
+      }
+    } catch (e: any) {
+      toast.error(`Error: ${e.message}`);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -380,16 +412,34 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                           <Download size={13} />
                         </a>
                       )}
+                      <button
+                        onClick={() => handleDeleteVideo(deal.id)}
+                        disabled={deletingId === deal.id}
+                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors cursor-pointer"
+                        title="Delete Video"
+                      >
+                        <Trash2 size={13} className={deletingId === deal.id ? "animate-spin" : ""} />
+                      </button>
                     </>
                   ) : (
-                    <button
-                      onClick={() => handleRegenerate(deal.id)}
-                      disabled={isDispatching || isProcessing}
-                      className="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <RefreshCw size={12} className={isDispatching || isProcessing ? "animate-spin text-amber-400" : ""} />
-                      <span>{isProcessing ? "Rendering in background..." : "Trigger Render"}</span>
-                    </button>
+                    <div className="w-full flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleRegenerate(deal.id)}
+                        disabled={isDispatching || isProcessing}
+                        className="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw size={12} className={isDispatching || isProcessing ? "animate-spin text-amber-400" : ""} />
+                        <span>{isProcessing ? "Rendering in background..." : "Trigger Render"}</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteVideo(deal.id)}
+                        disabled={deletingId === deal.id}
+                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors cursor-pointer"
+                        title="Delete Video"
+                      >
+                        <Trash2 size={13} className={deletingId === deal.id ? "animate-spin" : ""} />
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -422,12 +472,27 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                     {activePlayerDeal.title}
                   </span>
                 </div>
-                <button
-                  onClick={() => setActivePlayerDeal(null)}
-                  className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                >
-                  <X size={16} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      if (activePlayerDeal) {
+                        handleDeleteVideo(activePlayerDeal.id);
+                      }
+                    }}
+                    disabled={deletingId === activePlayerDeal.id}
+                    className="p-1 px-2.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer active:scale-95 disabled:opacity-50"
+                    title="Delete this viral short"
+                  >
+                    <Trash2 size={12} className={deletingId === activePlayerDeal.id ? "animate-spin" : ""} />
+                    <span>Delete</span>
+                  </button>
+                  <button
+                    onClick={() => setActivePlayerDeal(null)}
+                    className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
 
               {/* Video Element */}
