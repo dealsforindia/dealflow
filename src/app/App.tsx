@@ -598,11 +598,20 @@ function mapChangesToBackend(changes: Record<string, unknown>): Record<string, u
   return mapped;
 }
 
-function getAdminHeaders(): Record<string, string> {
-  const token = typeof window !== "undefined" ? (localStorage.getItem("dealflow_admin_token") || "") : "";
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+function getAdminToken(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "";
+}
+
+function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
+  const token = getAdminToken();
+  const headers: Record<string, string> = {};
+  if (includeContentType) {
+    headers["Content-Type"] = "application/json";
+  }
   if (token) {
     headers["X-Admin-Token"] = token;
+    headers["Authorization"] = `Bearer ${token}`;
   }
   return headers;
 }
@@ -645,7 +654,7 @@ async function apiAiRewrite(id: string, instruction: string): Promise<string | n
   try {
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/ai-rewrite`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminHeaders(),
       body: JSON.stringify({ instruction }),
     });
     if (!res.ok) return null;
@@ -656,7 +665,10 @@ async function apiAiRewrite(id: string, instruction: string): Promise<string | n
 
 async function apiRetryAffiliate(id: string): Promise<string | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/retry-affiliate`, { method: "POST" });
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/retry-affiliate`, { 
+      method: "POST",
+      headers: getAdminHeaders(false),
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return data.aff_text || data.ai_formatted_text || data.text || data.affiliate_text || null;
@@ -771,7 +783,10 @@ async function apiGetPriceHistory(id: string): Promise<PriceIntelligenceData | n
 
 async function apiPurgeNonDeals(): Promise<{ success: boolean; purged_count: number; total_scanned: number } | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/purge-non-deals`, { method: "POST" });
+    const res = await fetch(`${API_BASE}/api/v1/deals/purge-non-deals`, { 
+      method: "POST",
+      headers: getAdminHeaders(false),
+    });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -2121,7 +2136,11 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     fd.append("file", f);
     try {
       onToast("Uploading image to server...", "info");
-      const res = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, { method: "POST", body: fd });
+      const res = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, { 
+        method: "POST", 
+        headers: getAdminHeaders(false),
+        body: fd 
+      });
       if (res.ok) {
         const data = await res.json();
         const serverImg = data.img_url || data.uploaded_img_url;
@@ -3766,7 +3785,7 @@ function ChannelsView() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/channels/alias`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminHeaders(),
         body: JSON.stringify({ id, name: trimmed })
       });
       if (res.ok) {
@@ -3829,7 +3848,10 @@ function ChannelsView() {
   const toggleChannel = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, active: !current } : c)));
     try {
-      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { method: "PUT" });
+      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { 
+        method: "PUT",
+        headers: getAdminHeaders(false),
+      });
       toast.success(`Channel ${!current ? "resumed" : "paused"}`);
     } catch {
       toast.error("Failed to toggle channel");
@@ -3839,7 +3861,10 @@ function ChannelsView() {
   const toggleAutoApproveTg = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve_tg: !current, auto_approve: !current } : c)));
     try {
-      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-tg`, { method: "PUT" });
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-tg`, { 
+        method: "PUT",
+        headers: getAdminHeaders(false),
+      });
       if (res.ok) {
         toast.success(`Telegram Auto-Post ${!current ? "Enabled" : "Disabled"}`);
       } else {
@@ -3853,7 +3878,10 @@ function ChannelsView() {
   const toggleAutoApproveWeb = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve_web: !current } : c)));
     try {
-      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-web`, { method: "PUT" });
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-web`, { 
+        method: "PUT",
+        headers: getAdminHeaders(false),
+      });
       if (res.ok) {
         toast.success(`Website Auto-Post ${!current ? "Enabled (Image Required)" : "Disabled"}`);
       } else {
@@ -3868,7 +3896,10 @@ function ChannelsView() {
     if (!confirm(`Are you sure you want to remove ${id}?`)) return;
     setChs(cs => cs.filter(c => c.id !== id));
     try {
-      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}`, { method: "DELETE" });
+      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}`, { 
+        method: "DELETE",
+        headers: getAdminHeaders(false),
+      });
       toast.success("Channel removed!");
     } catch {
       toast.error("Failed to delete channel");
@@ -3881,7 +3912,7 @@ function ChannelsView() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/channels/config`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminHeaders(),
         body: JSON.stringify({ channel: ch })
       });
       if (res.ok) {
@@ -3905,7 +3936,7 @@ function ChannelsView() {
     try {
       const res = await fetch(`${API_BASE}/api/v1/channels/update-link`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminHeaders(),
         body: JSON.stringify({
           old_channel: updatingChannel.id,
           new_channel: newLinkInput.trim(),
@@ -4419,7 +4450,7 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
     try {
       const res = await fetch(`${API_BASE}/api/v1/settings`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminHeaders(),
         body: JSON.stringify({
           CURATED_CHANNEL: s.outputChannel,
           AI_STYLE_PROMPT: s.stylePrompt,
