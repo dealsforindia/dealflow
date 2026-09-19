@@ -121,9 +121,10 @@ async function main() {
       });
       
       if (fs.existsSync(voiceFilePath) && fs.statSync(voiceFilePath).size > 1000) {
-        props.audioVoice = `audio/${voiceFileName}`;
+        const voiceBase64 = fs.readFileSync(voiceFilePath).toString("base64");
+        props.audioVoice = `data:audio/mp3;base64,${voiceBase64}`;
         customVoiceFile = voiceFilePath;
-        console.log(`✅ Voiceover generated: ${voiceFileName}`);
+        console.log(`✅ Voiceover generated and embedded as base64 data URL (${Math.round(voiceBase64.length / 1024)} KB)`);
       }
     } catch (err) {
       console.warn(`⚠️ Voice synthesis fallback:`, err.message);
@@ -155,8 +156,12 @@ async function main() {
     if (fs.existsSync(tempPropsFile)) {
       fs.unlinkSync(tempPropsFile);
     }
+    if (customVoiceFile && fs.existsSync(customVoiceFile)) {
+      try { fs.unlinkSync(customVoiceFile); } catch (e) {}
+    }
   }
 }
+
 
 main().catch(err => {
   console.error("Renderer error:", err);
