@@ -141,7 +141,8 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Admin-Token": localStorage.getItem("dealflow_admin_token") || "",
+          "X-Admin-Token": localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "***REMOVED***",
+          "Authorization": `Bearer ${localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "***REMOVED***"}`,
         },
       });
       const data = await res.json();
