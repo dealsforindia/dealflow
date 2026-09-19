@@ -5,14 +5,9 @@ Config.setOverwriteOutput(true);
 Config.setPixelFormat("yuv420p");
 Config.setCodec("h264");
 
-// Linux CI headless optimization (avoids shm exhaustion and sandbox errors in GitHub Actions)
-Config.setChromiumOptions({
-  args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage",
-    "--disable-gpu",
-    "--headless=new",
-  ],
-});
+// Linux CI headless optimization for GitHub Actions
+Config.setChromiumDisableWebSecurity(true);
+Config.setChromiumHeadlessMode(true);
+Config.setChromiumMultiProcessOnLinux(true);
+
 
