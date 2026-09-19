@@ -328,11 +328,12 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
 }
 
 // ─── 4. 3D Floating Nav / Sidebar Icons ───────────────────────────────────────
-export function Nav3DIcon({ icon, active }: { icon: "review" | "broadcast" | "channels" | "settings"; active: boolean }) {
+export function Nav3DIcon({ icon, active }: { icon: "review" | "broadcast" | "channels" | "videos" | "settings"; active: boolean }) {
   const icons = {
     review: "🛒",
     broadcast: "🚀",
     channels: "📡",
+    videos: "🎬",
     settings: "⚙️",
   };
 
