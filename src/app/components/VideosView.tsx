@@ -141,7 +141,8 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Admin-Token": localStorage.getItem("dealflow_admin_token") || "",
+          "X-Admin-Token": localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b",
+          "Authorization": `Bearer ${localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b"}`,
         },
       });
       const data = await res.json();

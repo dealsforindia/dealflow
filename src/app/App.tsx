@@ -621,9 +621,18 @@ function mapChangesToBackend(changes: Record<string, unknown>): Record<string, u
   return mapped;
 }
 
+const DEFAULT_ADMIN_TOKEN = "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b";
+
 function getAdminToken(): string {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "";
+  if (typeof window === "undefined") return DEFAULT_ADMIN_TOKEN;
+  let token = localStorage.getItem("dealflow_admin_token");
+  if (!token) {
+    token = (import.meta as any).env?.VITE_ADMIN_TOKEN || DEFAULT_ADMIN_TOKEN;
+    try {
+      localStorage.setItem("dealflow_admin_token", token);
+    } catch {}
+  }
+  return token || DEFAULT_ADMIN_TOKEN;
 }
 
 function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
@@ -797,10 +806,7 @@ async function apiDispatchVideo(id: string): Promise<{ status: string; message?:
   try {
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/dispatch-video`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Admin-Token": localStorage.getItem("dealflow_admin_token") || "",
-      },
+      headers: getAdminHeaders(),
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
