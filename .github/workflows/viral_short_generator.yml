@@ -1,0 +1,137 @@
+name: Generate Viral Deal Short (1080x1920)
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Product Title"
+        required: true
+        default: "boAt Airdopes 141 Bluetooth Wireless Earbuds"
+      brand:
+        description: "Brand Name"
+        required: true
+        default: "boAt"
+      sale_price:
+        description: "Sale Price (INR)"
+        required: true
+        default: "899"
+      mrp:
+        description: "MRP (INR)"
+        required: true
+        default: "4490"
+      discount:
+        description: "Discount Percentage"
+        required: true
+        default: "80"
+      store:
+        description: "Store / Merchant"
+        required: false
+        default: "Amazon"
+      coupon:
+        description: "Coupon Text (Optional)"
+        required: false
+        default: ""
+      img_url:
+        description: "Product Image URL"
+        required: true
+        default: "https://m.media-amazon.com/images/I/71IkDIETLlL._AC_UF1000,1000_QL80_.jpg"
+      fp_hash:
+        description: "Deal Fingerprint Hash (Optional)"
+        required: false
+        default: "manual_dispatch"
+
+  repository_dispatch:
+    types: [generate_viral_short]
+
+jobs:
+  render_video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install FFmpeg & Fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-freefont-ttf fonts-noto-core fonts-indic
+
+      - name: Install Python Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r dealflow/video-engine/requirements.txt
+
+      - name: Prepare Deal Payload
+        id: payload
+        run: |
+          python - << 'EOF'
+          import json, os
+
+          # Read from repository_dispatch payload or workflow_dispatch inputs
+          event_path = os.environ.get("GITHUB_EVENT_PATH")
+          deal = {}
+
+          if event_path and os.path.exists(event_path):
+              with open(event_path, "r", encoding="utf-8") as f:
+                  event_data = json.load(f)
+              client_payload = event_data.get("client_payload", {})
+              if client_payload:
+                  deal = client_payload.get("deal") or client_payload
+
+          if not deal:
+              deal = {
+                  "prod_name": os.environ.get("INPUT_TITLE", "Curated Loot Deal"),
+                  "brand": os.environ.get("INPUT_BRAND", "Brand"),
+                  "sale_price": int(os.environ.get("INPUT_SALE_PRICE", "0")),
+                  "mrp": int(os.environ.get("INPUT_MRP", "0")),
+                  "discount_pct": int(os.environ.get("INPUT_DISCOUNT", "0")),
+                  "store": os.environ.get("INPUT_STORE", "Amazon"),
+                  "coupon": os.environ.get("INPUT_COUPON", ""),
+                  "img_url": os.environ.get("INPUT_IMG_URL", ""),
+                  "fp_hash": os.environ.get("INPUT_FP_HASH", "manual")
+              }
+
+          fp = deal.get("fp_hash") or f"deal_{os.environ.get('GITHUB_RUN_ID')}"
+          with open("deal_payload.json", "w", encoding="utf-8") as out:
+              json.dump(deal, out, indent=2)
+
+          print(f"Prepared deal payload for {fp}: {deal.get('prod_name')}")
+          EOF
+        env:
+          INPUT_TITLE: ${{ github.event.inputs.title }}
+          INPUT_BRAND: ${{ github.event.inputs.brand }}
+          INPUT_SALE_PRICE: ${{ github.event.inputs.sale_price }}
+          INPUT_MRP: ${{ github.event.inputs.mrp }}
+          INPUT_DISCOUNT: ${{ github.event.inputs.discount }}
+          INPUT_STORE: ${{ github.event.inputs.store }}
+          INPUT_COUPON: ${{ github.event.inputs.coupon }}
+          INPUT_IMG_URL: ${{ github.event.inputs.img_url }}
+          INPUT_FP_HASH: ${{ github.event.inputs.fp_hash }}
+
+      - name: Render 1080x1920 Viral Short Video
+        run: |
+          python dealflow/video-engine/generator.py \
+            --json deal_payload.json \
+            --cover "viral_short_${{ github.run_id }}_cover.png" \
+            --output "viral_short_${{ github.run_id }}.mp4"
+
+      - name: Verify Video Artifact
+        run: |
+          ffprobe -v error -show_entries stream=width,height,codec_name,duration -of json "viral_short_${{ github.run_id }}.mp4"
+
+      - name: Upload Video Artifacts (MP4, Cover & Metadata)
+        uses: actions/upload-artifact@v4
+        with:
+          name: viral-short-${{ github.run_id }}
+          path: |
+            viral_short_${{ github.run_id }}.mp4
+            viral_short_${{ github.run_id }}_cover.png
+            viral_short_${{ github.run_id }}.meta.json
+          retention-days: 30

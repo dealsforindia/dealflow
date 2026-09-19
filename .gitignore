@@ -25,6 +25,10 @@ extract_frames/
 *.sw?
 
 # Backend scripts and environment variables
+__pycache__/
+*.pyc
 *.py
+!dealflow/**/*.py
+*.mp4
 .env
 .env.*
