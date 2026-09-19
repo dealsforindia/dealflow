@@ -45,6 +45,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [hoveredDealId, setHoveredDealId] = useState<string | null>(null);
   const [batchLoading, setBatchLoading] = useState(false);
+  const [creatorKitDeal, setCreatorKitDeal] = useState<any | null>(null);
 
   // Fetch all video deals from API
   const fetchVideos = async () => {
@@ -457,6 +458,13 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                       >
                         <Copy size={13} />
                       </button>
+                      <button
+                        onClick={() => setCreatorKitDeal(deal)}
+                        className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition-colors cursor-pointer"
+                        title="Creator Kit: YouTube Shorts & Reels Metadata"
+                      >
+                        <Sparkles size={13} className="text-amber-400" />
+                      </button>
                       {deal.videoUrl && (
                         <a
                           href={deal.videoUrl}
@@ -605,6 +613,103 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                     <Copy size={13} /> Copy Link
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Creator Kit Modal (YouTube Shorts & Instagram Reels One-Click Metadata) */}
+      <AnimatePresence>
+        {creatorKitDeal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            onClick={() => setCreatorKitDeal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-lg rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-2xl flex flex-col gap-4 text-white"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                    <Sparkles size={18} />
+                  </span>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Social Creator Kit</h3>
+                    <p className="text-[11px] text-slate-400">Ready-to-post YouTube Shorts & Instagram Reels payload</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCreatorKitDeal(null)}
+                  className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Title Generator */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300">Viral Short Title</span>
+                  <button
+                    onClick={() => {
+                      const title = `${creatorKitDeal.title} at ₹${creatorKitDeal.price?.toLocaleString('en-IN')} (${creatorKitDeal.discount}% Off)! 🔥 #shorts #deals #lootdeals`;
+                      navigator.clipboard.writeText(title);
+                      toast.success("Shorts title copied!");
+                    }}
+                    className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Copy size={11} /> Copy Title
+                  </button>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-950 border border-white/10 text-xs font-mono text-slate-200">
+                  {creatorKitDeal.title} at ₹{creatorKitDeal.price?.toLocaleString('en-IN')} ({creatorKitDeal.discount}% Off)! 🔥 #shorts #deals #lootdeals
+                </div>
+              </div>
+
+              {/* Description & Tags */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300">Affiliate Description & Disclosure</span>
+                  <button
+                    onClick={() => {
+                      const desc = `⚡ Grab Deal Now: https://indiadealhunts.in/?short=${creatorKitDeal.id}\n\n🏷️ Store: ${creatorKitDeal.store || 'Verified Store'}\n💰 Price: ₹${creatorKitDeal.price?.toLocaleString('en-IN')} (M.R.P. ₹${creatorKitDeal.mrp?.toLocaleString('en-IN')})\n🔥 Discount: ${creatorKitDeal.discount}% OFF\n\nPrice verified 0% fake on IndiaDealHunts.\n#deals #shopping #lootdeals #amazonloot #flipkart #techdeals`;
+                      navigator.clipboard.writeText(desc);
+                      toast.success("Description & tags copied!");
+                    }}
+                    className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Copy size={11} /> Copy Description
+                  </button>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-950 border border-white/10 text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                  {`⚡ Grab Deal Now: https://indiadealhunts.in/?short=${creatorKitDeal.id}\n\n🏷️ Store: ${creatorKitDeal.store || 'Verified Store'}\n💰 Price: ₹${creatorKitDeal.price?.toLocaleString('en-IN')} (M.R.P. ₹${creatorKitDeal.mrp?.toLocaleString('en-IN')})\n🔥 Discount: ${creatorKitDeal.discount}% OFF\n\nPrice verified 0% fake on IndiaDealHunts.\n#deals #shopping #lootdeals #amazonloot #flipkart #techdeals`}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                {creatorKitDeal.videoUrl && (
+                  <a
+                    href={creatorKitDeal.videoUrl}
+                    download={`short_${creatorKitDeal.id}.mp4`}
+                    className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <Download size={14} /> Download 1080x1920 MP4
+                  </a>
+                )}
+                <a
+                  href="https://studio.youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-red-600/30"
+                >
+                  <ExternalLink size={14} /> YouTube Studio
+                </a>
               </div>
             </motion.div>
           </div>
