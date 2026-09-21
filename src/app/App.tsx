@@ -58,6 +58,8 @@ interface Deal {
   livePrice?: number | null;
   priceChanged?: boolean;
   priceDiff?: number;
+  isMegaHaul?: boolean;
+  items?: any[];
   dealScore?: number;
   dealTier?: string;
   dealTierLabel?: string;
@@ -979,6 +981,7 @@ function DealCard({
   const [copied, setCopied] = useState(false);
   const [copyPlatform, setCopyPlatform] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [isHaulOpen, setIsHaulOpen] = useState(false);
   const store = getStoreBadge(deal.platforms, deal.affText);
   const isConsensus = Boolean(
     (deal.clusterChannels && deal.clusterChannels.length >= 2) ||
@@ -1610,6 +1613,58 @@ function DealCard({
 
 
           </div>
+
+          {/* Mega Haul Accordion (Desktop) */}
+          {deal.isMegaHaul && deal.items && deal.items.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-white/[0.06]">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsHaulOpen(!isHaulOpen); }}
+                className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors"
+              >
+                <span className="text-[11px] font-bold text-emerald-300">
+                  View {deal.items.length} more deals in this location...
+                </span>
+                <ChevronDown size={14} className={`text-emerald-300 transition-transform duration-300 ${isHaulOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isHaulOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-2 space-y-2 pb-1">
+                      {deal.items.map((item: any, idx: number) => (
+                        <div key={idx} className="flex flex-col gap-1 p-2 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="text-[11.5px] font-medium text-slate-200 line-clamp-2 leading-tight">
+                              {item.title}
+                            </span>
+                            <span className="text-[11px] font-black text-emerald-300 tabular-nums whitespace-nowrap bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                              ₹{item.price}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between mt-0.5">
+                            {item.mrp && item.mrp > item.price ? (
+                              <span className="text-[9px] font-bold text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                {Math.round(((item.mrp - item.price) / item.mrp) * 100)}% OFF
+                              </span>
+                            ) : <span />}
+                            <a href={item.url} target="_blank" rel="noreferrer" className="text-[9.5px] font-bold text-sky-300 hover:text-sky-200 flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                              Check Link <ExternalLink size={10} />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* Footer Buttons */}
           <div className="pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
