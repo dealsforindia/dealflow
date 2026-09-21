@@ -58,7 +58,7 @@ interface Deal {
   livePrice?: number | null;
   priceChanged?: boolean;
   priceDiff?: number;
-  isMegaHaul?: boolean;
+  is_mega_haul?: boolean;
   items?: any[];
   dealScore?: number;
   dealTier?: string;
@@ -1615,7 +1615,7 @@ function DealCard({
           </div>
 
           {/* Mega Haul Accordion (Desktop) */}
-          {deal.isMegaHaul && deal.items && deal.items.length > 0 && (
+          {deal.is_mega_haul && deal.items && deal.items.length > 0 && (
             <div className="mt-2 pt-2 border-t border-white/[0.06]">
               <button
                 onClick={(e) => { e.stopPropagation(); setIsHaulOpen(!isHaulOpen); }}
