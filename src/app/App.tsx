@@ -2745,7 +2745,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                         {deal.channel} <CheckCheck size={12} className="text-blue-400" />
                       </div>
                       <div className="text-[10px] text-slate-400">
-                        {deal.channelRaw.startsWith("@") ? deal.channelRaw : `Telegram Channel · ${deal.channel}`}
+                        {deal.channelRaw && deal.channelRaw.startsWith("@") ? deal.channelRaw : `Telegram Channel · ${deal.channel}`}
                       </div>
                     </div>
                   </div>
