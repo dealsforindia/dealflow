@@ -25,6 +25,7 @@ import { GlassDropdown, DropdownOption } from "./components/GlassDropdown";
 import { ChannelPerformanceHeatmap } from "./components/ChannelPerformanceHeatmap";
 import { SmartAutoRulesDeck } from "./components/SmartAutoRulesDeck";
 import { VideosView } from "./components/VideosView";
+import { LoginScreen } from "./components/LoginScreen";
 import {
   playApprove, playReject, playCopy, playTick, playUndo,
   isSoundMuted, toggleSound
@@ -578,9 +579,13 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
 
 async function fetchPendingDeals(): Promise<Deal[]> {
   const [pendingRes, recentRes] = await Promise.all([
-    fetch(`${API_BASE}/api/v1/deals/pending?limit=1000&cluster=true`).catch(() => null),
-    fetch(`${API_BASE}/api/v1/deals/recent?limit=300`).catch(() => null),
+    fetch(`${API_BASE}/api/v1/deals/pending?limit=1000&cluster=true`, { headers: getAdminHeaders(false) }).catch(() => null),
+    fetch(`${API_BASE}/api/v1/deals/recent?limit=300`, { headers: getAdminHeaders(false) }).catch(() => null),
   ]);
+
+  if (pendingRes?.status === 401 || pendingRes?.status === 403 || recentRes?.status === 401 || recentRes?.status === 403) {
+    throw new Error("UNAUTHORIZED");
+  }
 
   let rows: (RawDeal & { fp_hash?: string; _forceStatus?: DealStatus })[] = [];
   if (pendingRes?.ok) {
@@ -623,18 +628,18 @@ function mapChangesToBackend(changes: Record<string, unknown>): Record<string, u
   return mapped;
 }
 
-const DEFAULT_ADMIN_TOKEN = "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b";
-
-function getAdminToken(): string {
-  if (typeof window === "undefined") return DEFAULT_ADMIN_TOKEN;
+function getAdminToken(): string | null {
+  if (typeof window === "undefined") return null;
   let token = localStorage.getItem("dealflow_admin_token");
   if (!token) {
-    token = (import.meta as any).env?.VITE_ADMIN_TOKEN || DEFAULT_ADMIN_TOKEN;
-    try {
-      localStorage.setItem("dealflow_admin_token", token);
-    } catch {}
+    token = (import.meta as any).env?.VITE_ADMIN_TOKEN;
+    if (token) {
+      try {
+        localStorage.setItem("dealflow_admin_token", token);
+      } catch {}
+    }
   }
-  return token || DEFAULT_ADMIN_TOKEN;
+  return token || null;
 }
 
 function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
@@ -4843,10 +4848,37 @@ function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAle
 
 // ─── Main App Entry ───────────────────────────────────────────────────────────
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getAdminToken());
   const [tab, setTab] = useState<Tab>("Review");
   const [deals, setDeals] = useState<Deal[]>([]);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [dark, setDark] = useState(true);
+
+  const handleLogin = async (token: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/auth/verify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "X-Admin-Token": token
+        }
+      });
+      if (res.ok) {
+        localStorage.setItem("dealflow_admin_token", token);
+        setIsAuthenticated(true);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem("dealflow_admin_token");
+    setIsAuthenticated(false);
+  }, []);
 
   const [soundAlerts, setSoundAlerts] = useState<boolean>(() => {
     try {
@@ -4894,10 +4926,13 @@ export default function App() {
         }
         return merged.sort((a, b) => b.ts - a.ts);
       });
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to load deals", e);
+      if (e.message === "UNAUTHORIZED") {
+        handleLogout();
+      }
     }
-  }, []);
+  }, [handleLogout]);
 
   useEffect(() => {
     loadDeals();
@@ -5049,6 +5084,15 @@ export default function App() {
   };
 
   const pendingCount = deals.filter(d => d.status === "pending").length;
+
+  if (!isAuthenticated) {
+    return (
+      <React.Fragment>
+        <Toaster position="top-right" richColors theme="dark" />
+        <LoginScreen onLogin={handleLogin} />
+      </React.Fragment>
+    );
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#07080E] text-white relative">
