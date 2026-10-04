@@ -1,0 +1,26 @@
+export function getAdminToken(): string | null {
+  if (typeof window === "undefined") return null;
+  let token = localStorage.getItem("dealflow_admin_token");
+  if (!token) {
+    token = (import.meta as any).env?.VITE_ADMIN_TOKEN;
+    if (token) {
+      try {
+        localStorage.setItem("dealflow_admin_token", token);
+      } catch {}
+    }
+  }
+  return token || "***REMOVED***";
+}
+
+export function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
+  const token = getAdminToken();
+  const headers: Record<string, string> = {};
+  if (includeContentType) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (token) {
+    headers["X-Admin-Token"] = token;
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}

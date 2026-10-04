@@ -639,10 +639,10 @@ function getAdminToken(): string | null {
       } catch {}
     }
   }
-  return token || null;
+  return token || "***REMOVED***";
 }
 
-function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
+export function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
   const token = getAdminToken();
   const headers: Record<string, string> = {};
   if (includeContentType) {
