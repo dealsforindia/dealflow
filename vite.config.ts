@@ -32,6 +32,8 @@ export default defineConfig({
   },
 
   server: {
+    port: 5174,
+    host: true,
     proxy: {
       '/api': {
         target: 'http://74.225.250.0:8000',
