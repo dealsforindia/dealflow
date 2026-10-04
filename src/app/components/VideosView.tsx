@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Category3DIcon, Store3DBadge } from "./Iconscout3DAssets";
+import { getAdminHeaders } from "../utils/adminAuth";
 
 export interface VideoDeal {
   id: string;
@@ -51,7 +52,9 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
   const fetchVideos = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase}/api/v1/deals/videos`);
+      const res = await fetch(`${apiBase}/api/v1/deals/videos`, {
+        headers: getAdminHeaders(false),
+      });
       if (res.ok) {
         const data = await res.json();
         setServerVideos(data.deals || []);

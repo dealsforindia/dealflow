@@ -6,6 +6,7 @@ import {
   PenLine, Check, X
 } from "lucide-react";
 import { toast } from "sonner";
+import { getAdminHeaders } from "../utils/adminAuth";
 
 export interface ChannelAnalytics {
   channel: string;
@@ -94,7 +95,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
     try {
       const res = await fetch(`${apiBase}/api/v1/channels/alias`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminHeaders(true),
         body: JSON.stringify({ id, name: trimmed })
       });
       if (res.ok) {
@@ -115,7 +116,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
     try {
       const res = await fetch(`${apiBase}/api/v1/channels/update-link`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminHeaders(true),
         body: JSON.stringify({
           old_channel: updatingChannel.id,
           new_channel: newLinkInput.trim(),
@@ -141,7 +142,10 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
   const toggleAutoApproveTg = async (id: string, current: boolean) => {
     setData(prev => prev.map(c => c.channel === id ? { ...c, auto_approve_tg: !current, auto_approve: !current } : c));
     try {
-      const res = await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-tg`, { method: "PUT" });
+      const res = await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-tg`, {
+        method: "PUT",
+        headers: getAdminHeaders(false),
+      });
       if (res.ok) {
         toast.success(`Telegram Auto-Post ${!current ? "Enabled" : "Disabled"}`);
         onRefreshChannels?.();
@@ -154,7 +158,10 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
   const toggleAutoApproveWeb = async (id: string, current: boolean) => {
     setData(prev => prev.map(c => c.channel === id ? { ...c, auto_approve_web: !current } : c));
     try {
-      const res = await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-web`, { method: "PUT" });
+      const res = await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-web`, {
+        method: "PUT",
+        headers: getAdminHeaders(false),
+      });
       if (res.ok) {
         toast.success(`Website Auto-Post ${!current ? "Enabled (Image Required)" : "Disabled"}`);
         onRefreshChannels?.();
@@ -167,7 +174,10 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
   const toggleChannel = async (id: string, current: boolean) => {
     setData(prev => prev.map(c => c.channel === id ? { ...c, active: !current } : c));
     try {
-      await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { method: "PUT" });
+      await fetch(`${apiBase}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, {
+        method: "PUT",
+        headers: getAdminHeaders(false),
+      });
       toast.success(`Channel ${!current ? "resumed" : "paused"}`);
       onRefreshChannels?.();
     } catch {
@@ -178,7 +188,9 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${apiBase}/api/v1/channels/analytics`);
+      const res = await fetch(`${apiBase}/api/v1/channels/analytics`, {
+        headers: getAdminHeaders(false),
+      });
       if (res.ok) {
         const json = await res.json();
         if (json.channels && Array.isArray(json.channels)) {

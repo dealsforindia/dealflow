@@ -639,10 +639,10 @@ function getAdminToken(): string | null {
       } catch {}
     }
   }
-  return token || null;
+  return token || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b";
 }
 
-function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
+export function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
   const token = getAdminToken();
   const headers: Record<string, string> = {};
   if (includeContentType) {

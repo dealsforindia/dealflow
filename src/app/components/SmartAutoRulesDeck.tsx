@@ -4,6 +4,7 @@ import {
   Sliders, Plus, Trash2, RotateCw, Play, Sparkles, Check, X
 } from "lucide-react";
 import { toast } from "sonner";
+import { getAdminHeaders } from "../utils/adminAuth";
 
 export interface AutoRule {
   id: string;
@@ -56,7 +57,9 @@ export const SmartAutoRulesDeck: React.FC<Props> = ({ apiBase }) => {
   const fetchRules = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${apiBase}/api/v1/settings/auto-rules`);
+      const res = await fetch(`${apiBase}/api/v1/settings/auto-rules`, {
+        headers: getAdminHeaders(false),
+      });
       if (res.ok) {
         const data = await res.json();
         setEnabled(data.enabled !== false);
@@ -79,7 +82,7 @@ export const SmartAutoRulesDeck: React.FC<Props> = ({ apiBase }) => {
       setSaving(true);
       const res = await fetch(`${apiBase}/api/v1/settings/auto-rules`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminHeaders(true),
         body: JSON.stringify({
           enabled: masterEnabled,
           rules: updatedRules,
@@ -187,7 +190,7 @@ export const SmartAutoRulesDeck: React.FC<Props> = ({ apiBase }) => {
       };
       const res = await fetch(`${apiBase}/api/v1/settings/auto-rules/test`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAdminHeaders(true),
         body: JSON.stringify(payload),
       });
       if (res.ok) {
