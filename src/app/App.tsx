@@ -862,7 +862,7 @@ interface ChannelAnalyticsItem {
 
 async function apiGetChannelsAnalytics(): Promise<ChannelAnalyticsItem[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/channels/analytics`);
+    const res = await fetch(`${API_BASE}/api/v1/channels/analytics`, { headers: getAdminHeaders(false) });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data?.channels) ? data.channels : [];
@@ -3947,7 +3947,7 @@ function ChannelsView() {
 
   const fetchChannels = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/channels`);
+      const res = await fetch(`${API_BASE}/api/v1/channels`, { headers: getAdminHeaders(false) });
       if (res.ok) {
         const data = await res.json();
         if (data.channels && Array.isArray(data.channels)) {
