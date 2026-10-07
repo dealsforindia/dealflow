@@ -641,7 +641,7 @@ function getAdminToken(): string | null {
       } catch {}
     }
   }
-  return token || "***REMOVED***";
+  return token || "";
 }
 
 export function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
