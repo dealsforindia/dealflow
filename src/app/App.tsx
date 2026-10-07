@@ -9,7 +9,7 @@ import {
   Clock, Flame, RefreshCw, CheckCircle2,
   Maximize2, Copy, Link as LinkIcon, FileText,
   Globe, ArrowUpDown, ShoppingCart, Percent,
-  Send, CheckCheck, Trash2, SlidersHorizontal, Eye,
+  Send, CheckCheck, Trash2, SlidersHorizontal, Eye, EyeOff,
   LayoutGrid, Columns, Smartphone, CornerDownLeft, Command,
   Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History, Network, Cpu,
   Video, Play, Film
@@ -683,6 +683,26 @@ async function apiReject(id: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/deals/${id}/reject`, {
       method: "PUT",
+      headers: getAdminHeaders(),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function apiDeleteDeal(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}`, {
+      method: "DELETE",
+      headers: getAdminHeaders(),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
+async function apiUnpublishDeal(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/unpublish`, {
+      method: "POST",
       headers: getAdminHeaders(),
     });
     return res.ok;
@@ -4431,7 +4451,19 @@ function ChannelsView() {
 }
 
 // ─── Posted Deals View ────────────────────────────────────────────────────────
-function PostedDealCard({ deal, onPreviewVideo }: { deal: Deal; onPreviewVideo?: (deal: Deal) => void }) {
+function PostedDealCard({
+  deal,
+  onPreviewVideo,
+  onEdit,
+  onUnpublish,
+  onDelete,
+}: {
+  deal: Deal;
+  onPreviewVideo?: (deal: Deal) => void;
+  onEdit?: (deal: Deal) => void;
+  onUnpublish?: (id: string) => void;
+  onDelete?: (id: string) => void;
+}) {
   const [imgErr, setImgErr] = useState(false);
   const [videoStatus, setVideoStatus] = useState<string | null>(deal.videoStatus || (deal.hasVideo ? "ready" : null));
   const [isDispatching, setIsDispatching] = useState(false);
@@ -4557,19 +4589,67 @@ function PostedDealCard({ deal, onPreviewVideo }: { deal: Deal; onPreviewVideo?:
           </button>
         )}
 
+        {/* Live Storefront Link */}
+        <a
+          href={`https://indiadealhunts.vercel.app/?deal=${deal.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 transition-colors border border-cyan-500/20 cursor-pointer active:scale-95 flex items-center justify-center"
+          title="Open deal on IndiaDealHunts Live Storefront"
+        >
+          <ExternalLink size={13} />
+        </a>
+
+        {/* Edit Deal Metadata */}
+        <button
+          onClick={() => onEdit?.(deal)}
+          className="p-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 transition-colors border border-indigo-500/20 cursor-pointer active:scale-95"
+          title="Edit Deal Title, Pricing, Link & Photo"
+        >
+          <PenLine size={13} />
+        </button>
+
+        {/* Unpublish from Web */}
+        <button
+          onClick={() => onUnpublish?.(deal.id)}
+          className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 transition-colors border border-amber-500/20 cursor-pointer active:scale-95"
+          title="Unpublish from Storefront (Pull back to Review)"
+        >
+          <EyeOff size={13} />
+        </button>
+
+        {/* Delete Deal */}
+        <button
+          onClick={() => onDelete?.(deal.id)}
+          className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition-colors border border-rose-500/20 cursor-pointer active:scale-95"
+          title="Permanently Delete Deal from System"
+        >
+          <Trash2 size={13} />
+        </button>
+
         <button
           onClick={() => { navigator.clipboard.writeText(deal.affText); toast.success("Copied post text!"); }}
-          className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10 cursor-pointer active:scale-95"
+          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-colors border border-white/10 cursor-pointer active:scale-95"
           title="Copy Post"
         >
-          <Copy size={14} />
+          <Copy size={13} />
         </button>
       </div>
     </div>
   );
 }
 
-function PostedView({ deals }: { deals: Deal[] }) {
+function PostedView({
+  deals,
+  onEdit,
+  onUnpublish,
+  onDelete,
+}: {
+  deals: Deal[];
+  onEdit?: (deal: Deal) => void;
+  onUnpublish?: (id: string) => void;
+  onDelete?: (id: string) => void;
+}) {
   const [search, setSearch] = useState("");
   const [previewDeal, setPreviewDeal] = useState<Deal | null>(null);
   const postedDeals = deals.filter(d => d.status === "approved" || d.status === "auto_posted");
@@ -4592,7 +4672,7 @@ function PostedView({ deals }: { deals: Deal[] }) {
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               Broadcasted Deals History ({postedDeals.length})
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">Live timeline of deals sent to Telegram & X</p>
+            <p className="text-xs text-slate-400 mt-0.5">Live timeline of deals sent to Telegram, X & Storefront</p>
           </div>
         </div>
 
@@ -4624,7 +4704,14 @@ function PostedView({ deals }: { deals: Deal[] }) {
       ) : (
         <div className="flex flex-col gap-3">
           {filtered.map(d => (
-            <PostedDealCard key={d.id} deal={d} onPreviewVideo={setPreviewDeal} />
+            <PostedDealCard
+              key={d.id}
+              deal={d}
+              onPreviewVideo={setPreviewDeal}
+              onEdit={onEdit}
+              onUnpublish={onUnpublish}
+              onDelete={onDelete}
+            />
           ))}
         </div>
       )}
@@ -5079,6 +5166,27 @@ export default function App() {
     }, 5000);
   };
 
+  const handleUnpublish = async (id: string) => {
+    setDeals(prev => prev.map(d => d.id === id ? { ...d, status: "pending", liveOnWeb: false } : d));
+    const ok = await apiUnpublishDeal(id);
+    if (ok) {
+      toast.success("Deal unpublished from Web Storefront! Moved back to Review deck.", { icon: "🙈" });
+    } else {
+      toast.error("Failed to unpublish deal from server");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this deal from IndiaDealHunts?")) return;
+    setDeals(prev => prev.filter(d => d.id !== id));
+    const ok = await apiDeleteDeal(id);
+    if (ok) {
+      toast.success("Deal permanently deleted from catalog!", { icon: "🗑️" });
+    } else {
+      toast.error("Failed to delete deal from server");
+    }
+  };
+
   const handleAddDeal = (deal: Deal) => {
     setDeals(prev => [deal, ...prev]);
   };
@@ -5104,7 +5212,14 @@ export default function App() {
         {tab === "Review" && (
           <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onAddDeal={handleAddDeal} onRefresh={loadDeals} dark={dark} />
         )}
-        {tab === "Posted" && <PostedView deals={deals} />}
+        {tab === "Posted" && (
+          <PostedView
+            deals={deals}
+            onEdit={setEditing}
+            onUnpublish={handleUnpublish}
+            onDelete={handleDelete}
+          />
+        )}
         {tab === "Channels" && <ChannelsView />}
         {tab === "Videos" && <VideosView deals={deals} apiBase={API_BASE} onRefresh={loadDeals} onEdit={setEditing} />}
         {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
