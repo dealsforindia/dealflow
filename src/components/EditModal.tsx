@@ -7,6 +7,7 @@ import {
 import ScoreRing from "./ScoreRing";
 import ImageLightbox from "./ImageLightbox";
 import { X, PenLine, Upload, Sparkles, Undo2, Copy, ExternalLink, FileText, Link, Check, Maximize2, AlertTriangle, Globe, Zap } from "./Icons";
+import { renderSafeTelegramText } from "../utils/telegramText";
 
 const aiRewriteSim = (text: string, inst: string): string => {
   const i = inst.toLowerCase();
@@ -493,16 +494,7 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
                         onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
                     )}
                     <div className="tg-bubble-text">
-                      {text.split("\n").slice(0, 12).join("\n")
-                        .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
-                        .replace(/~~(.+?)~~/g, (_, m) => `<s>${m}</s>`)
-                        .split(/(https?:\/\/\S+)/g)
-                        .map((part, i) =>
-                          /^https?:\/\//.test(part)
-                            ? <a key={i} href={part} className="tg-bubble-link" target="_blank" rel="noreferrer">{part.length > 32 ? part.slice(0,32) + "…" : part}</a>
-                            : <span key={i} dangerouslySetInnerHTML={{ __html: part.replace(/<b>(.*?)<\/b>/g, '<strong style="color:#fff">$1</strong>').replace(/<s>(.*?)<\/s>/g, '<del>$1</del>') }} />
-                        )
-                      }
+                      {renderSafeTelegramText(text, 12, 32)}
                     </div>
                     <div className="tg-bubble-time">{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} ✓✓</div>
                   </div>
