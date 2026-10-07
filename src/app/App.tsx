@@ -622,7 +622,9 @@ function mapChangesToBackend(changes: Record<string, unknown>): Record<string, u
   if ("couponDiscount" in changes) mapped.coupon_discount = changes.couponDiscount;
   if ("category" in changes) mapped.category = changes.category;
   if ("destinations" in changes) mapped.destinations = changes.destinations;
-  for (const k of ["prod_name", "aff_text", "img_url", "prices", "message", "coupon", "coupon_discount", "effective_price", "destinations"]) {
+  if ("uploadedImgUrl" in changes) mapped.uploaded_img_url = changes.uploadedImgUrl;
+  if ("uploaded_img_url" in changes) mapped.uploaded_img_url = changes.uploaded_img_url;
+  for (const k of ["prod_name", "aff_text", "img_url", "uploaded_img_url", "prices", "message", "coupon", "coupon_discount", "effective_price", "destinations"]) {
     if (k in changes && !(k in mapped)) mapped[k] = changes[k];
   }
   return mapped;
@@ -2305,6 +2307,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
         if (serverImg) {
           setImgUrl(serverImg);
           setUploadedImg(serverImg);
+          setImgFile(null);
         }
         onToast("Image uploaded to server successfully!", "success");
       } else {
