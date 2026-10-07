@@ -565,8 +565,8 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     dealBadges: (d as any).deal_badges || [],
     isWorthPosting: (d as any).is_worth_posting ?? true,
     destinations: d.destinations || d.broadcast_destinations || [],
-    liveOnWeb: d.live_on_web ?? (d.status === "auto_posted" || d.status === "approved" || Boolean(d.broadcast_destinations?.length)),
-    liveOnTelegram: d.live_on_telegram ?? ((d.status === "approved" || Boolean(d.broadcast_destinations?.length)) && !d.broadcast_destinations?.includes("storefront_only") && !d.destinations?.includes("storefront_only")),
+    liveOnWeb: d.live_on_web ?? (d.status === "auto_posted" || d.status === "approved" || d.status === "posted" || Boolean(d.broadcast_destinations?.length)),
+    liveOnTelegram: d.live_on_telegram ?? ((d.status === "approved" || d.status === "posted" || Boolean(d.broadcast_destinations?.length)) && !d.broadcast_destinations?.includes("storefront_only") && !d.destinations?.includes("storefront_only")),
     desidimeTemperature: (d as any).desidime_temperature ?? (d as any).desidimeTemperature ?? undefined,
     isCommunityVerified: Boolean((d as any).is_community_verified || (d as any).isCommunityVerified || ((d as any).desidime_temperature && (d as any).desidime_temperature >= 200)),
     isArbitrage: Boolean((d as any).is_arbitrage || (d as any).isArbitrage),
@@ -3033,9 +3033,9 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     }
     if (filter !== "all" && filter !== "promos") {
       if (filter === "approved") {
-        if (d.status !== "approved" && d.status !== "auto_posted") return false;
+        if (d.status !== "approved" && d.status !== "auto_posted" && d.status !== "posted") return false;
       } else if (filter === "web_live") {
-        const onWeb = d.liveOnWeb || d.status === "auto_posted" || (d.status === "approved" && (d.destinations?.includes("storefront_only")));
+        const onWeb = d.liveOnWeb || d.status === "auto_posted" || d.status === "posted" || (d.status === "approved" && (d.destinations?.includes("storefront_only")));
         if (!onWeb) return false;
       } else if (d.status !== filter) {
         return false;
@@ -3126,8 +3126,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const selectedSplitDeal = pagedVisible.find(d => d.id === selectedSplitId) || pagedVisible[0] || null;
 
   const pending = deals.filter(d => d.status === "pending").length;
-  const approved = deals.filter(d => d.status === "approved" || d.status === "auto_posted").length;
-  const webLiveCount = deals.filter(d => d.liveOnWeb || d.status === "auto_posted" || (d.status === "approved" && (d.destinations?.includes("storefront_only")))).length;
+  const approved = deals.filter(d => d.status === "approved" || d.status === "auto_posted" || d.status === "posted").length;
+  const webLiveCount = deals.filter(d => d.liveOnWeb || d.status === "auto_posted" || d.status === "posted" || (d.status === "approved" && (d.destinations?.includes("storefront_only")))).length;
   const rejected = deals.filter(d => d.status === "rejected").length;
 
   // Velocity and Smart Curation Telemetry
