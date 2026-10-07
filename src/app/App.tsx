@@ -473,7 +473,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     affiliate: (() => {
       if (d.affiliate_applied === true || (d as any).affiliate === true) return true;
       const combined = `${d.aff_text || ""} ${d.ai_formatted_text || ""} ${d.original_text || ""}`;
-      if (/tag=dealshare0b7-21|ekaro|earnkaro|bitli\.in|fkrt\.cc|amzn\.to|myntr\.it|ajiio\.in|app\.lehlah\.club/i.test(combined)) {
+      if (/tag=rudranil0a-21|tag=dealshare0b7-21|ekaro|earnkaro|bitli\.in|fkrt\.cc|amzn\.to|myntr\.it|ajiio\.in|app\.lehlah\.club/i.test(combined)) {
         return true;
       }
       return false;
