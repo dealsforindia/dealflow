@@ -30,6 +30,7 @@ import {
   playApprove, playReject, playCopy, playTick, playUndo,
   isSoundMuted, toggleSound
 } from "./utils/soundFX";
+import { renderSafeTelegramText } from "../utils/telegramText";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type DealStatus = "pending" | "approved" | "rejected" | "draft" | "auto_posted";
@@ -1878,15 +1879,7 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
 
           {/* Message Text Rendering */}
           <div className="tg-bubble-text text-xs text-zinc-200 leading-relaxed font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
-            {text.split("\n").slice(0, 10).join("\n")
-              .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
-              .split(/(https?:\/\/\S+)/g)
-              .map((part, i) =>
-                /^https?:\/\//.test(part)
-                  ? <a key={i} href={part} className="tg-bubble-link" target="_blank" rel="noreferrer">{part.length > 25 ? part.slice(0, 25) + "…" : part}</a>
-                  : <span key={i} dangerouslySetInnerHTML={{ __html: part }} />
-              )
-            }
+            {renderSafeTelegramText(text, 10, 25)}
           </div>
         </div>
 
@@ -2786,15 +2779,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                       </div>
                     )}
                     <div className="tg-bubble-text">
-                      {text
-                        .replace(/\*\*(.+?)\*\*/g, (_, m) => `<b>${m}</b>`)
-                        .split(/(https?:\/\/\S+)/g)
-                        .map((part, i) =>
-                          /^https?:\/\//.test(part)
-                            ? <a key={i} href={part} className="tg-bubble-link" target="_blank" rel="noreferrer">{part.length > 30 ? part.slice(0, 30) + "…" : part}</a>
-                            : <span key={i} dangerouslySetInnerHTML={{ __html: part }} />
-                        )
-                      }
+                      {renderSafeTelegramText(text, undefined, 30)}
                     </div>
                     <div className="tg-bubble-time">
                       {new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} ✓✓
