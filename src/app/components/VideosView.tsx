@@ -150,11 +150,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
     try {
       const res = await fetch(`${apiBase}/api/v1/deals/${dealId}/dispatch-video`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Token": localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b",
-          "Authorization": `Bearer ${localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b"}`,
-        },
+        headers: getAdminHeaders(),
       });
       const data = await res.json();
       if (res.ok && (data.status === "dispatched" || data.status === "ready_to_dispatch")) {
@@ -175,14 +171,9 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
     if (!window.confirm("Are you sure you want to delete this viral short video from the deal?")) return;
     setDeletingId(dealId);
     try {
-      const token = localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b";
       const res = await fetch(`${apiBase}/api/v1/deals/${dealId}/video`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Token": token,
-          "Authorization": `Bearer ${token}`,
-        },
+        headers: getAdminHeaders(),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -207,14 +198,9 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
     setBatchLoading(true);
     toast.info("⚡ Finding & queueing top 5 loot drops for 15s viral shorts...", { icon: "🎬" });
     try {
-      const token = localStorage.getItem("dealflow_admin_token") || (import.meta as any).env?.VITE_ADMIN_TOKEN || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b";
       const res = await fetch(`${apiBase}/api/v1/deals/batch-dispatch-video`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Token": token,
-          "Authorization": `Bearer ${token}`,
-        },
+        headers: getAdminHeaders(),
         body: JSON.stringify({ limit: 5 }),
       });
       const data = await res.json();

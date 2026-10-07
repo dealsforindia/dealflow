@@ -641,7 +641,7 @@ function getAdminToken(): string | null {
       } catch {}
     }
   }
-  return token || "df_adm_549586c9722ab144751420b657b2f709bb10d1f251b9663b";
+  return token || "";
 }
 
 export function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
