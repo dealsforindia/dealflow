@@ -87,6 +87,9 @@ interface Deal {
   videoStatus?: string;
   videoUrl?: string;
   videoCover?: string;
+  is_multi_deal?: boolean;
+  multi_deal_count?: number;
+  multi_items?: Array<{ label: string; url: string; price?: number | null; discount?: number | null }>;
 }
 
 interface RawDeal {
@@ -108,6 +111,9 @@ interface RawDeal {
   cluster_channels?: { name: string; channel: string; price?: number; ts?: number }[];
   cluster_sources?: { name: string; channel: string; price?: number; ts?: number }[];
   best_price?: number;
+  is_multi_deal?: boolean;
+  multi_deal_count?: number;
+  multi_items?: Array<{ label: string; url: string; price?: number | null; discount?: number | null }>;
   best_channel?: string;
   affiliate_warn?: string;
   live_price?: number | null;
@@ -575,6 +581,9 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     videoStatus: (d as any).video_status || (d as any).videoStatus || null,
     videoUrl: (d as any).video_url || (d as any).videoUrl || null,
     videoCover: (d as any).video_cover || (d as any).videoCover || null,
+    is_multi_deal: Boolean(d.is_multi_deal || ((d as any).multi_items && (d as any).multi_items.length >= 2)),
+    multi_deal_count: d.multi_deal_count ?? (d as any).multi_items?.length ?? 0,
+    multi_items: d.multi_items || (d as any).multi_items || [],
   };
 }
 
@@ -1685,6 +1694,64 @@ function DealCard({
                               Check Link <ExternalLink size={10} />
                             </a>
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Universal Multi-Deal Accordion (Desktop & Mobile) */}
+          {deal.is_multi_deal && deal.multi_items && deal.multi_items.length >= 2 && (
+            <div className="mt-2 pt-2 border-t border-white/[0.06]">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsHaulOpen(!isHaulOpen); }}
+                className="w-full flex items-center justify-between py-1.5 px-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/15 border border-indigo-500/20 transition-colors"
+              >
+                <span className="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5">
+                  <span>📦</span> {deal.multi_items.length} Multiple Deals Inside
+                </span>
+                <ChevronDown size={14} className={`text-indigo-300 transition-transform duration-300 ${isHaulOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              <AnimatePresence>
+                {isHaulOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-2 space-y-1.5 pb-1 max-h-48 overflow-y-auto pr-1">
+                      {deal.multi_items.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[11.5px] font-medium text-slate-200 truncate">
+                              {item.label}
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {item.price ? (
+                                <span className="text-[10px] font-black text-emerald-400">₹{item.price}</span>
+                              ) : null}
+                              {item.discount ? (
+                                <span className="text-[9px] font-bold text-amber-300 bg-amber-500/10 px-1 py-0.5 rounded">
+                                  {item.discount}% OFF
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] font-bold text-indigo-300 hover:text-indigo-200 bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-1 rounded-md flex items-center gap-1 whitespace-nowrap transition-colors"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <span>Test</span> <ExternalLink size={10} />
+                          </a>
                         </div>
                       ))}
                     </div>
