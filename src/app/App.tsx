@@ -1930,12 +1930,13 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
         <div className="tg-bubble rounded-xl p-3 border border-white/10 bg-slate-950/70 shadow-inner">
           <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-white/6 text-xs text-zinc-300 font-bold">
             <div className="w-4 h-4 rounded-full bg-slate-800 text-[9px] font-bold text-white flex items-center justify-center">
-              {deal.channel[0]}
+              {(deal.channel || "D")[0]}
             </div>
-            <span className="truncate">{deal.channel}</span>
+            <span className="truncate">{deal.channel || "Direct Channel"}</span>
             <CheckCheck size={12} className="text-blue-400 ml-0.5" />
             <span className="text-[9px] text-emerald-400 font-mono ml-auto">Live Preview</span>
           </div>
+
 
           {/* Photo */}
           {imgUrl && (
