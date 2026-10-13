@@ -482,19 +482,23 @@ export default function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, o
                 <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>Telegram Preview</p>
                 <div className="tg-preview-wrap">
                   <div className="tg-preview-header">
-                    <div className="tg-preview-avatar">B</div>
-                    <div>
-                      <div className="tg-preview-name">BestIndianDeals</div>
-                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Channel</div>
+                    <div className="tg-preview-avatar">{(deal.channel || "D")[0].toUpperCase()}</div>
+                    <div className="truncate">
+                      <div className="tg-preview-name truncate">{deal.channel || "Direct Channel"}</div>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>
+                        {deal.channelRaw && deal.channelRaw.startsWith("@") ? deal.channelRaw : `Telegram Channel`}
+                      </div>
                     </div>
                   </div>
                   <div className="tg-bubble">
                     {previewSrc && (
-                      <img src={previewSrc} alt="" style={{ width: "100%", borderRadius: 8, marginBottom: 8, maxHeight: 140, objectFit: "cover" }}
-                        onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      <div className="w-full rounded-lg mb-2.5 max-h-52 overflow-hidden bg-black/40 border border-white/10 flex items-center justify-center">
+                        <img src={previewSrc} alt="" className="max-h-52 w-full object-contain p-1"
+                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      </div>
                     )}
                     <div className="tg-bubble-text">
-                      {renderSafeTelegramText(text, 12, 32)}
+                      {renderSafeTelegramText(text, undefined, 30)}
                     </div>
                     <div className="tg-bubble-time">{new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} ✓✓</div>
                   </div>
