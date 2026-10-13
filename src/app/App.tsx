@@ -236,6 +236,7 @@ const toChName = (ch?: string): string => {
   if (ch.includes("1786042652") || ch.includes("958_Lu4ZoUxM2E9")) return "Shopping Genie";
   if (clean.includes("technicalsheikh") || ch.includes("1357275556")) return "Technical Sheikh";
   if (clean.includes("loot_dealsx") || ch.includes("1450755585")) return "Trending Loot Deals";
+  if (clean.includes("freekart") || ch.includes("1394855402")) return "Loots Tricks by Freekart";
   if (clean.includes("desidime")) return "DesiDime";
   if (clean.includes("shopquest")) return "Shoppers Quest";
   
