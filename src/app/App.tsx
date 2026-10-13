@@ -1985,7 +1985,7 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
 
           {/* Message Text Rendering */}
           <div className="tg-bubble-text text-xs text-zinc-200 leading-relaxed font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
-            {renderSafeTelegramText(text, 10, 25)}
+            {renderSafeTelegramText(text, undefined, 25)}
           </div>
         </div>
 
