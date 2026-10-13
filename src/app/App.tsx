@@ -331,13 +331,15 @@ const INVALID_TITLE_TERMS = [
   "site maintenance", "maintenance", "access denied", "just a moment",
   "security check", "robot or human", "are you a human", "attention required",
   "403 forbidden", "404 not found", "page not found", "myntra new", "amazon.in",
-  "flipkart.com", "online shopping", "loading...", "error", "we could not locate"
+  "flipkart.com", "online shopping", "loading...", "error", "we could not locate",
+  "{title}", "{name}", "{product}", "{prod_name}", "[title]", "[name]"
 ];
 
 function isInvalidTitle(name: string): boolean {
-  if (!name || name.trim().length < 5) return true;
+  if (!name || name.trim().length < 4) return true;
   const clean = name.replace(/[*_~`#\[\]\(\)]/g, "").replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡•—\-\s"':]+/g, "").trim().toLowerCase();
   if (clean.length < 4) return true;
+  if (/^\{[a-z_0-9\-]+\}$/i.test(name.trim())) return true;
   if (INVALID_TITLE_TERMS.some(t => clean.includes(t))) return true;
   if (/^[\d\s.,₹\-/\\():\[\]\(\)\|\+kK%]+$/.test(clean)) return true;
   if (/^(?:₹|rs\.?|inr|lowest|loot|regular|fast|mrp|deal|steal|final|only|price)\b/i.test(clean)) return true;
@@ -448,6 +450,30 @@ export function cleanAffText(raw?: string | null, title?: string, price?: number
       cleanLines.push(line);
     }
     text = cleanLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  // Strip aggregator/forum leaks in post text
+  if (/Available on:\s*(?:DesiDime|Telegram|ddime)/i.test(text)) {
+    const low = text.toLowerCase();
+    let realStore = "";
+    if (low.includes("flipkart") || low.includes("fkrt")) realStore = "Flipkart";
+    else if (low.includes("amazon") || low.includes("amzn")) realStore = "Amazon";
+    else if (low.includes("myntra") || low.includes("myntr")) realStore = "Myntra";
+    else if (low.includes("ajio") || low.includes("ajiio")) realStore = "AJIO";
+    else if (low.includes("swiggy") || low.includes("instamart")) realStore = "Swiggy";
+    else if (low.includes("blinkit")) realStore = "Blinkit";
+    
+    if (realStore) {
+      text = text.replace(/Available on:\s*(?:DesiDime|Telegram|ddime)[^\n]*/gi, `Available on: ${realStore}`);
+    } else {
+      text = text.replace(/\n*Available on:\s*(?:DesiDime|Telegram|ddime)[^\n]*/gi, "");
+    }
+  }
+
+  // Strip literal {TITLE} or {name} placeholder
+  if (/\{TITLE\}|\{name\}|\{product\}/i.test(text)) {
+    const cleanT = (title && !isInvalidTitle(title)) ? title : "Featured Deal";
+    text = text.replace(/\{TITLE\}|\{name\}|\{product\}/gi, cleanT);
   }
 
   // If text became empty or lost title/link, synthesize clean post
