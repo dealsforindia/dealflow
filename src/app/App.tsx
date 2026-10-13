@@ -72,6 +72,8 @@ interface Deal {
   liveOnTelegram?: boolean;
   desidimeTemperature?: number;
   isCommunityVerified?: boolean;
+  tempVelocity?: number;
+  isBreakoutSurge?: boolean;
   isArbitrage?: boolean;
   arbitrage?: {
     canonical_model?: string;
@@ -130,6 +132,8 @@ interface RawDeal {
   broadcast_destinations?: string[];
   desidime_temperature?: number;
   is_community_verified?: boolean;
+  temp_velocity?: number;
+  is_breakout_surge?: boolean;
 }
 
 interface AppSettings {
@@ -576,6 +580,8 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     liveOnTelegram: d.live_on_telegram ?? ((d.status === "approved" || d.status === "posted" || Boolean(d.broadcast_destinations?.length)) && !d.broadcast_destinations?.includes("storefront_only") && !d.destinations?.includes("storefront_only")),
     desidimeTemperature: (d as any).desidime_temperature ?? (d as any).desidimeTemperature ?? undefined,
     isCommunityVerified: Boolean((d as any).is_community_verified || (d as any).isCommunityVerified || ((d as any).desidime_temperature && (d as any).desidime_temperature >= 200)),
+    tempVelocity: (d as any).temp_velocity ?? (d as any).tempVelocity ?? undefined,
+    isBreakoutSurge: Boolean((d as any).is_breakout_surge || (d as any).isBreakoutSurge || ((d as any).temp_velocity && (d as any).temp_velocity >= 5)),
     isArbitrage: Boolean((d as any).is_arbitrage || (d as any).isArbitrage),
     arbitrage: (d as any).arbitrage || null,
     hasVideo: Boolean((d as any).has_video || (d as any).hasVideo),
@@ -1470,6 +1476,11 @@ function DealCard({
                   : "bg-orange-500/20 text-orange-300 border-orange-500/30"
               }`} title={`DesiDime Community Heat: ${deal.desidimeTemperature}° (${deal.isCommunityVerified || deal.desidimeTemperature >= 200 ? 'Community Verified Fire' : 'Community Voted'})`}>
                 <span>🔥</span> {deal.desidimeTemperature}° {deal.isCommunityVerified || deal.desidimeTemperature >= 200 ? "VERIFIED" : "HEAT"}
+              </span>
+            )}
+            {deal.isBreakoutSurge && (
+              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-rose-500 to-red-500 text-white font-mono text-[9.5px] font-black shadow-lg shadow-rose-500/30 flex items-center gap-1 border border-amber-300 animate-pulse" title={`Breakout Velocity Surge: Rapid community heat acceleration (+${deal.tempVelocity || 5}°/min)`}>
+                <span>⚡</span> BREAKOUT SURGE{deal.tempVelocity ? ` (+${deal.tempVelocity}°/m)` : ""}
               </span>
             )}
             {deal.dealScore !== undefined && deal.dealScore >= 80 && (
