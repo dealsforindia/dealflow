@@ -4032,8 +4032,16 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   );
 }
 
+export interface SystemHealth {
+  status: "ok" | "degraded" | "offline" | "checking";
+  redis: boolean;
+  mongodb: boolean;
+  wsClients: number;
+  lastChecked: number | null;
+}
+
 // ─── Channels View ────────────────────────────────────────────────────────────
-function ChannelsView() {
+function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
   const [chs, setChs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [channelSubTab, setChannelSubTab] = useState<"directory" | "heatmap" | "auto_rules">("directory");
@@ -4229,15 +4237,35 @@ function ChannelsView() {
       {/* Live Worker Telemetry & Engine Health Deck */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-2xl glass-card border border-white/10 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+            systemHealth?.status === "ok"
+              ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+              : systemHealth?.status === "degraded"
+              ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
+              : "bg-rose-500/15 border-rose-500/30 text-rose-400"
+          }`}>
             <Zap size={16} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className={`w-2 h-2 rounded-full ${
+                systemHealth?.status === "ok"
+                  ? "bg-emerald-400 animate-pulse"
+                  : systemHealth?.status === "degraded"
+                  ? "bg-amber-400 animate-pulse"
+                  : "bg-rose-500"
+              }`} />
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">FastAPI Engine</span>
             </div>
-            <p className="text-xs font-bold text-white mt-0.5">Online (200 OK)</p>
+            <p className="text-xs font-bold text-white mt-0.5">
+              {systemHealth?.status === "ok"
+                ? "Online (200 OK)"
+                : systemHealth?.status === "degraded"
+                ? "Degraded"
+                : systemHealth?.status === "checking"
+                ? "Checking..."
+                : "Offline (Unreachable)"}
+            </p>
           </div>
         </div>
 
@@ -4971,9 +4999,10 @@ const NAV: { id: Tab; icon: React.ElementType; label: string }[] = [
   { id: "Settings", icon: Settings2, label: "Settings" },
 ];
 
-function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAlerts }: {
+function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAlerts, systemHealth }: {
   tab: Tab; setTab: (t: Tab) => void; pending: number; dark: boolean; setDark: (v: boolean) => void;
   soundAlerts: boolean; setSoundAlerts: (v: boolean) => void;
+  systemHealth: SystemHealth;
 }) {
   return (
     <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-white/8 glass-panel" style={{ width: 220, background: "rgba(9, 10, 16, 0.85)" }}>
@@ -5041,18 +5070,38 @@ function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAle
 
         <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
           <span>Engine VM</span>
-          <span className="text-emerald-400 font-bold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" /> Online
+          <span className={`font-bold flex items-center gap-1 ${
+            systemHealth.status === "ok"
+              ? "text-emerald-400"
+              : systemHealth.status === "degraded"
+              ? "text-amber-400"
+              : systemHealth.status === "checking"
+              ? "text-slate-400"
+              : "text-rose-400"
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              systemHealth.status === "ok"
+                ? "bg-emerald-400 animate-ping"
+                : systemHealth.status === "degraded"
+                ? "bg-amber-400 animate-pulse"
+                : systemHealth.status === "checking"
+                ? "bg-slate-400"
+                : "bg-rose-500"
+            }`} /> {systemHealth.status === "ok" ? "Online" : systemHealth.status === "degraded" ? "Degraded" : systemHealth.status === "checking" ? "Checking..." : "Offline"}
           </span>
         </div>
         <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/5 flex flex-col gap-1 text-[10px] font-mono text-slate-400">
           <div className="flex justify-between">
             <span>Workers</span>
-            <span className="text-white font-bold">5 Active</span>
+            <span className={`font-bold ${systemHealth.redis ? "text-white" : systemHealth.status === "offline" ? "text-rose-400" : "text-amber-400"}`}>
+              {systemHealth.status === "offline" ? "Unreachable" : systemHealth.redis ? "5 Active" : "Degraded (Redis Down)"}
+            </span>
           </div>
           <div className="flex justify-between">
             <span>Live Sync</span>
-            <span className="text-emerald-400">100% OK</span>
+            <span className={systemHealth.redis && systemHealth.mongodb ? "text-emerald-400" : systemHealth.status === "offline" ? "text-rose-400" : "text-amber-400"}>
+              {systemHealth.status === "offline" ? "Offline" : systemHealth.redis && systemHealth.mongodb ? "100% OK" : systemHealth.redis ? "Redis Only" : "Degraded"}
+            </span>
           </div>
         </div>
       </div>
@@ -5067,6 +5116,60 @@ export default function App() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [dark, setDark] = useState(true);
+
+  const [systemHealth, setSystemHealth] = useState<SystemHealth>({
+    status: "checking",
+    redis: false,
+    mongodb: false,
+    wsClients: 0,
+    lastChecked: null,
+  });
+
+  useEffect(() => {
+    let mounted = true;
+    const checkHealth = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/health`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted) {
+            setSystemHealth({
+              status: data.status === "ok" ? "ok" : "degraded",
+              redis: !!data.redis,
+              mongodb: !!data.mongodb,
+              wsClients: typeof data.ws_clients === "number" ? data.ws_clients : 0,
+              lastChecked: Date.now(),
+            });
+          }
+        } else {
+          if (mounted) {
+            setSystemHealth(prev => ({
+              ...prev,
+              status: "degraded",
+              lastChecked: Date.now(),
+            }));
+          }
+        }
+      } catch {
+        if (mounted) {
+          setSystemHealth(prev => ({
+            ...prev,
+            status: "offline",
+            redis: false,
+            mongodb: false,
+            lastChecked: Date.now(),
+          }));
+        }
+      }
+    };
+
+    checkHealth();
+    const iv = setInterval(checkHealth, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(iv);
+    };
+  }, []);
 
   const handleLogin = async (token: string) => {
     try {
@@ -5333,7 +5436,7 @@ export default function App() {
     <div className="flex h-screen w-screen overflow-hidden bg-[#07080E] text-white relative">
       <div className="ambient-mesh" />
       <Toaster position="top-right" richColors theme="dark" />
-      <Sidebar tab={tab} setTab={setTab} pending={pendingCount} dark={dark} setDark={setDark} soundAlerts={soundAlerts} setSoundAlerts={setSoundAlerts} />
+      <Sidebar tab={tab} setTab={setTab} pending={pendingCount} dark={dark} setDark={setDark} soundAlerts={soundAlerts} setSoundAlerts={setSoundAlerts} systemHealth={systemHealth} />
 
       <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0 relative z-10">
         {tab === "Review" && (
@@ -5347,7 +5450,7 @@ export default function App() {
             onDelete={handleDelete}
           />
         )}
-        {tab === "Channels" && <ChannelsView />}
+        {tab === "Channels" && <ChannelsView systemHealth={systemHealth} />}
         {tab === "Videos" && <VideosView deals={deals} apiBase={API_BASE} onRefresh={loadDeals} onEdit={setEditing} />}
         {tab === "Settings" && <SettingsView dark={dark} setDark={setDark} />}
       </main>
