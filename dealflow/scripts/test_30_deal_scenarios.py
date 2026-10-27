@@ -16,7 +16,8 @@ import asyncio
 import json
 
 if sys.platform == "win32":
-    import io
+    import io, warnings
+    warnings.filterwarnings('ignore', category=DeprecationWarning)
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
     try:
@@ -24,8 +25,10 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-# Ensure parent directory is in python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Ensure parent and backend directories are in python path
+_curr_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _curr_dir)
+sys.path.insert(0, os.path.abspath(os.path.join(_curr_dir, "../../../dealbot_backend/dealbot")))
 
 from deal_intelligence import (
     classify_deal_intent,
