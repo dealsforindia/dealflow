@@ -812,7 +812,10 @@ interface ScrapedProductData {
 
 async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/scrape-image`, { method: "POST" });
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/scrape-image`, {
+      method: "POST",
+      headers: getAdminHeaders(false),
+    });
     if (!res.ok) return null;
     const data = await res.json();
     const storeImg = data.store_img_url || data.img_url || data.url || data.image_url || null;
@@ -866,7 +869,10 @@ export interface PriceIntelligenceData {
 
 async function apiGenerateBanner(id: string): Promise<{ banner_url: string; img_path: string } | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/generate-banner`, { method: "POST" });
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/generate-banner`, {
+      method: "POST",
+      headers: getAdminHeaders(false),
+    });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -4850,16 +4856,22 @@ function PostedView({
 // ─── Settings View ────────────────────────────────────────────────────────────
 function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) => void }) {
   const [s, setS] = useState<AppSettings>({
-    outputChannel: "@dealsforindia",
+    outputChannel: "@dealsforindiachannel",
     stylePrompt: "Write in a casual, enthusiastic style. Highlight key discount clearly.",
     dedupHours: 24, maxPerCycle: 40,
   });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
-        const res = await fetch(`${API_BASE}/api/v1/settings`);
+        const res = await fetch(`${API_BASE}/api/v1/settings`, {
+          headers: getAdminHeaders(false),
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.settings) {
@@ -4871,12 +4883,22 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
               maxPerCycle: data.settings.MAX_POSTS_CYCLE || prev.maxPerCycle,
             }));
           }
+        } else {
+          setLoadError(`Failed to load server settings (HTTP ${res.status})`);
         }
-      } catch {}
+      } catch (err: any) {
+        setLoadError(err?.message || "Failed to connect to API");
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
   const save = async () => {
+    if (loading || loadError) {
+      toast.error("Cannot save: settings could not be verified from server.");
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE}/api/v1/settings`, {
         method: "PUT",
@@ -4892,6 +4914,8 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
         setSaved(true);
         toast.success("Settings saved to VM!");
         setTimeout(() => setSaved(false), 2500);
+      } else {
+        toast.error(`Save failed (HTTP ${res.status})`);
       }
     } catch {
       toast.error("Error saving settings");
@@ -4905,23 +4929,32 @@ function SettingsView({ dark, setDark }: { dark: boolean; setDark: (v: boolean) 
           <span>⚙️</span> DealFlow Pipeline Settings
         </h2>
         <p className="text-xs text-slate-400 mt-0.5">Configure scraping limits, destination channels, and AI prompt instructions</p>
+        {loadError && (
+          <div className="mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
+            <span>⚠️ {loadError}</span>
+            <button onClick={() => window.location.reload()} className="underline font-bold ml-2">Retry</button>
+          </div>
+        )}
       </div>
 
       <div className="p-5 rounded-3xl glass-card flex flex-col gap-4 border border-white/10">
         <div>
           <label className="block text-xs font-bold text-white mb-1.5">Broadcast Output Channel</label>
           <input value={s.outputChannel} onChange={e => setS(v => ({ ...v, outputChannel: e.target.value }))}
-            className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white bg-slate-950/80 border border-white/10 focus:outline-none focus:border-primary/50" />
+            disabled={loading || Boolean(loadError)}
+            className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white bg-slate-950/80 border border-white/10 focus:outline-none focus:border-primary/50 disabled:opacity-50" />
         </div>
 
         <div>
           <label className="block text-xs font-bold text-white mb-1.5">AI Formatting Instruction Prompt</label>
           <textarea value={s.stylePrompt} onChange={e => setS(v => ({ ...v, stylePrompt: e.target.value }))} rows={4}
-            className="w-full px-3.5 py-3 rounded-xl text-xs bg-slate-950/80 border border-white/10 text-white focus:outline-none focus:border-primary/50 resize-none leading-relaxed" />
+            disabled={loading || Boolean(loadError)}
+            className="w-full px-3.5 py-3 rounded-xl text-xs bg-slate-950/80 border border-white/10 text-white focus:outline-none focus:border-primary/50 resize-none leading-relaxed disabled:opacity-50" />
         </div>
 
         <button onClick={save}
-          className="mt-2 py-3 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2">
+          disabled={loading || Boolean(loadError)}
+          className="mt-2 py-3 rounded-2xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50">
           <Check size={14} strokeWidth={3} /> Save Configuration
         </button>
       </div>
