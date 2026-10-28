@@ -1129,7 +1129,7 @@ function DealCard({
   };
 
   return (
-    <motion.div layout
+    <motion.div
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       onMouseMove={(e) => {
@@ -1180,7 +1180,9 @@ function DealCard({
                 )}
                 <img
                   src={deal.imgUrl}
-                  alt=""
+                  alt={deal.title}
+                  loading="lazy"
+                  decoding="async"
                   className={`w-full h-full object-contain transition-opacity duration-200 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
                   onLoad={() => setImgLoaded(true)}
                   onError={() => setImgErr(true)}
@@ -1226,10 +1228,11 @@ function DealCard({
                   e.stopPropagation();
                   downloadImage(deal.imgUrl, `${deal.title.slice(0, 20)}.jpg`);
                 }}
-                className="absolute bottom-1 right-1 w-5 h-5 rounded-md bg-black/70 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-md active:scale-90 transition-transform"
+                className="absolute bottom-1 right-1 w-6 h-6 rounded-md bg-black/70 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-md active:scale-90 transition-transform touch-manipulation"
                 title="Download"
+                aria-label={`Download image for ${deal.title}`}
               >
-                <Download size={10} />
+                <Download size={11} />
               </button>
             )}
 
@@ -1237,11 +1240,14 @@ function DealCard({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleSelect?.(deal.id); }}
-                className={`absolute top-1 right-1 w-5 h-5 rounded-md flex items-center justify-center ${
+                className={`absolute top-1 right-1 w-6 h-6 rounded-md flex items-center justify-center touch-manipulation ${
                   selected ? "bg-indigo-500 text-white" : "bg-black/80 border border-white/20 text-white/40"
                 }`}
+                title={selected ? "Deselect deal" : "Select deal"}
+                aria-label={selected ? `Deselect ${deal.title}` : `Select ${deal.title}`}
+                aria-checked={selected}
               >
-                {selected ? <Check size={10} strokeWidth={3} /> : null}
+                {selected ? <Check size={11} strokeWidth={3} /> : null}
               </button>
             )}
           </div>
@@ -1284,7 +1290,7 @@ function DealCard({
                       ✈️ On TG
                     </span>
                   ) : null}
-                  <span className="text-[9.5px] text-slate-500 font-mono">{fmtAgo(deal.ts)}</span>
+                  <span className="text-[9.5px] text-slate-400 font-mono">{fmtAgo(deal.ts)}</span>
                 </div>
               </div>
 
@@ -1308,7 +1314,7 @@ function DealCard({
                   </span>
                 )}
                 {deal.mrp > displayPrice && (
-                  <span className="text-[10px] text-slate-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>
+                  <span className="text-[10px] text-slate-400 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>
                 )}
               </div>
               <div className="flex items-center gap-1">
@@ -1352,28 +1358,31 @@ function DealCard({
             <>
               <button
                 onClick={() => handleRejectWithSound(deal.id)}
-                className="h-8 px-2.5 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/10 active:scale-95 text-xs font-semibold cursor-pointer transition-colors"
+                className="h-9 px-3 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-rose-500/15 text-slate-300 hover:text-rose-300 border border-white/10 active:scale-95 text-xs font-semibold cursor-pointer transition-colors touch-manipulation"
                 title="Skip Deal"
+                aria-label={`Skip deal ${deal.title}`}
               >
-                <X size={13} strokeWidth={2.5} />
+                <X size={14} strokeWidth={2.5} />
                 <span>Skip</span>
               </button>
 
               <button
                 onClick={() => onEdit(deal)}
-                className="h-8 px-2.5 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/10 active:scale-95 text-xs font-semibold cursor-pointer transition-colors"
+                className="h-9 px-3 rounded-xl flex items-center justify-center gap-1 bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/10 active:scale-95 text-xs font-semibold cursor-pointer transition-colors touch-manipulation"
                 title="Edit & Tune Post"
+                aria-label={`Edit and tune post for ${deal.title}`}
               >
-                <PenLine size={12} />
+                <PenLine size={13} />
                 <span>Tune</span>
               </button>
 
               <button
                 onClick={() => handleApproveWithSound(deal.id)}
-                className="h-8 px-3.5 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all"
+                className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 to-teal-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all touch-manipulation"
                 title="Approve — Goes live on IndiaDealHunts storefront"
+                aria-label={`Approve deal ${deal.title} to go live`}
               >
-                <Check size={13} strokeWidth={3} />
+                <Check size={14} strokeWidth={3} />
                 <span className="truncate">Approve</span>
               </button>
             </>
@@ -1547,6 +1556,7 @@ function DealCard({
                 onClick={(e) => { e.stopPropagation(); downloadImage(deal.imgUrl, `${deal.title.slice(0, 24).replace(/[^\w]/g, "_")}.jpg`); }}
                 className="w-7 h-7 rounded-lg bg-black/60 hover:bg-black/90 text-white/70 hover:text-emerald-300 border border-white/15 flex items-center justify-center backdrop-blur-md transition-all active:scale-90 cursor-pointer shadow-lg"
                 title="Download Asset"
+                aria-label={`Download image asset for ${deal.title}`}
               >
                 <Download size={12} />
               </button>
@@ -1633,7 +1643,7 @@ function DealCard({
                         Best of {clusterSize} channels (₹{deal.price})
                       </span>
                     )}
-                    {deal.mrp > displayPrice && <span className="text-xs text-zinc-500 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>}
+                    {deal.mrp > displayPrice && <span className="text-xs text-zinc-400 line-through font-mono tabular-nums">{fmt(deal.mrp)}</span>}
                   </div>
                   {savings > 0 && <SavingsPill3D amount={savings} />}
                 </>
@@ -1809,13 +1819,28 @@ function DealCard({
           <div className="pt-2 border-t border-white/6" onClick={e => e.stopPropagation()}>
             {deal.status === "pending" ? (
               <div className="flex items-center gap-1.5">
-                <button onClick={() => handleRejectWithSound(deal.id)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Skip">
+                <button
+                  onClick={() => handleRejectWithSound(deal.id)}
+                  className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer"
+                  title="Skip"
+                  aria-label={`Skip deal ${deal.title}`}
+                >
                   <X size={14} strokeWidth={2.5} /><span className="ml-1">Skip</span>
                 </button>
-                <button onClick={() => onEdit(deal)} className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer" title="Edit & Tune">
+                <button
+                  onClick={() => onEdit(deal)}
+                  className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer"
+                  title="Edit & Tune"
+                  aria-label={`Edit and tune post for ${deal.title}`}
+                >
                   <PenLine size={13} /><span className="ml-1.5">Tune</span>
                 </button>
-                <button onClick={() => handleApproveWithSound(deal.id)} className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all" title="Approve — Goes live on IndiaDealHunts storefront">
+                <button
+                  onClick={() => handleApproveWithSound(deal.id)}
+                  className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all"
+                  title="Approve — Goes live on IndiaDealHunts storefront"
+                  aria-label={`Approve deal ${deal.title} to go live`}
+                >
                   <Check size={14} strokeWidth={3} /><span>Approve</span>
                 </button>
               </div>
@@ -3747,15 +3772,17 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                     <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => onReject(d.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 cursor-pointer transition-all active:scale-95"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-slate-200 border border-white/10 cursor-pointer transition-all active:scale-95 touch-manipulation"
                         title="Skip"
+                        aria-label={`Skip deal ${d.title}`}
                       >
                         <X size={13} />
                       </button>
                       <button
                         onClick={() => onApprove(d.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 shadow-sm cursor-pointer transition-all active:scale-95"
+                        className="w-8 h-8 rounded-lg flex items-center justify-center bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/40 shadow-sm cursor-pointer transition-all active:scale-95 touch-manipulation"
                         title="Approve"
+                        aria-label={`Approve deal ${d.title}`}
                       >
                         <Check size={13} strokeWidth={2.5} />
                       </button>
