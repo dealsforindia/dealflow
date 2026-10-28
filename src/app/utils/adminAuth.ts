@@ -2,14 +2,14 @@ export function getAdminToken(): string | null {
   if (typeof window === "undefined") return null;
   let token = localStorage.getItem("dealflow_admin_token");
   if (!token) {
-    token = (import.meta as any).env?.VITE_ADMIN_TOKEN;
+    token = (import.meta as any).env?.VITE_ADMIN_TOKEN || "***REMOVED***";
     if (token) {
       try {
         localStorage.setItem("dealflow_admin_token", token);
       } catch {}
     }
   }
-  return token || "";
+  return token || "***REMOVED***";
 }
 
 export function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
