@@ -92,6 +92,7 @@ interface Deal {
   is_multi_deal?: boolean;
   multi_deal_count?: number;
   multi_items?: Array<{ label: string; url: string; price?: number | null; discount?: number | null }>;
+  pendingRedirection?: boolean;
 }
 
 interface RawDeal {
@@ -134,6 +135,7 @@ interface RawDeal {
   is_community_verified?: boolean;
   temp_velocity?: number;
   is_breakout_surge?: boolean;
+  pending_redirection?: boolean;
 }
 
 interface AppSettings {
@@ -617,6 +619,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
     is_multi_deal: Boolean(d.is_multi_deal || ((d as any).multi_items && (d as any).multi_items.length >= 2)),
     multi_deal_count: d.multi_deal_count ?? (d as any).multi_items?.length ?? 0,
     multi_items: d.multi_items || (d as any).multi_items || [],
+    pendingRedirection: Boolean((d as any).pending_redirection),
   };
 }
 
@@ -1302,6 +1305,11 @@ function DealCard({
               >
                 {deal.title}
               </h4>
+              {deal.pendingRedirection && (
+                <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-[9px] font-bold text-amber-300">
+                  ⚠️ Link Resolving — Approve after verifying URL
+                </span>
+              )}
             </div>
 
             {/* Price & Savings */}
@@ -1633,6 +1641,11 @@ function DealCard({
             <h4 className="font-heading text-[13.5px] font-bold text-zinc-100 line-clamp-2 leading-snug hover:text-indigo-300 transition-colors cursor-pointer tracking-tight" onClick={() => onEdit(deal)} title={deal.title}>
               {deal.title}
             </h4>
+            {deal.pendingRedirection && (
+              <span className="inline-flex items-center gap-1 mt-1 mb-1 px-1.5 py-0.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-[9px] font-bold text-amber-300">
+                ⚠️ Link Resolving — Verify URL before approving
+              </span>
+            )}
             <div className="flex items-center justify-between gap-2 mt-2 flex-wrap">
               {displayPrice > 0 ? (
                 <>
