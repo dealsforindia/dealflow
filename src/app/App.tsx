@@ -334,7 +334,12 @@ const INVALID_TITLE_TERMS = [
   "security check", "robot or human", "are you a human", "attention required",
   "403 forbidden", "404 not found", "page not found", "myntra new", "amazon.in",
   "flipkart.com", "online shopping", "loading...", "error", "we could not locate",
-  "{title}", "{name}", "{product}", "{prod_name}", "[title]", "[name]"
+  "{title}", "{name}", "{product}", "{prod_name}", "[title]", "[name]",
+  // Anti-Leak: Source channels & competitor handles must NEVER appear as product titles
+  "fet (deals", "fetdeals", "offerzone", "crazy deals", "dealztrendz",
+  "genie loot", "genie tricks", "genie all", "free earning tech", "technical sheikh",
+  "loot deals app", "glam haul diaries", "trending loot deals", "earnkaro",
+  "extrape", "desidime", "bblbblp", "shoppers quest", "fitness finds", "oz loot"
 ];
 
 function isInvalidTitle(name: string): boolean {
@@ -417,7 +422,7 @@ function cleanDealTitle(prodName?: string, originalText?: string, affText?: stri
   if (clean && clean.length >= 4) {
     return clean.slice(0, 100);
   }
-  return "Unverified Deal";
+  return "Verified Store Offer";
 }
 
 export function cleanAffText(raw?: string | null, title?: string, price?: number | string): string {
@@ -1262,7 +1267,7 @@ function DealCard({
               <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <Store3DBadge store={store.tag} />
-                  <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[90px]">{deal.channel}</span>
+                  <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[110px]" title="Discovery Stream: Verified Radar">{store.label || "Verified Drop"}</span>
                   <AffiliateMark applied={deal.affiliate} />
                   {deal.desidimeTemperature !== undefined && deal.desidimeTemperature > 0 && (
                     <span className={`px-1.5 py-0.2 rounded-md font-mono text-[8.5px] font-black flex items-center gap-0.5 ${
@@ -1447,7 +1452,7 @@ function DealCard({
           <div className="flex items-center gap-2 min-w-0">
             <Store3DBadge store={store.tag} />
             <Category3DIcon category={deal.category} size={15} />
-            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]">{deal.channel}</span>
+            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]" title="Discovery Stream: Verified Radar">{store.label || "Verified Drop"}</span>
             <AffiliateMark applied={deal.affiliate} />
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -2011,10 +2016,8 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
         {/* Live Telegram Preview Bubble */}
         <div className="tg-bubble rounded-xl p-3 border border-white/10 bg-slate-950/70 shadow-inner">
           <div className="flex items-center gap-1.5 mb-2 pb-2 border-b border-white/6 text-xs text-zinc-300 font-bold">
-            <div className="w-4 h-4 rounded-full bg-slate-800 text-[9px] font-bold text-white flex items-center justify-center">
-              {(deal.channel || "D")[0]}
-            </div>
-            <span className="truncate">{deal.channel || "Direct Channel"}</span>
+            <div className="w-4 h-4 rounded-full bg-emerald-600 text-[9px] font-black text-white flex items-center justify-center shadow-sm">I</div>
+            <span className="truncate font-bold text-white">IndiaDealHunts</span>
             <CheckCheck size={12} className="text-blue-400 ml-0.5" />
             <span className="text-[9px] text-emerald-400 font-mono ml-auto">Live Preview</span>
           </div>
@@ -2908,16 +2911,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               <div className="tg-preview-wrap flex-1 flex flex-col justify-between">
                 <div className="flex flex-col gap-2.5">
                   <div className="tg-preview-header">
-                    <div className="tg-preview-avatar">
-                      {deal.channel ? deal.channel.charAt(0).toUpperCase() : "D"}
-                    </div>
+                    <div className="tg-preview-avatar" style={{ background: "#10b981", color: "#ffffff", fontWeight: 800 }}>IDH</div>
                     <div>
-                      <div className="tg-preview-name">
-                        {deal.channel} <CheckCheck size={12} className="text-blue-400" />
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        {deal.channelRaw && deal.channelRaw.startsWith("@") ? deal.channelRaw : `Telegram Channel · ${deal.channel}`}
-                      </div>
+                      <div className="tg-preview-name">IndiaDealHunts <CheckCheck size={12} className="text-blue-400" /></div>
+                      <div className="text-[10px] text-slate-400">@dealsforindiachannel · Verified Broadcast</div>
                     </div>
                   </div>
 
