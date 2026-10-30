@@ -254,7 +254,7 @@ const API_BASE = import.meta.env.PROD ? "https://api.rudranil.me" : (import.meta
 const WS_URL = import.meta.env.PROD ? "wss://api.rudranil.me/ws" : (import.meta.env.VITE_WS_URL || `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`);
 
 // ─── Formatters & Theme Utilities ─────────────────────────────────────────────
-const fmt = (p: number) => p === 0 ? "Free" : `₹${p.toLocaleString("en-IN")}`;
+const fmt = (p: number) => p === 0 ? "Free" : `₹${Math.round(p).toLocaleString("en-IN")}`;
 const fmtAgo = (ts: number) => {
   const d = Math.floor(Date.now() / 1000 - ts);
   if (d < 60) return `${d}s ago`;
@@ -390,7 +390,28 @@ function cleanDealTitle(prodName?: string, originalText?: string, affText?: stri
   let raw = (prodName || "").trim();
   // Strip hidden markdown links e.g. [ ](https://...)
   raw = raw.replace(/\[.*?\]\(.*?\)/g, "").replace(/\[.*?\]/g, "").trim();
+  // Strip broken dangling operators or word cutoffs like "+ Toas" or trailing "+", "-", "|"
+  raw = raw.replace(/\s*[\+\-\|\:]\s*[A-Za-z]{1,4}$/, "").replace(/\s*[\+\-\|\:]\s*$/, "").trim();
   let clean = raw.replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡*_\-•—\s"']+/g, "").replace(/\s*@\s*[\d,₹Rs.]+\s*.*$/, "").trim();
+
+  // Strip broken dangling operators or word cutoffs like "+ Toas" or trailing "+", "-", "|"
+  clean = clean.replace(/\s*[\+\-\|\:]\s*[A-Za-z]{1,4}$/, "").replace(/\s*[\+\-\|\:]\s*$/, "").trim();
+
+  // Check if originalText or affText contains a longer, more complete title with the same prefix
+  if ((originalText || affText) && clean.length >= 10) {
+    const combined = `${originalText || ""}\n${affText || ""}`;
+    const lines = combined.split("\n").map(l => l.trim()).filter(Boolean);
+    const searchPrefix = clean.slice(0, Math.min(clean.length, 30)).toLowerCase();
+    for (const line of lines) {
+      let lClean = line.replace(/\[.*?\]\(.*?\)/g, "").replace(/\[.*?\]/g, "").trim();
+      lClean = lClean.replace(/^[👉🔥⚡🛍️🎁🛒📦💥📢🏷️✨🚨📌▶️➔➡*_\-•—\s"']+/g, "").replace(/\s*@\s*[\d,₹Rs.]+\s*.*$/, "").trim();
+      lClean = lClean.replace(/\s*[\+\-\|\:]\s*[A-Za-z]{1,4}$/, "").replace(/\s*[\+\-\|\:]\s*$/, "").trim();
+      if (lClean.toLowerCase().startsWith(searchPrefix) && lClean.length > clean.length && !isInvalidTitle(lClean)) {
+        clean = lClean;
+        break;
+      }
+    }
+  }
 
   if (clean && !isInvalidTitle(clean)) {
     return clean.slice(0, 120);
@@ -506,12 +527,14 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
   if (!disc && mrpPrice > salePrice && salePrice > 0) {
     disc = Math.round((1 - salePrice / mrpPrice) * 100);
   }
+const rawCh = d.channel || d.source_channel || (d as any).channelRaw || (d as any).tg_channel || (d as any).channel_title || "";
+  const chName = toChName(rawCh) !== "Unknown" ? toChName(rawCh) : (rawCh || "Direct Channel");
   return {
     id, title: cleanDealTitle(d.prod_name, d.original_text, d.aff_text),
-    price: salePrice, mrp: mrpPrice,
+    price: Math.round(salePrice), mrp: Math.round(mrpPrice),
     discount: disc,
     category: catName, catEmoji: catEmoji,
-    channel: toChName(d.source_channel), channelRaw: d.source_channel,
+    channel: chName, channelRaw: rawCh || chName,
     score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
     ts: Math.floor(d.ts), status: "pending" as DealStatus,
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
@@ -524,8 +547,8 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
       return false;
     })(),
     coupon: (d.coupon && !d.coupon.includes("://") && !d.coupon.includes("/") && !d.coupon.toLowerCase().includes("http")) ? d.coupon : null,
-    couponDiscount: d.coupon_discount ?? (d as any).coupon_discount ?? null,
-    effectivePrice: d.effective_price ?? (d as any).effective_price ?? null,
+    couponDiscount: (d.coupon_discount !== null && d.coupon_discount !== undefined) ? Math.round(Number(d.coupon_discount)) : null,
+    effectivePrice: (d.effective_price !== null && d.effective_price !== undefined) ? Math.round(Number(d.effective_price)) : null,
     imgUrl: (() => {
       const u = d.img_url;
       if (u && !u.includes("74.225.250.0")) return u;
@@ -628,6 +651,123 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
   };
 }
 
+// ─── Client-Side Cross-Channel Duplicate Clustering Engine ───────────────────
+function clusterClientDeals(dealList: Deal[]): Deal[] {
+  if (!dealList || dealList.length <= 1) return dealList;
+
+  const getProductFingerprint = (d: Deal): string => {
+    // 1. Direct Amazon ASIN
+    const combined = `${d.affText || ""} ${d.originalText || ""}`;
+    const mAmz = combined.match(/\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/i) || combined.match(/[?&]asin=([A-Z0-9]{10})/i);
+    if (mAmz) return `amz:${mAmz[1].toUpperCase()}`;
+
+    // 2. Flipkart itm/FSN
+    const mFk = combined.match(/(?:flipkart\.com|shopsy\.in)[^\s"'<>]*\/p\/(itm[a-zA-Z0-9]+)/i);
+    if (mFk) return `fk:${mFk[1].toLowerCase()}`;
+
+    // 3. Product Title Token Fingerprint
+    const cleanT = (d.title || "").toLowerCase().replace(/[^\w\s]/g, " ");
+    const stopWords = new Set(["deal", "deals", "loot", "flat", "off", "free", "price", "drop", "online", "india", "buy", "now", "offer", "discount", "lowest", "mrp", "rs", "inr", "best", "at", "on", "for", "with", "and", "the", "a", "an", "is", "of", "to", "in"]);
+    const tokens = cleanT.split(/\s+/).filter(t => t.length >= 3 && !stopWords.has(t));
+    if (tokens.length >= 3) {
+      // Group by top tokens and rounded price
+      return `tok:${tokens.slice(0, 4).sort().join("-")}:${Math.round(d.price)}`;
+    }
+
+    return `id:${d.id}`;
+  };
+
+  const clusters = new Map<string, Deal[]>();
+  for (const d of dealList) {
+    const fp = getProductFingerprint(d);
+    if (!clusters.has(fp)) clusters.set(fp, []);
+    clusters.get(fp)!.push(d);
+  }
+
+  // Secondary merge: merge clusters that share identical product image URL and same price (within 10%)
+  const mergedClusters: Deal[][] = [];
+  const processed = new Set<string>();
+
+  for (const [key, group] of clusters.entries()) {
+    if (processed.has(key)) continue;
+    processed.add(key);
+
+    let currentGroup = [...group];
+    const head = currentGroup[0];
+
+    if (head.imgUrl && !head.imgUrl.includes("placeholder") && head.price > 0) {
+      for (const [otherKey, otherGroup] of clusters.entries()) {
+        if (processed.has(otherKey)) continue;
+        const otherHead = otherGroup[0];
+        if (otherHead.imgUrl === head.imgUrl && Math.abs(otherHead.price - head.price) <= Math.max(50, head.price * 0.1)) {
+          currentGroup = currentGroup.concat(otherGroup);
+          processed.add(otherKey);
+        }
+      }
+    }
+    mergedClusters.push(currentGroup);
+  }
+
+  const result: Deal[] = [];
+  for (const group of mergedClusters) {
+    if (group.length === 1) {
+      result.push(group[0]);
+      continue;
+    }
+
+    // Sort to pick best deal representation:
+    // Prefer longer/more complete title, has coupon, lower price, newest
+    group.sort((a, b) => {
+      const aLen = (a.title || "").length;
+      const bLen = (b.title || "").length;
+      if (Math.abs(aLen - bLen) >= 6) return bLen - aLen;
+      if (a.coupon && !b.coupon) return -1;
+      if (!a.coupon && b.coupon) return 1;
+      if (a.price !== b.price && a.price > 0 && b.price > 0) return a.price - b.price;
+      return b.ts - a.ts;
+    });
+
+    const best = { ...group[0] };
+    const duplicateIds = group.slice(1).map(d => d.id);
+    (best as any).duplicateIds = duplicateIds;
+
+    // Collect and unify all channel sources
+    const channelsMap = new Map<string, { name: string; channel: string; price?: number; ts?: number }>();
+    for (const d of group) {
+      if (d.clusterChannels && d.clusterChannels.length > 0) {
+        for (const cc of d.clusterChannels) {
+          if (cc.name && !channelsMap.has(cc.name)) channelsMap.set(cc.name, cc);
+        }
+      }
+      const chName = d.channel || d.channelRaw;
+      if (chName && chName !== "Unknown" && !channelsMap.has(chName)) {
+        channelsMap.set(chName, { name: chName, channel: chName, price: d.price, ts: d.ts });
+      }
+    }
+
+    const uniqueChannels = Array.from(channelsMap.values());
+    if (uniqueChannels.length >= 2 || group.length >= 2) {
+      best.clusterChannels = uniqueChannels;
+      best.clusterCount = Math.max(uniqueChannels.length, group.length);
+      best.isClusterHead = true;
+    }
+
+    // Inherit coupon if missing on the selected best title
+    if (!best.coupon) {
+      const cDeal = group.find(d => d.coupon);
+      if (cDeal) {
+        best.coupon = cDeal.coupon;
+        best.couponDiscount = cDeal.couponDiscount;
+        best.effectivePrice = cDeal.effectivePrice;
+      }
+    }
+
+    result.push(best);
+  }
+
+  return result;
+}
+
 async function fetchPendingDeals(): Promise<Deal[]> {
   const [pendingRes, recentRes] = await Promise.all([
     fetch(`${API_BASE}/api/v1/deals/pending?limit=1000&cluster=true`, { headers: getAdminHeaders(false) }).catch(() => null),
@@ -650,11 +790,12 @@ async function fetchPendingDeals(): Promise<Deal[]> {
     rows = rows.concat(list.map((d: any) => ({ ...d, _forceStatus: (d.status === "auto_posted" ? "auto_posted" : "approved") as DealStatus })));
   }
 
-  return rows.map((d, i) => {
+  const mappedDeals = rows.map((d, i) => {
     const deal = mapRawToDeal(d, String(i));
     if (d._forceStatus) deal.status = d._forceStatus;
     return deal;
-  }).sort((a, b) => b.ts - a.ts);
+  });
+  return clusterClientDeals(mappedDeals).sort((a, b) => b.ts - a.ts);
 }
 
 function mapChangesToBackend(changes: Record<string, unknown>): Record<string, unknown> {
@@ -1074,8 +1215,8 @@ function DealCard({
   const clusterSize = deal.clusterChannels && deal.clusterChannels.length >= 2
     ? deal.clusterChannels.length
     : (deal.clusterCount && deal.clusterCount >= 2 ? deal.clusterCount : 1);
-  const displayPrice = deal.bestPrice && deal.bestPrice < deal.price ? deal.bestPrice : deal.price;
-  const savings = deal.mrp > displayPrice ? deal.mrp - displayPrice : 0;
+  const displayPrice = deal.bestPrice && deal.bestPrice < deal.price ? Math.round(deal.bestPrice) : Math.round(deal.price);
+  const savings = deal.mrp > displayPrice ? Math.round(deal.mrp - displayPrice) : 0;
   const isUnder299 = displayPrice > 0 && displayPrice <= 299;
   const isFresh = (Date.now() / 1000 - deal.ts) < 900;
 
@@ -1267,7 +1408,7 @@ function DealCard({
               <div className="flex items-center justify-between gap-1">
                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <Store3DBadge store={store.tag} />
-                  <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[110px]" title="Discovery Stream: Verified Radar">{store.label || "Verified Drop"}</span>
+                  <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[110px]" title={`Source Channel: ${deal.channel || "Verified Drop"}`}>{deal.channel || "Verified Drop"}</span>
                   <AffiliateMark applied={deal.affiliate} />
                   {deal.desidimeTemperature !== undefined && deal.desidimeTemperature > 0 && (
                     <span className={`px-1.5 py-0.2 rounded-md font-mono text-[8.5px] font-black flex items-center gap-0.5 ${
@@ -1336,13 +1477,18 @@ function DealCard({
             </div>
 
             {deal.coupon && (
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-[8.5px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 truncate max-w-[140px]" title={deal.coupon}>
-                  <span>🎟️</span> {deal.coupon}
+              <div className="flex items-center justify-between gap-1.5 mt-1 text-[10px]">
+                <span className="text-[8.5px] font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 rounded flex items-center gap-1 truncate max-w-[150px]" title={deal.coupon}>
+                  <span>🎟️</span> <span className="truncate">{deal.coupon}</span>
+                  {deal.couponDiscount ? (
+                    <span className="text-[8px] text-amber-400 font-mono whitespace-nowrap">
+                      (-₹{Math.round(deal.couponDiscount).toLocaleString("en-IN")})
+                    </span>
+                  ) : null}
                 </span>
                 {deal.effectivePrice && deal.effectivePrice < deal.price && (
-                  <span className="text-[9px] font-mono font-black text-emerald-300 whitespace-nowrap">
-                    Eff: ₹{deal.effectivePrice}
+                  <span className="text-[9px] font-mono font-black text-emerald-300 whitespace-nowrap bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                    Eff: ₹{Math.round(deal.effectivePrice).toLocaleString("en-IN")}
                   </span>
                 )}
               </div>
@@ -1452,7 +1598,7 @@ function DealCard({
           <div className="flex items-center gap-2 min-w-0">
             <Store3DBadge store={store.tag} />
             <Category3DIcon category={deal.category} size={15} />
-            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]" title="Discovery Stream: Verified Radar">{store.label || "Verified Drop"}</span>
+            <span className="text-[11px] font-medium text-zinc-300 truncate max-w-[150px]" title={`Source Channel: ${deal.channel || "Verified Drop"}`}>{deal.channel || "Verified Drop"}</span>
             <AffiliateMark applied={deal.affiliate} />
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -1558,9 +1704,9 @@ function DealCard({
               </span>
             )}
             {deal.coupon && (
-              <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500/30 via-orange-500/25 to-amber-500/30 border border-amber-400/50 text-amber-200 font-mono text-[9.5px] font-bold shadow-md flex items-center gap-1 backdrop-blur-md">
+              <span className="px-2.5 py-0.5 rounded-full bg-slate-950/95 text-amber-300 font-mono text-[9.5px] font-black shadow-lg shadow-black/60 flex items-center gap-1 border border-amber-400/80 backdrop-blur-md">
                 <span>🎟️</span>
-                <span className="truncate max-w-[120px]">{deal.coupon}</span>
+                <span className="truncate max-w-[130px]">{deal.coupon}</span>
               </span>
             )}
             {deal.imgUrl && (
@@ -1674,20 +1820,22 @@ function DealCard({
 
             {/* Coupon & Effective Price Strip */}
             {deal.coupon && (
-              <div className="mt-2 flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-amber-500/[0.08] border border-amber-500/25 text-[11px] shadow-sm">
-                <div className="flex items-center gap-1.5 font-medium text-amber-300">
-                  <span className="text-xs">🎟️</span>
-                  <span className="font-semibold text-zinc-300">Coupon:</span>
-                  <span className="font-bold text-amber-200 font-mono">{deal.coupon}</span>
+              <div className="mt-2 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/[0.08] border border-amber-500/25 text-[11px] shadow-sm">
+                <div className="flex items-center gap-1.5 font-medium text-amber-300 min-w-0 flex-1">
+                  <span className="text-xs flex-shrink-0">🎟️</span>
+                  <span className="font-semibold text-zinc-300 flex-shrink-0">Coupon:</span>
+                  <span className="font-bold text-amber-200 font-mono truncate max-w-[110px] sm:max-w-[140px]" title={deal.coupon}>{deal.coupon}</span>
                   {deal.couponDiscount ? (
-                    <span className="text-[10px] text-amber-400/80 font-mono">(-₹{deal.couponDiscount})</span>
+                    <span className="text-[10px] text-amber-400/90 font-mono whitespace-nowrap flex-shrink-0">
+                      (-₹{Math.round(deal.couponDiscount).toLocaleString("en-IN")})
+                    </span>
                   ) : null}
                 </div>
                 {deal.effectivePrice && deal.effectivePrice < deal.price ? (
-                  <div className="flex items-center gap-1.5 font-mono">
+                  <div className="flex items-center gap-1.5 font-mono flex-shrink-0 whitespace-nowrap">
                     <span className="text-[10px] text-zinc-400">Effective:</span>
                     <span className="font-black text-emerald-300 text-xs bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 rounded">
-                      ₹{deal.effectivePrice}
+                      ₹{Math.round(deal.effectivePrice).toLocaleString("en-IN")}
                     </span>
                   </div>
                 ) : null}
@@ -5350,12 +5498,15 @@ export default function App() {
     } catch {}
 
     const previousDeal = deals.find(d => d.id === id);
+    const duplicateIds: string[] = (previousDeal as any)?.duplicateIds || (previousDeal as any)?.duplicate_hashes || [];
+    const affectedIds = new Set([id, ...duplicateIds]);
+
     // Manual dashboard approval broadcasts to Telegram (@dealsforindiachannel) and posts to IndiaDealHunts Web
     const resolvedChanges: any = {
       ...(changes || {}),
       destinations: (changes as any)?.destinations || ["@dealsforindiachannel"],
     };
-    setDeals(prev => prev.map(d => d.id === id ? {
+    setDeals(prev => prev.map(d => affectedIds.has(d.id) ? {
       ...d,
       ...resolvedChanges,
       status: "approved",
@@ -5389,6 +5540,9 @@ export default function App() {
       delete undoTimers.current[id];
       if (!isCancelled) {
         await apiApprove(id, resolvedChanges);
+        for (const dupId of duplicateIds) {
+          apiApprove(dupId, resolvedChanges).catch(() => {});
+        }
       }
     }, 5000);
   };
@@ -5401,7 +5555,10 @@ export default function App() {
 
   const handleReject = async (id: string) => {
     const previousDeal = deals.find(d => d.id === id);
-    setDeals(prev => prev.map(d => d.id === id ? { ...d, status: "rejected" } : d));
+    const duplicateIds: string[] = (previousDeal as any)?.duplicateIds || (previousDeal as any)?.duplicate_hashes || [];
+    const affectedIds = new Set([id, ...duplicateIds]);
+
+    setDeals(prev => prev.map(d => affectedIds.has(d.id) ? { ...d, status: "rejected" } : d));
 
     if (undoTimers.current[id]) {
       clearTimeout(undoTimers.current[id]);
@@ -5429,6 +5586,9 @@ export default function App() {
       delete undoTimers.current[id];
       if (!isCancelled) {
         await apiReject(id);
+        for (const dupId of duplicateIds) {
+          apiReject(dupId).catch(() => {});
+        }
       }
     }, 5000);
   };
