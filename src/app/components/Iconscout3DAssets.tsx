@@ -420,13 +420,14 @@ export function Stat3DPill({
 // ─── 6. 3D Savings Pill ───────────────────────────────────────────────────────
 export function SavingsPill3D({ amount }: { amount: number }) {
   if (!amount || amount <= 0) return null;
+  const roundedAmount = Math.round(amount);
   return (
     <motion.div
-      className="inline-flex items-center gap-1 text-[10.5px] font-black text-emerald-300 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-2 py-0.5 rounded-lg border border-emerald-400/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] backdrop-blur-md select-none"
+      className="inline-flex items-center gap-1 text-[10.5px] font-black text-emerald-300 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-2 py-0.5 rounded-lg border border-emerald-400/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] backdrop-blur-md select-none whitespace-nowrap"
       whileHover={{ scale: 1.05, y: -1 }}
     >
       <span className="text-xs filter drop-shadow-[0_1px_3px_rgba(16,185,129,0.6)]">💰</span>
-      <span>Save ₹{amount.toLocaleString("en-IN")}</span>
+      <span>Save ₹{roundedAmount.toLocaleString("en-IN")}</span>
     </motion.div>
   );
 }
