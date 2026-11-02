@@ -770,8 +770,8 @@ function clusterClientDeals(dealList: Deal[]): Deal[] {
 
 async function fetchPendingDeals(): Promise<Deal[]> {
   const [pendingRes, recentRes] = await Promise.all([
-    fetch(`${API_BASE}/api/v1/deals/pending?limit=1000&cluster=true`, { headers: getAdminHeaders(false) }).catch(() => null),
-    fetch(`${API_BASE}/api/v1/deals/recent?limit=300`, { headers: getAdminHeaders(false) }).catch(() => null),
+    fetch(`${API_BASE}/api/v1/deals/pending?limit=120&cluster=true`, { headers: getAdminHeaders(false) }).catch(() => null),
+    fetch(`${API_BASE}/api/v1/deals/recent?limit=60`, { headers: getAdminHeaders(false) }).catch(() => null),
   ]);
 
   if (pendingRes?.status === 401 || pendingRes?.status === 403 || recentRes?.status === 401 || recentRes?.status === 403) {
@@ -988,7 +988,7 @@ async function apiQuickDrop(url: string): Promise<any> {
   try {
     const res = await fetch(`${API_BASE}/api/v1/deals/quick-drop`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAdminHeaders(),
       body: JSON.stringify({ url }),
     });
     if (!res.ok) return null;
@@ -998,7 +998,7 @@ async function apiQuickDrop(url: string): Promise<any> {
 
 async function fetchPromos(): Promise<any[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/promos?limit=50`);
+    const res = await fetch(`${API_BASE}/api/v1/deals/promos?limit=50`, { headers: getAdminHeaders(false) });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data.promos) ? data.promos : [];
@@ -1047,7 +1047,7 @@ async function apiDispatchVideo(id: string): Promise<{ status: string; message?:
 
 async function apiGetPriceHistory(id: string): Promise<PriceIntelligenceData | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/price-history`);
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/price-history`, { headers: getAdminHeaders(false) });
     if (!res.ok) return null;
     const data = await res.json();
     return data.price_intelligence || null;
@@ -3233,7 +3233,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     setIsRadarScanning(true);
     try {
       toast.loading("⚡ Scanning D2C Brand Clearance Feeds...", { id: "d2c-radar" });
-      const res = await fetch("https://api.rudranil.me/api/v1/radar/d2c", { method: "POST" });
+      const res = await fetch(`${API_BASE}/api/v1/radar/d2c`, { method: "POST", headers: getAdminHeaders(false) });
       const data = await res.json();
       if (data.status === "ok") {
         toast.success(`⚡ D2C Radar: ${data.new_deals} drops found (${data.auto_posted} live on storefront!)`, { id: "d2c-radar" });
@@ -5407,6 +5407,7 @@ export default function App() {
     try {
       const apiDeals = await fetchPendingDeals();
       setDeals(prev => {
+        if (apiDeals.length === 0 && prev.length > 0) return prev;
         // During undo windows, merge server data without overwriting optimistic status changes
         const activeUndoIds = new Set(Object.keys(undoTimers.current));
         if (activeUndoIds.size === 0 && !opts?.skipOptimistic) {
