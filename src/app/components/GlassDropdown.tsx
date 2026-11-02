@@ -144,6 +144,8 @@ export function GlassDropdown({
       <motion.button
         ref={triggerRef}
         type="button"
+        aria-expanded={open}
+        title={selectedOption.label}
         whileTap={{ scale: 0.96 }}
         onClick={(e) => {
           e.stopPropagation();

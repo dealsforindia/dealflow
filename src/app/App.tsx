@@ -1,6 +1,7 @@
+import { VisitorSummary } from './components/VisitorSummary';
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { toast, Toaster } from "sonner";
 import {
   Check, X, Search, Sun, Moon, Zap, Tag, Settings2, Radio,
@@ -12,7 +13,7 @@ import {
   Send, CheckCheck, Trash2, SlidersHorizontal, Eye, EyeOff,
   LayoutGrid, Columns, Smartphone, CornerDownLeft, Command,
   Volume2, VolumeX, Keyboard, TrendingUp, AlertTriangle, BarChart3, ChevronDown, ChevronUp, Share2, History, Network, Cpu,
-  Video, Play, Film
+  Video, Play, Film, Star
 } from "lucide-react";
 import {
   LiveRadar3D, FireFlame3D, RocketBroadcast3D, EmptySearch3D, triggerApproveConfetti
@@ -814,6 +815,10 @@ function mapChangesToBackend(changes: Record<string, unknown>): Record<string, u
   if ("couponDiscount" in changes) mapped.coupon_discount = changes.couponDiscount;
   if ("category" in changes) mapped.category = changes.category;
   if ("destinations" in changes) mapped.destinations = changes.destinations;
+  if ("liveOnWeb" in changes) mapped.live_on_web = changes.liveOnWeb;
+  if ("live_on_web" in changes) mapped.live_on_web = changes.live_on_web;
+  if ("liveOnTelegram" in changes) mapped.live_on_telegram = changes.liveOnTelegram;
+  if ("live_on_telegram" in changes) mapped.live_on_telegram = changes.live_on_telegram;
   if ("uploadedImgUrl" in changes) mapped.uploaded_img_url = changes.uploadedImgUrl;
   if ("uploaded_img_url" in changes) mapped.uploaded_img_url = changes.uploaded_img_url;
   for (const k of ["prod_name", "aff_text", "img_url", "uploaded_img_url", "prices", "message", "coupon", "coupon_discount", "effective_price", "destinations"]) {
@@ -1166,7 +1171,7 @@ function AffiliateMark({ applied }: { applied: boolean }) {
   if (applied) {
     return (
       <span
-        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/35 flex-shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.15)]"
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9.5px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/35 flex-shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.15)]"
         title="Affiliate converted link — Commission tracking active"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -1445,7 +1450,7 @@ function DealCard({
 
               {/* Title: 2 lines with comfortable leading */}
               <h4
-                className="font-heading text-xs font-bold text-slate-100 line-clamp-2 leading-snug mt-1 hover:text-indigo-300 transition-colors cursor-pointer tracking-tight"
+                className="text-[13px] font-semibold text-slate-100 line-clamp-2 leading-relaxed mt-1 hover:text-indigo-300 transition-colors cursor-pointer tracking-normal"
                 onClick={() => onEdit(deal)}
                 title={deal.title}
               >
@@ -1594,7 +1599,7 @@ function DealCard({
       {/* ─── DESKTOP/TABLET LAYOUT: Luxury Specimen Showcase Card (hidden sm:flex) ─── */}
       <div className="hidden sm:flex flex-col flex-1 relative z-20">
         {/* Header */}
-        <div className="px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/6 bg-white/[0.02]">
+        <div className="flow-deal-card-header px-3.5 py-2.5 flex items-center justify-between gap-2 border-b border-white/6 bg-white/[0.02]">
           <div className="flex items-center gap-2 min-w-0">
             <Store3DBadge store={store.tag} />
             <Category3DIcon category={deal.category} size={15} />
@@ -1631,7 +1636,7 @@ function DealCard({
 
         {/* Media Showcase */}
         <div
-          className="relative w-full h-48 bg-[#080911] flex items-center justify-center p-3 overflow-hidden cursor-zoom-in border-b border-white/6 group/img"
+          className="product-stage relative w-full h-48 bg-[#080911] flex items-center justify-center p-3 overflow-hidden cursor-zoom-in border-b border-white/6 group/img"
           onClick={() => !imgErr && deal.imgUrl && setLightbox(true)}
         >
           {deal.imgUrl && !imgErr ? (
@@ -1724,7 +1729,7 @@ function DealCard({
 
           {/* Quick Action Floating Bar on Card Hover (Multi-Platform Copy & Actions) */}
           <div
-            className="absolute bottom-2 inset-x-2 z-30 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto flex-wrap"
+            className="card-action-dock absolute bottom-2 inset-x-2 z-30 flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto flex-wrap"
             onClick={e => e.stopPropagation()}
           >
 
@@ -1762,15 +1767,7 @@ function DealCard({
               <ExternalLink size={11} />
               <span>Store</span>
             </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onEdit(deal); }}
-              className="px-2 py-1 rounded-lg text-[10.5px] font-bold bg-black/90 text-white hover:text-amber-300 hover:bg-black border border-white/20 backdrop-blur-md shadow-xl flex items-center gap-1 cursor-pointer active:scale-95 transition-all"
-              title="Edit & Tune"
-            >
-              <PenLine size={11} />
-              <span>Tune</span>
-            </button>
+
           </div>
 
           {(bulkMode || selected) && (
@@ -1787,9 +1784,9 @@ function DealCard({
         </div>
 
         {/* Content */}
-        <div className="p-3.5 flex flex-col flex-1 justify-between gap-3 bg-gradient-to-b from-[#111322]/50 via-[#0C0E1A]/60 to-[#070810]/80">
+        <div className="flow-deal-card-body p-3.5 flex flex-col flex-1 justify-between gap-3 bg-gradient-to-b from-[#111322]/50 via-[#0C0E1A]/60 to-[#070810]/80">
           <div>
-            <h4 className="font-heading text-[13.5px] font-bold text-zinc-100 line-clamp-2 leading-snug hover:text-indigo-300 transition-colors cursor-pointer tracking-tight" onClick={() => onEdit(deal)} title={deal.title}>
+            <h4 className="text-[13.5px] font-semibold text-zinc-100 line-clamp-2 leading-relaxed hover:text-indigo-300 transition-colors cursor-pointer tracking-normal" onClick={() => onEdit(deal)} title={deal.title}>
               {deal.title}
             </h4>
             {deal.pendingRedirection && (
@@ -2476,8 +2473,8 @@ function CommandPaletteModal({
 interface EditModalProps {
   deal: Deal;
   onClose: () => void;
-  onSaveDraft: (changes: Partial<Deal>) => void;
-  onSaveApprove: (changes: Partial<Deal>) => void;
+  onSaveDraft: (changes: Partial<Deal>) => void | Promise<void>;
+  onSaveApprove: (changes: Partial<Deal>) => void | Promise<void>;
   onToast: (msg: string, type?: "success" | "error" | "info") => void;
 }
 
@@ -2518,6 +2515,17 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [scrapingImage, setScrapingImage] = useState(false);
   const [generatingBanner, setGeneratingBanner] = useState(false);
   const [priceIntel, setPriceIntel] = useState<PriceIntelligenceData | null>(null);
+  const [postToTelegram, setPostToTelegram] = useState<boolean>(() => {
+    if (deal.destinations && deal.destinations.length === 1 && deal.destinations[0] === "storefront_only") {
+      return false;
+    }
+    if (deal.liveOnTelegram === false) return false;
+    return true; // Default ON
+  });
+  const [postToWeb, setPostToWeb] = useState<boolean>(() => {
+    if (deal.liveOnWeb === false) return false;
+    return true; // Default ON
+  });
   const [destinations, setDestinations] = useState<string[]>(
     deal.destinations && deal.destinations.length > 0 ? deal.destinations : ["@dealsforindiachannel"]
   );
@@ -2569,50 +2577,30 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 
   const fileRef = useRef<HTMLInputElement>(null);
   const previewSrc = imgFile || imgUrl || null;
-  const isDirty = title !== deal.title || price !== String(deal.price || "") || mrp !== String(deal.mrp || "") || coupon !== (deal.coupon || "") || imgUrl !== deal.imgUrl || text !== deal.affText || imgFile !== null;
+  const isDirty = title !== deal.title || price !== String(deal.price || "") || mrp !== String(deal.mrp || "") || coupon !== (deal.coupon || "") || imgUrl !== deal.imgUrl || text !== deal.affText || imgFile !== null || postToTelegram !== (deal.liveOnTelegram !== false && !deal.destinations?.includes("storefront_only")) || postToWeb !== (deal.liveOnWeb !== false);
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    
-    // 1. Instant local preview with zero network delay
+  const pendingImage = useRef<File | null>(null);
+  const [imageName, setImageName] = useState("");
+  const [imageError, setImageError] = useState("");
+  const [draggingImage, setDraggingImage] = useState(false);
+  const [savingAction, setSavingAction] = useState<"draft" | "broadcast" | null>(null);
+  const [saveError, setSaveError] = useState("");
+  const stageImage = (file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) { setImageError("Choose a JPG, PNG or WebP image."); return; }
+    if (file.size > 10 * 1024 * 1024) { setImageError("Image is too large. Choose a file under 10 MB."); return; }
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setImgFile(dataUrl);
-      setImgUrl(dataUrl);
-      setUploadedImg(dataUrl);
-    };
-    reader.readAsDataURL(f);
-
-    // 2. Upload to server
-    const fd = new FormData();
-    fd.append("file", f);
-    try {
-      onToast("Uploading image to server...", "info");
-      const res = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, { 
-        method: "POST", 
-        headers: getAdminHeaders(false),
-        body: fd 
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const serverImg = data.img_url || data.uploaded_img_url;
-        if (serverImg) {
-          setImgUrl(serverImg);
-          setUploadedImg(serverImg);
-          setImgFile(null);
-        }
-        onToast("Image uploaded to server successfully!", "success");
-      } else {
-        onToast("Uploaded to local preview (server returned non-200)", "info");
-      }
-    } catch {
-      onToast("Network issue uploading to server, keeping local preview", "info");
-    } finally {
-      if (fileRef.current) fileRef.current.value = "";
-    }
+    reader.onerror = () => setImageError("Could not read this image. Try another file.");
+    reader.onload = () => { pendingImage.current = file; setImgFile(String(reader.result)); setImageName(file.name || "Pasted image"); setImageError(""); setSaveError(""); };
+    reader.readAsDataURL(file);
   };
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (file) stageImage(file); e.target.value = "";
+  };
+  const handleImagePaste = (e: React.ClipboardEvent) => {
+    const image = Array.from(e.clipboardData.items).find(item => item.kind === "file" && item.type.startsWith("image/"))?.getAsFile();
+    if (image) { e.preventDefault(); stageImage(image); }
+  };
+  const removeStagedImage = () => { pendingImage.current = null; setImgFile(null); setImageName(""); setImageError(""); };
 
   const doRewrite = async () => {
     if (!instruction.trim()) return;
@@ -2697,7 +2685,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
 
   const changes: Partial<Deal> = {
     title,
-    imgUrl: uploadedImg || imgFile || imgUrl,
+    imgUrl: imgFile || imgUrl,
     telegramImgUrl: telegramImg,
     storeImgUrl: storeImg,
     uploadedImgUrl: uploadedImg,
@@ -2707,7 +2695,33 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     couponDiscount: computedCouponDisc ?? deal.couponDiscount,
     effectivePrice: computedEff ?? deal.effectivePrice,
     affText: text,
-    destinations: destinations.length > 0 ? destinations : ["storefront_only"],
+    destinations: postToTelegram ? ["@dealsforindiachannel"] : (postToWeb ? ["storefront_only"] : []),
+    liveOnWeb: postToWeb,
+    liveOnTelegram: postToTelegram,
+  };
+
+  const saveDeal = async (action: "draft" | "broadcast") => {
+    if (savingAction) return;
+    if (!title.trim() || !text.trim()) { setSaveError("Add a product title and post text before saving."); return; }
+    if (action === "broadcast" && !postToTelegram && !postToWeb) {
+      setSaveError("Select at least one destination (Telegram or Web Storefront) to broadcast.");
+      return;
+    }
+    setSavingAction(action); setSaveError("");
+    try {
+      const payload = { ...changes };
+      if (imgFile && pendingImage.current) {
+        const form = new FormData(); form.append("file", pendingImage.current);
+        const response = await fetch(`${API_BASE}/api/v1/deals/${deal.id}/image`, { method: "POST", headers: getAdminHeaders(false), body: form });
+        if (!response.ok) throw new Error("Image upload failed. Your edits are kept here; try again.");
+        const data = await response.json(); const url = data.img_url || data.uploaded_img_url;
+        if (!url) throw new Error("The image upload returned no URL. Try again.");
+        payload.imgUrl = url; payload.uploadedImgUrl = url;
+        setImgUrl(url); setUploadedImg(url); setImgFile(null); pendingImage.current = null;
+      }
+      if (action === "draft") await onSaveDraft(payload); else await onSaveApprove(payload);
+    } catch (error) { setSaveError(error instanceof Error ? error.message : "Could not save. Your edits are kept here."); }
+    finally { setSavingAction(null); }
   };
 
   return (
@@ -2715,7 +2729,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
       style={{ background: "rgba(3, 7, 18, 0.85)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       
-      <div className="relative w-full max-w-4xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#0A0C16]/95 backdrop-blur-2xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden">
+      <div onPaste={handleImagePaste} className="flow-deal-editor relative w-full max-w-4xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#0A0C16]/95 backdrop-blur-2xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden">
         {/* Sticky Header */}
         <div className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-slate-900/90 backdrop-blur-md">
           <div className="flex items-center gap-3 min-w-0">
@@ -2878,6 +2892,13 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
               </div>
             )}
 
+            <div className={`flow-image-dropzone ${draggingImage ? "is-dragging" : ""}`} onDragOver={e => { e.preventDefault(); setDraggingImage(true); }} onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDraggingImage(false); }} onDrop={e => { e.preventDefault(); setDraggingImage(false); const file = e.dataTransfer.files[0]; if (file) stageImage(file); }}>
+              <div className="flow-upload-preview">{previewSrc ? <img src={previewSrc} alt="Selected broadcast image" /> : <Upload size={26} />}</div>
+              <div className="flow-upload-copy"><strong>Broadcast image</strong><span>Drop an image here or paste with Ctrl+V</span><small>JPG, PNG or WebP · up to 10 MB</small><button type="button" onClick={() => fileRef.current?.click()}><Upload size={13} />{previewSrc ? "Replace image" : "Choose image"}</button></div>
+              {imgFile && <div className="flow-staged-image"><span>{imageName} · ready to save</span><button type="button" onClick={removeStagedImage} aria-label="Remove selected image"><X size={14} /></button></div>}
+              {imageError && <p role="alert">{imageError}</p>}
+            </div>
+
             {/* Dual Image Choice Selector + Download Action */}
             {(telegramImg || storeImg || uploadedImg || imgFile) && (
               <div className="flex flex-col gap-2 p-3 rounded-2xl bg-slate-950/80 border border-white/8 shadow-inner">
@@ -2901,7 +2922,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                   {telegramImg && (
                     <button
                       type="button"
-                      onClick={() => { setImgUrl(telegramImg); setImgFile(null); }}
+                      onClick={() => { removeStagedImage(); setImgUrl(telegramImg); }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
                         imgUrl === telegramImg && !imgFile
                           ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md"
@@ -2915,7 +2936,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                   {storeImg && (
                     <button
                       type="button"
-                      onClick={() => { setImgUrl(storeImg); setImgFile(null); }}
+                      onClick={() => { removeStagedImage(); setImgUrl(storeImg); }}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
                         imgUrl === storeImg && !imgFile
                           ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md"
@@ -3010,7 +3031,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 title="Offload 1080x1920 Viral Short Video render to GitHub Actions runner">
                 <span>🎬</span> {dispatchingVideo ? "Dispatching..." : "Generate 9:16 Viral Short"}
               </button>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} />
             </div>
           </div>
 
@@ -3153,56 +3174,101 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           </div>
         </div>
 
-        {/* Broadcast Destination Info */}
+        {/* Broadcast Destination Info & Interactive Toggles */}
         <div className="flex items-center justify-between gap-2.5 px-4 sm:px-6 py-2.5 bg-[#080B14] border-t border-white/10 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" /> Destination:
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+              <span className={`w-2 h-2 rounded-full ${postToTelegram || postToWeb ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
+              DESTINATION:
             </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20">
-              ✈️ @dealsforindiachannel
-            </span>
-            <span className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20">
-              🌐 IndiaDealHunts Web
-            </span>
+
+            {/* Telegram Toggle Pill */}
+            <button
+              type="button"
+              onClick={() => setPostToTelegram(v => !v)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border active:scale-95 ${
+                postToTelegram
+                  ? "text-emerald-300 bg-emerald-500/15 border-emerald-500/35 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                  : "text-slate-500 bg-white/[0.03] border-white/10 hover:border-white/20 hover:text-slate-400 opacity-60"
+              }`}
+              title={postToTelegram ? "Telegram broadcast is ON (Click to disable)" : "Telegram broadcast is OFF (Click to enable)"}
+            >
+              <span>✈️</span>
+              <span>@dealsforindiachannel</span>
+              <span className={`ml-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-black ${postToTelegram ? "bg-emerald-400/20 text-emerald-200" : "bg-white/10 text-slate-400"}`}>
+                {postToTelegram ? "ON" : "OFF"}
+              </span>
+            </button>
+
+            {/* Web Storefront Toggle Pill */}
+            <button
+              type="button"
+              onClick={() => setPostToWeb(v => !v)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border active:scale-95 ${
+                postToWeb
+                  ? "text-cyan-300 bg-cyan-500/15 border-cyan-500/35 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                  : "text-slate-500 bg-white/[0.03] border-white/10 hover:border-white/20 hover:text-slate-400 opacity-60"
+              }`}
+              title={postToWeb ? "Web Storefront post is ON (Click to disable)" : "Web Storefront post is OFF (Click to enable)"}
+            >
+              <span>🌐</span>
+              <span>IndiaDealHunts Web</span>
+              <span className={`ml-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-black ${postToWeb ? "bg-cyan-400/20 text-cyan-200" : "bg-white/10 text-slate-400"}`}>
+                {postToWeb ? "ON" : "OFF"}
+              </span>
+            </button>
           </div>
-          <span className="text-[10px] text-slate-500 italic hidden sm:inline">Broadcasts to Telegram & Storefront</span>
+
+          <span className="text-[10px] text-slate-400 italic hidden sm:inline">
+            {postToTelegram && postToWeb
+              ? "Both enabled · Click pills to customize where to publish"
+              : postToTelegram
+              ? "Publishing to Telegram only"
+              : postToWeb
+              ? "Publishing to Web Storefront only"
+              : "⚠️ Both disabled: enable at least one to broadcast"}
+          </span>
         </div>
 
-        {/* Sticky Footer Actions */}
-        <div className="sticky bottom-0 z-30 flex items-center justify-between px-3 sm:px-6 py-3 border-t border-white/10 bg-[#060810]/95 backdrop-blur-xl gap-2">
-          <button onClick={onClose}
-            className="px-3 sm:px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white bg-white/5 border border-white/10 transition-colors cursor-pointer">
-            Cancel
-          </button>
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
-            <button onClick={() => { onSaveDraft(changes); onClose(); }} disabled={!isDirty}
-              className="hidden sm:inline-flex px-3 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors disabled:opacity-40 cursor-pointer">
-              Save Draft
-            </button>
-            <button onClick={() => { onSaveApprove(changes); onClose(); }}
-              className="px-3.5 sm:px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-success hover:opacity-90 active:scale-95 transition-all shadow-lg flex items-center gap-1.5 cursor-pointer">
-              <RocketBroadcast3D size={15} />
-              <span className="hidden min-[400px]:inline">Save &amp; Broadcast</span>
-              <span className="min-[400px]:hidden">Approve</span>
-            </button>
-          </div>
-        </div>
+        <footer className="flow-editor-footer">
+          {saveError && <div className="flow-save-error" role="alert">{saveError}</div>}
+          <div className="flow-save-context"><span>{savingAction ? (imgFile ? "Uploading image…" : "Saving changes…") : imgFile ? "Image ready · uploads when you save" : "Review your changes before sending"}</span><small>{destinations.includes("storefront_only") ? "Web storefront" : "Telegram & web storefront"}</small></div>
+          <div className="flow-editor-save-actions"><button className="flow-editor-cancel" onClick={onClose} disabled={!!savingAction}>Cancel</button><button className="flow-editor-draft" onClick={() => saveDeal("draft")} disabled={!!savingAction || !isDirty}><FileText size={16} />{savingAction === "draft" ? "Saving…" : "Save draft"}</button><button className="flow-editor-broadcast" onClick={() => saveDeal("broadcast")} disabled={!!savingAction}><Send size={17} />{savingAction === "broadcast" ? "Preparing…" : "Save & broadcast"}</button></div>
+        </footer>
       </div>
     </div>
   );
 }
 
 // ─── Review View ──────────────────────────────────────────────────────────────
-function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, dark }: {
+function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, dark, loading }: {
   deals: Deal[]; onApprove: (id: string, changes?: Partial<Deal>) => void;
   onReject: (id: string) => void; onEdit: (d: Deal) => void;
-  onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean;
+  onAddDeal: (deal: Deal) => void; onRefresh?: () => void; dark: boolean; loading: boolean;
 }) {
+  const statusStripRef = useRef<HTMLDivElement>(null);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  useEffect(() => {
+    if (!toolsOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const focusable = () => Array.from(document.querySelectorAll<HTMLElement>('#deal-review-tools button:not(:disabled), #deal-review-tools input')) .filter(el => el.getClientRects().length > 0);
+    const frame = requestAnimationFrame(() => focusable()[0]?.focus());
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setToolsOpen(false); }
+      if (event.key === "Tab") {
+        const items = focusable(); const first = items[0]; const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => { cancelAnimationFrame(frame); document.removeEventListener("keydown", handleKey); previous?.focus(); };
+  }, [toolsOpen]);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"latest" | "temperature" | "discount" | "price_asc" | "price_desc">("latest");
   const [filter, setFilter] = useState<"pending" | "approved" | "web_live" | "rejected" | "promos" | "all">("pending");
-  const [selectedChannel, setSelectedChannel] = useState<string>("All");
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
+  const [channelSearch, setChannelSearch] = useState("");
   const [selectedStore, setSelectedStore] = useState<string>("All");
   const [pageSize, setPageSize] = useState<number>(40);
   const [page, setPage] = useState(1);
@@ -3321,7 +3387,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
     .sort();
 
   let visible = deals.filter(d => {
-    if (selectedChannel !== "All" && d.channel !== selectedChannel) return false;
+    if (selectedChannels.length > 0 && !selectedChannels.includes(d.channel)) return false;
     if (selectedStore !== "All") {
       const store = getStoreBadge(d.platforms, d.affText);
       if (store.tag !== selectedStore) return false;
@@ -3476,19 +3542,22 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   return (
     <div className="flex-1 flex flex-col overflow-hidden perspective-1000 relative">
       {/* Sleek Senior Minimalist Toolbar */}
-      <div className="flex-shrink-0 px-3 sm:px-6 py-2.5 sm:py-3 border-b border-white/8 glass-panel flex flex-col gap-2.5 relative z-40 overflow-visible">
+      <div data-expanded={toolsOpen} className="flow-toolbar flex-shrink-0 px-3 sm:px-6 py-2.5 sm:py-3 border-b border-white/8 glass-panel flex flex-col gap-2.5 relative z-40 overflow-visible">
         {/* Tier 1: Search + Essential Actions */}
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
+        <div className="flow-search-row flex items-center gap-2">
+          <div className="flow-search relative flex-1">
             {isSearchUrl ? (
               <Zap size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-400 fill-emerald-400 animate-pulse" />
             ) : (
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             )}
             <input
+              aria-label="Search deals or paste a product URL"
+              data-url={isSearchUrl}
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
               onKeyDown={e => {
+                if (e.key === "Escape") setSearch("");
                 if (e.key === "Enter" && isSearchUrl && !isDropping) {
                   e.preventDefault();
                   handleQuickDrop(search);
@@ -3512,13 +3581,13 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                 <span className="hidden sm:inline">Drop</span>
               </button>
             ) : search ? (
-              <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-100 p-1">
+              <button aria-label="Clear search" onClick={() => { setSearch(""); setPage(1); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-100 p-1">
                 <X size={13} />
               </button>
             ) : null}
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+          <div className="flow-quick-actions flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
             <button
               onClick={handleTriggerRadar}
               disabled={isRadarScanning}
@@ -3567,64 +3636,28 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           </div>
         </div>
 
-        {/* ─── MOBILE CONTROLS (Ergonomic 2-Row High-Efficiency Layout on sm:hidden) ─── */}
-        <div className="flex sm:hidden flex-col gap-2">
-          {/* Mobile Row 1: Store & Channel Dropdown Filters (Ample width for channel names) */}
-          <div className="flex items-center gap-1.5 overflow-visible">
-            <GlassDropdown
-              value={selectedStore}
-              onChange={val => { setSelectedStore(val); setPage(1); }}
-              options={storeOptions}
-              placeholder="Store"
-              className="w-28 flex-shrink-0"
-            />
-            <GlassDropdown
-              value={selectedChannel}
-              onChange={val => { setSelectedChannel(val); setPage(1); }}
-              options={channelOptions}
-              placeholder="Channel"
-              searchable={true}
-              className="flex-1 min-w-0"
-            />
+        <div className="flow-status-row">
+          <button className="flow-tools-toggle" aria-expanded={toolsOpen} aria-controls="deal-review-tools" onClick={() => setToolsOpen(v => !v)}><SlidersHorizontal size={14} /><span>Filters & tools</span>{[selectedStore !== "All", selectedChannels.length > 0, smartPreset !== "all", sort !== "latest"].filter(Boolean).length > 0 && <span className="flow-filter-count">{[selectedStore !== "All", selectedChannels.length > 0, smartPreset !== "all", sort !== "latest"].filter(Boolean).length}</span>}<ChevronDown size={12} /></button>
+          <div className="flow-status-strip" ref={statusStripRef} role="group" aria-label="Deal status">
+            {[
+              { id: "pending", label: "Pending", count: pending },
+              { id: "approved", label: "Live / All", count: approved },
+              { id: "web_live", label: "🌐 On Web", count: webLiveCount },
+              { id: "rejected", label: "Rejected", count: rejected },
+              { id: "promos", label: "Promos", count: promos.length },
+              { id: "all", label: "All", count: deals.length },
+            ].map(item => <Stat3DPill key={item.id} id={item.id} label={item.label} count={item.count} active={filter === item.id} onClick={() => { setFilter(item.id as any); setPage(1); }} />)}
           </div>
-
-          {/* Mobile Row 2: Status Tabs Horizontal Scroll + Sort Dropdown */}
-          <div className="flex items-center gap-1.5 overflow-visible">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-1 min-w-0 py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              {[
-                { id: "pending", label: "Pending", count: pending },
-                { id: "approved", label: "Live / All", count: approved },
-                { id: "web_live", label: "🌐 On Web", count: webLiveCount },
-                { id: "rejected", label: "Rejected", count: rejected },
-                { id: "promos", label: "Promos", count: promos.length },
-                { id: "all", label: "All", count: deals.length },
-              ].map(tab => (
-                <Stat3DPill
-                  key={tab.id}
-                  id={tab.id}
-                  label={tab.label}
-                  count={tab.count}
-                  active={filter === tab.id}
-                  onClick={() => { setFilter(tab.id as any); setPage(1); }}
-                />
-              ))}
-            </div>
-            <GlassDropdown
-              value={sort}
-              onChange={val => { setSort(val as any); setPage(1); }}
-              options={sortOptions}
-              placeholder="Sort"
-              align="right"
-              className="flex-shrink-0"
-            />
-          </div>
+          <button className="flow-status-more" aria-label="Scroll deal statuses" onClick={() => statusStripRef.current?.scrollBy({ left: statusStripRef.current.scrollLeft + statusStripRef.current.clientWidth >= statusStripRef.current.scrollWidth - 5 ? -statusStripRef.current.scrollWidth : 200, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" })}><ChevronDown size={14} /></button>
+          {(search || selectedStore !== "All" || selectedChannels.length > 0 || smartPreset !== "all") && <button className="flow-reset-filters" onClick={() => { setSearch(""); setSelectedStore("All"); setSelectedChannels([]); setSmartPreset("all"); setPage(1); }}><X size={12} />Reset</button>}
         </div>
+      </div>
 
-        {/* ─── DESKTOP/TABLET CONTROLS (Spacious 2-Tier on hidden sm:flex) ─── */}
-        <div className="hidden sm:flex flex-col gap-3">
-          {/* Tier 2: View Switcher (The Pill!) + Store/Channel Dropdowns */}
-          <div className="flex items-center justify-between gap-2 overflow-visible">
-            <div className="flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
+      {toolsOpen && createPortal(<div className="flow-drawer-backdrop" onClick={e => { if (e.target === e.currentTarget) setToolsOpen(false); }}><section className="flow-advanced-panel flow-tools-drawer" id="deal-review-tools" role="dialog" aria-modal="true" aria-label="Filters and review tools">
+        <div className="flow-panel-heading"><span>Filters & tools</span><button aria-label="Close filters and tools" onClick={() => setToolsOpen(false)}><X size={15} /></button></div>
+        <div className="flow-drawer-utilities"><button onClick={handleTriggerRadar} disabled={isRadarScanning}><Zap size={15} />{isRadarScanning ? "Scanning…" : "D2C Radar"}</button><button onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); setToolsOpen(false); }}><CheckSquare size={15} />{bulkMode ? "Cancel selection" : "Select deals"}</button><button onClick={handleToggleSound}>{soundMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}{soundMuted ? "Audio off" : "Audio on"}</button></div>
+        <div className="flow-filter-row">
+            <div className="flow-view-switch flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
@@ -3653,67 +3686,21 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
               </button>
             </div>
 
-            {/* Quick Filter Dropdowns */}
-            <div className="flex items-center gap-1.5 overflow-visible flex-shrink-0">
-              <GlassDropdown
-                value={selectedStore}
-                onChange={val => { setSelectedStore(val); setPage(1); }}
-                options={storeOptions}
-                placeholder="Store"
-              />
-              <GlassDropdown
-                value={selectedChannel}
-                onChange={val => { setSelectedChannel(val); setPage(1); }}
-                options={channelOptions}
-                placeholder="Channel"
-                searchable={true}
-              />
-              <GlassDropdown
-                value={sort}
-                onChange={val => { setSort(val as any); setPage(1); }}
-                options={sortOptions}
-                placeholder="Sort"
-                align="right"
-              />
-              <div className="hidden md:block">
-                <GlassDropdown
-                  value={String(pageSize)}
-                  onChange={val => { setPageSize(Number(val)); setPage(1); }}
-                  options={pageSizeOptions}
-                  placeholder="Page Size"
-                  align="right"
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* Tier 3: Status Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap py-0.5" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-            {[
-              { id: "pending", label: "Pending", count: pending },
-              { id: "approved", label: "Live / All", count: approved },
-              { id: "web_live", label: "🌐 On Web", count: webLiveCount },
-              { id: "rejected", label: "Rejected", count: rejected },
-              { id: "promos", label: "Promos", count: promos.length },
-              { id: "all", label: "All", count: deals.length },
-            ].map(tab => (
-              <Stat3DPill
-                key={tab.id}
-                id={tab.id}
-                label={tab.label}
-                count={tab.count}
-                active={filter === tab.id}
-                onClick={() => { setFilter(tab.id as any); setPage(1); }}
-              />
-            ))}
-          </div>
+          <GlassDropdown value={selectedStore} onChange={val => { setSelectedStore(val); setPage(1); }} options={storeOptions} placeholder="Store" className="flow-store-filter" />
+          <fieldset className="flow-channel-picker"><legend>Channels <span>{selectedChannels.length ? `${selectedChannels.length} selected` : "All channels"}</span></legend>
+            <input aria-label="Search review channels" placeholder="Search channels…" value={channelSearch} onChange={e => setChannelSearch(e.target.value)} />
+            <button type="button" onClick={() => { setSelectedChannels([]); setPage(1); }}>Show all channels</button>
+            <div className="flow-channel-options">{channelOptions.filter(o => o.value !== "All" && o.label.toLowerCase().includes(channelSearch.toLowerCase())).map(o => <label key={o.value}><input type="checkbox" checked={selectedChannels.includes(o.value)} onChange={() => { setSelectedChannels(prev => prev.includes(o.value) ? prev.filter(ch => ch !== o.value) : [...prev, o.value]); setPage(1); }} /><span>{o.label}</span></label>)}</div>
+            <small>Shows posts from any selected channel.</small>
+          </fieldset>
+          <GlassDropdown value={sort} onChange={val => { setSort(val as any); setPage(1); }} options={sortOptions} placeholder="Sort" align="right" className="flow-sort-filter" />
+          <GlassDropdown value={String(pageSize)} onChange={val => { setPageSize(Number(val)); setPage(1); }} options={pageSizeOptions} placeholder="Page size" align="right" className="flow-page-filter" />
         </div>
-      </div>
-
       {/* ─── CURATOR VELOCITY & SMART PRESET PULSE BAR ─── */}
-      <div className="flex-shrink-0 px-3 sm:px-6 py-1.5 sm:py-2 bg-[#090B14]/90 border-b border-white/6 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar flex-nowrap relative z-30">
+      <div className="flow-presets flex-shrink-0 px-3 sm:px-6 py-1.5 sm:py-2 bg-[#090B14]/90 border-b border-white/6 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar flex-nowrap relative z-30">
         {/* Left: Velocity Metrics */}
-        <div className="flex items-center gap-2 font-mono text-[11px] flex-shrink-0">
+        <div className="flow-metrics flex items-center gap-2 font-mono text-[11px] flex-shrink-0">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-bold">
             <TrendingUp size={12} className="text-emerald-400" />
             <span>{approvedToday} <span className="hidden min-[360px]:inline">Approved</span> Today</span>
@@ -3733,8 +3720,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
         </div>
 
         {/* Right: Smart Filter Presets & Telemetry Toggle */}
-        <div className="flex items-center gap-1.5 flex-nowrap flex-shrink-0">
-          <div className="flex items-center gap-1.5 py-0.5">
+        <div className="flow-preset-actions flex items-center gap-1.5 flex-nowrap flex-shrink-0">
+          <div className="flow-preset-strip flex items-center gap-1.5 py-0.5">
             <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
             {[
               { id: "all", label: "All" },
@@ -3806,9 +3793,13 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
         </div>
       </div>
 
+      </section></div>, document.body)}
+
       {/* Deals Card Grid / Linear Table / Split Inspector */}
       <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 pb-28 md:pb-8">
-        {filter === "promos" ? (
+        {loading && deals.length === 0 ? (
+          <div className="deal-loading" role="status"><RefreshCw size={22} className="animate-spin" /><strong>Loading your deal stream</strong><span>Connecting to DealFlow…</span></div>
+        ) : filter === "promos" ? (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between border-b border-white/8 pb-3">
               <div className="flex items-center gap-2">
@@ -3862,10 +3853,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             )}
           </div>
         ) : visible.length === 0 ? (
-          filter === "pending" && !search.trim() && selectedChannel === "All" && selectedStore === "All" ? (
+          filter === "pending" && !search.trim() && selectedChannels.length === 0 && selectedStore === "All" ? (
             <AllCaughtUp3D onRefresh={onRefresh} />
           ) : (
-            <EmptyFilter3D onClear={() => { setSearch(""); setFilter("pending"); setSelectedChannel("All"); setSelectedStore("All"); setPage(1); }} />
+            <EmptyFilter3D onClear={() => { setSearch(""); setFilter("pending"); setSelectedChannels([]); setSelectedStore("All"); setPage(1); }} />
           )
         ) : viewMode === "split" ? (
           /* 3-Pane Command Desk (Split Inspector View) */
@@ -3972,8 +3963,8 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           </div>
         ) : (
           /* Gallery Grid View */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
-            <AnimatePresence mode="popLayout">
+          <div className="deal-gallery grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
+            <AnimatePresence mode="sync">
               {pagedVisible.map((d) => (
                 <DealCard
                   key={d.id}
@@ -4016,46 +4007,87 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
       {/* Dedicated Quick Drop Glass Modal */}
       <AnimatePresence>
         {quickDropModal && (
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 backdrop-blur-2xl bg-black/85">
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 backdrop-blur-xl bg-black/80 animate-in fade-in duration-200"
+            onClick={e => {
+              if (e.target === e.currentTarget && !isDropping) {
+                setQuickDropModal(false);
+                setModalUrl("");
+              }
+            }}
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-lg rounded-3xl glass-card border border-emerald-500/30 p-6 flex flex-col gap-4 shadow-2xl bg-gradient-to-b from-[#0F1424] to-[#090C16]"
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-xl rounded-2xl bg-[#0d101d] border border-white/10 p-6 flex flex-col gap-5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.04),inset_0_1px_0_rgba(255,255,255,0.08)] relative overflow-hidden text-left"
             >
-              <div className="flex items-center justify-between border-b border-white/8 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <FloatingCart3D size={38} />
+              {/* Top ambient highlight */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-28 bg-gradient-to-b from-indigo-500/15 via-purple-500/5 to-transparent blur-2xl pointer-events-none" />
+
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-white/8 pb-4 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border border-indigo-400/25 flex items-center justify-center text-indigo-300 shadow-[0_0_16px_rgba(99,102,241,0.25)] flex-shrink-0">
+                    <Zap size={18} className="fill-indigo-400/30 text-indigo-300" />
+                  </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-white flex items-center gap-1.5">
-                      Quick Drop Deal
-                    </h3>
-                    <p className="text-[11px] text-slate-400">Paste any store link → instant unshorten, scrape & affiliate</p>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-white tracking-normal">
+                        Quick Drop Ingestion
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-mono">
+                        Instant Scrape
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Paste any product link or affiliate shortlink to auto-unshorten, scrape & tag.
+                    </p>
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => { setQuickDropModal(false); setModalUrl(""); }}
-                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
+                  className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer border border-transparent hover:border-white/10"
                 >
-                  <X size={14} />
+                  <X size={15} />
                 </button>
               </div>
 
-              {/* Supported Store Icons Pill */}
-              <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-slate-400 font-mono">
-                <span className="text-slate-500 mr-1">Supported:</span>
-                <Store3DBadge store="Amazon" />
-                <Store3DBadge store="Flipkart" />
-                <Store3DBadge store="Myntra" />
-                <Store3DBadge store="AJIO" />
-                <Store3DBadge store="DesiDime" />
-                <Store3DBadge store="Blinkit" />
-              </div>
+              {/* URL Input Box */}
+              <div className="flex flex-col gap-2 relative z-10">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-200">Product or Shortlink URL</span>
+                  {(() => {
+                    const u = modalUrl.toLowerCase();
+                    const detected = u.includes("amazon") || u.includes("amzn") ? "Amazon"
+                      : u.includes("flipkart") || u.includes("fkrt") ? "Flipkart"
+                      : u.includes("myntra") || u.includes("myntr") ? "Myntra"
+                      : u.includes("ajio") ? "AJIO"
+                      : u.includes("blinkit") ? "Blinkit"
+                      : u.includes("desidime") || u.includes("ddime") ? "DesiDime"
+                      : u.includes("swiggy") ? "Swiggy"
+                      : u.includes("shopsy") ? "Shopsy"
+                      : null;
+                    if (detected) {
+                      return (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Detected {detected}
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="text-[11px] text-slate-400">
+                        Supports amzn.in, fkrt.cc, bitli, wishlink & more
+                      </span>
+                    );
+                  })()}
+                </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-300">Product / Shortlink URL</label>
-                <div className="relative">
-                  <LinkIcon size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <div className="relative group/input">
+                  <LinkIcon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/input:text-indigo-400 transition-colors" />
                   <input
                     autoFocus
                     value={modalUrl}
@@ -4065,37 +4097,130 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                         e.preventDefault();
                         handleQuickDrop(modalUrl);
                       }
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        setQuickDropModal(false);
+                        setModalUrl("");
+                      }
                     }}
-                    placeholder="https://amzn.in/... or https://fkrt.cc/..."
-                    className="w-full pl-10 pr-4 py-3 rounded-xl text-sm bg-slate-950/80 border border-white/15 text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/40"
+                    placeholder="Paste URL (e.g. https://amzn.in/... or https://fkrt.cc/...)"
+                    className="w-full pl-10 pr-24 py-3.5 rounded-xl text-xs sm:text-sm bg-slate-950/90 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/20 shadow-inner transition-all font-mono"
                   />
+                  {modalUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => setModalUrl("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                      title="Clear URL"
+                    >
+                      <X size={14} />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const text = await navigator.clipboard.readText();
+                          if (text) setModalUrl(text.trim());
+                        } catch {}
+                      }}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md text-[10px] font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1 transition-all cursor-pointer"
+                      title="Paste from clipboard"
+                    >
+                      <span>Paste</span>
+                      <kbd className="text-[9px] font-mono text-slate-400">⌘V</kbd>
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => { setQuickDropModal(false); setModalUrl(""); }}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-white/5 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={!modalUrl.trim() || isDropping}
-                  onClick={() => handleQuickDrop(modalUrl)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-black text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 transition-all flex items-center gap-1.5 shadow-lg shadow-emerald-500/30 active:scale-95 disabled:opacity-40 cursor-pointer"
-                >
-                  {isDropping ? (
-                    <>
-                      <RefreshCw size={13} className="animate-spin" /> Ingesting...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={13} /> Drop & Ingest Deal
-                    </>
-                  )}
-                </button>
+              {/* Supported Stores Grid */}
+              <div className="flex flex-col gap-2 relative z-10">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                    Supported Stores & Shortlinks
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Auto-Affiliate Active
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {[
+                    { name: "Amazon", match: ["amazon", "amzn"], dot: "bg-amber-400" },
+                    { name: "Flipkart", match: ["flipkart", "fkrt"], dot: "bg-blue-400" },
+                    { name: "Myntra", match: ["myntra", "myntr"], dot: "bg-pink-400" },
+                    { name: "AJIO", match: ["ajio"], dot: "bg-purple-400" },
+                    { name: "DesiDime", match: ["desidime", "ddime"], dot: "bg-orange-400" },
+                    { name: "Blinkit", match: ["blinkit"], dot: "bg-yellow-400" },
+                  ].map(s => {
+                    const u = modalUrl.toLowerCase();
+                    const isMatched = s.match.some(m => u.includes(m));
+                    return (
+                      <div
+                        key={s.name}
+                        className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
+                          isMatched
+                            ? "bg-indigo-500/20 text-white border-indigo-400/50 shadow-[0_0_12px_rgba(99,102,241,0.3)] scale-[1.03]"
+                            : "bg-white/[0.03] text-slate-300 border-white/8 hover:bg-white/[0.06] hover:text-white"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+                        <span>{s.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Engine Ingestion Capabilities Pills */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 border-t border-white/6 text-[11px] text-slate-400 relative z-10">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                  <Zap size={12} className="text-amber-400 flex-shrink-0" />
+                  <span className="truncate">Deep Unshorten (bitli/fkrt)</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                  <Sparkles size={12} className="text-indigo-400 flex-shrink-0" />
+                  <span className="truncate">Price & Title Scraper</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-white/5">
+                  <CheckCircle2 size={12} className="text-emerald-400 flex-shrink-0" />
+                  <span className="truncate">EarnKaro & Amazon Tag</span>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between pt-2 border-t border-white/8 relative z-10">
+                <div className="text-[11px] text-slate-400 font-mono hidden sm:flex items-center gap-1.5">
+                  <span>Press</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-slate-300 text-[10px] font-mono border border-white/10">↵ Enter</kbd>
+                  <span>to ingest</span>
+                </div>
+
+                <div className="flex items-center gap-2.5 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => { setQuickDropModal(false); setModalUrl(""); }}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!modalUrl.trim() || isDropping}
+                    onClick={() => handleQuickDrop(modalUrl)}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-700 hover:from-indigo-400 hover:to-indigo-600 active:scale-[0.98] transition-all flex items-center gap-2 shadow-[0_4px_20px_-2px_rgba(99,102,241,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {isDropping ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" /> Ingesting Deal...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} /> Drop & Ingest Deal
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -4228,6 +4353,11 @@ export interface SystemHealth {
 // ─── Channels View ────────────────────────────────────────────────────────────
 function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
   const [chs, setChs] = useState<any[]>([]);
+  const [channelQuery, setChannelQuery] = useState("");
+  const [starsOnly, setStarsOnly] = useState(false);
+  const [starred, setStarred] = useState<string[]>(() => { try { const saved = JSON.parse(localStorage.getItem("dealflow-starred-channels") || "[]"); return Array.isArray(saved) ? saved.filter(x => typeof x === "string") : []; } catch { return []; } });
+  const toggleStar = (id: string) => setStarred(prev => { const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]; try { localStorage.setItem("dealflow-starred-channels", JSON.stringify(next)); } catch {} return next; });
+  const visibleChannels = chs.filter(ch => (!starsOnly || starred.includes(ch.id)) && `${ch.name} ${ch.id}`.toLowerCase().includes(channelQuery.toLowerCase())).sort((a,b) => Number((b.deals_24h || 0) > 0) - Number((a.deals_24h || 0) > 0) || Number(starred.includes(b.id)) - Number(starred.includes(a.id)) || (b.deals_24h || 0) - (a.deals_24h || 0) || String(a.name).localeCompare(String(b.name)));
   const [loading, setLoading] = useState(true);
   const [channelSubTab, setChannelSubTab] = useState<"directory" | "heatmap" | "auto_rules">("directory");
   const [showAdd, setShowAdd] = useState(false);
@@ -4571,14 +4701,18 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
         </div>
       )}
 
+      <div className="flow-directory-search"><Search size={16}/><input aria-label="Search channel directory" placeholder="Search channel name or username…" value={channelQuery} onChange={e => setChannelQuery(e.target.value)}/><button aria-pressed={starsOnly} onClick={() => setStarsOnly(v => !v)}><Star size={14}/>Starred</button><span>{visibleChannels.length} channels</span></div>
+      <p className="flow-directory-hint">Active sources first · Channels with no deals in 24h appear last · Stars stay on this browser</p>
+      {!loading && visibleChannels.length === 0 && <p role="status">No matching channels. Try another name or turn off Starred.</p>}
       {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+      <div className="flow-channel-directory grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {loading && chs.length === 0 ? (
           <div className="col-span-2 text-center py-20 text-xs text-slate-400">Loading channels…</div>
         ) : (
-          chs.map(ch => (
-            <div key={ch.id} className="p-4 rounded-2xl glass-card flex flex-col justify-between gap-3 border border-white/8 hover:border-white/15">
+          visibleChannels.map(ch => (
+            <div key={ch.id} data-zero-deals={(ch.deals_24h || 0) === 0} className="flow-channel-card p-4 rounded-2xl glass-card flex flex-col justify-between gap-3 border border-white/8 hover:border-white/15">
               <div className="flex items-center gap-3.5">
+                <button className="flow-channel-star" aria-label={`${starred.includes(ch.id) ? "Unstar" : "Star"} ${ch.name || ch.id}`} aria-pressed={starred.includes(ch.id)} onClick={() => toggleStar(ch.id)}><Star size={17}/></button>
                 <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-extrabold text-white flex-shrink-0 glow-pill-accent">
                   {(ch.name || ch.id || "C")[0].toUpperCase()}
                 </div>
@@ -4807,7 +4941,7 @@ function PostedDealCard({
   const isVideoProcessing = !isVideoReady && (videoStatus === "queued" || videoStatus === "dispatched" || videoStatus === "processing");
 
   return (
-    <div className="p-4 rounded-2xl glass-card flex items-center gap-4 border border-white/8 hover:border-white/15 transition-colors">
+    <div className="flow-broadcast-card p-4 rounded-2xl glass-card flex items-center gap-4 border border-white/8 hover:border-white/15 transition-colors">
       {deal.imgUrl && !imgErr ? (
         <img
           src={deal.imgUrl}
@@ -4821,7 +4955,7 @@ function PostedDealCard({
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <h4 className="text-xs font-bold text-white truncate" title={deal.title}>{deal.title}</h4>
+        <h4 className="text-xs font-semibold text-white truncate tracking-normal leading-normal" title={deal.title}>{deal.title}</h4>
         <div className="flex items-center gap-2 mt-1 text-[11px] flex-wrap">
           <span className="font-bold font-mono text-emerald-400">{fmt(deal.price)}</span>
           {deal.coupon && (
@@ -4977,8 +5111,8 @@ function PostedView({
   });
 
   return (
-    <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 pb-28 md:pb-8 max-w-4xl mx-auto flex flex-col gap-4">
-      <div className="p-5 rounded-3xl glass-panel border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="flow-broadcast-page flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 pb-28 md:pb-8 max-w-4xl mx-auto flex flex-col gap-4">
+      <div className="flow-broadcast-heading p-5 rounded-3xl glass-panel border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <RocketBroadcast3D size={36} />
           <div>
@@ -5015,7 +5149,7 @@ function PostedView({
           <p className="text-xs text-slate-400">No matching broadcasted deals found.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flow-broadcast-list flex flex-col gap-3">
           {filtered.map(d => (
             <PostedDealCard
               key={d.id}
@@ -5186,109 +5320,40 @@ const NAV: { id: Tab; icon: React.ElementType; label: string }[] = [
 
 function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAlerts, systemHealth }: {
   tab: Tab; setTab: (t: Tab) => void; pending: number; dark: boolean; setDark: (v: boolean) => void;
-  soundAlerts: boolean; setSoundAlerts: (v: boolean) => void;
-  systemHealth: SystemHealth;
+  soundAlerts: boolean; setSoundAlerts: (v: boolean) => void; systemHealth: SystemHealth;
 }) {
+  const reducedMotion = useReducedMotion();
+  const healthLabel = systemHealth.status === "ok" ? "Connected" : systemHealth.status === "degraded" ? "Degraded" : systemHealth.status === "checking" ? "Connecting" : "Offline";
   return (
-    <aside className="hidden md:flex flex-shrink-0 flex-col border-r border-white/8 glass-panel" style={{ width: 220, background: "rgba(9, 10, 16, 0.85)" }}>
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
-        <div className="w-9 h-9 rounded-2xl flex items-center justify-center glow-pill-primary text-white font-black text-base shadow-lg">
-          ⚡
-        </div>
-        <div>
-          <h1 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
-            DealFlow <span className="text-[10px] px-1.5 py-0.2 rounded bg-primary/20 text-primary border border-primary/30 font-mono">2.0</span>
-          </h1>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <LiveRadar3D size={14} />
-            <span className="text-[9px] text-slate-400 font-semibold tracking-wider uppercase">Live Engine</span>
-          </div>
-        </div>
+    <aside className="flow-sidebar hidden md:flex" aria-label="DealFlow workspace">
+      <div className="flow-brand">
+        <div className="flow-brand-mark"><Zap size={21} fill="currentColor" strokeWidth={1.5} /></div>
+        <div><h1>DealFlow<span>2.0</span></h1><div className="flow-brand-status"><LiveRadar3D size={13} /><span>Live engine</span></div></div>
       </div>
-
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-1.5">
+      <nav className="flow-navigation" aria-label="Main navigation">
         {NAV.map(({ id, label }) => {
           const active = tab === id;
           const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : id === "Videos" ? "videos" : "settings";
-          return (
-            <button key={id} onClick={() => setTab(id)}
-              className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
-                active 
-                  ? "bg-indigo-500/15 text-white border border-indigo-500/30 shadow-sm shadow-indigo-500/10" 
-                  : "text-slate-400 hover:text-white hover:bg-white/5"
-              }`}>
-              {active && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-full bg-indigo-500 shadow-md shadow-indigo-500" />}
-              <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "videos" | "settings"} active={active} />
-              <span className="tracking-tight">{label}</span>
-              {id === "Review" && pending > 0 && (
-                <span className="ml-auto text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow-sm">
-                  {pending}
-                </span>
-              )}
-            </button>
-          );
+          return <button key={id} className="flow-nav-item" aria-current={active ? "page" : undefined} onClick={() => setTab(id)}>
+            {active && <motion.span className="flow-nav-selection" layoutId="flow-nav-selection" transition={{ duration: reducedMotion ? 0 : .24, ease: [.16, 1, .3, 1] }} />}
+            <span className="flow-nav-icon"><Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "videos" | "settings"} active={active} /></span>
+            <span className="flow-nav-label">{label}</span>
+            {id === "Review" && pending > 0 && <span className="flow-pending-count" aria-label={`${pending} pending deals`}>{pending}</span>}
+            {active && id !== "Review" && <span className="flow-selected-dot" aria-hidden="true" />}
+          </button>;
         })}
       </nav>
-
-      <div className="p-4 border-t border-white/8 flex flex-col gap-2.5">
-        <button
-          type="button"
-          onClick={() => {
-            const next = !soundAlerts;
-            setSoundAlerts(next);
-            try { localStorage.setItem("dealflow_sound_alerts", String(next)); } catch {}
-            if (next) playAlertChime();
-          }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-            soundAlerts
-              ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/15 shadow-sm"
-              : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
-          }`}
-          title="Toggle audio alert chime for incoming deals"
-        >
-          <span className="flex items-center gap-1.5">
-            <span>{soundAlerts ? "🔔" : "🔕"}</span>
-            <span>Sound Alerts</span>
-          </span>
-          <span className="text-[10px] font-mono font-bold uppercase">{soundAlerts ? "ON" : "OFF"}</span>
-        </button>
-
-        <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-          <span>Engine VM</span>
-          <span className={`font-bold flex items-center gap-1 ${
-            systemHealth.status === "ok"
-              ? "text-emerald-400"
-              : systemHealth.status === "degraded"
-              ? "text-amber-400"
-              : systemHealth.status === "checking"
-              ? "text-slate-400"
-              : "text-rose-400"
-          }`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${
-              systemHealth.status === "ok"
-                ? "bg-emerald-400 animate-ping"
-                : systemHealth.status === "degraded"
-                ? "bg-amber-400 animate-pulse"
-                : systemHealth.status === "checking"
-                ? "bg-slate-400"
-                : "bg-rose-500"
-            }`} /> {systemHealth.status === "ok" ? "Online" : systemHealth.status === "degraded" ? "Degraded" : systemHealth.status === "checking" ? "Checking..." : "Offline"}
-          </span>
-        </div>
-        <div className="p-2.5 rounded-xl bg-slate-950/80 border border-white/5 flex flex-col gap-1 text-[10px] font-mono text-slate-400">
-          <div className="flex justify-between">
-            <span>Workers</span>
-            <span className={`font-bold ${systemHealth.redis ? "text-white" : systemHealth.status === "offline" ? "text-rose-400" : "text-amber-400"}`}>
-              {systemHealth.status === "offline" ? "Unreachable" : systemHealth.redis ? "5 Active" : "Degraded (Redis Down)"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Live Sync</span>
-            <span className={systemHealth.redis && systemHealth.mongodb ? "text-emerald-400" : systemHealth.status === "offline" ? "text-rose-400" : "text-amber-400"}>
-              {systemHealth.status === "offline" ? "Offline" : systemHealth.redis && systemHealth.mongodb ? "100% OK" : systemHealth.redis ? "Redis Only" : "Degraded"}
-            </span>
-          </div>
-        </div>
+      <div className="flow-sidebar-footer">
+        <button className="flow-sound-control" role="switch" aria-checked={soundAlerts} aria-label="Sound alerts" onClick={() => {
+          const next = !soundAlerts; setSoundAlerts(next);
+          try { localStorage.setItem("dealflow_sound_alerts", String(next)); } catch {}
+          if (next) playAlertChime();
+        }}><span className="flow-sound-icon">{soundAlerts ? <Volume2 size={16} /> : <VolumeX size={16} />}</span><span>Sound alerts</span><span className="flow-switch" aria-hidden="true"><span /></span></button>
+        <section className="flow-engine-panel" aria-label="Backend connection status">
+          <div className="flow-engine-heading"><span className="flow-engine-icon"><Cpu size={16} /></span><span>Engine status</span><span className={`flow-health flow-health-${systemHealth.status}`}><span />{healthLabel}</span></div>
+          <div className="flow-service-row"><span>Redis</span><span className={systemHealth.redis ? "flow-service-ok" : "flow-service-muted"}><span />{systemHealth.status === "checking" ? "Checking" : systemHealth.redis ? "Connected" : "Unavailable"}</span></div>
+          <div className="flow-service-row"><span>MongoDB</span><span className={systemHealth.mongodb ? "flow-service-ok" : "flow-service-muted"}><span />{systemHealth.status === "checking" ? "Checking" : systemHealth.mongodb ? "Connected" : "Unavailable"}</span></div>
+        </section>
       </div>
     </aside>
   );
@@ -5299,6 +5364,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getAdminToken());
   const [tab, setTab] = useState<Tab>("Review");
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [loadingDeals, setLoadingDeals] = useState(true);
   const [editing, setEditing] = useState<Deal | null>(null);
   const [dark, setDark] = useState(true);
 
@@ -5434,6 +5500,8 @@ export default function App() {
       if (e.message === "UNAUTHORIZED") {
         handleLogout();
       }
+    } finally {
+      setLoadingDeals(false);
     }
   }, [handleLogout]);
 
@@ -5503,16 +5571,20 @@ export default function App() {
     const affectedIds = new Set([id, ...duplicateIds]);
 
     // Manual dashboard approval broadcasts to Telegram (@dealsforindiachannel) and posts to IndiaDealHunts Web
+    const postTg = (changes as any)?.liveOnTelegram !== false && !(changes as any)?.destinations?.includes("storefront_only");
+    const postWeb = (changes as any)?.liveOnWeb !== false;
     const resolvedChanges: any = {
       ...(changes || {}),
-      destinations: (changes as any)?.destinations || ["@dealsforindiachannel"],
+      destinations: (changes as any)?.destinations || (postTg ? ["@dealsforindiachannel"] : ["storefront_only"]),
+      liveOnWeb: postWeb,
+      liveOnTelegram: postTg,
     };
     setDeals(prev => prev.map(d => affectedIds.has(d.id) ? {
       ...d,
       ...resolvedChanges,
       status: "approved",
-      liveOnWeb: true,
-      liveOnTelegram: true,
+      liveOnWeb: postWeb,
+      liveOnTelegram: postTg,
     } : d));
 
     if (undoTimers.current[id]) {
@@ -5549,9 +5621,10 @@ export default function App() {
   };
 
   const handleSaveDraft = async (id: string, changes: Partial<Deal>) => {
+    const saved = await apiUpdateDeal(id, changes);
+    if (!saved) throw new Error("Draft could not be saved. Your edits are kept here; try again.");
     setDeals(prev => prev.map(d => d.id === id ? { ...d, ...changes } : d));
-    toast.success("Deal draft updated!");
-    await apiUpdateDeal(id, changes);
+    toast.success("Deal draft saved");
   };
 
   const handleReject = async (id: string) => {
@@ -5631,14 +5704,15 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#07080E] text-white relative">
+    <div className="dealflow-app flex h-screen w-screen overflow-hidden bg-[#07080E] text-white relative">
       <div className="ambient-mesh" />
       <Toaster position="top-right" richColors theme="dark" />
       <Sidebar tab={tab} setTab={setTab} pending={pendingCount} dark={dark} setDark={setDark} soundAlerts={soundAlerts} setSoundAlerts={setSoundAlerts} systemHealth={systemHealth} />
 
       <main className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0 relative z-10">
+        <VisitorSummary apiBase={API_BASE} />
         {tab === "Review" && (
-          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onAddDeal={handleAddDeal} onRefresh={loadDeals} dark={dark} />
+          <ReviewView deals={deals} onApprove={handleApprove} onReject={handleReject} onEdit={setEditing} onAddDeal={handleAddDeal} onRefresh={loadDeals} dark={dark} loading={loadingDeals} />
         )}
         {tab === "Posted" && (
           <PostedView
@@ -5661,10 +5735,10 @@ export default function App() {
           return (
             <button key={id} onClick={() => setTab(id)}
               className={`relative flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-all ${
-                active ? "text-indigo-400 font-black" : "text-slate-400 hover:text-white"
+                active ? "text-indigo-400 font-extrabold" : "text-slate-400 hover:text-white"
               }`}>
               <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "videos" | "settings"} active={active} />
-              <span className="text-[9.5px] tracking-tight">{label}</span>
+              <span className="text-[9.5px] tracking-normal">{label}</span>
               {id === "Review" && pendingCount > 0 && (
                 <span className="absolute -top-0.5 right-1 w-4 h-4 rounded-full bg-amber-400 text-slate-950 text-[9px] font-mono font-bold flex items-center justify-center shadow-sm">
                   {pendingCount > 99 ? "99+" : pendingCount}

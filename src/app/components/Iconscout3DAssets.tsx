@@ -179,7 +179,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500/25 via-amber-600/20 to-orange-500/25 border border-amber-400/40 text-amber-300 backdrop-blur-xl shadow-[0_4px_12px_rgba(245,158,11,0.2)]"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(245,158,11,0.6)]">📦</span>
-        <span className="text-[11px] font-black tracking-tight drop-shadow-sm">Amazon</span>
+        <span className="text-[11px] font-bold tracking-normal drop-shadow-sm">Amazon</span>
       </motion.div>
     );
   }
@@ -190,7 +190,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-blue-500/25 via-blue-600/20 to-cyan-500/25 border border-blue-400/40 text-blue-300 backdrop-blur-xl shadow-[0_4px_12px_rgba(59,130,246,0.2)]"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(59,130,246,0.6)]">🛍️</span>
-        <span className="text-[11px] font-black tracking-tight drop-shadow-sm">Flipkart</span>
+        <span className="text-[11px] font-bold tracking-normal drop-shadow-sm">Flipkart</span>
       </motion.div>
     );
   }
@@ -201,7 +201,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-pink-500/25 via-rose-600/20 to-pink-500/25 border border-pink-400/40 text-pink-300 backdrop-blur-xl shadow-[0_4px_12px_rgba(244,63,94,0.2)]"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(244,63,94,0.6)]">👗</span>
-        <span className="text-[11px] font-black tracking-tight drop-shadow-sm">Myntra</span>
+        <span className="text-[11px] font-bold tracking-normal drop-shadow-sm">Myntra</span>
       </motion.div>
     );
   }
@@ -212,7 +212,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-purple-500/25 via-indigo-600/20 to-purple-500/25 border border-purple-400/40 text-purple-300 backdrop-blur-xl shadow-[0_4px_12px_rgba(168,85,247,0.2)]"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(168,85,247,0.6)]">✨</span>
-        <span className="text-[11px] font-black tracking-tight drop-shadow-sm">AJIO</span>
+        <span className="text-[11px] font-bold tracking-normal drop-shadow-sm">AJIO</span>
       </motion.div>
     );
   }
@@ -223,7 +223,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-red-500/25 via-orange-600/20 to-red-500/25 border border-red-400/40 text-red-300 backdrop-blur-xl shadow-[0_4px_12px_rgba(239,68,68,0.25)]"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(239,68,68,0.6)]">🔥</span>
-        <span className="text-[11px] font-black tracking-tight drop-shadow-sm">DesiDime</span>
+        <span className="text-[11px] font-bold tracking-normal drop-shadow-sm">DesiDime</span>
       </motion.div>
     );
   }
@@ -234,7 +234,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-purple-500/25 via-pink-600/20 to-purple-500/25 border border-purple-400/40 text-purple-300 backdrop-blur-xl shadow-sm"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(168,85,247,0.5)]">⚡</span>
-        <span className="text-[11px] font-black tracking-tight">Zepto</span>
+        <span className="text-[11px] font-bold tracking-normal">Zepto</span>
       </motion.div>
     );
   }
@@ -245,7 +245,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-yellow-500/25 via-amber-600/20 to-yellow-500/25 border border-yellow-400/40 text-yellow-300 backdrop-blur-xl shadow-sm"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(234,179,8,0.5)]">🛵</span>
-        <span className="text-[11px] font-black tracking-tight">Blinkit</span>
+        <span className="text-[11px] font-bold tracking-normal">Blinkit</span>
       </motion.div>
     );
   }
@@ -256,7 +256,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-teal-500/25 via-emerald-600/20 to-teal-500/25 border border-teal-400/40 text-teal-300 backdrop-blur-xl shadow-sm"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(20,184,166,0.5)]">🛍️</span>
-        <span className="text-[11px] font-black tracking-tight">Shopsy</span>
+        <span className="text-[11px] font-bold tracking-normal">Shopsy</span>
       </motion.div>
     );
   }
@@ -267,7 +267,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-fuchsia-500/25 via-pink-600/20 to-fuchsia-500/25 border border-fuchsia-400/40 text-fuchsia-300 backdrop-blur-xl shadow-sm"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(217,70,239,0.5)]">👗</span>
-        <span className="text-[11px] font-black tracking-tight">Meesho</span>
+        <span className="text-[11px] font-bold tracking-normal">Meesho</span>
       </motion.div>
     );
   }
@@ -278,7 +278,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-red-600/25 via-rose-600/20 to-red-600/25 border border-red-500/40 text-rose-300 backdrop-blur-xl shadow-sm"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(225,29,72,0.5)]">💎</span>
-        <span className="text-[11px] font-black tracking-tight">Tata CLiQ</span>
+        <span className="text-[11px] font-bold tracking-normal">Tata CLiQ</span>
       </motion.div>
     );
   }
@@ -289,7 +289,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-teal-500/25 via-cyan-600/20 to-teal-500/25 border border-teal-400/40 text-teal-300 backdrop-blur-xl shadow-sm"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(20,184,166,0.5)]">📺</span>
-        <span className="text-[11px] font-black tracking-tight">Croma</span>
+        <span className="text-[11px] font-bold tracking-normal">Croma</span>
       </motion.div>
     );
   }
@@ -300,7 +300,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-blue-600/25 via-indigo-600/20 to-blue-600/25 border border-blue-500/40 text-blue-300 backdrop-blur-xl shadow-sm"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(37,99,235,0.5)]">🛒</span>
-        <span className="text-[11px] font-black tracking-tight">JioMart</span>
+        <span className="text-[11px] font-bold tracking-normal">JioMart</span>
       </motion.div>
     );
   }
@@ -311,7 +311,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-500/25 via-green-600/20 to-emerald-500/25 border border-emerald-400/40 text-emerald-300 backdrop-blur-xl shadow-sm"
       >
         <span className="text-sm filter drop-shadow-[0_2px_4px_rgba(16,185,129,0.5)]">🌾</span>
-        <span className="text-[11px] font-black tracking-tight">Digihaat</span>
+        <span className="text-[11px] font-bold tracking-normal">Digihaat</span>
       </motion.div>
     );
   }
@@ -322,7 +322,7 @@ export function Store3DBadge({ store }: { store: string; size?: number }) {
       className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800/80 border border-slate-600/40 text-slate-300 backdrop-blur-xl shadow-sm"
     >
       <span className="text-sm">🛒</span>
-      <span className="text-[11px] font-black tracking-tight">{clean}</span>
+      <span className="text-[11px] font-bold tracking-normal">{clean}</span>
     </motion.div>
   );
 }
@@ -395,6 +395,7 @@ export function Stat3DPill({
   return (
     <motion.button
       type="button"
+      aria-pressed={active}
       onClick={onClick}
       whileHover={{ scale: 1.04, y: -1 }}
       whileTap={{ scale: 0.96 }}
@@ -494,7 +495,7 @@ export function AllCaughtUp3D({ onRefresh }: { onRefresh?: () => void }) {
         />
       </div>
 
-      <h3 className="text-lg font-black text-white tracking-tight">
+      <h3 className="text-lg font-black text-white tracking-normal">
         You're All Caught Up!
       </h3>
       <p className="text-xs text-slate-400 mt-1.5 max-w-xs leading-relaxed">
@@ -547,7 +548,7 @@ export function EmptyFilter3D({ onClear }: { onClear?: () => void }) {
         />
       </div>
 
-      <h3 className="text-sm font-bold text-white tracking-tight">
+      <h3 className="text-sm font-bold text-white tracking-normal">
         No Matching Deals Found
       </h3>
       <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">

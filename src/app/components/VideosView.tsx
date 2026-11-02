@@ -220,9 +220,9 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
 
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 pb-28 md:pb-12 max-w-7xl mx-auto flex flex-col gap-6">
+    <div className="flow-video-page flex-1 overflow-y-auto px-4 sm:px-8 py-6 pb-28 md:pb-12 max-w-7xl mx-auto flex flex-col gap-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-3xl glass-panel border border-white/10 bg-gradient-to-br from-slate-900/90 via-[#0b0f19]/90 to-indigo-950/40 relative overflow-hidden shadow-2xl">
+      <div className="flow-video-heading p-6 rounded-3xl glass-panel border border-white/10 bg-gradient-to-br from-slate-900/90 via-[#0b0f19]/90 to-indigo-950/40 relative overflow-hidden shadow-2xl">
         <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
@@ -231,7 +231,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                 🎬
               </div>
               <div>
-                <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                <h2 className="text-xl font-extrabold text-white tracking-normal flex items-center gap-2">
                   <span>Viral Shorts & Reels Studio</span>
                   <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                     1080x1920 (9:16)
