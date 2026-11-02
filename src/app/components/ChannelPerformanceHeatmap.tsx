@@ -51,7 +51,7 @@ const getHeatColor = (count: number) => {
   if (count <= 5) return "bg-emerald-500/40 text-emerald-200 border-emerald-500/50";
   if (count <= 12) return "bg-cyan-500/50 text-cyan-100 border-cyan-400/50 shadow-[0_0_8px_rgba(6,182,212,0.25)]";
   if (count <= 25) return "bg-indigo-500/65 text-white border-indigo-400/60 shadow-[0_0_10px_rgba(99,102,241,0.35)]";
-  return "bg-gradient-to-tr from-rose-500 to-amber-500 text-white font-bold border-rose-400/80 shadow-[0_0_14px_rgba(244,63,94,0.5)]";
+  return "bg-amber-500/80 text-slate-950 font-bold border-amber-400/80";
 };
 
 const getTierColor = (tier: string) => {
@@ -269,10 +269,11 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
   }, [data, filterTier, sortOption]);
 
   return (
-    <div className="flex flex-col gap-5 w-full">
+    <div className="df-heatmap min-w-0 w-full flex flex-col gap-5">
+      <header className="df-page-header"><h2 className="text-2xl font-bold text-white">Channel performance</h2><p className="mt-2 text-sm text-slate-400">Review incoming volume and approval rates across your source channels.</p></header>
       {/* ─── Top Telemetry Summary Ribbon ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-        <div className="p-4 rounded-2xl glass-card border border-white/10 flex items-center gap-3.5 relative overflow-hidden group">
+        <div className="p-4 rounded-2xl df-panel border border-white/10 flex items-center gap-3.5 relative overflow-hidden group">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 group-hover:scale-105 transition-transform">
             <Zap size={20} className="fill-indigo-400/20" />
           </div>
@@ -285,7 +286,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl glass-card border border-white/10 flex items-center gap-3.5 relative overflow-hidden group">
+        <div className="p-4 rounded-2xl df-panel border border-white/10 flex items-center gap-3.5 relative overflow-hidden group">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-amber-500/15 border border-amber-500/30 text-amber-400 group-hover:scale-105 transition-transform">
             <Flame size={20} className="fill-amber-400/20" />
           </div>
@@ -298,7 +299,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl glass-card border border-white/10 flex items-center gap-3.5 relative overflow-hidden group">
+        <div className="p-4 rounded-2xl df-panel border border-white/10 flex items-center gap-3.5 relative overflow-hidden group">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 group-hover:scale-105 transition-transform">
             <TrendingUp size={20} />
           </div>
@@ -315,7 +316,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl glass-card border border-white/10 flex items-center gap-3.5 relative overflow-hidden group">
+        <div className="p-4 rounded-2xl df-panel border border-white/10 flex items-center gap-3.5 relative overflow-hidden group">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 group-hover:scale-105 transition-transform">
             <Radio size={20} />
           </div>
@@ -325,14 +326,14 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
               <h4 className="text-xl font-black text-white font-mono">
                 {data.filter(c => c.active).length} <span className="text-xs text-slate-400 font-normal">/ {data.length}</span>
               </h4>
-              <span className="text-[10px] text-emerald-400 font-semibold">● 100% Online</span>
+              <span className="text-[10px] text-emerald-400 font-semibold">Configured feeds</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ─── Heatmap Controls & Filter Bar ─── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl glass-panel border border-white/10">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl df-panel border border-white/10">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1">
             <Filter size={13} /> Filter:
@@ -364,6 +365,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
           <div className="flex items-center gap-1.5 text-xs text-slate-400">
             <span>Sort:</span>
             <select
+              aria-label="Sort channels"
               value={sortOption}
               onChange={e => setSortOption(e.target.value as any)}
               className="bg-slate-900 border border-white/10 text-white rounded-xl px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 cursor-pointer"
@@ -415,7 +417,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
 
       {/* ─── View 1: 24-Hour Visual Heatmap Matrix ─── */}
       {viewMode === "matrix" ? (
-        <div className="rounded-3xl glass-panel border border-white/10 overflow-hidden shadow-2xl">
+        <div className="min-w-0 w-full rounded-3xl df-panel border border-white/10 overflow-hidden">
           {/* Legend Banner */}
           <div className="px-5 py-3 border-b border-white/8 bg-white/[0.02] flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -426,7 +428,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                 <span className="px-1.5 py-0.5 rounded bg-emerald-500/40 text-emerald-200 border border-emerald-500/50">3-5</span>
                 <span className="px-1.5 py-0.5 rounded bg-cyan-500/50 text-cyan-100 border border-cyan-400/50">6-12</span>
                 <span className="px-1.5 py-0.5 rounded bg-indigo-500/65 text-white border border-indigo-400/60">13-25</span>
-                <span className="px-1.5 py-0.5 rounded bg-gradient-to-tr from-rose-500 to-amber-500 text-white font-bold">25+</span>
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/80 text-slate-950 font-bold">25+</span>
               </div>
             </div>
 
@@ -437,11 +439,12 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
           </div>
 
           {/* Matrix Scroll Area */}
-          <div className="overflow-x-auto">
+          <p className="px-5 py-2 text-xs text-slate-400">Scroll horizontally to view all 24 hours. Cell values show deal counts.</p>
+          <div className="min-w-0 max-w-full overflow-x-auto" tabIndex={0} role="region" aria-label="Channel activity by hour">
             <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
                 <tr className="border-b border-white/10 bg-slate-950/60 text-[11px] font-mono text-slate-400">
-                  <th className="py-3 px-4 w-60 sticky left-0 z-20 bg-[#0a0d18] border-r border-white/10 backdrop-blur-md">
+                  <th className="py-3 px-4 w-60 sticky left-0 z-20 bg-[#0a0d18] border-r border-white/10 ">
                     Channel Source ({processedChannels.length})
                   </th>
                   <th className="py-3 px-2 text-center w-16">24h Vol</th>
@@ -481,7 +484,8 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                                 <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                                   <input
                                     autoFocus
-                                    value={editName}
+                                    aria-label="Channel name"
+                        value={editName}
                                     onChange={e => setEditName(e.target.value)}
                                     onKeyDown={e => {
                                       if (e.key === "Enter") saveAlias(ch.channel, editName);
@@ -490,10 +494,10 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                                     onBlur={() => saveAlias(ch.channel, editName)}
                                     className="px-2 py-0.5 rounded text-xs font-bold text-white bg-slate-900 border border-primary/50 focus:outline-none w-32"
                                   />
-                                  <button onClick={() => saveAlias(ch.channel, editName)} className="text-emerald-400 hover:text-emerald-300 cursor-pointer">
+                                  <button aria-label="Save channel name" onClick={() => saveAlias(ch.channel, editName)} className="text-emerald-400 hover:text-emerald-300 cursor-pointer">
                                     <Check size={13} />
                                   </button>
-                                  <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-white cursor-pointer">
+                                  <button aria-label="Cancel channel rename" onClick={() => setEditingId(null)} className="text-slate-400 hover:text-white cursor-pointer">
                                     <X size={13} />
                                   </button>
                                 </div>
@@ -626,7 +630,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
           </div>
 
           {/* Hover Tooltip Footnote */}
-          <div className="px-5 py-2.5 bg-slate-950/80 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+          <div className="px-5 py-2.5 bg-slate-950/80 border-t border-white/10 flex flex-wrap gap-3 items-center justify-between text-xs text-slate-400">
             <div className="flex items-center gap-2">
               <Info size={13} className="text-indigo-400" />
               {hoveredCell ? (
@@ -653,7 +657,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
           {processedChannels.map(ch => (
             <div
               key={ch.channel}
-              className="p-4 rounded-2xl glass-card border border-white/10 flex flex-col justify-between gap-4 hover:border-indigo-500/40 transition-all shadow-lg group"
+              className="p-4 rounded-2xl df-panel border border-white/10 flex flex-col justify-between gap-4 hover:border-indigo-500/40 transition-all shadow-lg group"
             >
               {/* Card Header */}
               <div className="flex items-start justify-between gap-2">
@@ -662,6 +666,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                     <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                       <input
                         autoFocus
+                        aria-label="Channel name"
                         value={editName}
                         onChange={e => setEditName(e.target.value)}
                         onKeyDown={e => {
@@ -671,10 +676,10 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                         onBlur={() => saveAlias(ch.channel, editName)}
                         className="px-2 py-0.5 rounded text-xs font-bold text-white bg-slate-900 border border-primary/50 focus:outline-none w-36"
                       />
-                      <button onClick={() => saveAlias(ch.channel, editName)} className="text-emerald-400 hover:text-emerald-300 cursor-pointer">
+                      <button aria-label="Save channel name" onClick={() => saveAlias(ch.channel, editName)} className="text-emerald-400 hover:text-emerald-300 cursor-pointer">
                         <Check size={14} />
                       </button>
-                      <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-white cursor-pointer">
+                      <button aria-label="Cancel channel rename" onClick={() => setEditingId(null)} className="text-slate-400 hover:text-white cursor-pointer">
                         <X size={14} />
                       </button>
                     </div>
@@ -726,7 +731,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                     }`}
                     title="Telegram Auto-Post"
                   >
-                    {Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "✈️ TG Auto" : "TG off"}
+                    {Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "TG Auto" : "TG off"}
                   </button>
                   <button
                     onClick={() => toggleAutoApproveWeb(ch.channel, Boolean(ch.auto_approve_web))}
@@ -735,7 +740,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                     }`}
                     title="Website Auto-Post (Strictly requires product image)"
                   >
-                    {Boolean(ch.auto_approve_web) ? "🌐 Web Auto" : "Web off"}
+                    {Boolean(ch.auto_approve_web) ? "Web Auto" : "Web off"}
                   </button>
                   <span className={`px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold border ${getTierColor(ch.quality_tier)}`}>
                     {ch.quality_tier}
@@ -754,7 +759,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                 <div className="h-9 flex items-end gap-0.5 bg-black/40 p-1 rounded-xl border border-white/5">
                   {HOURS.map(h => {
                     const cnt = (ch.hourly_volume || [])[h] || 0;
-                    const maxInCh = Math.max(1, ...ch.hourly_volume);
+                    const maxInCh = Math.max(1, ...(ch.hourly_volume || []));
                     const heightPct = Math.min(100, Math.max(12, (cnt / maxInCh) * 100));
                     const isNow = h === currentHour;
                     return (
@@ -766,7 +771,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                             : isNow
                             ? "bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]"
                             : cnt > 10
-                            ? "bg-gradient-to-t from-indigo-500 to-rose-500"
+                            ? "bg-amber-400"
                             : "bg-emerald-500/70"
                         }`}
                         style={{ height: `${heightPct}%` }}
@@ -805,7 +810,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
 
                 {ch.auto_approve && (
                   <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                    ⚡ Auto-Post ON
+                    Auto-post on
                   </span>
                 )}
               </div>
@@ -816,8 +821,8 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
 
       {/* Update Channel Invite Link Modal */}
       {updatingChannel && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in" onClick={() => setUpdatingChannel(null)}>
-          <div className="w-full max-w-md p-6 rounded-3xl glass-panel border border-cyan-500/30 shadow-2xl flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+        <div className="df-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80  animate-fade-in" onClick={() => setUpdatingChannel(null)}>
+          <div role="dialog" aria-modal="true" aria-label="Update channel invite link" className="df-dialog w-full max-w-md p-6 rounded-3xl df-panel border border-cyan-500/30 shadow-2xl flex flex-col gap-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
@@ -847,7 +852,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
                 value={newLinkInput}
                 onChange={e => setNewLinkInput(e.target.value)}
                 placeholder="https://t.me/+... or @username"
-                className="px-3.5 py-2.5 rounded-xl bg-slate-950 border border-cyan-500/40 text-white placeholder:text-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-400"
+                aria-label="New invite link or username" className="df-field px-3.5 py-2.5 rounded-xl bg-slate-950 border border-cyan-500/40 text-white placeholder:text-slate-500 font-mono text-xs focus:outline-none focus:border-cyan-400"
                 onKeyDown={e => e.key === "Enter" && handleUpdateLink()}
               />
               <p className="text-[10px] text-slate-500">
@@ -865,7 +870,7 @@ export function ChannelPerformanceHeatmap({ apiBase, onRefreshChannels }: Props)
               <button
                 onClick={handleUpdateLink}
                 disabled={isUpdatingLink || !newLinkInput.trim()}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-400 hover:brightness-105 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 cursor-pointer"
+                className="df-primary px-5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-[var(--df-surface-raised)] hover:brightness-105 active:scale-95 disabled:opacity-40 transition-all flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 cursor-pointer"
               >
                 <LinkIcon size={12} />
                 <span>{isUpdatingLink ? "Reconnecting..." : "Save & Reconnect"}</span>

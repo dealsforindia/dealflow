@@ -1,8 +1,9 @@
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import confetti from "canvas-confetti";
 
 // ─── 1. Confetti Burst on Approval ────────────────────────────────────────────
 export const triggerApproveConfetti = () => {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   confetti({
     particleCount: 45,
     spread: 60,
@@ -17,19 +18,20 @@ export const triggerApproveConfetti = () => {
 
 // ─── 2. 3D Live Engine Radar ──────────────────────────────────────────────────
 export function LiveRadar3D({ size = 20 }: { size?: number }) {
+  const reducedMotion = useReducedMotion();
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       {/* Outer 3D Pulse Ring */}
       <motion.div
         className="absolute inset-0 rounded-full border border-emerald-400/40"
         animate={{ scale: [1, 1.8, 1], opacity: [0.8, 0, 0.8] }}
-        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 2.2, repeat: reducedMotion ? 0 : Infinity, ease: "easeInOut" }}
       />
       {/* Middle Rotating Aura */}
       <motion.div
         className="absolute inset-1 rounded-full border border-emerald-500/60 border-t-transparent"
         animate={{ rotate: 360 }}
-        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 3, repeat: reducedMotion ? 0 : Infinity, ease: "linear" }}
       />
       {/* Center Radiant Core */}
       <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#10B981]" />
@@ -39,6 +41,7 @@ export function LiveRadar3D({ size = 20 }: { size?: number }) {
 
 // ─── 3. 3D Hot Loot Flame ─────────────────────────────────────────────────────
 export function FireFlame3D({ size = 18 }: { size?: number }) {
+  const reducedMotion = useReducedMotion();
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <motion.svg
@@ -50,7 +53,7 @@ export function FireFlame3D({ size = 18 }: { size?: number }) {
           scale: [1, 1.08, 0.96, 1.05, 1],
           rotate: [-2, 3, -1, 2, -2],
         }}
-        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 1.6, repeat: reducedMotion ? 0 : Infinity, ease: "easeInOut" }}
       >
         <defs>
           <linearGradient id="flameGrad" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -70,11 +73,12 @@ export function FireFlame3D({ size = 18 }: { size?: number }) {
 
 // ─── 4. 3D Rocket Broadcast Icon ──────────────────────────────────────────────
 export function RocketBroadcast3D({ size = 20 }: { size?: number }) {
+  const reducedMotion = useReducedMotion();
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <motion.div
         animate={{ y: [-1, -3, -1], x: [0, 1, 0] }}
-        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 1.8, repeat: reducedMotion ? 0 : Infinity, ease: "easeInOut" }}
       >
         <svg viewBox="0 0 24 24" fill="none" className="w-full h-full text-emerald-400 drop-shadow-[0_0_6px_#10B981]">
           <path
@@ -100,13 +104,14 @@ export function RocketBroadcast3D({ size = 20 }: { size?: number }) {
 
 // ─── 5. 3D Isometric Empty Search State ───────────────────────────────────────
 export function EmptySearch3D() {
+  const reducedMotion = useReducedMotion();
   return (
     <div className="relative w-40 h-40 flex items-center justify-center">
       {/* Floating 3D Box */}
       <motion.div
         className="w-24 h-24 rounded-3xl glass-panel border border-primary/30 flex items-center justify-center relative shadow-[0_0_40px_rgba(244,63,94,0.15)]"
         animate={{ y: [0, -8, 0], rotateZ: [0, 2, -2, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 4, repeat: reducedMotion ? 0 : Infinity, ease: "easeInOut" }}
       >
         <span className="text-4xl filter drop-shadow-lg">🔍</span>
 
@@ -114,14 +119,14 @@ export function EmptySearch3D() {
         <motion.div
           className="absolute -top-2 -right-2 text-base"
           animate={{ scale: [1, 1.3, 1], rotate: [0, 180, 360] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 3, repeat: reducedMotion ? 0 : Infinity, ease: "easeInOut" }}
         >
           ✨
         </motion.div>
         <motion.div
           className="absolute -bottom-2 -left-2 text-sm"
           animate={{ scale: [1, 1.4, 1], opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+          transition={{ duration: 2.5, repeat: reducedMotion ? 0 : Infinity, ease: "easeInOut", delay: 0.5 }}
         >
           ⚡
         </motion.div>
@@ -131,7 +136,7 @@ export function EmptySearch3D() {
       <motion.div
         className="absolute bottom-2 w-20 h-4 rounded-full bg-black/40 blur-md"
         animate={{ scale: [1, 0.8, 1], opacity: [0.6, 0.3, 0.6] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 4, repeat: reducedMotion ? 0 : Infinity, ease: "easeInOut" }}
       />
     </div>
   );

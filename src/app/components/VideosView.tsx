@@ -38,7 +38,8 @@ interface VideosViewProps {
 
 export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
   const [serverVideos, setServerVideos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "ready" | "queued">("all");
   const [search, setSearch] = useState("");
   const [activePlayerDeal, setActivePlayerDeal] = useState<any | null>(null);
@@ -51,16 +52,17 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
   // Fetch all video deals from API
   const fetchVideos = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await fetch(`${apiBase}/api/v1/deals/videos`, {
         headers: getAdminHeaders(false),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setServerVideos(data.deals || []);
-      }
+      if (!res.ok) throw new Error(`Video request failed (${res.status})`);
+      const data = await res.json();
+      setServerVideos(data.deals || []);
     } catch (e) {
       console.error("Failed to load video deals:", e);
+      setLoadError("Video library could not be refreshed. Your current deals are still shown.");
     } finally {
       setLoading(false);
     }
@@ -146,7 +148,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
 
   const handleRegenerate = async (dealId: string) => {
     setDispatchingId(dealId);
-    toast.info("⚡ Dispatching 9:16 Viral Short re-render...", { icon: "🎬" });
+    toast.info("Queueing vertical video render…");
     try {
       const res = await fetch(`${apiBase}/api/v1/deals/${dealId}/dispatch-video`, {
         method: "POST",
@@ -154,7 +156,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
       });
       const data = await res.json();
       if (res.ok && (data.status === "dispatched" || data.status === "ready_to_dispatch")) {
-        toast.success("🚀 Dispatched to GitHub Actions runner! Rendering in background.");
+        toast.success("Render queued on GitHub Actions.");
         fetchVideos();
         onRefresh?.();
       } else {
@@ -168,7 +170,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
   };
 
   const handleDeleteVideo = async (dealId: string) => {
-    if (!window.confirm("Are you sure you want to delete this viral short video from the deal?")) return;
+    if (!window.confirm("Are you sure you want to delete this short video from the deal?")) return;
     setDeletingId(dealId);
     try {
       const res = await fetch(`${apiBase}/api/v1/deals/${dealId}/video`, {
@@ -177,7 +179,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success("🗑️ Video short successfully removed from deal");
+        toast.success("Video removed from deal");
         setServerVideos(prev => prev.filter(d => (d.fp_hash || d.id) !== dealId));
         if (activePlayerDeal?.id === dealId) {
           setActivePlayerDeal(null);
@@ -196,7 +198,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
 
   const handleBatchDispatchTopDeals = async () => {
     setBatchLoading(true);
-    toast.info("⚡ Finding & queueing top 5 loot drops for 15s viral shorts...", { icon: "🎬" });
+    toast.info("Queueing up to 5 eligible deal videos…");
     try {
       const res = await fetch(`${apiBase}/api/v1/deals/batch-dispatch-video`, {
         method: "POST",
@@ -205,7 +207,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
       });
       const data = await res.json();
       if (res.ok && data.status === "batch_dispatched") {
-        toast.success(`🚀 Dispatched ${data.total} viral shorts to GitHub Actions!`);
+        toast.success(`Queued ${data.total} videos on GitHub Actions.`);
         fetchVideos();
         onRefresh?.();
       } else {
@@ -220,25 +222,25 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
 
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 pb-28 md:pb-12 max-w-7xl mx-auto flex flex-col gap-6">
+    <div className="df-videos min-w-0 w-full flex-1 overflow-y-auto px-4 sm:px-8 py-6 pb-28 md:pb-12 max-w-7xl mx-auto flex flex-col gap-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-3xl glass-panel border border-white/10 bg-gradient-to-br from-slate-900/90 via-[#0b0f19]/90 to-indigo-950/40 relative overflow-hidden shadow-2xl">
-        <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="df-page-header p-6 rounded-3xl df-panel border border-white/10 bg-[var(--df-surface-raised)] relative overflow-hidden shadow-2xl">
+        
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xl text-indigo-400 shadow-lg shadow-indigo-500/20">
-                🎬
+                <Film size={24} />
               </div>
               <div>
                 <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-                  <span>Viral Shorts & Reels Studio</span>
+                  <span>Video studio</span>
                   <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                     1080x1920 (9:16)
                   </span>
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Autonomous 9:16 vertical shorts with kinetic captions, dynamic price animations, and zero VM CPU usage.
+                  Create vertical deal videos, review renders, and prepare your social posts.
                 </p>
               </div>
             </div>
@@ -248,17 +250,17 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
             <button
               onClick={handleBatchDispatchTopDeals}
               disabled={batchLoading}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 border border-indigo-400/40 shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
+              className="df-primary px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[var(--df-surface-raised)] hover:from-indigo-500 hover:to-pink-500 border border-indigo-400/40 shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-95"
               title="Auto-dispatch 15s shorts for top 5 drops"
             >
               <Sparkles size={13} className={batchLoading ? "animate-spin text-white" : "text-amber-300"} />
-              <span>{batchLoading ? "Queueing..." : "⚡ Generate Top 5 Shorts"}</span>
+              <span>{batchLoading ? "Queueing..." : "Generate top 5 shorts"}</span>
             </button>
 
             <button
               onClick={fetchVideos}
               disabled={loading}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="df-secondary px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               title="Refresh video list"
             >
               <RefreshCw size={13} className={loading ? "animate-spin text-indigo-400" : ""} />
@@ -268,7 +270,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
         </div>
 
         {/* Stats & Filters Bar */}
-        <div className="mt-6 pt-5 border-t border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="df-tabs mt-6 pt-5 border-t border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFilter("all")}
@@ -289,7 +291,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
               }`}
             >
               <Check size={13} />
-              <span>Ready 🎬 ({readyCount})</span>
+              <span>Ready ({readyCount})</span>
             </button>
             <button
               onClick={() => setFilter("queued")}
@@ -300,32 +302,35 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
               }`}
             >
               <Clock size={13} />
-              <span>Rendering ⏳ ({queuedCount})</span>
+              <span>Rendering ({queuedCount})</span>
             </button>
           </div>
 
           <div className="relative w-full sm:w-64">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
+              aria-label="Search video deals"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search video deals..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-950/60 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50"
+              className="df-field w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-950/60 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500/50"
             />
           </div>
         </div>
       </div>
 
+      {loadError && <div role="alert" className="df-panel p-4 flex flex-wrap items-center justify-between gap-3 text-sm"><span>{loadError}</span><button className="df-secondary" disabled={loading} onClick={fetchVideos}>Retry</button></div>}
+      {loading && allVideoDeals.length === 0 && <p role="status" className="text-sm text-slate-300">Loading video library…</p>}
       {/* Grid of Video Cards */}
-      {filteredDeals.length === 0 ? (
-        <div className="py-20 text-center rounded-3xl glass-panel border border-white/8 flex flex-col items-center justify-center gap-3">
+      {!loading && filteredDeals.length === 0 ? (
+        <div className="py-20 text-center rounded-3xl df-panel border border-white/8 flex flex-col items-center justify-center gap-3">
           <div className="w-16 h-16 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-3xl">
-            🎬
+            <Film size={24} />
           </div>
-          <h3 className="text-base font-bold text-white">No Viral Shorts Found</h3>
+          <h3 className="text-base font-bold text-white">No videos to show</h3>
           <p className="text-xs text-slate-400 max-w-md">
             {filter === "all"
-              ? "No deals have viral shorts generated yet. Switch to the 'Broadcasted' tab and click 'Generate Video' on any posted deal to create one!"
+              ? "No deals have videos generated yet. Switch to the 'Broadcasted' tab and click 'Generate Video' on any posted deal to create one!"
               : `No deals found matching the "${filter}" filter.`}
           </p>
         </div>
@@ -339,7 +344,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
             return (
               <div
                 key={deal.id}
-                className="group relative rounded-3xl overflow-hidden glass-card border border-white/10 hover:border-indigo-500/40 transition-all flex flex-col bg-slate-950/80 shadow-xl"
+                className="group relative rounded-3xl overflow-hidden df-panel border border-white/10 hover:border-indigo-500/40 transition-all flex flex-col bg-slate-950/80 shadow-xl"
               >
                 {/* 9:16 Visual Poster / Video Thumbnail Container */}
                 <div 
@@ -371,11 +376,11 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                   {/* Top Status & Store Badges */}
                   <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
                     {isReady ? (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/90 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md shadow-emerald-500/30 backdrop-blur-md">
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/90 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md shadow-emerald-500/30 ">
                         <Check size={11} strokeWidth={3} /> Ready
                       </span>
                     ) : isProcessing ? (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md shadow-amber-400/30 animate-pulse backdrop-blur-md">
+                      <span className="px-2.5 py-1 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md shadow-amber-400/30 animate-pulse ">
                         <Clock size={11} strokeWidth={3} /> Rendering
                       </span>
                     ) : (
@@ -385,7 +390,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                     )}
 
                     {deal.store && (
-                      <span className="px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur-md text-[10px] font-bold text-white border border-white/15">
+                      <span className="px-2 py-0.5 rounded-lg bg-black/60  text-[10px] font-bold text-white border border-white/15">
                         {deal.store}
                       </span>
                     )}
@@ -506,18 +511,18 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
       <AnimatePresence>
         {activePlayerDeal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-xl animate-fade-in"
+            className="df-overlay fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90  animate-fade-in"
             onClick={() => setActivePlayerDeal(null)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative max-h-[90vh] aspect-[9/16] w-full max-w-[420px] rounded-3xl overflow-hidden bg-black border border-white/20 shadow-2xl flex flex-col"
+              role="dialog" aria-modal="true" aria-label="Video player" className="df-dialog relative max-h-[90vh] aspect-[9/16] w-full max-w-[420px] rounded-3xl overflow-hidden bg-black border border-white/20 shadow-2xl flex flex-col"
               onClick={e => e.stopPropagation()}
             >
               {/* Modal Top Header */}
-              <div className="absolute top-0 inset-x-0 z-20 p-4 bg-gradient-to-b from-black/80 to-transparent flex items-center justify-between pointer-events-auto">
+              <div className="absolute top-0 inset-x-0 z-20 p-4 bg-black/80 flex items-center justify-between pointer-events-auto">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded-lg bg-indigo-500 text-white text-[10px] font-black uppercase tracking-wider">
                     9:16 Short
@@ -542,7 +547,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                   </button>
                   <button
                     onClick={() => setActivePlayerDeal(null)}
-                    className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                    aria-label="Close video player" className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
                   >
                     <X size={16} />
                   </button>
@@ -612,14 +617,14 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
       <AnimatePresence>
         {creatorKitDeal && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+            className="df-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85  animate-fade-in"
             onClick={() => setCreatorKitDeal(null)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-2xl flex flex-col gap-4 text-white"
+              role="dialog" aria-modal="true" aria-label="Social creator kit" className="df-dialog relative w-full max-w-lg rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-2xl flex flex-col gap-4 text-white"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -634,7 +639,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                 </div>
                 <button
                   onClick={() => setCreatorKitDeal(null)}
-                  className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                  aria-label="Close creator kit" className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -643,7 +648,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
               {/* Title Generator */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-300">Viral Short Title</span>
+                  <span className="text-xs font-bold text-slate-300">Short title</span>
                   <button
                     onClick={() => {
                       const title = `${creatorKitDeal.title} at ₹${creatorKitDeal.price?.toLocaleString('en-IN')} (${creatorKitDeal.discount}% Off)! 🔥 #shorts #deals #lootdeals`;
@@ -666,7 +671,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                   <span className="text-xs font-bold text-slate-300">Affiliate Description & Disclosure</span>
                   <button
                     onClick={() => {
-                      const desc = `⚡ Grab Deal Now: https://indiadealhunts.in/?short=${creatorKitDeal.id}\n\n🏷️ Store: ${creatorKitDeal.store || 'Verified Store'}\n💰 Price: ₹${creatorKitDeal.price?.toLocaleString('en-IN')} (M.R.P. ₹${creatorKitDeal.mrp?.toLocaleString('en-IN')})\n🔥 Discount: ${creatorKitDeal.discount}% OFF\n\nPrice verified 0% fake on IndiaDealHunts.\n#deals #shopping #lootdeals #amazonloot #flipkart #techdeals`;
+                      const desc = `⚡ Grab Deal Now: https://indiadealhunts.in/?short=${creatorKitDeal.id}\n\n🏷️ Store: ${creatorKitDeal.store || 'Verified Store'}\n💰 Price: ₹${creatorKitDeal.price?.toLocaleString('en-IN')} (M.R.P. ₹${creatorKitDeal.mrp?.toLocaleString('en-IN')})\n🔥 Discount: ${creatorKitDeal.discount}% OFF\n#deals #shopping #lootdeals #amazonloot #flipkart #techdeals`;
                       navigator.clipboard.writeText(desc);
                       toast.success("Description & tags copied!");
                     }}
@@ -676,7 +681,7 @@ export function VideosView({ deals, apiBase, onRefresh }: VideosViewProps) {
                   </button>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-950 border border-white/10 text-xs font-mono text-slate-300 whitespace-pre-wrap max-h-32 overflow-y-auto">
-                  {`⚡ Grab Deal Now: https://indiadealhunts.in/?short=${creatorKitDeal.id}\n\n🏷️ Store: ${creatorKitDeal.store || 'Verified Store'}\n💰 Price: ₹${creatorKitDeal.price?.toLocaleString('en-IN')} (M.R.P. ₹${creatorKitDeal.mrp?.toLocaleString('en-IN')})\n🔥 Discount: ${creatorKitDeal.discount}% OFF\n\nPrice verified 0% fake on IndiaDealHunts.\n#deals #shopping #lootdeals #amazonloot #flipkart #techdeals`}
+                  {`⚡ Grab Deal Now: https://indiadealhunts.in/?short=${creatorKitDeal.id}\n\n🏷️ Store: ${creatorKitDeal.store || 'Verified Store'}\n💰 Price: ₹${creatorKitDeal.price?.toLocaleString('en-IN')} (M.R.P. ₹${creatorKitDeal.mrp?.toLocaleString('en-IN')})\n🔥 Discount: ${creatorKitDeal.discount}% OFF\n#deals #shopping #lootdeals #amazonloot #flipkart #techdeals`}
                 </div>
               </div>
 
