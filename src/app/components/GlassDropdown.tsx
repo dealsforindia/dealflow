@@ -12,26 +12,20 @@ export interface DropdownOption {
 
 export function GlassDropdown({
   value,
-  values,
   onChange,
-  onChangeMultiple,
   options,
   placeholder,
   searchable = false,
   align = "left",
   className = "",
-  multiple = false,
 }: {
-  value?: string;
-  values?: string[];
-  onChange?: (val: string) => void;
-  onChangeMultiple?: (vals: string[]) => void;
+  value: string;
+  onChange: (val: string) => void;
   options: DropdownOption[];
   placeholder?: string;
   searchable?: boolean;
   align?: "left" | "right";
   className?: string;
-  multiple?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,64 +44,25 @@ export function GlassDropdown({
     placement: "bottom",
   });
 
-  const currentValues: string[] = values
-    ? values
-    : value !== undefined && value !== ""
-    ? [value]
-    : ["All"];
-
-  const isAllSelected = currentValues.includes("All");
-
-  let triggerIcon: React.ReactNode = undefined;
-  let triggerLabel = placeholder || "Select";
-  let triggerBadge: string | number | undefined = undefined;
-
-  if (multiple) {
-    if (isAllSelected) {
-      const allOpt = options.find((o) => o.value === "All");
-      triggerIcon = allOpt?.icon || "⚡";
-      triggerLabel = allOpt?.label || "All Channels";
-      triggerBadge = undefined;
-    } else if (currentValues.length === 0) {
-      triggerIcon = "📡";
-      triggerLabel = "No Channels";
-      triggerBadge = 0;
-    } else if (currentValues.length === 1) {
-      const matched = options.find(
-        (o) => o.value.toLowerCase() === currentValues[0].toLowerCase()
-      );
-      triggerIcon = matched?.icon || "📡";
-      triggerLabel = matched?.label || currentValues[0];
-      triggerBadge = matched?.badge;
-    } else {
-      triggerIcon = "📡";
-      triggerLabel = `${currentValues.length} Channels`;
-      triggerBadge = currentValues.length;
-    }
-  } else {
-    const selectedOption = options.find(
-      (o) => o.value.toLowerCase() === String(value).toLowerCase()
-    ) || {
-      value: String(value),
-      label: placeholder || String(value),
-    };
-    triggerIcon = selectedOption.icon;
-    triggerLabel = selectedOption.label;
-    triggerBadge = selectedOption.badge;
-  }
+  const selectedOption = options.find(
+    (o) => o.value.toLowerCase() === String(value).toLowerCase()
+  ) || {
+    value: String(value),
+    label: placeholder || String(value),
+  };
 
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const minW = multiple ? 270 : 220;
+    const dropdownWidth = Math.max(rect.width, 220);
+    const dropdownHeight = 280; // approximate max menu height
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
-    const dropdownWidth = Math.min(Math.max(rect.width, minW), windowWidth - 20);
-    const dropdownHeight = multiple ? 350 : 280;
 
     let placement: "bottom" | "top" = "bottom";
     let top = rect.bottom + 6;
 
+    // Flip upwards if overflows viewport bottom and there's sufficient room on top
     if (rect.bottom + dropdownHeight > windowHeight - 12 && rect.top > dropdownHeight + 12) {
       top = rect.top - dropdownHeight - 6;
       placement = "top";
@@ -115,6 +70,7 @@ export function GlassDropdown({
 
     let left = align === "right" ? rect.right - dropdownWidth : rect.left;
 
+    // Clamp horizontally to screen bounds with 10px safe margin
     if (left + dropdownWidth > windowWidth - 10) {
       left = windowWidth - dropdownWidth - 10;
     }
@@ -128,7 +84,7 @@ export function GlassDropdown({
       width: dropdownWidth,
       placement,
     });
-  }, [align, multiple]);
+  }, [align]);
 
   useEffect(() => {
     if (!open) return;
@@ -146,6 +102,7 @@ export function GlassDropdown({
     };
 
     const handleScroll = (e: Event) => {
+      // If scroll happens inside our menu, don't re-calculate
       if (menuRef.current?.contains(e.target as Node)) return;
       updatePosition();
     };
@@ -153,16 +110,6 @@ export function GlassDropdown({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setOpen(false);
-        triggerRef.current?.focus();
-        return;
-      }
-      if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Home" || e.key === "End") {
-        const buttons = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") || []);
-        if (!buttons.length) return;
-        e.preventDefault();
-        const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
-        const next = e.key === "Home" ? 0 : e.key === "End" ? buttons.length - 1 : (index + (e.key === "ArrowUp" ? -1 : 1) + buttons.length) % buttons.length;
-        buttons[next].focus();
       }
     };
 
@@ -184,57 +131,6 @@ export function GlassDropdown({
     };
   }, [open, updatePosition]);
 
-  const handleToggleOption = (optVal: string) => {
-    if (!multiple) {
-      onChange?.(optVal);
-      setOpen(false);
-      setSearchTerm("");
-      return;
-    }
-
-    if (!onChangeMultiple) return;
-
-    if (optVal === "All") {
-      if (isAllSelected) {
-        onChangeMultiple([]);
-      } else {
-        onChangeMultiple(["All"]);
-      }
-      return;
-    }
-
-    let next: string[];
-    if (isAllSelected) {
-      next = [optVal];
-    } else {
-      const exists = currentValues.some(
-        (v) => v.toLowerCase() === optVal.toLowerCase()
-      );
-      if (exists) {
-        next = currentValues.filter(
-          (v) => v.toLowerCase() !== optVal.toLowerCase()
-        );
-      } else {
-        next = [...currentValues, optVal];
-      }
-    }
-
-    const nonAllOptions = options.filter((o) => o.value !== "All");
-    if (next.length > 0 && next.length >= nonAllOptions.length) {
-      onChangeMultiple(["All"]);
-    } else {
-      onChangeMultiple(next);
-    }
-  };
-
-  const handleSelectAll = () => {
-    onChangeMultiple?.(["All"]);
-  };
-
-  const handleClearAll = () => {
-    onChangeMultiple?.([]);
-  };
-
   const filteredOptions =
     searchable && searchTerm.trim()
       ? options.filter((o) =>
@@ -242,58 +138,48 @@ export function GlassDropdown({
         )
       : options;
 
-  const hasActiveCustomFilter = multiple && !isAllSelected && currentValues.length > 0;
-
   return (
     <div className={`relative select-none inline-block ${className}`}>
       {/* Trigger Button */}
       <motion.button
         ref={triggerRef}
-        aria-expanded={open}
-        aria-label={placeholder ? `${placeholder}: ${triggerLabel}` : triggerLabel}
         type="button"
-        whileTap={{ scale: 0.97 }}
+        whileTap={{ scale: 0.96 }}
         onClick={(e) => {
           e.stopPropagation();
           setOpen((prev) => !prev);
         }}
-        className={`w-full flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
+        className={`w-full flex items-center justify-between gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
           open
-            ? "bg-white border-[#5B50E6] text-[#5B50E6] ring-2 ring-[#5B50E6]/15 shadow-sm"
-            : hasActiveCustomFilter
-            ? "bg-indigo-50 border-[#C7D2FE] text-[#4F46E5] hover:border-[#5B50E6]"
-            : "bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50/80 shadow-2xs"
+            ? "bg-slate-900 border-primary/60 text-white shadow-[0_0_18px_rgba(244,63,94,0.3)] ring-1 ring-primary/40"
+            : "bg-slate-950/80 border-white/10 text-slate-200 hover:border-white/25 hover:bg-slate-900/90"
         }`}
       >
         <div className="flex items-center gap-1.5 min-w-0 truncate">
-          {triggerIcon && (
-            <span className="flex-shrink-0 text-xs sm:text-sm">{triggerIcon}</span>
+          {selectedOption.icon && (
+            <span className="flex-shrink-0 text-xs sm:text-sm">{selectedOption.icon}</span>
           )}
           <span className="truncate flex-1 font-medium text-left">
-            {triggerLabel}
+            {selectedOption.label}
           </span>
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-          {triggerBadge !== undefined && (
-            <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${
-              hasActiveCustomFilter
-                ? "bg-indigo-100 text-[#4F46E5] border border-indigo-200 font-bold"
-                : "bg-gray-100 text-gray-500"
-            }`}>
-              {triggerBadge}
+          {selectedOption.badge !== undefined && (
+            <span className="px-1.5 py-0.2 rounded-md bg-white/10 text-[10px] font-mono text-slate-400">
+              {selectedOption.badge}
             </span>
           )}
           <ChevronDown
             size={12}
-            className={`transition-transform duration-200 ${
-              open ? "rotate-180 text-[#5B50E6]" : "text-gray-400"
+            className={`text-slate-400 transition-transform duration-200 ${
+              open ? "rotate-180 text-primary" : ""
             }`}
           />
         </div>
       </motion.button>
 
-      {/* Portaled Popover Menu */}
+      {/* Portaled Popover Menu (Never clipped by any parent overflow/transform!) */}
       {typeof document !== "undefined" &&
         createPortal(
           <AnimatePresence>
@@ -317,34 +203,34 @@ export function GlassDropdown({
                   top: `${coords.top}px`,
                   left: `${coords.left}px`,
                   width: `${coords.width}px`,
-                  minWidth: "220px",
-                  maxWidth: "340px",
+                  minWidth: "210px",
+                  maxWidth: "300px",
                   zIndex: 99999,
                 }}
-                className="dealflow-dropdown rounded-2xl bg-white border border-gray-200 shadow-xl p-2 flex flex-col"
+                className="rounded-2xl bg-[#090D18]/98 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.95),0_0_25px_rgba(244,63,94,0.12)] p-1.5 flex flex-col"
               >
                 {searchable && (
                   <div
-                    className="p-1 mb-1 border-b border-gray-100 relative flex items-center"
+                    className="p-1 mb-1 border-b border-white/10 relative flex items-center"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Search
                       size={12}
-                      className="absolute left-2.5 text-gray-400 pointer-events-none"
+                      className="absolute left-2.5 text-slate-400 pointer-events-none"
                     />
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search options..."
-                      className="w-full pl-7 pr-6 py-1.5 rounded-lg text-xs bg-gray-50 border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#5B50E6]"
+                      className="w-full pl-7 pr-6 py-1.5 rounded-lg text-xs bg-slate-900/90 border border-white/10 text-white placeholder:text-slate-500 focus:outline-none focus:border-primary/50"
                       autoFocus
                     />
                     {searchTerm && (
                       <button
                         type="button"
                         onClick={() => setSearchTerm("")}
-                        className="absolute right-2 p-0.5 text-gray-400 hover:text-gray-700 transition-colors"
+                        className="absolute right-2 p-0.5 text-slate-400 hover:text-white transition-colors"
                       >
                         <X size={12} />
                       </button>
@@ -352,111 +238,19 @@ export function GlassDropdown({
                   </div>
                 )}
 
-                {/* Multi-Select Action / Status Header */}
-                {multiple && (
-                  <div
-                    className="flex items-center justify-between px-2 py-1 mb-1 border-b border-gray-100 text-[11px]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <span className="text-gray-500 font-medium truncate">
-                      {isAllSelected
-                        ? "All channels active"
-                        : currentValues.length === 0
-                        ? "0 selected"
-                        : `${currentValues.length} of ${options.filter((o) => o.value !== "All").length} selected`}
-                    </span>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectAll();
-                        }}
-                        className="text-[#5B50E6] hover:text-[#4E43D8] font-semibold cursor-pointer transition-colors"
-                      >
-                        Select All
-                      </button>
-                      <span className="text-gray-300">•</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleClearAll();
-                        }}
-                        className="text-gray-500 hover:text-gray-800 cursor-pointer transition-colors"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 <div
                   className="overflow-y-auto max-h-56 flex flex-col gap-0.5 pr-0.5"
                   style={{
                     scrollbarWidth: "thin",
-                    scrollbarColor: "rgba(0, 0, 0, 0.1) transparent",
+                    scrollbarColor: "rgba(255, 255, 255, 0.2) transparent",
                   }}
                 >
                   {filteredOptions.length === 0 ? (
-                    <div className="px-3 py-3 text-[11px] text-gray-400 text-center">
+                    <div className="px-3 py-3 text-[11px] text-slate-500 text-center">
                       No options found
                     </div>
                   ) : (
                     filteredOptions.map((opt) => {
-                      if (multiple) {
-                        const isAllOption = opt.value === "All";
-                        const isChecked = isAllOption
-                          ? isAllSelected
-                          : !isAllSelected &&
-                            currentValues.some(
-                              (v) => v.toLowerCase() === opt.value.toLowerCase()
-                            );
-
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleOption(opt.value);
-                            }}
-                            className={`group flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl text-xs font-medium transition-all text-left cursor-pointer ${
-                              isChecked
-                                ? "bg-indigo-50 text-[#5B50E6] border border-indigo-200/60 font-semibold shadow-2xs"
-                                : "text-gray-700 hover:text-gray-900 hover:bg-gray-50 border border-transparent"
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 truncate min-w-0 flex-1">
-                              {/* Modern Checkbox */}
-                              <div
-                                className={`w-4 h-4 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${
-                                  isChecked
-                                    ? "bg-[#5B50E6] border-[#5B50E6] text-white"
-                                    : "border-gray-300 bg-white group-hover:border-gray-400"
-                                }`}
-                              >
-                                {isChecked && (
-                                  <Check size={11} strokeWidth={3} className="text-white" />
-                                )}
-                              </div>
-
-                              {opt.icon && (
-                                <span className="text-sm flex-shrink-0">{opt.icon}</span>
-                              )}
-                              <span className="truncate">{opt.label}</span>
-                            </div>
-
-                            {opt.badge !== undefined && (
-                              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-[10px] font-mono text-gray-500 flex-shrink-0">
-                                {opt.badge}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      }
-
-                      // Single-select mode
                       const isSelected =
                         opt.value.toLowerCase() === String(value).toLowerCase();
                       return (
@@ -465,14 +259,14 @@ export function GlassDropdown({
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onChange?.(opt.value);
+                            onChange(opt.value);
                             setOpen(false);
                             setSearchTerm("");
                           }}
                           className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all text-left cursor-pointer ${
                             isSelected
-                              ? "bg-indigo-50 text-[#5B50E6] border border-indigo-200/60 font-bold shadow-2xs"
-                              : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                              ? "bg-primary/25 text-white border border-primary/35 font-bold shadow-sm"
+                              : "text-slate-300 hover:text-white hover:bg-white/8"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate min-w-0">
@@ -486,7 +280,7 @@ export function GlassDropdown({
                           {isSelected && (
                             <Check
                               size={13}
-                              className="text-[#5B50E6] flex-shrink-0 ml-1"
+                              className="text-primary flex-shrink-0 ml-1"
                             />
                           )}
                         </button>
@@ -494,33 +288,6 @@ export function GlassDropdown({
                     })
                   )}
                 </div>
-
-                {/* Multi-Select Footer Done Button */}
-                {multiple && (
-                  <div
-                    className="mt-1.5 pt-1.5 border-t border-gray-100 flex items-center justify-between px-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <span className="text-[11px] text-gray-500 truncate max-w-[150px]">
-                      {isAllSelected
-                        ? "All channels active"
-                        : currentValues.length === 0
-                        ? "0 selected"
-                        : `${currentValues.length} active`}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpen(false);
-                        setSearchTerm("");
-                      }}
-                      className="px-3 py-1 rounded-lg bg-[#5B50E6] hover:bg-[#4E43D8] text-white text-xs font-semibold cursor-pointer transition-all active:scale-95 shadow-sm"
-                    >
-                      Done
-                    </button>
-                  </div>
-                )}
               </motion.div>
             )}
           </AnimatePresence>,

@@ -11,42 +11,38 @@
       
       <!-- PWA & Mobile Web App Config -->
       <link rel="manifest" href="/manifest.json" />
-      <meta name="theme-color" content="#F8F9FD" />
+      <meta name="theme-color" content="#09090b" />
       <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       <meta name="apple-mobile-web-app-title" content="DealFlow" />
       <meta name="mobile-web-app-capable" content="yes" />
       <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       <!-- Telegram Mini App (TMA) SDK -->
       <script src="https://telegram.org/js/telegram-web-app.js"></script>
-      <!-- Google Fonts: Nunito Sans (Compact Humanist UI), Plus Jakarta Sans & JetBrains Mono -->
+      <!-- Google Fonts: Outfit (Luxury/Modern UI), Plus Jakarta Sans (SaaS), Inter & JetBrains Mono -->
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Nunito+Sans:ital,opsz,wght@0,6..12,300..900;1,6..12,300..900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
       
       <style>
         html, body { 
           height: 100%; 
           margin: 0; 
-          font-family: 'Nunito Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
           text-rendering: optimizeLegibility;
-          background-color: #F8F9FD;
-          color: #192137;
+          background-color: #05060A;
+          color: #F3F4F8;
           letter-spacing: -0.01em;
           line-height: 1.5;
         } 
         h1, h2, h3, h4, .font-heading {
-          font-family: 'Nunito Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          letter-spacing: -0.015em;
+          font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+          letter-spacing: -0.025em;
         }
-        .font-mono {
+        .font-mono, .pro-price {
           font-family: 'JetBrains Mono', monospace;
-          font-feature-settings: "tnum" 1;
-        }
-        .pro-price {
-          font-family: 'Nunito Sans', 'Plus Jakarta Sans', -apple-system, sans-serif;
           font-feature-settings: "tnum" 1;
         }
         #root { height: 100%; }
