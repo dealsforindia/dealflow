@@ -1,15 +1,10 @@
 export function getAdminToken(): string | null {
   if (typeof window === "undefined") return null;
-  let token = localStorage.getItem("dealflow_admin_token");
-  if (!token) {
-    token = (import.meta as any).env?.VITE_ADMIN_TOKEN || "***REMOVED***";
-    if (token) {
-      try {
-        localStorage.setItem("dealflow_admin_token", token);
-      } catch {}
-    }
+  try {
+    return localStorage.getItem("dealflow_admin_token") || null;
+  } catch {
+    return null;
   }
-  return token || "***REMOVED***";
 }
 
 export function getAdminHeaders(includeContentType: boolean = true): Record<string, string> {
@@ -19,7 +14,8 @@ export function getAdminHeaders(includeContentType: boolean = true): Record<stri
     headers["Content-Type"] = "application/json";
   }
   if (token) {
-    headers["X-Admin-Token"] = token;
+    // Bearer only: the edge gateway no longer allows the custom X-Admin-Token
+    // header through CORS, and the API accepts the standard header.
     headers["Authorization"] = `Bearer ${token}`;
   }
   return headers;

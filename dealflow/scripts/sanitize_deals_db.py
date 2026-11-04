@@ -9,7 +9,9 @@ import dns.resolver
 dns.resolver.default_resolver = dns.resolver.Resolver()
 dns.resolver.default_resolver.nameservers = ['8.8.8.8', '1.1.1.1']
 
-MONGO_URI = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or "mongodb+srv://dealbot:***REMOVED***@dealbot-cluster.m9o3kr8.mongodb.net/dealbot?appName=dealbot-cluster"
+MONGO_URI = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise SystemExit("MONGODB_URI is not set. Refusing to connect with a hardcoded credential.")
 DB_NAME = os.getenv("MONGODB_DB") or os.getenv("MONGO_DB", "dealbot")
 AMAZON_TAG = os.getenv("AMAZON_AFFILIATE_TAG", os.getenv("AMAZON_TAG", "dealshare0b7-21"))
 

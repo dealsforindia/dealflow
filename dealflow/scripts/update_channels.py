@@ -1,6 +1,11 @@
+import os
 import pymongo
 
-client = pymongo.MongoClient("mongodb+srv://dealbot:***REMOVED***@dealbot-cluster.m9o3kr8.mongodb.net/dealbot?appName=dealbot-cluster")
+MONGO_URI = os.getenv("MONGODB_URI", "").strip()
+if not MONGO_URI:
+    raise SystemExit("MONGODB_URI is not set. Refusing to connect with a hardcoded credential.")
+
+client = pymongo.MongoClient(MONGO_URI)
 db = client["dealbot"]
 collection = db["SystemSettings"]
 

@@ -12,7 +12,11 @@ if sys.platform == "win32":
 
 def fetch_via_api():
     url = "https://api.rudranil.me/api/v1/deals/pending?limit=100"
-    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    headers = {"User-Agent": "Mozilla/5.0"}
+    admin_token = os.getenv("ADMIN_API_TOKEN", "").strip()
+    if admin_token:
+        headers["X-Admin-Token"] = admin_token
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=10) as resp:
         data = json.loads(resp.read().decode())
         return data.get("deals", [])
@@ -25,8 +29,12 @@ def run():
         print(f"API fetch failed ({e}), trying direct MongoDB...")
         try:
             import pymongo
+            mongo_uri = os.getenv("MONGODB_URI", "").strip()
+            if not mongo_uri:
+                print("MongoDB connection failed: MONGODB_URI is not set")
+                return
             client = pymongo.MongoClient(
-                "mongodb+srv://dealbot:***REMOVED***@dealbot-cluster.m9o3kr8.mongodb.net/dealbot?appName=dealbot-cluster",
+                mongo_uri,
                 serverSelectionTimeoutMS=5000
             )
             db = client['dealbot']
