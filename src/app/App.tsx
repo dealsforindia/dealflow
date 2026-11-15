@@ -537,7 +537,16 @@ const rawCh = d.channel || d.source_channel || (d as any).channelRaw || (d as an
     category: catName, catEmoji: catEmoji,
     channel: chName, channelRaw: rawCh || chName,
     score: (d.score !== null && d.score !== undefined) ? Math.min(100, Math.round(d.score * 10)) : 0,
-    ts: Math.floor(d.ts), status: "pending" as DealStatus,
+    ts: Math.floor(d.ts),
+    status: (() => {
+      const rawStatus = (d as any).status;
+      if (rawStatus === "pending_approval" || rawStatus === "pending") return "pending";
+      if (rawStatus === "auto_posted") return "auto_posted";
+      if (rawStatus === "approved" || rawStatus === "posted") return "approved";
+      if (rawStatus === "rejected") return "rejected";
+      if (rawStatus === "draft") return "draft";
+      return "pending";
+    })() as DealStatus,
     dealType: (d.deal_type === "trick" ? "trick" : "product") as DealType,
     affiliate: (() => {
       if (d.affiliate_applied === true || (d as any).affiliate === true) return true;
@@ -1979,7 +1988,7 @@ function DealCard({
             {deal.status === "pending" ? (
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => handleRejectWithSound(deal.id)}
+                  onClick={() => handleReject(deal.id)}
                   className="h-9 px-2.5 rounded-xl flex items-center justify-center bg-white/[0.03] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/[0.08] active:scale-95 transition-all text-xs font-semibold cursor-pointer"
                   title="Skip"
                   aria-label={`Skip deal ${deal.title}`}
@@ -1995,7 +2004,7 @@ function DealCard({
                   <PenLine size={13} /><span className="ml-1.5">Tune</span>
                 </button>
                 <button
-                  onClick={() => handleApproveWithSound(deal.id)}
+                  onClick={() => handleApprove(deal.id)}
                   className="h-9 px-4 rounded-xl text-xs font-black text-slate-950 flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-105 active:scale-95 shadow-md shadow-emerald-500/20 cursor-pointer flex-[2] transition-all"
                   title="Approve — Goes live on IndiaDealHunts storefront"
                   aria-label={`Approve deal ${deal.title} to go live`}
@@ -2012,7 +2021,23 @@ function DealCard({
                 }`}>
                   {deal.status === "auto_posted" ? (
                     <span>⚡ Auto-Posted to Web</span>
-                  ) : deal.liveOnWeb && deal.liveOnTelegram ? (
+                  ) : deal.channel ? (
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400">Channel:</span>
+                        <span className="text-emerald-300 font-medium">{deal.channel}</span>
+                    </div>
+                  ) : (
+                    <div className="text-slate-600 italic">Direct Channel (no normalized channel)</div>
+                  )}
+
+                  {deal.store && (
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400">Store:</span>
+                        <span className="text-blue-300">{deal.store}</span>
+                    </div>
+                  )}
+
+                  {deal.liveOnWeb && deal.liveOnTelegram ? (
                     <span>✓ Live on Web & TG</span>
                   ) : deal.liveOnWeb ? (
                     <span>✓ Live on Storefront</span>
@@ -4433,12 +4458,18 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
   const toggleChannel = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, active: !current } : c)));
     try {
-      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { 
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { 
         method: "PUT",
         headers: getAdminHeaders(false),
       });
-      toast.success(`Channel ${!current ? "resumed" : "paused"}`);
+      if (res.ok) {
+        toast.success(`Channel ${!current ? "resumed" : "paused"}`);
+      } else {
+        setChs(cs => cs.map(c => (c.id === id ? { ...c, active: current } : c)));
+        toast.error(`Failed to ${!current ? "resume" : "pause"} channel`);
+      }
     } catch {
+      setChs(cs => cs.map(c => (c.id === id ? { ...c, active: current } : c)));
       toast.error("Failed to toggle channel");
     }
   };
@@ -4479,14 +4510,21 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
 
   const deleteChannel = async (id: string) => {
     if (!confirm(`Are you sure you want to remove ${id}?`)) return;
+    const removed = chs.find(c => c.id === id);
     setChs(cs => cs.filter(c => c.id !== id));
     try {
-      await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}`, { 
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}`, { 
         method: "DELETE",
         headers: getAdminHeaders(false),
       });
-      toast.success("Channel removed!");
+      if (res.ok) {
+        toast.success("Channel removed!");
+      } else {
+        if (removed) setChs(cs => cs.some(c => c.id === id) ? cs : [...cs, removed]);
+        toast.error("Failed to remove channel");
+      }
     } catch {
+      if (removed) setChs(cs => cs.some(c => c.id === id) ? cs : [...cs, removed]);
       toast.error("Failed to delete channel");
     }
   };
@@ -5506,9 +5544,16 @@ export default function App() {
     return () => clearInterval(timer);
   }, [loadDeals]);
 
+  const soundAlertsRef = useRef(soundAlerts);
   useEffect(() => {
-    let ws: WebSocket;
+    soundAlertsRef.current = soundAlerts;
+  }, [soundAlerts]);
+
+  useEffect(() => {
+    let ws: WebSocket | null = null;
     let debounceTimer: ReturnType<typeof setTimeout>;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
     const connect = () => {
       try {
         ws = new WebSocket(WS_URL);
@@ -5528,7 +5573,7 @@ export default function App() {
               if (data.event === "deal_approved" && data.fp_hash && undoTimers.current[data.fp_hash]) {
                 return; // We already have optimistic state for this deal
               }
-              if (data.event === "new_deal" && soundAlerts) {
+              if (data.event === "new_deal" && soundAlertsRef.current) {
                 playAlertChime();
                 toast("⚡ New Deal Received!", { icon: "🔥" });
               }
@@ -5540,15 +5585,24 @@ export default function App() {
             }
           } catch {}
         };
-        ws.onclose = () => setTimeout(connect, 3000);
+        ws.onclose = () => {
+          if (stopped) return;
+          reconnectTimer = setTimeout(connect, 3000);
+        };
       } catch {}
     };
     connect();
     return () => {
+      stopped = true;
       clearTimeout(debounceTimer);
-      ws?.close();
+      clearTimeout(reconnectTimer);
+      if (ws) {
+        ws.onclose = null;
+        ws.onerror = null;
+        ws.close();
+      }
     };
-  }, [loadDeals, soundAlerts]);
+  }, [loadDeals]);
 
 
 
