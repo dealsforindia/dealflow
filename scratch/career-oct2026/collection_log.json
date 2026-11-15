@@ -1,0 +1,100 @@
+{
+  "start_ist": "2026-10-01T00:00:00+05:30",
+  "end_exclusive_ist": "2026-10-29T00:00:00+05:30",
+  "collected_at_utc": "2026-10-28T09:19:27.764732+00:00",
+  "raw_unique": 1104,
+  "eligible": 523,
+  "selected": 500,
+  "queries": [
+    {
+      "query": "junior",
+      "nbHits": 12,
+      "retrieved": 12
+    },
+    {
+      "query": "AI coding",
+      "nbHits": 266,
+      "retrieved": 100
+    },
+    {
+      "query": "coding agents",
+      "nbHits": 415,
+      "retrieved": 100
+    },
+    {
+      "query": "software engineer",
+      "nbHits": 100,
+      "retrieved": 100
+    },
+    {
+      "query": "vibe coding",
+      "nbHits": 61,
+      "retrieved": 61
+    },
+    {
+      "query": "programming",
+      "nbHits": 178,
+      "retrieved": 100
+    },
+    {
+      "query": "developer jobs",
+      "nbHits": 12,
+      "retrieved": 12
+    },
+    {
+      "query": "LLM code",
+      "nbHits": 108,
+      "retrieved": 100
+    },
+    {
+      "query": "code review",
+      "nbHits": 114,
+      "retrieved": 100
+    },
+    {
+      "query": "AI developer",
+      "nbHits": 116,
+      "retrieved": 100
+    },
+    {
+      "query": "AI hiring",
+      "nbHits": 29,
+      "retrieved": 29
+    },
+    {
+      "query": "learn programming",
+      "nbHits": 5,
+      "retrieved": 5
+    },
+    {
+      "query": "software development",
+      "nbHits": 37,
+      "retrieved": 37
+    },
+    {
+      "query": "AI skills",
+      "nbHits": 72,
+      "retrieved": 72
+    },
+    {
+      "query": "Claude Code",
+      "nbHits": 469,
+      "retrieved": 100
+    },
+    {
+      "query": "Codex",
+      "nbHits": 1492,
+      "retrieved": 100
+    },
+    {
+      "query": "engineering AI",
+      "nbHits": 101,
+      "retrieved": 100
+    },
+    {
+      "query": "AI code",
+      "nbHits": 415,
+      "retrieved": 100
+    }
+  ]
+}

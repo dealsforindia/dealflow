@@ -1,0 +1,31 @@
+{
+  "success": true,
+  "canonical_key": "amz:B0FC6R7Y9V",
+  "price_intelligence": {
+    "history": [
+      [
+        1791699909558,
+        3798.0
+      ],
+      [
+        1791700603226,
+        3798.0
+      ]
+    ],
+    "lowest": 3798.0,
+    "highest": 3798.0,
+    "is_lowest": true,
+    "observations": 2,
+    "verdict": "DealFlow Verified Price History"
+  },
+  "history": [
+    [
+      1791699909558,
+      3798.0
+    ],
+    [
+      1791700603226,
+      3798.0
+    ]
+  ]
+}

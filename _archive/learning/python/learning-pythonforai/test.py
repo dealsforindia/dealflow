@@ -1,0 +1,2 @@
+messege = 'chamoli'
+print(messege)

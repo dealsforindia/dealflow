@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>KTX2 Test</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+      "three/": "https://cdn.jsdelivr.net/npm/three@0.128.0/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <h1>Testing KTX2 Loader</h1>
+  <div id="status">Loading...</div>
+  <script type="module">
+    window.addEventListener('error', (e) => {
+      console.error('Window Error:', e.message, e.filename, e.lineno);
+      document.getElementById('status').innerText = 'Window Error: ' + e.message;
+    });
+
+    import * as THREE from 'three';
+    import { KTX2Loader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/KTX2Loader.js';
+    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/DRACOLoader.js';
+    import { EffectComposer } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+    console.log('ALL MODULES IMPORTED SUCCESSFULLY!');
+    document.getElementById('status').innerText = 'All modules imported successfully!';
+
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    console.log('WebGL supported:', !!gl);
+
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    
+    const ktx2Loader = new KTX2Loader();
+    ktx2Loader.setTranscoderPath('vendor/basis/');
+    ktx2Loader.detectSupport(renderer);
+
+    console.log('Loading world.ktx2...');
+    document.getElementById('status').innerText = 'Loading world.ktx2 with Basis transcoder...';
+
+    ktx2Loader.load('assets/atlases/world.ktx2', (texture) => {
+      console.log('✓ world.ktx2 loaded successfully!', texture);
+      const w = texture.image ? (texture.image.width || (texture.mipmaps && texture.mipmaps[0] && texture.mipmaps[0].width)) : 'GPU compressed';
+      const h = texture.image ? (texture.image.height || (texture.mipmaps && texture.mipmaps[0] && texture.mipmaps[0].height)) : 'GPU compressed';
+      document.getElementById('status').innerText = '✓ world.ktx2 LOADED SUCCESSFULLY! Dimensions: ' + w + 'x' + h;
+    }, (progress) => {
+      console.log('Progress:', progress.loaded, '/', progress.total);
+    }, (err) => {
+      console.error('KTX2 load error:', err);
+      document.getElementById('status').innerText = 'Error: ' + (err.message || err);
+    });
+  </script>
+</body>
+</html>

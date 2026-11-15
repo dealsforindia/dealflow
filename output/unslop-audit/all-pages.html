@@ -1,0 +1,434 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>IndiaDealHunts — all-page teardown</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#101417;color:#eef2f1;font:15px/1.6 Segoe UI,Arial,sans-serif}main{max-width:1440px;margin:auto;padding:38px}h1{font-size:38px;line-height:1.15;letter-spacing:-1px;max-width:1000px}h2{font-size:26px;margin:0}h3{font-size:16px;margin:0 0 7px}p{color:#bfc9c9}a{color:#bbd9ee}nav{display:flex;gap:12px;flex-wrap:wrap;margin:22px 0}nav a,button{border:1px solid #475158;border-radius:7px;background:#1b242a;color:#edf2ef;padding:10px 14px;text-decoration:none;font:inherit}button{cursor:pointer}button[aria-pressed=true]{background:#e0bc79;color:#182026}.eyebrow,.meta{font-size:12px;color:#e0bc79;letter-spacing:1px}.scope{font-size:12px}.index{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:25px 0}.index a{padding:9px 0;border-bottom:1px solid #303a41;text-decoration:none}.review{border-top:1px solid #465058;padding:30px 0 38px;scroll-margin-top:12px}.review-head{display:flex;gap:15px;align-items:baseline;justify-content:space-between}.layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(280px,1fr);gap:28px;margin-top:20px;align-items:start}.screens{position:relative}.image-wrap{position:relative}.image-wrap img{width:100%;display:block}.image-wrap.mobile{max-width:393px;margin:auto}.pin{position:absolute;width:25px;height:25px;display:grid;place-items:center;background:#ffe09a;color:#182026;border:2px solid #182026;border-radius:50%;font-weight:700}.find{border-bottom:1px solid #303a41;padding:12px 0}.find p{margin:4px 0;font-size:14px}.fix{border-left:3px solid #e0bc79;padding-left:15px;margin-top:20px}.fix strong{color:#e0bc79}.controls{display:flex;gap:8px;margin-bottom:12px}details{padding:16px 0}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #303a41;padding:12px;vertical-align:top}footer{padding:30px 0;color:#bac4c4}.top{font-size:13px}@media(max-width:850px){main{padding:20px}.layout,.index{grid-template-columns:1fr}h1{font-size:30px}.review-head{display:block}.layout{gap:15px}}</style><main>
+<div class="eyebrow">INDIADEALHUNTS / ALL-PAGE DESIGN TEARDOWN / 28 OCTOBER 2026</div><h1>A shared design problem, with different fixes for each task.</h1>
+<p>Coverage: all 10 main tab views including the homepage, 12 planning tools, plus search, product details, comparison, lookup, saved targets, alerts, filters and legal surfaces. This is a visual and information-hierarchy audit, not a full functional certification.</p>
+<p>Desktop captures: 1280 × 720. Mobile captures: 393 × 852. Known routes were mapped from App.tsx; real UI controls were used for search, saving and product details. Comparison and alert fixtures are explicitly marked. No messages, alerts, deals or purchases were submitted.</p>
+<nav><a href="teardown.html">Original annotated homepage review</a><a href="#inventory">Page inventory</a><a href="#sequence">Implementation order</a><a href="mobile-measurements.json">Mobile width evidence</a></nav>
+<h2 id="inventory">Page and surface inventory</h2><div class="index">
+<a href="#home">Homepage <small>· P1</small></a>
+<a href="#discounts">Top discounts <small>· P1</small></a>
+<a href="#worth">Worth score ranking <small>· P1</small></a>
+<a href="#saved">Saved deals — empty <small>· P2</small></a>
+<a href="#saved-populated">Saved deals — populated <small>· P1</small></a>
+<a href="#search">Search results workspace <small>· P1</small></a>
+<a href="#palette">Global search palette <small>· P2</small></a>
+<a href="#radar">External store discovery radar <small>· P1</small></a>
+<a href="#filters">Filter and sort sheet <small>· P2</small></a>
+<a href="#detail">Product details and price history <small>· P1</small></a>
+<a href="#compare">Deal comparison <small>· P1</small></a>
+<a href="#specs">Specification comparison <small>· P1</small></a>
+<a href="#lookup">Product price lookup <small>· P2</small></a>
+<a href="#watches">Saved price goals <small>· P2</small></a>
+<a href="#alert">Price alert registration <small>· P1</small></a>
+<a href="#profile">Profile and product tracking <small>· P1</small></a>
+<a href="#settings">Account preferences <small>· P2</small></a>
+<a href="#about">About IndiaDealHunts <small>· P2</small></a>
+<a href="#verification">How deals are verified <small>· P1</small></a>
+<a href="#verification-modal">Verification guide dialog <small>· P2</small></a>
+<a href="#community">Wall of Happiness <small>· P2</small></a>
+<a href="#contact">Contact and support <small>· P2</small></a>
+<a href="#submit">Submit a deal <small>· P2</small></a>
+<a href="#privacy">Privacy policy <small>· P2</small></a>
+<a href="#terms">Terms of service <small>· P2</small></a>
+<a href="#tool-gst">GST input tax credit <small>· P1</small></a>
+<a href="#tool-bank_offers">Bank offer comparison <small>· P1</small></a>
+<a href="#tool-emi">EMI cost calculator <small>· P2</small></a>
+<a href="#tool-qcommerce">Quick-commerce cart costs <small>· P2</small></a>
+<a href="#tool-unit_price">Unit-price comparison <small>· P2</small></a>
+<a href="#tool-subs">Subscription break-even <small>· P2</small></a>
+<a href="#tool-customs">Import duty estimate <small>· P1</small></a>
+<a href="#tool-returns">Returns and open-box delivery <small>· P1</small></a>
+<a href="#tool-exchange">Phone exchange estimate <small>· P2</small></a>
+<a href="#tool-energy">Appliance running costs <small>· P2</small></a>
+<a href="#tool-warranty">Warranty tracker <small>· P2</small></a>
+<a href="#tool-budget">Sale budget planner <small>· P2</small></a>
+</div><p>Markers 1–3 identify the header, primary content and supporting controls in each capture. Read the corresponding numbered observations. Some observations concern the full section, not a single pixel. Desktop/mobile toggles switch captured evidence only.</p>
+<section class="review" id="home"><div class="review-head"><h2>Homepage</h2><span class="meta">P1 · Browse</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="desktop-top.png"><img loading="lazy" src="desktop-top.png" alt="Homepage — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="mobile-top.png"><img loading="lazy" src="mobile-top.png" alt="Homepage — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Hierarchy</h3><p>The hero, collections, category rail and filters precede the desktop inventory; the grid heading was around y=842 at a 720px viewport.</p></div>
+<div class="find"><h3>2. Visual weight</h3><p>Repeated blue frames, raised pills and strong actions make navigation compete with products.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Mobile gets products into the first screen. Preserve that advantage while reducing the competing header and dock controls.</p></div>
+<div class="fix"><strong>Design change</strong><p>Start with search, one category system and the product grid. Define a coherent image, title, price and action hierarchy before extending the design.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="discounts"><div class="review-head"><h2>Top discounts</h2><span class="meta">P1 · Browse</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="discounts-desktop.png"><img loading="lazy" src="discounts-desktop.png" alt="Top discounts — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="discounts-mobile.png"><img loading="lazy" src="discounts-mobile.png" alt="Top discounts — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Naming</h3><p>The badge says STEEPEST PRICE DROPS while the explanation says the ranking uses listed discount from MRP. Those are different claims.</p></div>
+<div class="find"><h3>2. Controls</h3><p>Pink active styling and emoji discount tiers introduce a separate visual language from Discover.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>The introduction and wrapped filter panel consume much of the screen before products begin.</p></div>
+<div class="fix"><strong>Design change</strong><p>Name the ranking by its actual basis. Use the shared category/filter pattern and move secondary explanations behind a concise disclosure.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="worth"><div class="review-head"><h2>Worth score ranking</h2><span class="meta">P1 · Browse</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="worth-desktop.png"><img loading="lazy" src="worth-desktop.png" alt="Worth score ranking — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="worth-mobile.png"><img loading="lazy" src="worth-mobile.png" alt="Worth score ranking — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Meaning</h3><p>Algorithmic value leaderboard, God Tier and Mathematical ROI Ranking give a simple heuristic a more authoritative tone than the explanation supports.</p></div>
+<div class="find"><h3>2. Hierarchy</h3><p>The scoring explanation and tier controls take priority over the products.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Stacked score pills form a tall navigation block; the number needs an understandable reason next to each deal.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use a plain-language ranking name, expose score inputs and limitations, and explain the reason for a score at the item level.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="saved"><div class="review-head"><h2>Saved deals — empty</h2><span class="meta">P2 · Browse</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="saved-desktop.png"><img loading="lazy" src="saved-desktop.png" alt="Saved deals — empty — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="saved-mobile.png"><img loading="lazy" src="saved-mobile.png" alt="Saved deals — empty — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Repetition</h3><p>The page title, saved badge and empty-state title all repeat the same state.</p></div>
+<div class="find"><h3>2. Content</h3><p>The local-device storage explanation is valuable but competes with introductory copy.</p></div>
+<div class="find"><h3>3. Action</h3><p>Browse Latest Deals is relatively quiet inside a large decorative panel.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use a compact empty state with one clear browse action and a short local-storage explanation.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="saved-populated"><div class="review-head"><h2>Saved deals — populated</h2><span class="meta">P1 · Browse</span></div><div class="layout"><div class="screens">
+<div class="image-wrap desktop" data-screen="desktop"><a href="saved-populated-desktop.png"><img loading="lazy" src="saved-populated-desktop.png" alt="Saved deals — populated — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Layout</h3><p>A single saved item sits under a full-width search toolbar, creating a sparse inventory layout.</p></div>
+<div class="find"><h3>2. Action weight</h3><p>Clear All appears beside Find More Deals in the introductory region.</p></div>
+<div class="find"><h3>3. Purpose</h3><p>This screen repeats discovery cards rather than emphasizing shortlist decisions.</p></div>
+<div class="fix"><strong>Design change</strong><p>Prioritize revisiting, comparing and removing shortlisted items. Keep destructive bulk controls secondary.</p></div><p class="scope">Evidence scope: One real offer was saved, opened in Saved, then unsaved to restore the audit session. Desktop state verified.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="search"><div class="review-head"><h2>Search results workspace</h2><span class="meta">P1 · Search</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="search-results-desktop.png"><img loading="lazy" src="search-results-desktop.png" alt="Search results workspace — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="search-results-mobile.png"><img loading="lazy" src="search-results-mobile.png" alt="Search results workspace — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Layers</h3><p>Search header, workspace tabs, cross-store banner, source tabs and sorting sit above results.</p></div>
+<div class="find"><h3>2. Naming</h3><p>Discover/Saved appears again inside the workspace, alongside the app navigation.</p></div>
+<div class="find"><h3>3. Evidence</h3><p>The count moved from 0 to 80 directory results during the earbuds query. The later mobile capture showed Offer Preview fallbacks. This needs a relevance, provenance and image-loading follow-up; the capture alone does not establish the cause.</p></div>
+<div class="fix"><strong>Design change</strong><p>Make the query and results dominant. Show directory and external-source status with explicit loading, empty and error states. Check relevance and duplicate counting separately.</p></div><p class="scope">Evidence scope: Actual earbuds query. Initial desktop and later mobile states captured; search quality and completion were not exhaustively verified.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="palette"><div class="review-head"><h2>Global search palette</h2><span class="meta">P2 · Search</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="search-palette-desktop.png"><img loading="lazy" src="search-palette-desktop.png" alt="Global search palette — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="search-palette-mobile.png"><img loading="lazy" src="search-palette-mobile.png" alt="Global search palette — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Mixed tasks</h3><p>One field searches products and utilities, while result rows, merchant filters, trending chips and All 12 Engines share the panel.</p></div>
+<div class="find"><h3>2. Density</h3><p>Long product titles, discount badges and View labels crowd the compact rows.</p></div>
+<div class="find"><h3>3. Consistency</h3><p>Rows use a different merchant/discount treatment from the storefront cards.</p></div>
+<div class="fix"><strong>Design change</strong><p>Separate product results from tool commands and reuse compact product identity rules. Retain keyboard navigation as a useful pattern.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="radar"><div class="review-head"><h2>External store discovery radar</h2><span class="meta">P1 · Search</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="radar-mobile.png"><img loading="lazy" src="radar-mobile.png" alt="External store discovery radar — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Heading</h3><p>Google Shopping &amp; Pan-India Radar is a long implementation-oriented title.</p></div>
+<div class="find"><h3>2. Mobile</h3><p>Title, status, description and close control take a large area above the search input.</p></div>
+<div class="find"><h3>3. States</h3><p>The reviewed state showed scanning and zero store filters alongside Merchant Checkout Verified. Do not let a persistent positive label imply verification of results that have not loaded.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use a shopper-facing title, compact query controls and evidence labels tied to actual results. Keep loading state distinct from an empty result.</p></div><p class="scope">Evidence scope: Live mobile loading state inspected. No successful merchant quote was established.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="filters"><div class="review-head"><h2>Filter and sort sheet</h2><span class="meta">P2 · Browse</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="filters-mobile.png"><img loading="lazy" src="filters-mobile.png" alt="Filter and sort sheet — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Strength</h3><p>The mobile sheet has visible labels and a clear Show results action.</p></div>
+<div class="find"><h3>2. Consistency</h3><p>Its native selects and broad button contrast are calmer than the multi-pill filters elsewhere.</p></div>
+<div class="find"><h3>3. Opportunity</h3><p>Selected filters should be visible in the feed after the sheet closes.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use this simpler interaction as the basis for a shared filtering pattern. Verify applied filters, reset and result counts during implementation.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="detail"><div class="review-head"><h2>Product details and price history</h2><span class="meta">P1 · Product</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="detail-desktop.png"><img loading="lazy" src="detail-desktop.png" alt="Product details and price history — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="detail-mobile.png"><img loading="lazy" src="detail-mobile.png" alt="Product details and price history — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Claims</h3><p>Directory offer, Verified Flipkart, savings vs MRP and DealFlow Verified Price History appear in different parts of the same detail view. Explain exactly what each label verifies.</p></div>
+<div class="find"><h3>2. Priority</h3><p>The photo, full merchant title, discount and large history panel compete. The desktop footer offers merchant, Scan Stores, Copy Link and expiry actions.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>The history panel consumes much of the first screen. Product specifications and the next buying decision need a clearer order.</p></div>
+<div class="fix"><strong>Design change</strong><p>Build an offer summary, then dated price evidence and specifications. Give the merchant action clear priority; put occasional utilities behind secondary controls.</p></div><p class="scope">Evidence scope: Real Aqua Frisch product opened from the feed. Loaded desktop history showed six recorded checks; no merchant purchase or external-price verification performed.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="compare"><div class="review-head"><h2>Deal comparison</h2><span class="meta">P1 · Product</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="compare-mobile-demo.png"><img loading="lazy" src="compare-mobile-demo.png" alt="Deal comparison — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Mobile</h3><p>The wide table shows one product column and requires horizontal movement to reach the other.</p></div>
+<div class="find"><h3>2. Hierarchy</h3><p>Large row labels and a tall heading reduce the visible comparison area.</p></div>
+<div class="find"><h3>3. Source</h3><p>The source-provided demo compares shoes with a watch, which is unsuitable as evidence of a useful product comparison.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use a mobile comparison designed around a small shortlist. Keep product identity visible while reading differences; support unlike products without inventing meaningful spec comparisons.</p></div><p class="scope">Evidence scope: Built-in ?modal=compare fixture. Layout-only review; broken demo images are not treated as a production catalog defect.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="specs"><div class="review-head"><h2>Specification comparison</h2><span class="meta">P1 · Product</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="specs-mobile-demo.png"><img loading="lazy" src="specs-mobile-demo.png" alt="Specification comparison — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Mobile</h3><p>Wide comparison columns and oversized product headers leave the second item outside the initial view.</p></div>
+<div class="find"><h3>2. Navigation</h3><p>Offer prices opens a different comparison surface, adding a second layout to learn.</p></div>
+<div class="find"><h3>3. Evidence</h3><p>Best Price and worth-score rows need clear scope when specifications or scores are not supplied.</p></div>
+<div class="fix"><strong>Design change</strong><p>Combine price and specifications into one comparison model, with a mobile-friendly way to inspect differences and explicit missing-data states.</p></div><p class="scope">Evidence scope: Opened from the built-in comparison fixture. Layout and labeling reviewed; live specification completeness not tested.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="lookup"><div class="review-head"><h2>Product price lookup</h2><span class="meta">P2 · Product</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="lookup-desktop.png"><img loading="lazy" src="lookup-desktop.png" alt="Product price lookup — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="lookup-mobile.png"><img loading="lazy" src="lookup-mobile.png" alt="Product price lookup — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Layout</h3><p>A short form sits inside a centered dialog with substantial surrounding empty space.</p></div>
+<div class="find"><h3>2. Naming</h3><p>Analyzer and Watches introduce another vocabulary beside Price Radar, tracking and alerts.</p></div>
+<div class="find"><h3>3. Input</h3><p>The URL field relies on placeholder copy to explain supported inputs.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use a visible Product link label, concise source guidance and a shared price-history entry pattern. Distinguish inspection from saving a target.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="watches"><div class="review-head"><h2>Saved price goals</h2><span class="meta">P2 · Product</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="watches-mobile.png"><img loading="lazy" src="watches-mobile.png" alt="Saved price goals — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Naming</h3><p>Watches, saved price goals, alerts and tracked scrapers are competing terms.</p></div>
+<div class="find"><h3>2. Empty state</h3><p>Add New Link and the explanatory empty-state text point back to Analyzer without making that relationship obvious.</p></div>
+<div class="find"><h3>3. Device scope</h3><p>The screen says targets are saved on this device; keep this distinct from delivered notifications.</p></div>
+<div class="fix"><strong>Design change</strong><p>Choose one name for saved targets. Clearly distinguish local goals from active server alerts and offer one direct add-product action.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="alert"><div class="review-head"><h2>Price alert registration</h2><span class="meta">P1 · Product</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="alert-mobile-demo.png"><img loading="lazy" src="alert-mobile-demo.png" alt="Price alert registration — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Structure</h3><p>Preset discount targets are useful but the alert title, product panel and channel controls make a long form.</p></div>
+<div class="find"><h3>2. Setup</h3><p>Telegram instructions are split into short fragments and links below the username field.</p></div>
+<div class="find"><h3>3. Outcome</h3><p>Arm Price Drop Alert uses a different term from the profile tracker and saved goals.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use consistent Create price alert wording, explain channel setup in sequence and distinguish submission, active monitoring and delivery confirmation.</p></div><p class="scope">Evidence scope: Built-in ?modal=alert fixture. Form presentation reviewed; no alert or message was submitted.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="profile"><div class="review-head"><h2>Profile and product tracking</h2><span class="meta">P1 · Account</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="profile-desktop.png"><img loading="lazy" src="profile-desktop.png" alt="Profile and product tracking — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="profile-mobile.png"><img loading="lazy" src="profile-mobile.png" alt="Profile and product tracking — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Overload</h3><p>Guest identity, four metrics, sign-in, a monitoring form and a how-it-works panel precede account settings.</p></div>
+<div class="find"><h3>2. Vocabulary</h3><p>Saved Loot, tracked scrapers, Radar and monitors describe related shopper tasks with different terms.</p></div>
+<div class="find"><h3>3. State clarity</h3><p>Guest view shows Email Live while the preferences section says email notifications require sign-in. Clarify configured versus active status.</p></div>
+<div class="fix"><strong>Design change</strong><p>Separate account settings from price tracking. Show actionable guest guidance, plain-language targets and honest monitoring status.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="settings"><div class="review-head"><h2>Account preferences</h2><span class="meta">P2 · Account</span></div><div class="layout"><div class="screens">
+<div class="image-wrap desktop" data-screen="desktop"><a href="profile-settings-desktop.png"><img loading="lazy" src="profile-settings-desktop.png" alt="Account preferences — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Placement</h3><p>Theme and sound settings are far down the tracking-heavy profile page.</p></div>
+<div class="find"><h3>2. State</h3><p>Email notifications appear as an enabled toggle beside Requires email sign in; this needs an explicit inactive/needs-setup state.</p></div>
+<div class="find"><h3>3. Consistency</h3><p>Theme selection appears here and in the global header, with different presentations.</p></div>
+<div class="fix"><strong>Design change</strong><p>Group account, notifications and appearance clearly. Reuse one appearance control and show prerequisites directly.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="about"><div class="review-head"><h2>About IndiaDealHunts</h2><span class="meta">P2 · Information</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="about-desktop.png"><img loading="lazy" src="about-desktop.png" alt="About IndiaDealHunts — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="about-mobile.png"><img loading="lazy" src="about-mobile.png" alt="About IndiaDealHunts — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Space</h3><p>Breadcrumb, badge, headline and paragraph consume a large introductory area.</p></div>
+<div class="find"><h3>2. Tiles</h3><p>Multi-store, When available, On-device and 100% Free are displayed as four KPI-like tiles even though they are different kinds of facts.</p></div>
+<div class="find"><h3>3. Copy</h3><p>The paragraph claims genuine price drops while other screens carefully distinguish MRP comparisons from observed history.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use a concise product explanation, clear source limitations and concrete examples of how the product helps a shopper. Replace filler metric tiles with useful content.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="verification"><div class="review-head"><h2>How deals are verified</h2><span class="meta">P1 · Information</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="verify-desktop.png"><img loading="lazy" src="verify-desktop.png" alt="How deals are verified — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="verify-mobile.png"><img loading="lazy" src="verify-mobile.png" alt="How deals are verified — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Title</h3><p>The title implies a verification process; the introduction describes evidence shoppers can assess.</p></div>
+<div class="find"><h3>2. Reading</h3><p>Numbered steps are each framed as large cards with extra system labels such as Link Layer and Price Audit.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Nested padding creates a long reading experience for short instructions.</p></div>
+<div class="fix"><strong>Design change</strong><p>State what the service checks, what it does not check and what shoppers must confirm. Use a compact evidence guide with an actual example.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="verification-modal"><div class="review-head"><h2>Verification guide dialog</h2><span class="meta">P2 · Information</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="verify-modal-mobile.png"><img loading="lazy" src="verify-modal-mobile.png" alt="Verification guide dialog — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Duplication</h3><p>The same topic exists as a full page and a five-stage modal.</p></div>
+<div class="find"><h3>2. Navigation</h3><p>Stage pills, a process strip and footer actions compete with the actual explanation.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Source labels, available evidence, what to check and limits are broken into multiple panels.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use one canonical guide. If a quick explanation is needed, keep it genuinely short and link to the detailed guide.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="community"><div class="review-head"><h2>Wall of Happiness</h2><span class="meta">P2 · Community</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="community-desktop.png"><img loading="lazy" src="community-desktop.png" alt="Wall of Happiness — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="community-mobile.png"><img loading="lazy" src="community-mobile.png" alt="Wall of Happiness — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Empty state</h3><p>The first capture showed ₹0, zero reports and zero names inside a large metrics panel. Treat these as observed state, not a permanent claim about community activity.</p></div>
+<div class="find"><h3>2. Meaning</h3><p>Not measured is useful honesty but should not occupy a KPI tile.</p></div>
+<div class="find"><h3>3. Tone</h3><p>Brag Your Deal Loot does not match the calmer directory language elsewhere.</p></div>
+<div class="fix"><strong>Design change</strong><p>Lead with actual shopper stories when available. Otherwise use a concise invitation and explain reported versus independently verified outcomes.</p></div><p class="scope">Evidence scope: Live visual review; initial or default state.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="contact"><div class="review-head"><h2>Contact and support</h2><span class="meta">P2 · Information</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="contact-desktop.png"><img loading="lazy" src="contact-desktop.png" alt="Contact and support — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="contact-mobile.png"><img loading="lazy" src="contact-mobile.png" alt="Contact and support — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Strength</h3><p>Visible labels, subject selection and a clear message field provide a sound basic form.</p></div>
+<div class="find"><h3>2. Spacing</h3><p>The shared header, ticker and introductory spacing delay the form on desktop; the narrow mobile form becomes a long page.</p></div>
+<div class="find"><h3>3. Task</h3><p>Expired deals, partnerships and feature suggestions have different information needs.</p></div>
+<div class="fix"><strong>Design change</strong><p>Use task-based subjects with relevant helper text and consistent form spacing. Keep the submission outcome visible and explain where responses arrive.</p></div><p class="scope">Evidence scope: Form inspected without entering personal data or sending a message.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="submit"><div class="review-head"><h2>Submit a deal</h2><span class="meta">P2 · Community</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="submit-desktop.png"><img loading="lazy" src="submit-desktop.png" alt="Submit a deal — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="submit-mobile.png"><img loading="lazy" src="submit-mobile.png" alt="Submit a deal — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Effort</h3><p>The form requests product URL, store, price, MRP, notes and email in one long step.</p></div>
+<div class="find"><h3>2. Hierarchy</h3><p>Store and both price fields have similar weight, while the source link should establish the item first.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>The vertical form is long; later inputs and the submission action sit below the first screen.</p></div>
+<div class="fix"><strong>Design change</strong><p>Start with the product link and progressively reveal useful optional fields. Preserve the statement that submission does not guarantee publication.</p></div><p class="scope">Evidence scope: Form presentation reviewed. No deal submitted.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="privacy"><div class="review-head"><h2>Privacy policy</h2><span class="meta">P2 · Information</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="privacy-mobile.png"><img loading="lazy" src="privacy-mobile.png" alt="Privacy policy — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Strength</h3><p>A restrained reading surface with section headings is calmer than the rest of the app.</p></div>
+<div class="find"><h3>2. Navigation</h3><p>A centered modal is the only surface inspected; independent linking, printing and history behavior need checking.</p></div>
+<div class="find"><h3>3. Consistency</h3><p>The legal dialog uses another header/footer pattern rather than a shared reading layout.</p></div>
+<div class="fix"><strong>Design change</strong><p>Keep readable line lengths and headings. Provide stable links to policies and a consistent reading surface.</p></div><p class="scope">Evidence scope: Presentation review only; no legal adequacy assessment.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="terms"><div class="review-head"><h2>Terms of service</h2><span class="meta">P2 · Information</span></div><div class="layout"><div class="screens">
+<div class="image-wrap mobile" data-screen="mobile"><a href="terms-mobile.png"><img loading="lazy" src="terms-mobile.png" alt="Terms of service — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Strength</h3><p>A restrained reading surface with section headings is calmer than the rest of the app.</p></div>
+<div class="find"><h3>2. Navigation</h3><p>A centered modal is the only surface inspected; independent linking, printing and history behavior need checking.</p></div>
+<div class="find"><h3>3. Consistency</h3><p>The legal dialog uses another header/footer pattern rather than a shared reading layout.</p></div>
+<div class="fix"><strong>Design change</strong><p>Keep readable line lengths and headings. Provide stable links to policies and a consistent reading surface.</p></div><p class="scope">Evidence scope: Presentation review only; no legal adequacy assessment.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-gst"><div class="review-head"><h2>GST input tax credit</h2><span class="meta">P1 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tools-desktop.png"><img loading="lazy" src="tools-desktop.png" alt="GST input tax credit — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tools-mobile.png"><img loading="lazy" src="tools-mobile.png" alt="GST input tax credit — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>Long title, preset prices, tax-rate controls and a highlighted economic-cost result create several levels of framing.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Shorten the title and group price, rate and confirmed eligibility before the result. Keep assumptions adjacent to outputs. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-bank_offers"><div class="review-head"><h2>Bank offer comparison</h2><span class="meta">P1 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-bank_offers-desktop.png"><img loading="lazy" src="tool-bank_offers-desktop.png" alt="Bank offer comparison — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-bank_offers-mobile.png"><img loading="lazy" src="tool-bank_offers-mobile.png" alt="Bank offer comparison — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>Named card/voucher scenarios and a prominent recommendation appear under example assumptions.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Make user-entered eligibility and fees explicit. Separate example presets from the selected scenario and show why a result wins. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-emi"><div class="review-head"><h2>EMI cost calculator</h2><span class="meta">P2 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-emi-desktop.png"><img loading="lazy" src="tool-emi-desktop.png" alt="EMI cost calculator — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-emi-mobile.png"><img loading="lazy" src="tool-emi-mobile.png" alt="EMI cost calculator — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>Price, tenure, card, down payment and fees compete with multiple result amounts.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Prioritize total repayment and extra cost, then explain installment and fee components in one breakdown. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-qcommerce"><div class="review-head"><h2>Quick-commerce cart costs</h2><span class="meta">P2 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-qcommerce-desktop.png"><img loading="lazy" src="tool-qcommerce-desktop.png" alt="Quick-commerce cart costs — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-qcommerce-mobile.png"><img loading="lazy" src="tool-qcommerce-mobile.png" alt="Quick-commerce cart costs — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>A bright cart-filler result competes with the store comparisons and input controls.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Show current cart total, delivery/handling costs and the proposed change together, including extra spend. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-unit_price"><div class="review-head"><h2>Unit-price comparison</h2><span class="meta">P2 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-unit_price-desktop.png"><img loading="lazy" src="tool-unit_price-desktop.png" alt="Unit-price comparison — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-unit_price-mobile.png"><img loading="lazy" src="tool-unit_price-mobile.png" alt="Unit-price comparison — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>A winner banner appears above several multi-field pack panels.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Align quantity, unit and price inputs and display one comparable unit beside each option. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-subs"><div class="review-head"><h2>Subscription break-even</h2><span class="meta">P2 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-subs-desktop.png"><img loading="lazy" src="tool-subs-desktop.png" alt="Subscription break-even — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-subs-mobile.png"><img loading="lazy" src="tool-subs-mobile.png" alt="Subscription break-even — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>Five service presets and several perk assumptions create a large setup surface.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Start with one selected service and user-entered fees/usage; reveal optional benefits when needed. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-customs"><div class="review-head"><h2>Import duty estimate</h2><span class="meta">P1 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-customs-desktop.png"><img loading="lazy" src="tool-customs-desktop.png" alt="Import duty estimate — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-customs-mobile.png"><img loading="lazy" src="tool-customs-mobile.png" alt="Import duty estimate — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>A large product-category preset catalog precedes the actual cost breakdown.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Start with purchase amount, shipping and editable rates. Label scenario estimates beside the result. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-returns"><div class="review-head"><h2>Returns and open-box delivery</h2><span class="meta">P1 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-returns-desktop.png"><img loading="lazy" src="tool-returns-desktop.png" alt="Returns and open-box delivery — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-returns-mobile.png"><img loading="lazy" src="tool-returns-mobile.png" alt="Returns and open-box delivery — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>Store presets, deadline inputs, checklists and dispute assistance share one calculator-like screen.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Separate deadline tracking from delivery checklists. Label store policies as examples and make the selected task clear. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-exchange"><div class="review-head"><h2>Phone exchange estimate</h2><span class="meta">P2 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-exchange-desktop.png"><img loading="lazy" src="tool-exchange-desktop.png" alt="Phone exchange estimate — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-exchange-mobile.png"><img loading="lazy" src="tool-exchange-mobile.png" alt="Phone exchange estimate — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>Device presets, condition deductions and recommendation badges imply a quote-like experience.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Make the hypothetical nature explicit and compare entered trade-in offers with transparent deductions. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-energy"><div class="review-head"><h2>Appliance running costs</h2><span class="meta">P2 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-energy-desktop.png"><img loading="lazy" src="tool-energy-desktop.png" alt="Appliance running costs — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-energy-mobile.png"><img loading="lazy" src="tool-energy-mobile.png" alt="Appliance running costs — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>Appliance presets, purchase prices and usage controls are spread across several panels.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Compare total ownership cost first, then show energy assumptions and payback in one aligned view. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-warranty"><div class="review-head"><h2>Warranty tracker</h2><span class="meta">P2 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-warranty-desktop.png"><img loading="lazy" src="tool-warranty-desktop.png" alt="Warranty tracker — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-warranty-mobile.png"><img loading="lazy" src="tool-warranty-mobile.png" alt="Warranty tracker — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>A large framed empty table offers demo items, export and add-product actions together.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Make Add product primary, show a useful example without inserting it into real records, and explain storage scope. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="tool-budget"><div class="review-head"><h2>Sale budget planner</h2><span class="meta">P2 · Planning tools</span></div><div class="layout"><div class="screens">
+<div class="controls" role="group" aria-label="Screenshot viewport">
+<button type="button" data-view="desktop" aria-pressed="true">Desktop</button>
+<button type="button" data-view="mobile" aria-pressed="false">Mobile</button>
+</div>
+<div class="image-wrap desktop" data-screen="desktop"><a href="tool-budget-desktop.png"><img loading="lazy" src="tool-budget-desktop.png" alt="Sale budget planner — desktop evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+<div class="image-wrap mobile" data-screen="mobile" hidden><a href="tool-budget-mobile.png"><img loading="lazy" src="tool-budget-mobile.png" alt="Sale budget planner — mobile evidence"></a><span class="pin" style="left:7%;top:13%">1</span><span class="pin" style="left:45%;top:42%">2</span><span class="pin" style="left:78%;top:78%">3</span></div>
+</div><div>
+<div class="find"><h3>1. Tool-specific hierarchy</h3><p>Budget sliders, wishlist entry, category/priority chips and a regret-risk score compete.</p></div>
+<div class="find"><h3>2. Shared navigation</h3><p>Search, category tabs, horizontal tool chips, a warning banner and an active-engine footer surround the tool.</p></div>
+<div class="find"><h3>3. Mobile</h3><p>Shared chrome and the long tool heading consume much of the viewport before useful results. Design for one primary calculation task at a time.</p></div>
+<div class="fix"><strong>Design change</strong><p>Lead with planned spend versus remaining budget. Explain any heuristic separately from concrete arithmetic. Replace Engines, Sentinel and Shield terminology with shopper-facing task names.</p></div><p class="scope">Evidence scope: Opened live on desktop and mobile with default/example inputs. Visual structure reviewed; arithmetic, current rates, legal/tax rules and financial suitability were not validated. Some captures include entry-transition opacity; no contrast conclusion is drawn from those frames.</p><a class="top" href="#inventory">Back to inventory ↑</a></div></div></section>
+<section class="review" id="sequence"><h2>Implementation order</h2><table><thead><tr><th>Step</th><th>Work</th><th>Review checkpoint</th></tr></thead><tbody><tr><td>1</td><td>Shared navigation, naming, type, surface and control rules</td><td>One desktop and mobile shell; clear role for every accent and persistent control.</td></tr><tr><td>2</td><td>Discovery cards, search and product details</td><td>Real mixed images, long names, missing ratings, loaded history and empty states. Show products early.</td></tr><tr><td>3</td><td>Shortlists, comparison and alerts</td><td>A shopper can save, retrieve, compare and understand what is monitored. Mobile comparison is readable.</td></tr><tr><td>4</td><td>Tool hub and all 12 calculators</td><td>One tool selected at a time, inputs before interpretation, visible assumptions and useful results on mobile.</td></tr><tr><td>5</td><td>Account, community, support and information pages</td><td>Consistent reading/form layouts; honest loading, empty and configured-versus-active states.</td></tr></tbody></table></section><footer>Scope limits: reviewed live public dark-mode views and selected states, with source used to enumerate routes. Account authentication, delivery of notifications, form submissions, complete error paths, light mode, all calculator combinations and full accessibility compliance remain untested. Nine additional main mobile views measured scrollWidth 387px at a 393px viewport; this is not proof that every nested region fits. No storefront source or deployment changed.</footer></main><script>document.querySelectorAll('.controls button').forEach(button=>button.addEventListener('click',()=>{const section=button.closest('.screens');section.querySelectorAll('[data-screen]').forEach(view=>view.hidden=view.dataset.screen!==button.dataset.view);section.querySelectorAll('button').forEach(peer=>peer.setAttribute('aria-pressed',String(peer===button)));}));</script></html>

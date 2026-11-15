@@ -1,0 +1,773 @@
+
+/* ------------------------------------------------------------------ */
+/* 05 — Portfolio ice blocks (screen-space refraction)                 */
+/* ------------------------------------------------------------------ */
+
+const ICE = { A: { y: -42 }, B: { y: -84 } };
+
+/* ------------------------------------------------------------------ */
+/* 04b — Sub-glacial cavern backdrops                                  */
+/*      Each sunken level gets its own matte environment so the        */
+/*      frame is not a flat fog field behind the hero object.          */
+/* ------------------------------------------------------------------ */
+
+function makeCavern(seed, tintDeep, tintGlow, tintAccent) {
+    const group = new THREE.Group();
+
+    const mat = new THREE.ShaderMaterial({
+        uniforms: {
+            uDeep: { value: new THREE.Color(tintDeep) },
+            uGlow: { value: new THREE.Color(tintGlow) },
+            uAccent: { value: new THREE.Color(tintAccent) },
+            uSeed: { value: seed },
+            uTime: timeUniform
+        },
+        fog: false,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        vertexShader: `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform vec3 uDeep, uGlow, uAccent;
+            uniform float uTime, uSeed;
+            varying vec2 vUv;
+
+            float hash12(vec2 p) {
+                vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return fract((p3.x + p3.y) * p3.z);
+            }
+            float noise2(vec2 p) {
+                vec2 i = floor(p), f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(hash12(i), hash12(i + vec2(1, 0)), f.x),
+                           mix(hash12(i + vec2(0, 1)), hash12(i + vec2(1, 1)), f.x), f.y);
+            }
+            float fbm(vec2 p) {
+                float s = 0.0, a = 0.5;
+                for (int i = 0; i < 4; i++) { s += noise2(p) * a; p *= 2.07; a *= 0.5; }
+                return s;
+            }
+
+            void main() {
+                vec2 p = vUv - vec2(0.5, 0.56);
+                float r = length(p * vec2(1.15, 0.92));
+
+                // deep cavern falloff
+                vec3 col = mix(uGlow, uDeep, smoothstep(0.04, 0.72, r));
+
+                // ice pillars / crevasse silhouettes
+                float col2 = fbm(vec2(vUv.x * 9.0 + uSeed, 1.7));
+                float pillar = smoothstep(0.55, 0.95, col2) * smoothstep(0.75, 0.18, r);
+                col = mix(col, uDeep * 0.45, pillar * 0.85);
+
+                // faint vertical light shafts bleeding from above
+                float shaft = pow(max(0.0, fbm(vec2(vUv.x * 3.4 + uSeed * 2.0, uTime * 0.02)) - 0.42), 2.2);
+                col += uAccent * shaft * smoothstep(0.9, 0.25, r) * 0.20;
+
+                // hot core behind the hero object
+                col += uAccent * pow(max(0.0, 1.0 - r * 3.1), 3.0) * 0.30;
+
+                // horizon glow band
+                col += uAccent * exp(-pow((vUv.y - 0.34) * 6.5, 2.0)) * 0.10;
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `
+    });
+
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(260, 150), mat);
+    wall.position.set(0, 12, -62);
+    group.add(wall);
+
+    // ground plate that catches the object glow
+    const floorMat = new THREE.ShaderMaterial({
+        uniforms: {
+            uDeep: { value: new THREE.Color(tintDeep) },
+            uAccent: { value: new THREE.Color(tintAccent) }
+        },
+        transparent: true,
+        depthWrite: false,
+        vertexShader: `
+            varying vec2 vUv;
+            void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+        `,
+        fragmentShader: `
+            uniform vec3 uDeep, uAccent;
+            varying vec2 vUv;
+            void main() {
+                vec2 p = vUv - 0.5;
+                float r = length(p) * 2.0;
+                float rings = smoothstep(0.42, 0.5, fract(r * 3.4)) * 0.05;
+                vec3 col = mix(uAccent * 0.55, uDeep * 0.65, smoothstep(0.05, 0.95, r));
+                col += uAccent * pow(max(0.0, 1.0 - r), 3.0) * 0.55;
+                col += uAccent * rings;
+                gl_FragColor = vec4(col, smoothstep(1.0, 0.35, r) * 0.92);
+            }
+        `
+    });
+    const plate = new THREE.Mesh(new THREE.CircleGeometry(85, 72), floorMat);
+    plate.rotation.x = -Math.PI / 2;
+    plate.position.y = -6.5;
+    plate.renderOrder = -2;
+    group.add(plate);
+
+    // local lighting so metal + solids still read inside the cavern
+    const key = new THREE.PointLight(0xeaf6ff, 2.6, 46, 2);
+    key.position.set(-8, 9, 11);
+    group.add(key);
+
+    const fill = new THREE.PointLight(tintAccent, 2.0, 40, 2);
+    fill.position.set(7, 1.5, 9);
+    group.add(fill);
+
+    return group;
+}
+
+const cavernA = makeCavern(1.7, 0x04090f, 0x0b1a26, 0x2b6d8c);
+const cavernB = makeCavern(4.3, 0x050810, 0x101a2a, 0x3a5f9e);
+const cavernP = makeCavern(8.1, 0x03060c, 0x0a1420, 0x246b86);
+const cavernD = makeCavern(12.6, 0x04060b, 0x0c1420, 0x8771c9);
+
+/* ---- out-of-focus technical text drifting through the fog ---- */
+const techTexts = [];
+const TECH_LABELS = [
+    'DATA',
+    'PRE LOAD OFF / 2',
+    '002 NON FUNGIBLE TOKEN',
+    '01 DEFI',
+    '00.001.22'
+];
+
+function makeTechText(label, opts) {
+    const o = opts || {};
+    const worldH = o.worldH || 6;
+
+    const c = document.createElement('canvas');
+    c.width = 2048;
+    c.height = 320;
+    const g = c.getContext('2d');
+    g.fillStyle = '#ffffff';
+    g.font = "600 130px 'JetBrains Mono', ui-monospace, monospace";
+    g.textBaseline = 'middle';
+
+    const tw = Math.max(1, g.measureText(label).width);
+    const fit = Math.min(1, (c.width - 72) / tw);
+
+    g.save();
+    g.translate(c.width * 0.5, c.height * 0.5);
+    g.scale(fit, fit);
+    if ('filter' in g) g.filter = 'blur(' + (o.blur == null ? 5 : o.blur) + 'px)';
+    g.fillText(label, -tw * 0.5, 0);
+    g.restore();
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+
+    const mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        transparent: true,
+        opacity: o.opacity == null ? 0.10 : o.opacity,
+        depthWrite: false,
+        fog: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide
+    });
+
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry((c.width / c.height) * worldH, worldH), mat);
+    mesh.userData.drift = {
+        x0: 0,
+        amp: o.amp || 9,
+        speed: o.speed || 0.015,
+        phase: o.phase || 0,
+        baseOpacity: mat.opacity
+    };
+    return mesh;
+}
+
+function addDriftTexts(group, salt, list) {
+    list.forEach((cfg, i) => {
+        const label = TECH_LABELS[(Math.floor(salt * 7) + i) % TECH_LABELS.length];
+        const mesh = makeTechText(label, {
+            worldH: cfg.h,
+            opacity: cfg.opacity,
+            blur: cfg.blur || 5,
+            amp: cfg.amp,
+            speed: cfg.speed,
+            phase: salt + i * 2.1
+        });
+        mesh.position.set(cfg.x, cfg.y, cfg.z);
+        mesh.userData.drift.x0 = cfg.x;
+        mesh.renderOrder = -1;
+        group.add(mesh);
+        techTexts.push(mesh);
+    });
+}
+
+addDriftTexts(cavernA, 1.7, [
+    { x: -14, y: 9.0, z: -58, h: 8.6, opacity: 0.105, amp: 12, speed: 0.013 },
+    { x: 27, y: 2.0, z: -55, h: 6.0, opacity: 0.080, amp: 8, speed: 0.019 },
+    { x: -7, y: -4.5, z: -52, h: 4.4, opacity: 0.055, amp: 6, speed: 0.011 }
+]);
+addDriftTexts(cavernB, 4.3, [
+    { x: 20, y: 9.5, z: -57, h: 7.8, opacity: 0.095, amp: 11, speed: 0.012 },
+    { x: -22, y: 2.5, z: -54, h: 5.6, opacity: 0.070, amp: 9, speed: 0.016 },
+    { x: 4, y: -5.0, z: -51, h: 4.0, opacity: 0.050, amp: 5, speed: 0.021 }
+]);
+addDriftTexts(cavernD, 12.6, [
+    { x: -24, y: 9.0, z: -56, h: 5.0, opacity: 0.070, amp: 10, speed: 0.010 },
+    { x: 21, y: 12.5, z: -58, h: 4.2, opacity: 0.055, amp: 12, speed: 0.014 },
+    { x: 2, y: 6.8, z: -54, h: 3.4, opacity: 0.045, amp: 8, speed: 0.017 }
+]);
+
+
+const iceUniforms = {
+    tScene: { value: rtRefract.texture },
+    uResolution: { value: new THREE.Vector2(1, 1) },
+    uStrength: { value: 0.055 },
+    uTint: { value: new THREE.Color(0xd9efff) },
+    uFrost: { value: snowTex.normal },
+    uTime: timeUniform,
+    uOpacity: { value: 0.86 }
+};
+
+const crystalMat = new THREE.ShaderMaterial({
+    uniforms: iceUniforms,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.FrontSide,
+    vertexShader: `
+        varying vec3 vN;
+        varying vec3 vView;
+        varying vec2 vUv;
+        varying vec3 vW;
+        void main() {
+            vUv = uv;
+            vN = normalize(normalMatrix * normal);
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            vView = normalize(-mv.xyz);
+            vec4 world = modelMatrix * vec4(position, 1.0);
+            vW = world.xyz;
+            gl_Position = projectionMatrix * mv;
+        }
+    `,
+    fragmentShader: `
+        uniform sampler2D tScene;
+        uniform sampler2D uFrost;
+        uniform vec2 uResolution;
+        uniform float uStrength, uOpacity;
+        uniform vec3 uTint;
+        varying vec3 vN;
+        varying vec3 vView;
+        varying vec2 vUv;
+        varying vec3 vW;
+
+        void main() {
+            vec2 screenUV = gl_FragCoord.xy / uResolution;
+            vec3 n = normalize(vN);
+
+            // per-channel refraction for chromatic dispersion
+            vec2 refr = n.xy * uStrength;
+            float r = texture2D(tScene, screenUV + refr * 1.075).r;
+            float g = texture2D(tScene, screenUV + refr * 1.000).g;
+            float b = texture2D(tScene, screenUV + refr * 0.925).b;
+            vec3 refracted = vec3(r, g, b);
+
+            // frost noise frozen into the surface
+            float frost = texture2D(uFrost, vUv * 3.1).r;
+            float frost2 = texture2D(uFrost, vUv * 7.4 + 0.3).g;
+
+            float fres = pow(1.0 - clamp(dot(normalize(vView), n), 0.0, 1.0), 3.0);
+            float facet = pow(1.0 - abs(dot(normalize(vView), n)), 1.5);
+
+            vec3 col = refracted * mix(vec3(1.0), uTint, 0.35);
+            col += vec3(0.82, 0.94, 1.0) * fres * 0.62;
+            col += vec3(1.0) * pow(frost * 0.5 + frost2 * 0.5, 3.0) * 0.16;
+            col += vec3(0.55, 0.85, 1.0) * facet * 0.06;
+
+            float alpha = clamp(uOpacity + fres * 0.14, 0.0, 1.0);
+            gl_FragColor = vec4(col, alpha);
+        }
+    `
+});
+
+function makeCrystal(seed, height, radius) {
+    const segs = 7 + (seed % 3);
+    const steps = 9;
+    const profile = [];
+    for (let i = 0; i < steps; i++) {
+        const t = i / (steps - 1);
+        let r = Math.sin(Math.pow(t, 0.78) * Math.PI * 0.95) * radius;
+        r *= 0.72 + 0.45 * hash11(seed + i * 3.1);
+        if (i === 0) r = radius * 0.26;
+        if (i === steps - 1) r = 0.03;
+        profile.push(new THREE.Vector2(Math.max(0.02, r), (t - 0.5) * height));
+    }
+    let geo = new THREE.LatheGeometry(profile, segs);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+        const a = Math.atan2(z, x);
+        const j = Math.sin(a * segs * 0.5 + seed) * 0.05 + Math.sin(y * 2.3 + seed * 2.0) * 0.03;
+        p.setXYZ(i, x * (1 + j), y + Math.sin(a * 3.0 + seed) * 0.05, z * (1 + j));
+    }
+    geo = geo.toNonIndexed ? geo.toNonIndexed() : geo;
+    geo.computeVertexNormals();
+    return geo;
+}
+
+function makeWireCage(geo, color, count = 46) {
+    const group = new THREE.Group();
+    const wire = new THREE.LineSegments(
+        new THREE.WireframeGeometry(geo),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.22, depthWrite: false })
+    );
+    wire.scale.setScalar(1.035);
+    group.add(wire);
+
+    const src = geo.attributes.position;
+    const pts = [];
+    for (let i = 0; i < count; i++) {
+        const idx = Math.floor(Math.random() * src.count);
+        pts.push(src.getX(idx) * 1.06, src.getY(idx) * 1.06, src.getZ(idx) * 1.06);
+    }
+    const dotGeo = new THREE.BufferGeometry();
+    dotGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const dots = new THREE.Points(dotGeo, new THREE.PointsMaterial({
+        color: 0xffffff, size: 0.075, transparent: true, opacity: 0.75,
+        depthWrite: false, blending: THREE.AdditiveBlending
+    }));
+    group.add(dots);
+    return group;
+}
+
+function makePenguin() {
+    const g = new THREE.Group();
+    const dark = new THREE.MeshStandardMaterial({ color: 0x2b323b, roughness: 0.42, metalness: 0.04 });
+    const white = new THREE.MeshStandardMaterial({ color: 0xf2f7fc, roughness: 0.38, metalness: 0.02 });
+    const ink = new THREE.MeshStandardMaterial({ color: 0x0b0e12, roughness: 0.2 });
+    const gold = new THREE.MeshStandardMaterial({ color: 0xe8b25a, roughness: 0.35, metalness: 0.4 });
+
+    const body = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), dark);
+    body.scale.set(0.88, 1.14, 0.82);
+    body.position.y = -0.15;
+    g.add(body);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.62, 28, 22), dark);
+    head.position.set(0, 0.86, 0.06);
+    g.add(head);
+
+    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.78, 28, 22), white);
+    belly.scale.set(0.86, 1.22, 0.55);
+    belly.position.set(0, -0.24, 0.42);
+    g.add(belly);
+
+    const face = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 18), white);
+    face.scale.set(1.0, 0.9, 0.62);
+    face.position.set(0, 0.8, 0.42);
+    g.add(face);
+
+    const eyeGeo = new THREE.SphereGeometry(0.10, 14, 12);
+    const eyeL = new THREE.Mesh(eyeGeo, ink);
+    eyeL.position.set(-0.24, 0.90, 0.52);
+    const eyeR = new THREE.Mesh(eyeGeo, ink);
+    eyeR.position.set(0.24, 0.90, 0.52);
+    g.add(eyeL, eyeR);
+
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.34, 5), gold);
+    beak.rotation.x = Math.PI / 2;
+    beak.position.set(0, 0.72, 0.66);
+    g.add(beak);
+
+    const flipGeo = new THREE.SphereGeometry(0.3, 18, 14);
+    const flipL = new THREE.Mesh(flipGeo, dark);
+    flipL.scale.set(0.6, 1.5, 0.9);
+    flipL.position.set(-0.86, -0.1, 0.02);
+    flipL.rotation.z = 0.28;
+    const flipR = flipL.clone();
+    flipR.position.x = 0.86;
+    flipR.rotation.z = -0.28;
+    g.add(flipL, flipR);
+
+    const footGeo = new THREE.SphereGeometry(0.26, 16, 12);
+    const footL = new THREE.Mesh(footGeo, gold);
+    footL.scale.set(1.2, 0.4, 1.6);
+    footL.position.set(-0.34, -1.28, 0.24);
+    const footR = footL.clone();
+    footR.position.x = 0.34;
+    g.add(footL, footR);
+
+    // floating gold sigil behind the figure
+    const sigil = new THREE.Mesh(new THREE.OctahedronGeometry(0.30, 0), gold);
+    sigil.position.set(0, 1.78, -0.1);
+    g.add(sigil);
+
+    g.scale.setScalar(1.18);
+    return g;
+}
+
+function makeOverpassBadge() {
+    const g = new THREE.Group();
+    const metal = new THREE.MeshStandardMaterial({ color: 0x8fa4b8, roughness: 0.28, metalness: 0.72, flatShading: true });
+    const recess = new THREE.MeshStandardMaterial({ color: 0x2e3945, roughness: 0.5, metalness: 0.4 });
+    const light = new THREE.MeshStandardMaterial({ color: 0xdfeaf5, roughness: 0.3, metalness: 0.55 });
+
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.36, 6), metal);
+    plate.rotation.x = Math.PI / 2;
+    plate.rotation.z = Math.PI / 6;
+    g.add(plate);
+
+    const inner = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.14, 6), recess);
+    inner.rotation.x = Math.PI / 2;
+    inner.rotation.z = Math.PI / 6;
+    inner.position.z = 0.15;
+    g.add(inner);
+
+    // "I"
+    const barGeo = new THREE.BoxGeometry(0.16, 1.02, 0.16);
+    const iBar = new THREE.Mesh(barGeo, light);
+    iBar.position.set(-0.36, 0.02, 0.24);
+    g.add(iBar);
+
+    // "P" — stem + bowl
+    const pStem = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.02, 0.16), light);
+    pStem.position.set(0.16, 0.02, 0.24);
+    g.add(pStem);
+    const pBowl = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.09, 10, 22, Math.PI * 1.5), light);
+    pBowl.position.set(0.42, 0.28, 0.24);
+    pBowl.rotation.z = -Math.PI * 0.25;
+    g.add(pBowl);
+
+    g.scale.setScalar(1.25);
+    return g;
+}
+
+const iceA = new THREE.Group();
+iceA.position.set(0, ICE.A.y, 0);
+scene.add(iceA);
+iceA.add(cavernA);
+
+const iceB = new THREE.Group();
+iceB.position.set(0, ICE.B.y, 0);
+scene.add(iceB);
+iceB.add(cavernB);
+
+const crystalGeoA = makeCrystal(3, 4.5, 2.05);
+const crystalGeoB = makeCrystal(8, 4.9, 2.25);
+
+const crystalA = new THREE.Mesh(crystalGeoA, crystalMat);
+crystalA.renderOrder = 6;
+crystalA.userData.project = 'pudgy';
+iceA.add(crystalA);
+iceA.add(makeWireCage(crystalGeoA, 0xcbe9ff, 54));
+
+const crystalB = new THREE.Mesh(crystalGeoB, crystalMat);
+crystalB.renderOrder = 6;
+crystalB.userData.project = 'overpass';
+iceB.add(crystalB);
+iceB.add(makeWireCage(crystalGeoB, 0xcbe9ff, 54));
+
+const penguin = makePenguin();
+penguin.position.y = -0.15;
+iceA.add(penguin);
+
+const badge = makeOverpassBadge();
+iceB.add(badge);
+
+const pickables = [crystalA, crystalB];
+
+/* ------------------------------------------------------------------ */
+/* 06 — Portal rings + volumetric particle dais                        */
+/* ------------------------------------------------------------------ */
+
+const portal = new THREE.Group();
+portal.position.set(0, -118, 0);
+scene.add(portal);
+portal.add(cavernP);
+
+const ringMetal = new THREE.MeshStandardMaterial({
+    color: 0x8b9cae, roughness: 0.36, metalness: 0.82, flatShading: true
+});
+
+const portalOuter = new THREE.Group();
+const portalInner = new THREE.Group();
+portal.add(portalOuter, portalInner);
+
+{
+    const SEGS = 9;
+    const arc = TAU / SEGS * 0.90;
+    const outerGeo = new THREE.TorusGeometry(4.7, 0.36, 5, 8, arc);
+    const innerGeo = new THREE.TorusGeometry(3.15, 0.22, 5, 8, arc);
+
+    for (let i = 0; i < SEGS; i++) {
+        const a = new THREE.Mesh(outerGeo, ringMetal);
+        a.rotation.z = (i / SEGS) * TAU;
+        portalOuter.add(a);
+
+        const b = new THREE.Mesh(innerGeo, ringMetal);
+        b.rotation.z = (i / SEGS) * TAU + 0.2;
+        portalInner.add(b);
+    }
+    // rings lie flat (horizontal), so the camera reads them face-on from above
+    // before dropping straight through the opening
+    portalOuter.rotation.x = portalInner.rotation.x = -Math.PI / 2;
+}
+
+// glowing inner ring + volumetric center
+const portalGlow = new THREE.Mesh(
+    new THREE.TorusGeometry(2.55, 0.055, 8, 96),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false })
+);
+portal.add(portalGlow);
+portalGlow.rotation.x = -Math.PI / 2;
+
+const portalGlowSoft = new THREE.Mesh(
+    new THREE.RingGeometry(0.0, 2.5, 64),
+    new THREE.MeshBasicMaterial({
+        color: 0xdff6ff, transparent: true, opacity: 0.0,
+        side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending, fog: false
+    })
+);
+portal.add(portalGlowSoft);
+portalGlowSoft.rotation.x = -Math.PI / 2;
+
+// burst of white motes inside the ring
+const burstCount = 700;
+const burstGeo = new THREE.BufferGeometry();
+{
+    const pos = new Float32Array(burstCount * 3);
+    const seed = new Float32Array(burstCount);
+    for (let i = 0; i < burstCount; i++) {
+        const a = Math.random() * TAU;
+        const r = Math.sqrt(Math.random()) * 2.3;
+        pos[i * 3] = Math.cos(a) * r;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 0.5;
+        pos[i * 3 + 2] = Math.sin(a) * r;
+        seed[i] = Math.random();
+    }
+    burstGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    burstGeo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+}
+const burstMat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uPixelRatio: { value: CFG.dpr }, uIntensity: { value: 0 } },
+    vertexShader: `
+        attribute float aSeed;
+        uniform float uPixelRatio, uIntensity;
+        varying float vA;
+        void main() {
+            vec3 p = position * (1.0 + aSeed * 0.35 * uIntensity);
+            vec4 mv = modelViewMatrix * vec4(p, 1.0);
+            gl_Position = projectionMatrix * mv;
+            gl_PointSize = (1.4 + aSeed * 2.4) * uPixelRatio * (10.0 / max(-mv.z, 1.0));
+            vA = (0.25 + aSeed * 0.75) * uIntensity;
+        }
+    `,
+    fragmentShader: `
+        varying float vA;
+        void main() {
+            vec2 c = gl_PointCoord - 0.5;
+            if (length(c) > 0.5) discard;
+            gl_FragColor = vec4(vec3(1.0, 0.98, 0.94), smoothstep(0.5, 0.0, length(c)) * vA);
+        }
+    `
+});
+const burst = new THREE.Points(burstGeo, burstMat);
+portal.add(burst);
+
+/* ---- the dais ---- */
+const dais = new THREE.Group();
+dais.position.set(0, -152, 0);
+scene.add(dais);
+dais.add(cavernD);
+
+const daisLight = new THREE.PointLight(0xfff2de, 3.4, 42, 2);
+daisLight.position.set(0, 8.0, 0);
+dais.add(daisLight);
+
+const daisMetal = new THREE.MeshStandardMaterial({
+    color: 0x232a33, roughness: 0.34, metalness: 0.72,
+    normalMap: metalTex.normal, normalScale: new THREE.Vector2(0.25, 0.25)
+});
+const grooveMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+
+{
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(9.2, 9.5, 0.55, 80), daisMetal);
+    base.position.y = -0.3;
+    dais.add(base);
+
+    const levels = [
+        { r: 6.9, y: -0.03 },
+        { r: 4.5, y: 0.05 },
+        { r: 2.3, y: 0.13 }
+    ];
+    levels.forEach((l) => {
+        const disc = new THREE.Mesh(new THREE.CylinderGeometry(l.r, l.r, 0.16, 72), daisMetal);
+        disc.position.y = l.y;
+        dais.add(disc);
+    });
+
+    [9.2, 6.9, 4.5, 2.3].forEach((radius, i) => {
+        const groove = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.032, 6, 120), grooveMat);
+        groove.rotation.x = -Math.PI / 2;
+        groove.position.y = 0.06 + i * 0.02;
+        dais.add(groove);
+    });
+
+    // radial floor sheen
+    const sheen = new THREE.Mesh(
+        new THREE.RingGeometry(0.4, 9.0, 90, 1),
+        new THREE.ShaderMaterial({
+            transparent: true, depthWrite: false, side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            uniforms: { uTime: timeUniform },
+            vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+            fragmentShader: `
+                uniform float uTime; varying vec2 vUv;
+                void main() {
+                    float a = smoothstep(0.0, 0.16, vUv.y) * (1.0 - smoothstep(0.55, 1.0, vUv.y));
+                    float streak = 0.55 + 0.45 * sin(vUv.x * 42.0 + uTime * 0.4);
+                    gl_FragColor = vec4(vec3(0.72, 0.86, 1.0), a * 0.10 * streak);
+                }
+            `
+        })
+    );
+    sheen.rotation.x = -Math.PI / 2;
+    sheen.position.y = 0.2;
+    dais.add(sheen);
+
+    // overhead halo
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(5.45, 0.055, 8, 120), grooveMat);
+    halo.rotation.x = -Math.PI / 2;
+    halo.position.y = 8.4;
+    dais.add(halo);
+
+    const halo2 = new THREE.Mesh(new THREE.TorusGeometry(5.9, 0.02, 6, 120), grooveMat);
+    halo2.rotation.x = -Math.PI / 2;
+    halo2.position.y = 8.6;
+    dais.add(halo2);
+}
+
+/* ---- volumetric particle figure ---- */
+const pCount = CFG.particleCount;
+const particleGeo = new THREE.BufferGeometry();
+const pPos = new Float32Array(pCount * 3);
+const pVel = new Float32Array(pCount * 3);
+const pCol = new Float32Array(pCount * 3);
+const pSize = new Float32Array(pCount);
+const shapes = [new Float32Array(pCount * 3), new Float32Array(pCount * 3), new Float32Array(pCount * 3)];
+
+const FIG_Y = 3.5;
+
+function samplePenguinFigure(out, i) {
+    const r = Math.random();
+    let x, y, z;
+    if (r < 0.58) {
+        // body ellipsoid
+        const u = Math.random(), v = Math.random();
+        const th = u * TAU, ph = Math.acos(2 * v - 1);
+        const rad = Math.pow(Math.random(), 0.42);
+        x = rad * Math.sin(ph) * Math.cos(th) * 1.35;
+        y = rad * Math.cos(ph) * 1.85;
+        z = rad * Math.sin(ph) * Math.sin(th) * 1.25;
+    } else if (r < 0.84) {
+        // head
+        const u = Math.random(), v = Math.random();
+        const th = u * TAU, ph = Math.acos(2 * v - 1);
+        const rad = Math.pow(Math.random(), 0.4) * 1.05;
+        x = rad * Math.sin(ph) * Math.cos(th);
+        y = rad * Math.cos(ph) + 2.0;
+        z = rad * Math.sin(ph) * Math.sin(th);
+    } else {
+        // flippers / feet
+        const side = Math.random() < 0.5 ? -1 : 1;
+        const rad = Math.pow(Math.random(), 0.5);
+        x = side * (1.35 + rad * 0.5);
+        y = -0.35 + rad * 1.25 - Math.random() * 0.6;
+        z = (Math.random() - 0.5) * 0.55;
+    }
+    out[i * 3] = x;
+    out[i * 3 + 1] = y + FIG_Y;
+    out[i * 3 + 2] = z;
+}
+
+function sampleTorus(out, i) {
+    const th = Math.random() * TAU;
+    const ph = Math.random() * TAU;
+    const rr = 0.62 + Math.pow(Math.random(), 0.6) * 0.42;
+    const R = 2.15;
+    out[i * 3] = (R + rr * Math.cos(ph)) * Math.cos(th);
+    out[i * 3 + 1] = rr * Math.sin(ph) + FIG_Y;
+    out[i * 3 + 2] = (R + rr * Math.cos(ph)) * Math.sin(th);
+}
+
+function sampleX(out, i) {
+    const t = Math.random() * 2 - 1;
+    const taper = Math.pow(Math.abs(t), 1.6);
+    const rad = Math.pow(Math.random(), 0.55) * (0.35 + taper * 1.55);
+    const a = Math.random() * TAU;
+    out[i * 3] = Math.cos(a) * rad;
+    out[i * 3 + 1] = t * 2.3 + FIG_Y;
+    out[i * 3 + 2] = Math.sin(a) * rad;
+}
+
+for (let i = 0; i < pCount; i++) {
+    samplePenguinFigure(shapes[0], i);
+    sampleTorus(shapes[1], i);
+    sampleX(shapes[2], i);
+
+    pPos[i * 3] = shapes[0][i * 3];
+    pPos[i * 3 + 1] = shapes[0][i * 3 + 1];
+    pPos[i * 3 + 2] = shapes[0][i * 3 + 2];
+
+    pCol[i * 3] = 0.23;
+    pCol[i * 3 + 1] = 0.27;
+    pCol[i * 3 + 2] = 0.33;
+
+    pSize[i] = 0.65 + Math.random() * 0.9;
+}
+
+particleGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+particleGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+particleGeo.setAttribute('aSize', new THREE.BufferAttribute(pSize, 1));
+
+const particleMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: {
+        uPixelRatio: { value: CFG.dpr },
+        uGlow: { value: 0 }
+    },
+    vertexShader: `
+        attribute vec3 color;
+        attribute float aSize;
+        uniform float uPixelRatio, uGlow;
+        varying vec3 vColor;
+        void main() {
+            vColor = color;
+            vec4 mv = modelViewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * mv;
+            gl_PointSize = clamp(aSize * 30.0 * uPixelRatio / max(-mv.z, 1.0), 1.0, 9.0);
+        }
+    `,
+    fragmentShader: `
+        varying vec3 vColor;
+        void main() {
+            float d = length(gl_PointCoord - 0.5);
+            if (d > 0.5) discard;
+            float a = smoothstep(0.5, 0.12, d);
+            gl_FragColor = vec4(vColor, a * 0.95);
+        }
+    `
+});
+
+const particleFigure = new THREE.Points(particleGeo, particleMat);
+particleFigure.frustumCulled = false;
+dais.add(particleFigure);

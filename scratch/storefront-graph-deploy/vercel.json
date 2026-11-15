@@ -1,0 +1,88 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1/search/external",
+      "destination": "https://api.rudranil.me/api/v1/search/external"
+    },
+    {
+      "source": "/api/v1/deals/:id/price-history",
+      "destination": "https://api.rudranil.me/api/v1/deals/:id/price-history"
+    },
+    {
+      "source": "/api/v1/deals/public",
+      "destination": "https://api.rudranil.me/api/v1/deals/public"
+    },
+    {
+      "source": "/api/v1/deals/external-search",
+      "destination": "https://api.rudranil.me/api/v1/deals/external-search"
+    },
+    {
+      "source": "/api/v1/deals/stories",
+      "destination": "https://api.rudranil.me/api/v1/deals/stories"
+    },
+    {
+      "source": "/api/v1/deals/wall-of-happiness",
+      "destination": "https://api.rudranil.me/api/v1/deals/wall-of-happiness"
+    },
+    {
+      "source": "/api/v1/deals/analyze-url",
+      "destination": "https://api.rudranil.me/api/v1/deals/analyze-url"
+    },
+    {
+      "source": "/api/v1/deals/lookup",
+      "destination": "https://api.rudranil.me/api/v1/deals/lookup"
+    },
+    {
+      "source": "/api/v1/deals/submit",
+      "destination": "https://api.rudranil.me/api/v1/deals/submit"
+    },
+    {
+      "source": "/api/v1/deals/brag-submit",
+      "destination": "https://api.rudranil.me/api/v1/deals/brag-submit"
+    },
+    {
+      "source": "/api/v1/alerts",
+      "destination": "https://api.rudranil.me/api/v1/alerts"
+    },
+    {
+      "source": "/api/v1/feedback",
+      "destination": "https://api.rudranil.me/api/v1/feedback"
+    },
+    {
+      "source": "/api/v1/search/external",
+      "destination": "https://api.rudranil.me/api/v1/search/external"
+    },
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://api.rudranil.me/api/v1/:path*"
+    },
+    {
+      "source": "/deal-images/:path*",
+      "destination": "https://api.rudranil.me/images/:path*"
+    },
+    {
+      "source": "/feed-fallback/deals",
+      "destination": "https://dealflow-edge.pottemasshippo.workers.dev/deals"
+    },
+    {
+      "source": "/feed-fallback/deals/stories",
+      "destination": "https://dealflow-edge.pottemasshippo.workers.dev/deals/stories"
+    },
+    {
+      "source": "/feed-fallback/deals/wall-of-happiness",
+      "destination": "https://dealflow-edge.pottemasshippo.workers.dev/deals/wall-of-happiness"
+    },
+    {
+      "source": "/out/:id",
+      "destination": "/api/out/:id"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://dealflow-edge.pottemasshippo.workers.dev/sitemap.xml"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

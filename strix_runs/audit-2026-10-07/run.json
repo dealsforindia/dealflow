@@ -1,0 +1,18 @@
+{
+  "run_id": "audit-2026-10-07",
+  "run_name": "audit-2026-10-07",
+  "status": "completed",
+  "start_time": "2026-10-07T19:40:00Z",
+  "end_time": "2026-10-07T20:25:00Z",
+  "target": "http://localhost:5173, https://api.rudranil.me",
+  "targets": [
+    "http://localhost:5173",
+    "https://api.rudranil.me",
+    "rudranil-deals-web",
+    "dealbot_backend",
+    "tg-setup"
+  ],
+  "scan_mode": "standard",
+  "total_vulnerabilities": 5,
+  "total_fixed": 5
+}

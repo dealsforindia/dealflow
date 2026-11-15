@@ -1,0 +1,24 @@
+{
+  "posts": 500,
+  "unique_ids": 500,
+  "threads_fetched": 491,
+  "sampled_comments": 1251,
+  "posts_with_comments": 247,
+  "points_total": 8126,
+  "comments_total_reported": 5843,
+  "median_points": 3.0,
+  "median_comments": 0.0,
+  "min_date": "2026-09-30T18:34:32Z",
+  "max_date": "2026-10-28T03:35:56Z",
+  "linked_posts": 402,
+  "unique_exact_urls": 387,
+  "show_hn": 187,
+  "keyword_flags": {
+    "learning": 132,
+    "employment": 83,
+    "verification": 174,
+    "agents_tools": 331,
+    "cost": 82,
+    "security_ownership": 63
+  }
+}

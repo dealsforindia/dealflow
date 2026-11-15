@@ -1,0 +1,902 @@
+{
+  "folder_sizes": [
+    {
+      "dir": "_archive",
+      "file_count": 390,
+      "size_mb": 248.35
+    },
+    {
+      "dir": "telegram-system",
+      "file_count": 1274,
+      "size_mb": 224.16
+    },
+    {
+      "dir": "tools",
+      "file_count": 5123,
+      "size_mb": 89.76
+    },
+    {
+      "dir": "nilotpal-portfolio-next",
+      "file_count": 94,
+      "size_mb": 57.64
+    },
+    {
+      "dir": "brag-source",
+      "file_count": 343,
+      "size_mb": 44.51
+    },
+    {
+      "dir": "scratch",
+      "file_count": 627,
+      "size_mb": 39.04
+    },
+    {
+      "dir": ".claude",
+      "file_count": 76,
+      "size_mb": 21.66
+    },
+    {
+      "dir": ".github",
+      "file_count": 65,
+      "size_mb": 21.63
+    },
+    {
+      "dir": "output",
+      "file_count": 217,
+      "size_mb": 17.51
+    },
+    {
+      "dir": "nis-graphics-frame",
+      "file_count": 80,
+      "size_mb": 11.35
+    },
+    {
+      "dir": "dealflow-remotion",
+      "file_count": 156,
+      "size_mb": 10.91
+    },
+    {
+      "dir": "zero-university-2026",
+      "file_count": 47,
+      "size_mb": 9.78
+    },
+    {
+      "dir": "brag-output",
+      "file_count": 32,
+      "size_mb": 9.59
+    },
+    {
+      "dir": "nilotpal-saha-portfolio",
+      "file_count": 20,
+      "size_mb": 7.96
+    },
+    {
+      "dir": "aarav-singh-portfolio",
+      "file_count": 19,
+      "size_mb": 7.78
+    },
+    {
+      "dir": "design-concepts",
+      "file_count": 28,
+      "size_mb": 4.03
+    },
+    {
+      "dir": "jev-ultrafast",
+      "file_count": 41,
+      "size_mb": 2.44
+    },
+    {
+      "dir": "mindflow",
+      "file_count": 101,
+      "size_mb": 2.29
+    },
+    {
+      "dir": "dealflow",
+      "file_count": 127,
+      "size_mb": 2.25
+    },
+    {
+      "dir": "india-estate",
+      "file_count": 114,
+      "size_mb": 0.68
+    },
+    {
+      "dir": "fast-jev-compaction",
+      "file_count": 26,
+      "size_mb": 0.59
+    },
+    {
+      "dir": "scripts",
+      "file_count": 10,
+      "size_mb": 0.38
+    },
+    {
+      "dir": "commerce_engine_v2",
+      "file_count": 34,
+      "size_mb": 0.18
+    },
+    {
+      "dir": "agent",
+      "file_count": 9,
+      "size_mb": 0.07
+    },
+    {
+      "dir": "ai-smart-mirror",
+      "file_count": 4,
+      "size_mb": 0.05
+    },
+    {
+      "dir": ".agents",
+      "file_count": 13,
+      "size_mb": 0.03
+    },
+    {
+      "dir": ".opencode",
+      "file_count": 11,
+      "size_mb": 0.03
+    },
+    {
+      "dir": "ludo-2026",
+      "file_count": 3,
+      "size_mb": 0.03
+    },
+    {
+      "dir": ".planning",
+      "file_count": 5,
+      "size_mb": 0.02
+    },
+    {
+      "dir": ".impeccable",
+      "file_count": 2,
+      "size_mb": 0.01
+    },
+    {
+      "dir": "strix_runs",
+      "file_count": 11,
+      "size_mb": 0.01
+    },
+    {
+      "dir": ".codex",
+      "file_count": 1,
+      "size_mb": 0.0
+    },
+    {
+      "dir": ".freebuff",
+      "file_count": 1,
+      "size_mb": 0.0
+    },
+    {
+      "dir": ".kilo",
+      "file_count": 1,
+      "size_mb": 0.0
+    },
+    {
+      "dir": ".vscode",
+      "file_count": 1,
+      "size_mb": 0.0
+    },
+    {
+      "dir": "graphify-out",
+      "file_count": 1,
+      "size_mb": 0.0
+    },
+    {
+      "dir": "security-audit-run-2026-11-04",
+      "file_count": 0,
+      "size_mb": 0.0
+    }
+  ],
+  "secrets_audit": {
+    "scanned_files": 8466,
+    "scanned_mb": 157.94,
+    "secret_findings": [
+      {
+        "file": "SECURITY-ROTATION-RUNBOOK.md",
+        "type": "MongoDB Atlas URI with creds",
+        "preview": "mong...ster"
+      },
+      {
+        "file": "scratch\\deep_workspace_audit.py",
+        "type": "Redis URI with auth",
+        "preview": "redi...^\\s\\"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env",
+        "type": "Google API Key",
+        "preview": "AIza...KmwA"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env",
+        "type": "OpenAI Key",
+        "preview": "sk-4...xfn4"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env",
+        "type": "Groq Key",
+        "preview": "gsk_...UXW3"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env",
+        "type": "Groq Key",
+        "preview": "gsk_...EhwG"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env",
+        "type": "Groq Key",
+        "preview": "gsk_...R96V"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env",
+        "type": "Cerebras Key",
+        "preview": "csk-...xfn4"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env",
+        "type": "MongoDB Atlas URI with creds",
+        "preview": "mong...ster"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env",
+        "type": "Telegram Bot Token",
+        "preview": "8622...G_Iw"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.localbak",
+        "type": "Google API Key",
+        "preview": "AIza...KmwA"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.localbak",
+        "type": "OpenAI Key",
+        "preview": "sk-4...xfn4"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.localbak",
+        "type": "Groq Key",
+        "preview": "gsk_...UXW3"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.localbak",
+        "type": "Groq Key",
+        "preview": "gsk_...EhwG"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.localbak",
+        "type": "Groq Key",
+        "preview": "gsk_...R96V"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.localbak",
+        "type": "Cerebras Key",
+        "preview": "csk-...xfn4"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.localbak",
+        "type": "MongoDB Atlas URI with creds",
+        "preview": "mong...ster"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.localbak",
+        "type": "Telegram Bot Token",
+        "preview": "8622...G_Iw"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm",
+        "type": "Google API Key",
+        "preview": "AIza...KmwA"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm",
+        "type": "OpenAI Key",
+        "preview": "sk-4...xfn4"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm",
+        "type": "Groq Key",
+        "preview": "gsk_...UXW3"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm",
+        "type": "Groq Key",
+        "preview": "gsk_...EhwG"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm",
+        "type": "Groq Key",
+        "preview": "gsk_...R96V"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm",
+        "type": "Cerebras Key",
+        "preview": "csk-...xfn4"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm",
+        "type": "MongoDB Atlas URI with creds",
+        "preview": "mong...ster"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm",
+        "type": "Telegram Bot Token",
+        "preview": "8622...G_Iw"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm.localbak",
+        "type": "Google API Key",
+        "preview": "AIza...KmwA"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm.localbak",
+        "type": "OpenAI Key",
+        "preview": "sk-4...xfn4"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm.localbak",
+        "type": "Groq Key",
+        "preview": "gsk_...UXW3"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm.localbak",
+        "type": "Groq Key",
+        "preview": "gsk_...EhwG"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm.localbak",
+        "type": "Groq Key",
+        "preview": "gsk_...R96V"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm.localbak",
+        "type": "Cerebras Key",
+        "preview": "csk-...xfn4"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm.localbak",
+        "type": "MongoDB Atlas URI with creds",
+        "preview": "mong...ster"
+      },
+      {
+        "file": "telegram-system\\dealbot_backend\\dealbot\\.env.vm.localbak",
+        "type": "Telegram Bot Token",
+        "preview": "8622...G_Iw"
+      },
+      {
+        "file": "tools\\graphify\\graphify\\security.py",
+        "type": "Redis URI with auth",
+        "preview": "redi...st`)"
+      },
+      {
+        "file": "tools\\graphify\\tests\\test_security.py",
+        "type": "AWS Key",
+        "preview": "AKIA...MPLE"
+      },
+      {
+        "file": "tools\\graphify\\tests\\test_security.py",
+        "type": "AWS Key",
+        "preview": "AKIA...MPLE"
+      },
+      {
+        "file": "tools\\graphify\\tests\\test_security.py",
+        "type": "Redis URI with auth",
+        "preview": "redi...rnal"
+      },
+      {
+        "file": "tools\\graphify\\tests\\test_security.py",
+        "type": "Private Key",
+        "preview": "----...----"
+      },
+      {
+        "file": "tools\\graphify\\tests\\test_security.py",
+        "type": "Slack Token",
+        "preview": "xoxb...7890"
+      }
+    ]
+  },
+  "large_files_over_5mb": [
+    {
+      "file": "_archive\\learning\\html-css\\twogood\\video.mp4",
+      "size_mb": 78.7
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\boy-meditating-bed.jpg",
+      "size_mb": 20.97
+    },
+    {
+      "file": "tools\\agent-desktop\\assets\\Videos\\Muse using agent-desktop.mp4",
+      "size_mb": 20.71
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\sideview-groupmates-looking-camera-sitting-university.jpg",
+      "size_mb": 20.43
+    },
+    {
+      "file": ".claude\\skills\\impeccable\\scripts\\bin\\windows-x64\\impeccable.exe",
+      "size_mb": 19.49
+    },
+    {
+      "file": ".github\\skills\\impeccable\\scripts\\bin\\windows-x64\\impeccable.exe",
+      "size_mb": 19.49
+    },
+    {
+      "file": "telegram-system\\rudranil-deals-web\\.agents\\skills\\impeccable\\scripts\\bin\\windows-x64\\impeccable.exe",
+      "size_mb": 19.49
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\indian-yogi-sitting-holding-feet-together-gym.jpg",
+      "size_mb": 15.04
+    },
+    {
+      "file": "scratch\\full_deploy_payload.json",
+      "size_mb": 14.46
+    },
+    {
+      "file": "nilotpal-portfolio-next\\public\\assets\\etutor.jpg",
+      "size_mb": 13.99
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\serious-students-using-tablet-discussing-information.jpg",
+      "size_mb": 12.17
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\diverse-group-students-walking-school.jpg",
+      "size_mb": 11.86
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\teen-girl-education-studio-with-copy-space-teen-girl-education-school.jpg",
+      "size_mb": 11.77
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\smiling-young-female-teacher-wearing-glasses-standing-front-blackboard-points-blackboard-with-pointer-classroom.jpg",
+      "size_mb": 9.42
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\3d-landscape-with-balancing-pebbles-ocean.jpg",
+      "size_mb": 9.32
+    },
+    {
+      "file": "tools\\agent-desktop\\assets\\Videos\\Codex using agent-desktop.mp4",
+      "size_mb": 8.66
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\doctor-offering-medical-teleconsultation.jpg",
+      "size_mb": 8.65
+    },
+    {
+      "file": "_archive\\learning\\html-css\\amazon-clone\\Math_Sem_5_2024.zip",
+      "size_mb": 8.41
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\businesswoman-working-from-home-using-tablet-late-night.jpg",
+      "size_mb": 7.24
+    },
+    {
+      "file": "tools\\graphify\\docs\\discord-banner.png",
+      "size_mb": 6.3
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\meditation.jpg",
+      "size_mb": 5.7
+    },
+    {
+      "file": "_archive\\college\\nis\\images\\woman-streaming-online-webinar-training-night-from-home-remote-worker-having-online-meeting-video-conference-consulting-with-colleagues-using-videocall-webcam-chat-working-front-laptop.jpg",
+      "size_mb": 5.03
+    }
+  ],
+  "package_json_health": [
+    {
+      "path": "package.json",
+      "name": "unnamed",
+      "dependencies": 1,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "brag-output\\composition\\package.json",
+      "name": "composition",
+      "dependencies": 0,
+      "has_node_modules": false,
+      "lockfile": "NONE"
+    },
+    {
+      "path": "dealflow-remotion\\package.json",
+      "name": "dealflow-remotion",
+      "dependencies": 11,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "fast-jev-compaction\\package.json",
+      "name": "fast-jev-compaction",
+      "dependencies": 4,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "india-estate\\package.json",
+      "name": "india-estate",
+      "dependencies": 77,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "nilotpal-portfolio-next\\package.json",
+      "name": "nilotpal-portfolio-next",
+      "dependencies": 12,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "scratch\\storefront-graph-deploy\\package.json",
+      "name": "rudranil-deals-web",
+      "dependencies": 13,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "telegram-system\\dealflow-edge\\package.json",
+      "name": "dealflow-edge",
+      "dependencies": 3,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "telegram-system\\rudranil-deals-web\\package.json",
+      "name": "rudranil-deals-web",
+      "dependencies": 15,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "telegram-system\\tg-setup\\package.json",
+      "name": "@figma/my-make-file",
+      "dependencies": 61,
+      "has_node_modules": true,
+      "lockfile": "npm"
+    },
+    {
+      "path": "telegram-system\\tg-setup\\dealflow\\video-remotion\\package.json",
+      "name": "dealflow-remotion",
+      "dependencies": 9,
+      "has_node_modules": false,
+      "lockfile": "NONE"
+    },
+    {
+      "path": "tools\\agent-desktop\\apps\\docs\\package.json",
+      "name": "agent-desktop",
+      "dependencies": 41,
+      "has_node_modules": false,
+      "lockfile": "pnpm"
+    },
+    {
+      "path": "tools\\agent-desktop\\npm\\package.json",
+      "name": "agent-desktop",
+      "dependencies": 0,
+      "has_node_modules": false,
+      "lockfile": "NONE"
+    },
+    {
+      "path": "tools\\graphify\\graphify\\pi\\package.json",
+      "name": "graphify-pi",
+      "dependencies": 0,
+      "has_node_modules": false,
+      "lockfile": "NONE"
+    },
+    {
+      "path": "tools\\superpowers\\package.json",
+      "name": "superpowers",
+      "dependencies": 0,
+      "has_node_modules": false,
+      "lockfile": "NONE"
+    },
+    {
+      "path": "tools\\superpowers\\tests\\brainstorm-server\\package.json",
+      "name": "brainstorm-server-tests",
+      "dependencies": 1,
+      "has_node_modules": false,
+      "lockfile": "npm"
+    }
+  ],
+  "python_configs": [
+    "brag-source\\brag-main\\skills\\brag\\scripts\\pyproject.toml",
+    "commerce_engine_v2\\pyproject.toml",
+    "dealflow\\video-engine\\requirements.txt",
+    "jev-ultrafast\\pyproject.toml",
+    "telegram-system\\tg-setup\\dealflow\\video-engine\\requirements.txt",
+    "tools\\graphify\\pyproject.toml",
+    "_archive\\skills\\brag\\scripts\\pyproject.toml"
+  ],
+  "broken_cross_references": [
+    {
+      "file": ".impeccable\\config.json",
+      "matches": [
+        "\"rudranil-deals-web/src/emerald.css\"",
+        "\"rudranil-deals-web/src/emerald.css\"",
+        "\"rudranil-deals-web/src/emerald.css\""
+      ]
+    },
+    {
+      "file": "output\\unslop-audit\\finish_copy.py",
+      "matches": [
+        "'rudranil-deals-web/src'"
+      ]
+    },
+    {
+      "file": "scratch\\audit_routes_auth.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\""
+      ]
+    },
+    {
+      "file": "scratch\\bump_micro_fonts.py",
+      "matches": [
+        "'rudranil-deals-web/src/components/CommandPalette.tsx'",
+        "'rudranil-deals-web/src/components/StoryModal.tsx'",
+        "'rudranil-deals-web/src/components/DealDetailModal.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\compare_api_md5.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\""
+      ]
+    },
+    {
+      "file": "scratch\\deep_workspace_audit.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/\""
+      ]
+    },
+    {
+      "file": "scratch\\deploy_harvester_and_fixes.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/amazon_direct_harvester.py\"",
+        "\"dealbot_backend/dealbot/desidime_bot.py\"",
+        "\"dealbot_backend/dealbot/worker.py\""
+      ]
+    },
+    {
+      "file": "scratch\\deploy_to_vm.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\"",
+        "\"dealbot_backend/dealbot/oos_expiry_worker.py\"",
+        "\"dealbot_backend/dealbot/store_scraper.py\""
+      ]
+    },
+    {
+      "file": "scratch\\diff_api.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\""
+      ]
+    },
+    {
+      "file": "scratch\\download_vm_api.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\""
+      ]
+    },
+    {
+      "file": "scratch\\find_lookup_lines.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\""
+      ]
+    },
+    {
+      "file": "scratch\\fix_quote.py",
+      "matches": [
+        "'dealbot_backend/dealbot/deal_clusterer.py'"
+      ]
+    },
+    {
+      "file": "scratch\\fix_title.py",
+      "matches": [
+        "'dealbot_backend/dealbot/deal_clusterer.py'"
+      ]
+    },
+    {
+      "file": "scratch\\list_channels.py",
+      "matches": [
+        "'dealbot_backend/dealbot/channel_aliases.py'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_api.py",
+      "matches": [
+        "'dealbot_backend/dealbot/api.py'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_api_coupons.py",
+      "matches": [
+        "'dealbot_backend/dealbot/api.py'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_app_deep_links.py",
+      "matches": [
+        "'rudranil-deals-web/src/App.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_app_tsx.py",
+      "matches": [
+        "'tg-setup/src/app/App.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_app_tsx_stage2.py",
+      "matches": [
+        "'tg-setup/src/app/App.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_clusterer.py",
+      "matches": [
+        "'dealbot_backend/dealbot/deal_clusterer.py'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_command_palette.py",
+      "matches": [
+        "'rudranil-deals-web/src/components/CommandPalette.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_detail_modal.py",
+      "matches": [
+        "'rudranil-deals-web/src/components/DealDetailModal.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_profile_e35_e38.py",
+      "matches": [
+        "'rudranil-deals-web/src/components/ProfilePage.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_store_scraper_e44_e46.py",
+      "matches": [
+        "'dealbot_backend/dealbot/store_scraper.py'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_stories_budget.py",
+      "matches": [
+        "'rudranil-deals-web/src/components/CategoryStories.tsx'",
+        "'rudranil-deals-web/src/App.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_story_modal.py",
+      "matches": [
+        "'rudranil-deals-web/src/components/StoryModal.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_tg_setup.py",
+      "matches": [
+        "'tg-setup/src/app/App.tsx'",
+        "'tg-setup/src/app/App.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\patch_vocabulary.py",
+      "matches": [
+        "'rudranil-deals-web/src/components/SavedLootPage.tsx'",
+        "'rudranil-deals-web/src/components/IntelligenceWorkspace.tsx'",
+        "'rudranil-deals-web/src/components/TrustStrip.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\python-source-inventory.json",
+      "matches": [
+        "\"dealbot_backend/analyze_gshop.py\"",
+        "\"dealbot_backend/check_counts.py\"",
+        "\"dealbot_backend/check_deal.py\""
+      ]
+    },
+    {
+      "file": "scratch\\read_vm_python_inventory.py",
+      "matches": [
+        "'dealbot_backend/dealbot/'",
+        "'dealbot_backend/dealbot/'"
+      ]
+    },
+    {
+      "file": "scratch\\run_comprehensive_security_suite.py",
+      "matches": [
+        "\"rudranil-deals-web/dist\"",
+        "\"tg-setup/dist\""
+      ]
+    },
+    {
+      "file": "scratch\\stop_autopost.py",
+      "matches": [
+        "\"dealbot_backend/.env\""
+      ]
+    },
+    {
+      "file": "scratch\\sync_local_api.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\""
+      ]
+    },
+    {
+      "file": "scratch\\system_review_probes.py",
+      "matches": [
+        "'dealbot_backend/dealbot/api.py'",
+        "'dealbot_backend/dealbot/worker.py'"
+      ]
+    },
+    {
+      "file": "scratch\\test_clustering_and_fixes.py",
+      "matches": [
+        "'dealbot_backend/dealbot'"
+      ]
+    },
+    {
+      "file": "scratch\\test_multi_option_parsing.py",
+      "matches": [
+        "'dealbot_backend/dealbot/api.py'"
+      ]
+    },
+    {
+      "file": "scratch\\test_tricks.py",
+      "matches": [
+        "'dealbot_backend/dealbot/.env'"
+      ]
+    },
+    {
+      "file": "scratch\\update_compare_app.py",
+      "matches": [
+        "'rudranil-deals-web/src/App.tsx'",
+        "'rudranil-deals-web/src/App.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\update_spec_modal.py",
+      "matches": [
+        "'rudranil-deals-web/src/components/ProductSpecCompareModal.tsx'"
+      ]
+    },
+    {
+      "file": "scratch\\upload_api.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\""
+      ]
+    },
+    {
+      "file": "scratch\\upload_b64.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\""
+      ]
+    },
+    {
+      "file": "scratch\\upload_backend.py",
+      "matches": [
+        "'dealbot_backend/dealbot/stealth_fetcher.py'",
+        "'dealbot_backend/dealbot/universal_store_engine.py'",
+        "'dealbot_backend/dealbot/store_scraper.py'"
+      ]
+    },
+    {
+      "file": "scratch\\upload_worker.py",
+      "matches": [
+        "\"dealbot_backend/dealbot/worker.py\""
+      ]
+    },
+    {
+      "file": "scratch\\visitor-metrics\\test_backend.py",
+      "matches": [
+        "'dealbot_backend/dealbot/api.py'"
+      ]
+    },
+    {
+      "file": "strix_runs\\audit-2026-10-07\\vulnerabilities.json",
+      "matches": [
+        "\"dealbot_backend/dealbot/api.py\"",
+        "\"dealbot_backend/dealbot/api.py\"",
+        "\"rudranil-deals-web/package-lock.json\""
+      ]
+    }
+  ]
+}

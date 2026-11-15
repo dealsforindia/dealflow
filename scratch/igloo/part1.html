@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Igloo Inc.</title>
+<meta name="description" content="Scroll-driven WebGL reconstruction of the Igloo Inc. experience: fractured igloo hover physics, refractive ice blocks, segmented portal rings and a volumetric particle dais.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+    :root {
+        --bg: #0d0f13;
+        --ink: #f2f5f9;
+        --dim: #7b848f;
+        --dim-2: #4e565f;
+        --accent: #9fe8ff;
+        --navy: #070b12;
+        --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --pad: 30px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--mono);
+        -webkit-font-smoothing: antialiased;
+        cursor: default;
+    }
+
+    body.dragging { cursor: grabbing; }
+
+    canvas { display: block; }
+
+    #gl {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    #hud {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    /* ---------- HUD scrims ---------- */
+    /* The arctic surface is bright; these keep the fixed type legible
+       without dimming the actual 3D frame. */
+
+    .scrim {
+        position: fixed;
+        left: 0;
+        right: 0;
+        z-index: 3;
+        pointer-events: none;
+        opacity: 1;
+        transition: opacity 0.9s ease;
+    }
+
+    .scrim-top {
+        top: 0;
+        height: 34vh;
+        background:
+            linear-gradient(to bottom,
+                rgba(3, 7, 13, 0.62) 0%,
+                rgba(3, 7, 13, 0.38) 34%,
+                rgba(3, 7, 13, 0.14) 68%,
+                rgba(3, 7, 13, 0) 100%);
+    }
+
+    .scrim-bottom {
+        bottom: 0;
+        height: 30vh;
+        background:
+            linear-gradient(to top,
+                rgba(3, 7, 13, 0.66) 0%,
+                rgba(3, 7, 13, 0.40) 38%,
+                rgba(3, 7, 13, 0.14) 72%,
+                rgba(3, 7, 13, 0) 100%);
+    }
+
+    /* ---------- persistent HUD ---------- */
+
+    .hud {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        pointer-events: none;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        padding: var(--pad) calc(var(--pad) + 4px);
+    }
+
+    .hud-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 40px;
+    }
+
+    .brand { display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+
+    .wordmark {
+        font-family: var(--sans);
+        font-weight: 800;
+        font-size: 21px;
+        letter-spacing: 2.4px;
+        line-height: 1;
+        color: #fff;
+        text-shadow: 0 1px 14px rgba(4, 10, 18, 0.6), 0 0 2px rgba(4, 10, 18, 0.5);
+        transition: text-shadow 0.7s ease, opacity 0.5s ease;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .wordmark.bright {
+        text-shadow: 0 0 20px rgba(190, 236, 255, 0.95), 0 0 48px rgba(255, 255, 255, 0.6);
+    }
+
+    .copyright {
+        font-size: 10px;
+        line-height: 1.65;
+        letter-spacing: 0.4px;
+        color: var(--dim);
+        white-space: pre-line;
+        cursor: pointer;
+        text-shadow: 0 1px 10px rgba(2, 6, 12, 0.75);
+        transition: color 0.3s ease, opacity 0.6s ease;
+    }
+
+    .copyright:hover { color: #cdd5df; }
+
+    .manifesto {
+        max-width: 330px;
+        text-align: right;
+        pointer-events: auto;
+        transition: opacity 0.6s ease;
+    }
+
+    .manifesto-head {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 1.4px;
+        color: #fff;
+        margin-bottom: 6px;
+        text-shadow: 0 1px 10px rgba(2, 6, 12, 0.75);
+    }
+
+    .manifesto-body {
+        font-size: 10px;
+        line-height: 1.8;
+        letter-spacing: 0.35px;
+        color: var(--dim);
+        white-space: pre-line;
+        text-shadow: 0 1px 10px rgba(2, 6, 12, 0.75);
+        transition: color 0.3s ease;
+        cursor: pointer;
+    }
+
+    .manifesto-body:hover { color: #cbd4de; }
+
+    .hud-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+    }
+
+    .bottom-left { display: flex; flex-direction: column; gap: 14px; pointer-events: auto; }
+
+    .scroll-prompt {
+        font-size: 10px;
+        letter-spacing: 0.9px;
+        color: #aab4c0;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        text-shadow: 0 1px 10px rgba(2, 6, 12, 0.75);
+        transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+
+    .scroll-prompt .tick {
+        display: inline-block;
+        width: 16px;
+        height: 1px;
+        background: currentColor;
+        opacity: 0.6;
+        animation: tick 2.4s ease-in-out infinite;
+    }
+
+    @keyframes tick {
+        0%, 100% { transform: translateY(-2px); opacity: 0.25; }
+        50% { transform: translateY(2px); opacity: 0.85; }
+    }
+
+    .scroll-prompt.hidden { opacity: 0; transform: translateY(6px); pointer-events: none; }
+
+    .sound-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: none;
+        border: 0;
+        padding: 2px 0;
+        color: #e8edf4;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.9px;
+        cursor: pointer;
+        text-shadow: 0 1px 10px rgba(2, 6, 12, 0.75);
+        transition: color 0.2s ease;
+    }
+
+    .sound-toggle:hover { color: var(--accent); }
+    .sound-toggle svg { width: 13px; height: 13px; display: block; }
+    .sound-toggle .wave { transition: opacity 0.25s ease; }
+    .sound-toggle.off .wave { opacity: 0; }
+    .sound-toggle.off .slash { opacity: 1; }
+    .sound-toggle .slash { opacity: 0; transition: opacity 0.25s ease; }
+
+    .stage-label {
+        font-size: 10px;
+        letter-spacing: 1.2px;
+        color: var(--dim-2);
+        text-align: right;
+        text-shadow: 0 1px 10px rgba(2, 6, 12, 0.75);
+        transition: opacity 0.5s ease;
+    }
+
+    .stage-label b { color: #b9c3ce; font-weight: 500; }
+
+    /* ---------- scene rail ---------- */
+
+    .scene-nav {
+        position: fixed;
+        left: 50%;
+        bottom: 26px;
+        transform: translate(-50%, 130%);
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 5px;
+        border-radius: 30px;
+        background: rgba(11, 15, 21, 0.72);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.2, 1), opacity 0.4s ease;
+    }
+
+    .scene-nav.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+
+    .nav-pill {
+        position: relative;
+        background: none;
+        border: 0;
+        border-radius: 20px;
+        color: #78828d;
+        font-family: var(--mono);
+        font-size: 9.5px;
+        letter-spacing: 0.6px;
+        padding: 6px 11px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: color 0.25s ease, background 0.25s ease;
+    }
+
+    .nav-pill:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+    .nav-pill.active { color: #fff; background: rgba(255, 255, 255, 0.13); }
+    .nav-pill .num { color: var(--dim-2); margin-right: 5px; font-size: 8.5px; }
+    .nav-pill.active .num { color: var(--accent); }
+
+    /* ---------- preloader ---------- */
+
+    #preloader {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: #111316;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.9s ease;
+    }
+
+    #preloader.gone { opacity: 0; pointer-events: none; }
+
+    #preloader-ascii {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 7px;
+        color: #b9c0c9;
+        transform: translateX(3px);
+    }
+
+    /* ---------- modal ---------- */
+
+    #modal {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+    }
+
+    #modal.active { opacity: 1; pointer-events: auto; }
+
+    .modal-scrim {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(120% 90% at 50% 40%, rgba(8, 13, 22, 0.55) 0%, rgba(5, 8, 14, 0.93) 62%, rgba(3, 5, 9, 0.985) 100%);
+        backdrop-filter: blur(7px) saturate(115%);
+        -webkit-backdrop-filter: blur(7px) saturate(115%);
+    }
+
+    .modal-inner {
+        position: relative;
+        width: min(660px, calc(100vw - 64px));
+        max-height: 76vh;
+        overflow-y: auto;
+        padding: 4px 6px 10px;
+        transform: translateY(14px);
+        transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,.16) transparent;
+    }
+
+    #modal.active .modal-inner { transform: translateY(0); }
+
+    .modal-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 14px;
+        margin-bottom: 26px;
+    }
+
+    .modal-kicker {
+        font-size: 10px;
+        letter-spacing: 1.8px;
+        color: var(--accent);
+        padding-top: 6px;
+    }
+
+    .modal-kicker span { color: var(--dim-2); }
+
+    .close-btn {
+        position: relative;
+        background: none;
+        border: 0;
+        color: #dfe7f0;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        padding: 7px 13px;
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .close-btn:hover { color: var(--accent); }
+
+    .br { position: absolute; font-size: 11px; color: rgba(255, 255, 255, 0.55); line-height: 1; pointer-events: none; }
+    .br.tl { top: 0; left: 0; }
+    .br.tr { top: 0; right: 0; }
+    .br.bl { bottom: 0; left: 0; }
+    .br.br2 { bottom: 0; right: 0; }
+
+    .close-btn:hover .br { color: var(--accent); }
+
+    .modal-title {
+        font-family: var(--sans);
+        font-size: 27px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        color: #fff;
+        margin-bottom: 20px;
+    }
+
+    .modal-meta {
+        display: flex;
+        gap: 22px;
+        font-size: 9.5px;
+        letter-spacing: 1.1px;
+        color: var(--dim-2);
+        margin-bottom: 24px;
+        text-transform: uppercase;
+    }
+
+    .modal-meta b { color: #b6c1cd; font-weight: 500; }
+
+    .modal-body {
+        font-size: 12.5px;
+        line-height: 2;
+        letter-spacing: 0.15px;
+        color: #cbd5e1;
+        white-space: pre-line;
+        margin-bottom: 32px;
+        min-height: 120px;
+    }
+
+    .modal-discover {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 18px;
+    }
+
+    .modal-discover .label {
+        font-size: 10px;
+        letter-spacing: 1.6px;
+        color: var(--dim);
+    }
+
+    .ext-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        color: #eaf1f8;
+        font-size: 10px;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .ext-link:hover { color: var(--accent); }
+    .ext-link:hover .br { color: var(--accent); }
+
+    /* ---------- dais links (floor nav hint) ---------- */
+
+    .dais-links {
+        position: fixed;
+        left: 50%;
+        bottom: 108px;
+        transform: translate(-50%, 10px);
+        display: flex;
+        gap: 4px;
+        z-index: 12;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .dais-links.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+
+    .dais-link {
+        background: none;
+        border: 0;
+        color: #6d7681;
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 1.1px;
+        padding: 6px 14px;
+        cursor: pointer;
+        position: relative;
+        transition: color 0.25s ease;
+    }
+
+    .dais-link:hover { color: #dfe8f2; }
+    .dais-link.active { color: #fff; }
+    .dais-link.active::before { content: '┌'; position: absolute; left: 0; top: 1px; font-size: 10px; opacity: 0.75; }
+    .dais-link.active::after { content: '┐'; position: absolute; right: 0; top: 1px; font-size: 10px; opacity: 0.75; }
+    .dais-link.active .bl { position: absolute; left: 0; bottom: 0; font-size: 10px; opacity: 0.75; }
+    .dais-link.active .brr { position: absolute; right: 0; bottom: 0; font-size: 10px; opacity: 0.75; }
+
+    .dais-arrow {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 12;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: 0;
+        color: #8d97a3;
+        font-family: var(--mono);
+        font-size: 15px;
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease, color 0.2s ease;
+    }
+
+    .dais-arrow.on { opacity: 1; pointer-events: auto; }
+    .dais-arrow:hover { color: #fff; }
+    #dais-prev { left: 22px; }
+    #dais-next { right: 22px; }
+
+    .hint {
+        position: fixed;
+        top: calc(var(--pad) + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 11;
+        font-size: 9px;
+        letter-spacing: 1.6px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.26);
+        pointer-events: none;
+        transition: opacity 0.6s ease;
+    }
+
+    @media (max-width: 820px) {
+        :root { --pad: 18px; }
+        .manifesto { max-width: 210px; }
+        .wordmark { font-size: 18px; }
+        .manifesto-body, .copyright { font-size: 9px; }
+        .modal-title { font-size: 22px; }
+        .scene-nav { bottom: 16px; }
+        .nav-pill { padding: 5px 8px; font-size: 9px; }
+        .dais-links { bottom: 92px; }
+    }
+
+    @media (hover: none) {
+        .scene-nav { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+    }
+
+    /* prismatic shard flare on loop reset */
+    #flare {
+        position: fixed;
+        inset: -10%;
+        z-index: 60;
+        pointer-events: none;
+        opacity: 0;
+        mix-blend-mode: screen;
+        background:
+            conic-gradient(from 210deg at 50% 38%,
+                rgba(255, 90, 160, 0.55) 0deg,
+                rgba(255, 210, 90, 0.55) 42deg,
+                rgba(120, 255, 200, 0.5) 96deg,
+                rgba(90, 190, 255, 0.65) 150deg,
+                rgba(190, 120, 255, 0.5) 214deg,
+                rgba(255, 255, 255, 0.75) 268deg,
+                rgba(255, 90, 160, 0.55) 360deg),
+            radial-gradient(60% 50% at 50% 34%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.15) 40%, transparent 72%);
+        filter: blur(26px) saturate(150%);
+        transition: opacity 0.45s ease;
+    }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="hud"></canvas>
+
+<div id="preloader"><div id="preloader-ascii">=+==--==++</div></div>
+<div id="flare"></div>
+
+<div class="scrim scrim-top"></div>
+<div class="scrim scrim-bottom"></div>
+
+<header class="hud hud-top">
+    <div class="brand">
+        <div class="wordmark" id="wordmark" title="Igloo Inc.">IGLOO</div>
+        <div class="copyright" id="copyright" title="Click to scramble">// Copyright © 2026
+Igloo, Inc. All Rights Reserved.</div>
+    </div>
+    <div class="manifesto">
+        <div class="manifesto-head" id="manifesto-head">///// Manifesto</div>
+        <div class="manifesto-body" id="manifesto-body" title="Hover to scramble">Our mission is to build the next generation of consumer brands at the intersection of Community, AI, and crypto.</div>
+    </div>
+</header>
+
+<footer class="hud hud-bottom">
+    <div class="bottom-left">
+        <div class="scroll-prompt" id="scroll-prompt"><span class="tick"></span>Scroll down to discover.</div>
+        <button class="sound-toggle" id="sound-btn" aria-pressed="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="10 5 5 9 2 9 2 15 5 15 10 19 10 5"></polygon>
+                <path class="wave" d="M14.5 8.6a5 5 0 0 1 0 6.8"></path>
+                <path class="slash" d="M15 6.5 9 17.5"></path>
+            </svg>
+            <span id="sound-label">Sound: On</span>
+        </button>
+    </div>
+    <div class="stage-label" id="stage-label"><b>01</b> — Igloo</div>
+</footer>
+
+<nav class="scene-nav" id="scene-nav" aria-label="Scene navigation">
+    <button class="nav-pill" data-scene="0"><span class="num">01</span>Intro</button>
+    <button class="nav-pill active" data-scene="1"><span class="num">02</span>Igloo</button>
+    <button class="nav-pill" data-scene="2"><span class="num">03</span>Pudgy</button>
+    <button class="nav-pill" data-scene="3"><span class="num">04</span>Overpass</button>
+    <button class="nav-pill" data-scene="4"><span class="num">05</span>Portal</button>
+    <button class="nav-pill" data-scene="5"><span class="num">06</span>Dais</button>
+    <button class="nav-pill" data-scene="6"><span class="num">07</span>Loop</button>
+</nav>
+
+<button class="dais-arrow" id="dais-prev" aria-label="Previous figure">‹</button>
+<button class="dais-arrow" id="dais-next" aria-label="Next figure">›</button>
+
+<div class="dais-links" id="dais-links">
+    <button class="dais-link" data-shape="1">Medium<span class="bl">└</span><span class="brr">┘</span></button>
+    <button class="dais-link active" data-shape="0">LinkedIn<span class="bl">└</span><span class="brr">┘</span></button>
+    <button class="dais-link" data-shape="2">X / Twitter<span class="bl">└</span><span class="brr">┘</span></button>
+</div>
+
+<div class="hint" id="hint">scroll · drag · ← →</div>
+
+<div id="modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="modal-title">
+    <div class="modal-scrim"></div>
+    <div class="modal-inner" id="modal-inner">
+        <div class="modal-top">
+            <div class="modal-kicker" id="modal-kicker">///// Summary <span>— 01</span></div>
+            <button class="close-btn" id="modal-close">
+                <span class="br tl">┌</span><span class="br tr">┐</span><span class="br bl">└</span><span class="br br2">┘</span>
+                Close
+            </button>
+        </div>
+        <h2 class="modal-title" id="modal-title">Pudgy Penguins</h2>
+        <div class="modal-meta" id="modal-meta">
+            <span>ROLE <b>PORTFOLIO CO.</b></span>
+            <span>D <b>01.02.2020</b></span>
+            <span>STATE <b>FROZEN</b></span>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-discover" id="modal-discover">
+            <div class="label">/// Discover</div>
+            <a class="ext-link" id="modal-link" href="#" target="_blank" rel="noopener noreferrer">
+                <span class="br tl">┌</span><span class="br tr">┐</span><span class="br bl">└</span><span class="br br2">┘</span>
+                <span id="modal-link-label">X ↗</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<noscript><div style="position:fixed;inset:0;display:grid;place-items:center;background:#0d0f13;z-index:999;font-family:monospace;font-size:12px">This experience requires JavaScript and WebGL.</div></noscript>

@@ -1,0 +1,41 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "plus jakarta sans",
+        "files": [
+          "rudranil-deals-web/src/emerald.css"
+        ],
+        "createdAt": "2026-11-01T15:00:06.126Z",
+        "reason": "Intentional existing storefront typography, also present in the owner-supplied Cryon prototype; preserve it during refinement."
+      },
+      {
+        "rule": "design-system-font",
+        "value": "plus jakarta sans",
+        "files": [
+          "rudranil-deals-web/src/emerald.css"
+        ],
+        "createdAt": "2026-11-01T15:00:45.155Z",
+        "reason": "AGENTS.md identifies DESIGN.md as a historical Mobbin reference; retain the existing font also used by the owner-supplied prototype."
+      },
+      {
+        "rule": "gray-on-color",
+        "value": "*",
+        "files": [
+          "rudranil-deals-web/src/emerald.css"
+        ],
+        "createdAt": "2026-11-01T15:07:44.718Z",
+        "reason": "Legacy slate selectors remap to green-tinted theme tokens; preserve the established alias bridge and verify actual painted contrast."
+      },
+      {
+        "rule": "overused-font",
+        "value": "plus jakarta sans",
+        "createdAt": "2026-11-01T15:14:52.558Z",
+        "reason": "Agent decision: preserve the incumbent interface font during the user-requested visual-only refinement; Impeccable reference/operate.md permits workhorse UI faces for task interfaces."
+      }
+    ]
+  }
+}

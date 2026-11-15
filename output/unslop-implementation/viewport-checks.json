@@ -1,0 +1,142 @@
+[
+  {
+    "name": "home",
+    "viewport": "mobile",
+    "heading": "Find your next good deal.",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "discounts",
+    "viewport": "mobile",
+    "heading": "Top discounts",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "worth",
+    "viewport": "mobile",
+    "heading": "Explore by value score",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "saved",
+    "viewport": "mobile",
+    "heading": "Your saved finds",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "profile",
+    "viewport": "mobile",
+    "heading": "Guest Shopper",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "about",
+    "viewport": "mobile",
+    "heading": "Retail discoveries & clearer price evidence",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "verify",
+    "viewport": "mobile",
+    "heading": "Understand the price evidence",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "community",
+    "viewport": "mobile",
+    "heading": "Community finds",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "contact",
+    "viewport": "mobile",
+    "heading": "Contact & support",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "submit",
+    "viewport": "mobile",
+    "heading": "Share a deal",
+    "scrollWidth": 387,
+    "width": 393
+  },
+  {
+    "name": "home",
+    "viewport": "desktop",
+    "heading": "Find your next good deal.",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "discounts",
+    "viewport": "desktop",
+    "heading": "Top discounts",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "worth",
+    "viewport": "desktop",
+    "heading": "Explore by value score",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "saved",
+    "viewport": "desktop",
+    "heading": "Your saved finds",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "profile",
+    "viewport": "desktop",
+    "heading": "Guest Shopper",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "about",
+    "viewport": "desktop",
+    "heading": "Retail discoveries & clearer price evidence",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "verify",
+    "viewport": "desktop",
+    "heading": "Understand the price evidence",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "community",
+    "viewport": "desktop",
+    "heading": "Community finds",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "contact",
+    "viewport": "desktop",
+    "heading": "Contact & support",
+    "scrollWidth": 1274,
+    "width": 1280
+  },
+  {
+    "name": "submit",
+    "viewport": "desktop",
+    "heading": "Share a deal",
+    "scrollWidth": 1274,
+    "width": 1280
+  }
+]

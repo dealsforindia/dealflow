@@ -1,0 +1,32 @@
+{
+  "name": "rudranil-deals-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test:intelligence": "node --test tests/shopping-intelligence.test.mjs tests/checkout.test.mjs",
+    "test:ui": "node --test tests/modal-hooks.test.mjs",
+    "test:storefront": "node --test tests/public-storefront.test.mjs tests/price-evidence.test.mjs",
+    "dev": "vite",
+    "build": "tsc -b && vite build --emptyOutDir false",
+    "check": "node ./node_modules/typescript/bin/tsc -b",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide-react": "^1.16.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-is": "^19.3.0",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0"
+  }
+}

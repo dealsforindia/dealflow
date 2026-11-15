@@ -1,0 +1,15 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "servers": {
+      "motion": {
+        "type": "remote",
+        "url": "https://mcp.motion.dev"
+      },
+      "motion-plus": {
+        "type": "remote",
+        "url": "https://mcp.motion.dev/plus"
+      }
+    }
+  }
+}

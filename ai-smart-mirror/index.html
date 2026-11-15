@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Mirror - Real-Time Virtual Fitting Platform</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- MediaPipe Requirements -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    
+    <!-- Three.js & GLTF Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="mirror-container" id="drop-zone">
+        <!-- Hidden video element for webcam feed -->
+        <video class="input_video" style="display: none;"></video>
+        
+        <!-- Canvas for the webcam feed and MediaPipe segmentation -->
+        <canvas class="output_canvas" width="1280" height="720"></canvas>
+        
+        <!-- Canvas for Three.js 3D garment rendering -->
+        <div id="three-container"></div>
+
+        <!-- TOP NAVIGATION BAR -->
+        <header class="top-bar">
+            <div class="brand">
+                <div class="logo-badge"><i data-lucide="sparkles"></i></div>
+                <div>
+                    <h2>AURA MIRROR</h2>
+                    <span class="subtitle">AI Virtual Fitting Room v1.0</span>
+                </div>
+            </div>
+            
+            <div class="top-controls">
+                <div class="stat-pill"><i data-lucide="activity"></i> <span id="fps-counter">60 FPS</span></div>
+                <button class="icon-btn" id="btn-toggle-voice" title="Voice Assistant Control"><i data-lucide="mic"></i></button>
+                <button class="icon-btn" id="btn-toggle-heatmap" title="Toggle Fit Stress Heatmap"><i data-lucide="flame"></i></button>
+                <button class="icon-btn" id="btn-toggle-accessories" title="Toggle 3D Accessories (Glasses/Watch)"><i data-lucide="glasses"></i></button>
+                <button class="icon-btn" id="btn-toggle-landmarks" title="Toggle Pose Skeleton"><i data-lucide="scan"></i></button>
+                <button class="icon-btn" id="btn-toggle-env" title="Toggle Background Matting"><i data-lucide="image"></i></button>
+                <button class="primary-btn" id="btn-snapshot"><i data-lucide="camera"></i> Take Photo</button>
+            </div>
+        </header>
+
+        <!-- LEFT SIDEBAR: BODY METRICS & FIT INTELLIGENCE -->
+        <aside class="panel left-panel">
+            <div class="panel-header">
+                <h3><i data-lucide="user-check"></i> Body Metrics</h3>
+                <span class="live-tag">LIVE AI</span>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="label">Est. Height</span>
+                    <span class="value" id="val-height">-- cm</span>
+                </div>
+                <div class="metric-card">
+                    <span class="label">Shoulders</span>
+                    <span class="value" id="val-shoulders">-- cm</span>
+                </div>
+                <div class="metric-card">
+                    <span class="label">Est. Chest</span>
+                    <span class="value" id="val-chest">-- cm</span>
+                </div>
+                <div class="metric-card">
+                    <span class="label">Rec. Size</span>
+                    <span class="value badge-value" id="val-rec-size">M</span>
+                </div>
+            </div>
+
+            <div class="fit-analysis-box">
+                <div class="fit-header">
+                    <span>Fit Prediction</span>
+                    <strong id="fit-status-text">Regular Fit</strong>
+                </div>
+                <div class="fit-bar-bg">
+                    <div class="fit-bar-fill" id="fit-bar" style="width: 50%;"></div>
+                </div>
+                <div class="fit-labels">
+                    <span>Tight</span>
+                    <span>Regular</span>
+                    <span>Loose</span>
+                </div>
+            </div>
+
+            <div class="glb-drop-hint">
+                <i data-lucide="box"></i>
+                <p>Drag & Drop custom <strong>.GLB/.GLTF</strong> 3D garment model anywhere to try on</p>
+            </div>
+        </aside>
+
+        <!-- RIGHT SIDEBAR: PRODUCT CATALOG -->
+        <aside class="panel right-panel">
+            <div class="panel-header">
+                <h3><i data-lucide="shopping-bag"></i> Garment Collection</h3>
+            </div>
+            
+            <div class="catalog-list" id="catalog-container">
+                <!-- Dynamically populated by app.js -->
+            </div>
+        </aside>
+
+        <!-- BOTTOM CONTROLLER: VARIANT & SIZE SELECTOR -->
+        <footer class="bottom-bar">
+            <div class="bar-section">
+                <span class="bar-label">Active Garment:</span>
+                <strong id="active-garment-name">Oversized Heavyweight Tee</strong>
+            </div>
+
+            <div class="bar-section size-selector">
+                <span class="bar-label">Size:</span>
+                <button class="size-btn" data-size="S">S</button>
+                <button class="size-btn active" data-size="M">M</button>
+                <button class="size-btn" data-size="L">L</button>
+                <button class="size-btn" data-size="XL">XL</button>
+            </div>
+
+            <div class="bar-section fabric-swatches" id="fabric-swatch-container">
+                <!-- Dynamically populated by app.js -->
+            </div>
+        </footer>
+
+        <!-- SNAPSHOT COUNTDOWN OVERLAY -->
+        <div id="countdown-overlay" class="hidden">
+            <div id="countdown-number">3</div>
+        </div>
+
+        <!-- VOICE COMMAND TOAST INDICATOR -->
+        <div id="voice-toast" class="voice-toast hidden">
+            <div class="mic-pulse"><i data-lucide="mic"></i></div>
+            <span id="voice-text">Listening... "Say 'Take photo' or 'Next garment'"</span>
+        </div>
+
+        <!-- SNAPSHOT PREVIEW MODAL -->
+        <div id="snapshot-modal" class="modal-backdrop hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3><i data-lucide="sparkles"></i> Virtual Try-On Result</h3>
+                    <button class="icon-btn" id="btn-close-modal"><i data-lucide="x"></i></button>
+                </div>
+                <div class="modal-body snapshot-modal-body">
+                    <img id="snapshot-img" src="" alt="Virtual Fitting Snapshot">
+                    <div class="qr-container">
+                        <img id="qr-code-img" src="" alt="Scan to Save to Mobile">
+                        <span>Scan with phone camera to download photo</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a id="btn-download-img" download="aura-virtual-fitting.png" class="primary-btn"><i data-lucide="download"></i> Save Image</a>
+                    <button class="secondary-btn" id="btn-share-img"><i data-lucide="share-2"></i> Share Result</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="status">Initializing Camera...</div>
+    </div>
+    
+    <!-- Application Logic -->
+    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

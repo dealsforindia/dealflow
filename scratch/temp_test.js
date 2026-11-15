@@ -1,0 +1,4056 @@
+
+        (function () {
+            "use strict";
+
+            // ============================================================================
+            // 0. CAMTECH WDG4G NOTCH SCHEDULE, SIMULATION STATE & 16-SYSTEM INSPECTOR DATA
+            // ============================================================================
+            const CAMTECH_WDG4G_NOTCH_TABLE = [
+                { idx: 0, label: 'APU / AESS', rpm: 330, vdc: 280, hp: 45, teKn: 0, speedKmh: 0 },
+                { idx: 1, label: 'IDLE', rpm: 440, vdc: 420, hp: 110, teKn: 18, speedKmh: 6 },
+                { idx: 2, label: 'NOTCH 1', rpm: 440, vdc: 560, hp: 420, teKn: 95, speedKmh: 18 },
+                { idx: 3, label: 'NOTCH 2', rpm: 585, vdc: 720, hp: 950, teKn: 185, speedKmh: 30 },
+                { idx: 4, label: 'NOTCH 3', rpm: 705, vdc: 890, hp: 1520, teKn: 280, speedKmh: 42 },
+                { idx: 5, label: 'NOTCH 4', rpm: 765, vdc: 1020, hp: 2150, teKn: 345, speedKmh: 56 },
+                { idx: 6, label: 'NOTCH 5', rpm: 870, vdc: 1160, hp: 2840, teKn: 410, speedKmh: 72 },
+                { idx: 7, label: 'NOTCH 6', rpm: 935, vdc: 1270, hp: 3480, teKn: 465, speedKmh: 88 },
+                { idx: 8, label: 'NOTCH 7', rpm: 998, vdc: 1350, hp: 4050, teKn: 510, speedKmh: 104 },
+                { idx: 9, label: 'NOTCH 8', rpm: 1050, vdc: 1400, hp: 4500, teKn: 544, speedKmh: 120 }
+            ];
+
+            const state = {
+                isPlayingTimeline: true,
+                timelineTime: 0,
+                duration: 45,
+                activeStage: 0,
+                housingMode: 'cutaway',
+                focusTarget: 'rake',
+                notchIndex: 4,
+                rpm: 705,
+                targetRpm: 705,
+                dcLinkVolts: 890,
+                targetVolts: 890,
+                locoSpeedKmh: 42,
+                targetSpeedKmh: 42,
+                prevSpeedKmh: 42,
+                longitudinalAccel: 0,
+                couplerForceKn: 142,
+                coolantTemp: 78.4,
+                discBrakeTempC: 68.0,
+                explodeFactor: 0,
+                targetExplode: 0,
+                crankAngle: 0,
+                wheelAngle: 0,
+                coachWheelAngle: 0,
+                electricalAngle: 0,
+                showPowerFlow: false,
+                dynamicBrakeActive: false,
+                nightMode: false,
+                showLabels: true,
+                showAllDeepSubLabels: false,
+                selectedComponentId: null,
+                userInteractingCamera: false,
+                userInteractionCooldown: 0,
+                soundEnabled: true,
+                masterVolume: 0.75,
+                hornActive: false,
+                physics: {
+                    joltImpulse: 0,
+                    locoPitch: 0,
+                    locoBounce: 0,
+                    locoRoll: 0,
+                    eogSlackX: 0,
+                    coachSlackX: 0
+                }
+            };
+
+            const INSPECTOR_ITEMS = [
+                {
+                    id: 'cab1',
+                    name: '1. Cab-1 (4x CCA Displays, CA-1 & HVAC)',
+                    detail: 'EN12663 Crashworthy Operator Cab #1 • 4 Consolidated Control Architecture (CCA) Displays • CA-1 Breaker Panel • 27,000 Btu/hr Roof HVAC',
+                    maintBadge: 'SEC 2.1 & 4.13',
+                    maintHtml: '• Displays: <span class="mono text-yellow-300">4x CCA Smart LCDs per Cab</span><br>• Roof HVAC: <span class="mono text-sky-300">27,000 Btu/hr (7.9 kW), R-134a, 74 VDC</span><br>• Bulkhead: <span class="mono text-emerald-300">Control Area CA-1 + EC1 Breakers</span>',
+                    anchor: new THREE.Vector3(-4.15, 0.65, 0),
+                    subCallouts: [
+                        { id: 'c1_cca', title: '4x CCA Smart Displays', sub: 'Consolidated Control Architecture Operator Console', badge: 'CCA', pos: new THREE.Vector3(-4.10, 0.78, 0.15), offset: { x: -115, y: -85 } },
+                        { id: 'c1_hvac', title: '27,000 Btu/hr Cab HVAC', sub: '7.9 kW Cooling / 3.0 kW Heating • R-134a • 320 kg', badge: 'HVAC', pos: new THREE.Vector3(-4.10, 1.35, 0), offset: { x: -85, y: -110 } },
+                        { id: 'c1_ca1', title: 'Control Area CA-1 & EC1', sub: 'Rear Bulkhead Logic & Circuit Breaker Wall', badge: 'CA-1', pos: new THREE.Vector3(-3.60, 0.65, 0), offset: { x: 45, y: -95 } }
+                    ]
+                },
+                {
+                    id: 'auxcab',
+                    name: '2. Aux Cab (CA2–CA5 & 6x Axle IGBTs)',
+                    detail: 'Auxiliary Cabinet housing Control Areas CA-2 to CA-5, 6 Individual Axle IGBT Inverters & 5GDY102D Blower',
+                    maintBadge: 'SEC 2.2 & 3',
+                    maintHtml: '• Traction Inverters: <span class="mono text-yellow-300">6x Individual Axle IGBT Modules</span><br>• Control Areas: <span class="mono text-sky-300">CA-2, CA-3, CA-4, CA-5 Racks</span><br>• Cooling: <span class="mono text-emerald-300">5GDY102D Aux Blower + Canister Filter</span>',
+                    anchor: new THREE.Vector3(-2.85, 0.65, 0),
+                    subCallouts: [
+                        { id: 'ax_igbt', title: '6x Axle IGBT Inverters', sub: 'Independent 3-Phase VVVF Control per Traction Motor', badge: '6x IGBT', pos: new THREE.Vector3(-2.85, 0.72, 0.55), offset: { x: -80, y: -95 } },
+                        { id: 'ax_ca', title: 'Control Areas CA-2 to CA-5', sub: 'Traction Control, Auxiliaries & Inverter Gate Drivers', badge: 'CA2-CA5', pos: new THREE.Vector3(-2.85, 0.68, -0.48), offset: { x: 65, y: -95 } }
+                    ]
+                },
+                {
+                    id: 'alternator',
+                    name: '3. Blower Cab & 5GMG210B2 Alternator',
+                    detail: 'GE 5GMG210B2 Main Alternator (3,070 kW, 1,400 VDC) + Coaxial Aux Alternator (326 kW) + 3 AC Blowers',
+                    maintBadge: 'SEC 2.3 & 4.3',
+                    maintHtml: '• Main Alternator: <span class="mono text-yellow-300">5GMG210B2 (10-Pole, 3,070 kW, 1,400 VDC)</span><br>• Aux Alternator: <span class="mono text-sky-300">12-Pole, 326 kW (402/201/67 VAC)</span><br>• AC Blowers: <span class="mono text-emerald-300">5GDY100C + 5GDY91H + 5GDY97D</span>',
+                    anchor: new THREE.Vector3(-1.75, 0.52, 0),
+                    subCallouts: [
+                        { id: 'alt_main', title: '5GMG210B2 Main Alternator', sub: '3,070 kW • 10-Pole • 1,400 VDC / 3,655 A IDC', badge: '3070 kW', pos: new THREE.Vector3(-1.55, 0.55, 0), offset: { x: -65, y: -100 } },
+                        { id: 'alt_aux', title: 'Coaxial Aux Alternator & Blowers', sub: '326 kW 12-Pole Aux + 5GDY100C & 5GDY91H Blowers', badge: '326 kW', pos: new THREE.Vector3(-2.05, 0.42, 0.42), offset: { x: -95, y: 75 } }
+                    ]
+                },
+                {
+                    id: 'engine',
+                    name: '4. GEVO-12 (4500 HP) & 7S1712 Turbo',
+                    detail: 'GE GEVO-12 Four-Stroke 45° V12 Diesel Engine (250×320 mm, 16.8:1 CR, EFI) + 7S1712 Axial Turbocharger',
+                    maintBadge: 'SEC 4.1',
+                    maintHtml: '• Prime Mover: <span class="mono text-yellow-300">GEVO-12 (45° V12, 4,500 HP @ 1,050 RPM)</span><br>• Bore × Stroke: <span class="mono text-sky-300">250 × 320 mm (15.7 L/cyl • 16.8:1 CR)</span><br>• Induction: <span class="mono text-emerald-300">7S1712 Turbo + Baggie Air Filters</span>',
+                    anchor: new THREE.Vector3(-0.15, 0.65, 0),
+                    subCallouts: [
+                        { id: 'eng_v12', title: 'GEVO-12 45° V12 Power Assemblies', sub: '12 Unitized Cylinders • Articulated Con-Rods & Common Rail', badge: '4500 HP', pos: new THREE.Vector3(-0.22, 0.92, 0.30), offset: { x: -75, y: -100 } },
+                        { id: 'eng_turbo', title: 'Model 7S1712 Turbocharger', sub: 'Axial-Centrifugal Turbo + Charge Air Crossover Pipes', badge: '7S1712', pos: new THREE.Vector3(0.95, 0.98, 0), offset: { x: 65, y: -105 } }
+                    ]
+                },
+                {
+                    id: 'lubeoil',
+                    name: '5. 248-Plate Cooler & Moatti Filter',
+                    detail: '248-Plate Copper-Brazed Stainless Steel Lube Oil Cooler & Moatti T 290-20 20-Element 25 µm Filter (575 GPM)',
+                    maintBadge: 'SEC 4.7 & 4.8',
+                    maintHtml: '• Lube Oil Cooler: <span class="mono text-yellow-300">248 Brazed SS316L Plates (39 kg)</span><br>• Lube Filter: <span class="mono text-sky-300">Moatti Style T 290-20 (20 Elements, 25 µm)</span><br>• Rated Flow: <span class="mono text-emerald-300">575 GPM @ 130 PSI max</span>',
+                    anchor: new THREE.Vector3(1.24, 0.42, 0),
+                    subCallouts: [
+                        { id: 'lo_cooler', title: '248-Plate Brazed Lube Cooler', sub: 'Compact SS316L Heat Exchanger Stack', badge: '248 PLATES', pos: new THREE.Vector3(1.22, 0.38, 0.42), offset: { x: -65, y: 80 } },
+                        { id: 'lo_moatti', title: 'Moatti T 290-20 Oil Filter', sub: '20-Element Full-Flow 25 µm Filter (575 GPM)', badge: 'MOATTI', pos: new THREE.Vector3(1.25, 0.55, -0.40), offset: { x: 75, y: -90 } }
+                    ]
+                },
+                {
+                    id: 'dbgrid',
+                    name: '6. 3,230 HP Dynamic Brake Grid',
+                    detail: '3,230 HP Dynamic Brake Resistor Grid Assembly (0.526 Ω Box Resistance, 1,126 V DC Link, 270 kN Peak Braking Effort)',
+                    maintBadge: 'SEC 4.9',
+                    maintHtml: '• Capacity: <span class="mono text-yellow-300">3,230 HP Dynamic Braking Grid</span><br>• Resistance: <span class="mono text-rose-300">0.526 Ω Box (0.285 Ω + 0.241 Ω Legs)</span><br>• Effort: <span class="mono text-sky-300">270 kN Peak Braking Effort @ 1,126 VDC</span>',
+                    anchor: new THREE.Vector3(1.55, 1.04, 0),
+                    subCallouts: [
+                        { id: 'db_grid', title: '3,230 HP Dynamic Brake Grid', sub: 'Serpentine Resistor Ribbons • 270 kN Braking Effort', badge: '0.526 Ω', pos: new THREE.Vector3(1.55, 1.06, 0.38), offset: { x: 0, y: -100 } }
+                    ]
+                },
+                {
+                    id: 'radiator',
+                    name: '7. 10-Row Radiator & 72" 5GYA30C6 Fan',
+                    detail: 'Gull-Wing Cold-Side 10-Row Brass/Copper Radiator Cores + 72-Inch 5GYA30C6 AC Fan (80,000 SCFM) + CA9/12/13',
+                    maintBadge: 'SEC 4.10 & 4.11',
+                    maintHtml: '• Radiator Core: <span class="mono text-yellow-300">10-Row Brass Tube / Copper Fin (Cold-Side)</span><br>• Main AC Fan: <span class="mono text-sky-300">72" GE 5GYA30C6 (80,000 SCFM, 110 HP)</span><br>• Control Racks: <span class="mono text-emerald-300">CA-9, CA-12 & CA-13 Cabinets</span>',
+                    anchor: new THREE.Vector3(2.15, 1.15, 0),
+                    subCallouts: [
+                        { id: 'rad_fan', title: '72" 5GYA30C6 AC Radiator Fan', sub: '80,000 SCFM @ 1,035 RPM • 10 Pitched Airfoil Blades', badge: '110 HP', pos: new THREE.Vector3(2.15, 1.38, 0), offset: { x: -45, y: -105 } },
+                        { id: 'rad_core', title: '10-Row Split-Cooling Cores', sub: 'Gull-Wing Roof Overhang Heat Exchangers', badge: '10-ROW', pos: new THREE.Vector3(2.15, 1.24, 0.42), offset: { x: 75, y: -75 } }
+                    ]
+                },
+                {
+                    id: 'compressor',
+                    name: '8. 178 CFM Screw Comp, EAB & 34.5kW APU',
+                    detail: 'Oil-Lubricated Rotary Screw Air Compressor (178 CFM @ 145 PSI) + FastBrake EAB + 34.5 kW CPCB-II APU Skid',
+                    maintBadge: 'SEC 4.4 & 4.12',
+                    maintHtml: '• Compressor: <span class="mono text-yellow-300">Rotary Screw (178 CFM 8-Pole / 147 CFM 4-Pole)</span><br>• Air Brake: <span class="mono text-sky-300">Wabtec FastBrake Electronic Air Brake (EAB)</span><br>• CPCB-II APU: <span class="mono text-emerald-300">34.5 kW Diesel + 55 CFM Comp + 120A Alt</span>',
+                    anchor: new THREE.Vector3(3.05, 0.38, 0),
+                    subCallouts: [
+                        { id: 'cmp_screw', title: '178 CFM Rotary Screw Compressor', sub: '145 PSI MR • 25 L Oil Separator Vessel', badge: '178 CFM', pos: new THREE.Vector3(2.80, 0.35, -0.36), offset: { x: -65, y: 80 } },
+                        { id: 'cmp_apu', title: '34.5 kW CPCB-II APU Skid', sub: 'Idle-Reduction Diesel + 55 CFM Comp + 78 VDC Alt', badge: 'APU', pos: new THREE.Vector3(3.40, 0.34, -0.32), offset: { x: 75, y: -85 } }
+                    ]
+                },
+                {
+                    id: 'cab2',
+                    name: '9. Cab-2 Rear Operator Station & HVAC',
+                    detail: 'Bi-Directional Rear EN12663 Crashworthy Operator Cab #2 with 4 CCA Displays, Air Suspension Seats & 27,000 Btu/hr HVAC',
+                    maintBadge: 'SEC 2.1 & 5.1',
+                    maintHtml: '• Bi-Directional: <span class="mono text-yellow-300">Full Rear Operator Console (#2 Cab)</span><br>• Displays: <span class="mono text-sky-300">4x CCA Smart LCD Displays</span><br>• Roof HVAC: <span class="mono text-emerald-300">27,000 Btu/hr (7.9 kW) R-134a Unit</span>',
+                    anchor: new THREE.Vector3(4.15, 0.65, 0),
+                    subCallouts: [
+                        { id: 'c2_desk', title: 'Cab-2 CCA Operator Console', sub: '4x Smart LCDs + Master Reverser/Throttle/EAB Handles', badge: 'CAB-2', pos: new THREE.Vector3(4.15, 0.72, 0), offset: { x: 75, y: -95 } }
+                    ]
+                },
+                {
+                    id: 'underframe',
+                    name: '10. 6000L Fuel Tank & 32-Cell SLA Battery',
+                    detail: 'Heavy Underframe Platform, Slotted V-Plow Cowcatcher, Contoured 6,000 L Fuel Tank with Dual Glow Rods & 32-Cell SLA Batteries',
+                    maintBadge: 'SEC 3 & 4.2',
+                    maintHtml: '• Usable Fuel: <span class="mono text-yellow-300">6,000 L (6,300 L Gross) + Dual Glow Rods</span><br>• Batteries: <span class="mono text-sky-300">2×16-Cell SLA (64 V, 500 Ah Total)</span><br>• Cowcatcher: <span class="mono text-emerald-300">Slotted 5-Bar Steel V-Plow + AAR Type-H CBC</span>',
+                    anchor: new THREE.Vector3(0.0, -0.45, 0),
+                    subCallouts: [
+                        { id: 'uf_fuel', title: '6,000 L Contoured Belly Fuel Tank', sub: 'Dual Optical Sight-Glass Glow Rods + Retention Straps', badge: '6000 L', pos: new THREE.Vector3(0.0, -0.50, 0.68), offset: { x: 0, y: 85 } },
+                        { id: 'uf_batt', title: '32-Cell (2×16) SLA Battery Boxes', sub: '64 V, 500 Ah Sealed Lead-Acid Cranking & Control Bank', badge: '64V 500Ah', pos: new THREE.Vector3(-0.92, -0.22, 0.58), offset: { x: -95, y: 75 } }
+                    ]
+                },
+                {
+                    id: 'bogies',
+                    name: '11. Co-Co Bogies & 6x 5GEB24 AC Motors',
+                    detail: 'High-Adhesion Fabricated Co-Co Bogies • 6x GE 5GEB24 8-Pole AC Traction Motors (2,615 RPM, 85:18 Gear) • Arcuate Brake Shoes • 8 Sand Boxes',
+                    maintBadge: 'SEC 4.5 & 4.6',
+                    maintHtml: '• Traction Motors: <span class="mono text-yellow-300">6x GE 5GEB24 (8-Pole AC, 2,615 RPM Max)</span><br>• Gear Ratio: <span class="mono text-sky-300">85:18 Bull/Pinion • 1,092 mm Lathe Wheels</span><br>• Brakes & Sand: <span class="mono text-emerald-300">Arcuate Tread Shoes + 8×85 L Corner Sand Boxes</span>',
+                    anchor: new THREE.Vector3(-2.70, -0.72, 0),
+                    subCallouts: [
+                        { id: 'bg_tm', title: '6x GE 5GEB24 AC Traction Motors', sub: '8-Pole 3-Phase Induction • 85:18 Helical Bull Gear', badge: '544 kN TE', pos: new THREE.Vector3(-2.70, -0.76, 0.45), offset: { x: -85, y: 85 } },
+                        { id: 'bg_coil', title: '3D Helical Coil Springs & Sand Boxes', sub: 'Dynamic Compressible Springs • 12 Arcuate Tread Units', badge: 'Co-Co', pos: new THREE.Vector3(-1.45, -0.52, 0.68), offset: { x: 75, y: 80 } }
+                    ]
+                },
+                {
+                    id: 'lhb_eog',
+                    name: '12. LHB EOG Power Car (2×500 kVA DG)',
+                    detail: 'Coupled LHB LWLRRM End-On Generation Power Car • 2 × 500 kVA (750 V 3-Phase 50 Hz) DG Sets • 3D Perforated Shell with Tumblehome Skirt',
+                    maintBadge: 'LHB LWLRRM',
+                    maintHtml: '• DG Sets: <span class="mono text-yellow-300">2 × 500 kVA (400 kW) Cummins/Kirloskar Skids</span><br>• Hotel Feeder: <span class="mono text-sky-300">750 VAC, 3-Phase, 4-Wire, 50 Hz Bus</span><br>• Shell: <span class="mono text-emerald-300">Extruded Perforated 3D Windows + Tumblehome</span>',
+                    anchor: new THREE.Vector3(10.3, 0.45, 0),
+                    subCallouts: [
+                        { id: 'eog_dg', title: '2 × 500 kVA EOG Diesel-Alternators', sub: '750 V 3-Phase 50 Hz Hotel Load Supply + Roof Silencers', badge: '1000 kVA', pos: new THREE.Vector3(9.5, 0.45, 0), offset: { x: -75, y: -95 } },
+                        { id: 'eog_sw', title: '750V Auto-Sync Switchboard & Guard Van', sub: 'Dual Feeder Protection + Emergency Brake Valve', badge: '750 VAC', pos: new THREE.Vector3(12.2, 0.55, 0), offset: { x: 75, y: -95 } }
+                    ]
+                },
+                {
+                    id: 'lhb_berths',
+                    name: '13. LHB AC 3-Tier Sleeper Bays (LWACCN)',
+                    detail: 'LHB AC 3-Tier Passenger Interior • Suspension Chains, Transverse & Side Berths, Folding Bottle Holders, Reading Lights & SS Climbing Ladders',
+                    maintBadge: 'LHB LWACCN',
+                    maintHtml: '• Layout: <span class="mono text-yellow-300">8 Berths/Bay (6 Transverse + 2 Side Corridor)</span><br>• Details: <span class="mono text-sky-300">SS Suspension Chains + Snack Tables + Reading Lights</span><br>• Safety: <span class="mono text-emerald-300">Fire-Retardant Silicone Foam + SS Ladders</span>',
+                    anchor: new THREE.Vector3(18.1, 0.52, 0),
+                    subCallouts: [
+                        { id: 'br_tier', title: '3-Tier Transverse & Side Berths', sub: 'Diagonal Suspension Chains + Foldable Snack Tables', badge: '72 BERTHS', pos: new THREE.Vector3(18.0, 0.62, -0.22), offset: { x: -70, y: -95 } }
+                    ]
+                },
+                {
+                    id: 'lhb_chair',
+                    name: '14. LHB Executive Chair, Pantry & Bio-Toilets',
+                    detail: 'Sculpted Ergonomic S-Curve 2×2 Reclining Chairs with Tray Tables, Overhead Luggage Bins, LED Cove Lighting, Mini-Pantry & DRDO Bio-Toilets',
+                    maintBadge: 'LHB LWFCZAC',
+                    maintHtml: '• Seating: <span class="mono text-yellow-300">Sculpted S-Curve Reclining Chairs + Rear Snack Tables</span><br>• Amenities: <span class="mono text-sky-300">Mini-Pantry Hot Case + Warm LED Cove Strips</span><br>• Sanitation: <span class="mono text-emerald-300">DRDO Anaerobic Bio-Digester Tanks</span>',
+                    anchor: new THREE.Vector3(21.8, 0.48, 0),
+                    subCallouts: [
+                        { id: 'ch_seat', title: 'Sculpted S-Curve Executive Chairs', sub: 'Ergonomic Bolster, Winged Headrest & Fold-down Tables', badge: 'EXEC CHAIR', pos: new THREE.Vector3(21.8, 0.45, 0.22), offset: { x: -55, y: -95 } },
+                        { id: 'ch_bio', title: 'Mini-Pantry & DRDO Bio-Toilets', sub: 'Underslung Anaerobic Bio-Digester + 2×800L Water Tanks', badge: 'BIO-TOILET', pos: new THREE.Vector3(23.8, 0.15, -0.36), offset: { x: 75, y: 75 } }
+                    ]
+                },
+                {
+                    id: 'lhb_rmpu',
+                    name: '15. LHB Dual 7.0 TR Roof AC Units (RMPU)',
+                    detail: '2 × 7.0 TR (85,303 BTU/hr each) Microprocessor-Controlled Roof-Mounted AC Package Units (RMPUs) with R-407C Refrigerant',
+                    maintBadge: 'RDSO RMPU',
+                    maintHtml: '• Capacity: <span class="mono text-yellow-300">2 × 7.0 TR (14.0 TR / 170,606 BTU Total)</span><br>• Power Supply: <span class="mono text-sky-300">Fed via 60 kVA 750V/415V Underframe Transformer</span><br>• Control: <span class="mono text-emerald-300">Dual Scroll Compressors + Insulated Roof Duct</span>',
+                    anchor: new THREE.Vector3(20.2, 1.34, 0),
+                    subCallouts: [
+                        { id: 'rm_unit', title: 'Dual 7.0 TR Roof AC Package Units', sub: '85,303 BTU/hr per RMPU • Twin Condenser Fans', badge: '2×7.0 TR', pos: new THREE.Vector3(16.75, 1.38, 0), offset: { x: -65, y: -100 } }
+                    ]
+                },
+                {
+                    id: 'fiat_bogie',
+                    name: '16. Alstom-LHB FIAT Bogies & 640mm Discs',
+                    detail: 'Alstom-LHB FIAT High-Speed Bogies (160–200 km/h) • 2,560 mm WB • Anti-Roll Bar • Dual 640×110 mm Ventilated Brake Discs/Axle',
+                    maintBadge: 'FIAT BOGIE',
+                    maintHtml: '• Frame & WB: <span class="mono text-yellow-300">Welded GS20Mn5V H-Frame • 2,560 mm WB</span><br>• Disc Brakes: <span class="mono text-rose-300">2 × 640×110 mm Ventilated Discs per Axle + WSP</span><br>• Suspension: <span class="mono text-sky-300">Control-Arm Helical + Air/Flexicoil + Anti-Roll Bar</span>',
+                    anchor: new THREE.Vector3(17.05, -0.68, 0),
+                    subCallouts: [
+                        { id: 'ft_disc', title: 'Dual 640×110 mm Ventilated Brake Discs', sub: 'Axle-Mounted Discs + Pneumatic Calipers + 4-Axle WSP', badge: '640mm DISC', pos: new THREE.Vector3(17.05, -0.82, 0.28), offset: { x: -85, y: 85 } },
+                        { id: 'ft_arb', title: 'FIAT Swan-Neck Frame & Anti-Roll Bar', sub: 'Torsion-Bar Roll Stabilizer (0.3 Tilt) + Yaw Dampers', badge: '160 KM/H', pos: new THREE.Vector3(17.05, -0.52, 0.65), offset: { x: 85, y: 75 } }
+                    ]
+                }
+            ];
+
+            const EXPLODED_LABELS = [
+                { id: 'exp_hood', title: 'WDG4G Carbody & Gull-Wing Roof', sub: 'Evolution Yellow Shell + EN12663 Dual Cabs', pos: new THREE.Vector3(0, 2.65, 0), offset: { x: -90, y: -55 } },
+                { id: 'exp_gevo', title: 'GEVO-12 (4500 HP) + 5GMG210B2', sub: '45° V12 Engine + Articulated Con-Rods + 7S1712 Turbo', pos: new THREE.Vector3(-0.3, 0.95, 0), offset: { x: -75, y: -60 } },
+                { id: 'exp_coco', title: 'Co-Co Bogies & 6x 5GEB24 Motors', sub: '1092mm Lathe Wheels + 6000L Contoured Belly Tank', pos: new THREE.Vector3(-2.7, -1.35, 0), offset: { x: -85, y: 65 } },
+                { id: 'exp_eog', title: 'LHB EOG Car (2×500 kVA DG Skids)', sub: '750V 3-Phase 50Hz Hotel Load Generator Van', pos: new THREE.Vector3(10.3, 1.95, 0), offset: { x: 0, y: -65 } },
+                { id: 'exp_coach', title: 'LHB AC Coach & 2×7.0 TR RMPUs', sub: '3-Tier Sleeper + S-Curve Chair + FIAT Disc Bogies', pos: new THREE.Vector3(20.2, 2.25, 0), offset: { x: 85, y: -65 } }
+            ];
+
+            // ============================================================================
+            // 1. REAL-TIME WEB AUDIO API SYNTHESIZER
+            // ============================================================================
+            const soundEngine = (function () {
+                let ctx = null;
+                let masterGain = null;
+                let chugOsc = null;
+                let chugGain = null;
+                let turboOsc = null;
+                let turboGain = null;
+                let igbtOsc = null;
+                let igbtGain = null;
+                let hornOsc1 = null;
+                let hornOsc2 = null;
+                let hornGain = null;
+                let lastClackTime = 0;
+
+                function init() {
+                    if (ctx) return;
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioCtx) return;
+                    ctx = new AudioCtx();
+
+                    masterGain = ctx.createGain();
+                    masterGain.gain.value = state.soundEnabled ? state.masterVolume * 0.32 : 0;
+                    masterGain.connect(ctx.destination);
+
+                    chugOsc = ctx.createOscillator();
+                    chugOsc.type = 'sawtooth';
+                    chugOsc.frequency.value = 42;
+                    const chugFilter = ctx.createBiquadFilter();
+                    chugFilter.type = 'lowpass';
+                    chugFilter.frequency.value = 165;
+                    chugGain = ctx.createGain();
+                    chugGain.gain.value = 0.25;
+                    chugOsc.connect(chugFilter);
+                    chugFilter.connect(chugGain);
+                    chugGain.connect(masterGain);
+                    chugOsc.start();
+
+                    turboOsc = ctx.createOscillator();
+                    turboOsc.type = 'sine';
+                    turboOsc.frequency.value = 520;
+                    turboGain = ctx.createGain();
+                    turboGain.gain.value = 0.03;
+                    turboOsc.connect(turboGain);
+                    turboGain.connect(masterGain);
+                    turboOsc.start();
+
+                    igbtOsc = ctx.createOscillator();
+                    igbtOsc.type = 'triangle';
+                    igbtOsc.frequency.value = 180;
+                    igbtGain = ctx.createGain();
+                    igbtGain.gain.value = 0.04;
+                    igbtOsc.connect(igbtGain);
+                    igbtGain.connect(masterGain);
+                    igbtOsc.start();
+
+                    hornOsc1 = ctx.createOscillator();
+                    hornOsc2 = ctx.createOscillator();
+                    hornOsc1.type = 'sawtooth';
+                    hornOsc2.type = 'sawtooth';
+                    hornOsc1.frequency.value = 349.23;
+                    hornOsc2.frequency.value = 440.0;
+                    const hornFilter = ctx.createBiquadFilter();
+                    hornFilter.type = 'lowpass';
+                    hornFilter.frequency.value = 1400;
+                    hornGain = ctx.createGain();
+                    hornGain.gain.value = 0.0;
+                    hornOsc1.connect(hornFilter);
+                    hornOsc2.connect(hornFilter);
+                    hornFilter.connect(hornGain);
+                    hornGain.connect(masterGain);
+                    hornOsc1.start();
+                    hornOsc2.start();
+                }
+
+                function resumeIfNeeded() {
+                    if (!ctx) init();
+                    if (ctx && ctx.state === 'suspended') ctx.resume();
+                }
+
+                function playUiBeep(freq = 880, dur = 0.04, type = 'sine') {
+                    if (!state.soundEnabled) return;
+                    resumeIfNeeded();
+                    if (!ctx) return;
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.value = freq;
+                    g.gain.setValueAtTime(0.06, ctx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+                    osc.connect(g);
+                    g.connect(masterGain);
+                    osc.start();
+                    osc.stop(ctx.currentTime + dur);
+                }
+
+                function playTrackClack(intensity = 0.6) {
+                    if (!state.soundEnabled) return;
+                    resumeIfNeeded();
+                    if (!ctx) return;
+                    const osc = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(115, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(38, ctx.currentTime + 0.065);
+                    g.gain.setValueAtTime(0.18 * intensity, ctx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+                    osc.connect(g);
+                    g.connect(masterGain);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.075);
+                }
+
+                function setHorn(active) {
+                    state.hornActive = active;
+                    resumeIfNeeded();
+                    if (!ctx || !hornGain) return;
+                    hornGain.gain.setTargetAtTime(active ? 0.35 : 0.0, ctx.currentTime, 0.04);
+                }
+
+                function setEnabled(flag) {
+                    state.soundEnabled = flag;
+                    resumeIfNeeded();
+                    const iconEl = document.getElementById('sound-icon');
+                    const labelEl = document.getElementById('sound-label');
+                    if (iconEl) iconEl.textContent = flag ? '🔊' : '🔇';
+                    if (labelEl) labelEl.textContent = flag ? 'Audio: ON' : 'Audio: MUTED';
+                    if (ctx && masterGain) {
+                        masterGain.gain.setTargetAtTime(flag ? state.masterVolume * 0.32 : 0, ctx.currentTime, 0.05);
+                    }
+                }
+
+                function setVolume(v) {
+                    state.masterVolume = v;
+                    if (ctx && masterGain && state.soundEnabled) {
+                        masterGain.gain.setTargetAtTime(v * 0.32, ctx.currentTime, 0.05);
+                    }
+                }
+
+                function update() {
+                    if (!ctx || ctx.state !== 'running' || !state.soundEnabled) return;
+                    const now = ctx.currentTime;
+                    const firingHz = (state.rpm / 60) * 6;
+                    const pulseMod = 0.72 + 0.28 * Math.sin(now * firingHz * Math.PI * 2);
+                    chugOsc.frequency.setTargetAtTime(firingHz * 0.85, now, 0.04);
+                    chugGain.gain.setTargetAtTime((0.18 + (state.rpm / 1050) * 0.16) * pulseMod, now, 0.03);
+
+                    const turboHz = 420 + ((state.rpm - 330) / (1050 - 330)) * 1450;
+                    turboOsc.frequency.setTargetAtTime(turboHz, now, 0.06);
+                    turboGain.gain.setTargetAtTime(0.015 + ((state.rpm - 330) / 720) * 0.055, now, 0.05);
+
+                    const invHz = state.dynamicBrakeActive ? 680 : 120 + (state.locoSpeedKmh / 120) * 460;
+                    igbtOsc.frequency.setTargetAtTime(invHz, now, 0.05);
+                    igbtGain.gain.setTargetAtTime(state.dynamicBrakeActive ? 0.075 : 0.035, now, 0.05);
+
+                    if (state.locoSpeedKmh > 8) {
+                        const clackInterval = Math.max(0.22, 1.4 - (state.locoSpeedKmh / 120) * 1.1);
+                        if (now - lastClackTime > clackInterval) {
+                            lastClackTime = now;
+                            playTrackClack(0.28 + (state.locoSpeedKmh / 120) * 0.25);
+                        }
+                    }
+                }
+
+                return { resumeIfNeeded, playUiBeep, playTrackClack, setHorn, setEnabled, setVolume, update };
+            })();
+
+            // ============================================================================
+            // 2. THREE.JS WEBGL SCENE, STUDIO PMREM HDRI & CUSTOM GLSL SHADERS
+            // ============================================================================
+            const container = document.getElementById('canvas-container');
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050811);
+            scene.fog = new THREE.FogExp2(0x050811, 0.014);
+
+            const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 160);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.12;
+            container.appendChild(renderer.domElement);
+
+            // Generate a procedural studio reflection environment map for realistic PBR metals
+            const pmremGenerator = new THREE.PMREMGenerator(renderer);
+            pmremGenerator.compileEquirectangularShader();
+            const envScene = new THREE.Scene();
+            envScene.background = new THREE.Color(0x0f172a);
+
+            const studioSky = new THREE.Mesh(
+                new THREE.SphereGeometry(50, 32, 16),
+                new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.BackSide })
+            );
+            const warmStrip = new THREE.Mesh(
+                new THREE.PlaneGeometry(40, 12),
+                new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide })
+            );
+            warmStrip.position.set(0, 22, 15);
+            warmStrip.lookAt(0, 0, 0);
+            envScene.add(studioSky, warmStrip);
+
+            scene.environment = pmremGenerator.fromScene(envScene, 0.04).texture;
+
+            const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.72);
+            scene.add(ambientLight);
+
+            const keyLight = new THREE.DirectionalLight(0xfffbeb, 1.45);
+            keyLight.position.set(12, 18, 14);
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.width = 2048;
+            keyLight.shadow.mapSize.height = 2048;
+            keyLight.shadow.camera.near = 1;
+            keyLight.shadow.camera.far = 60;
+            keyLight.shadow.camera.left = -12;
+            keyLight.shadow.camera.right = 32;
+            keyLight.shadow.camera.top = 12;
+            keyLight.shadow.camera.bottom = -12;
+            keyLight.shadow.bias = -0.0004;
+            keyLight.shadow.normalBias = 0.02;
+            scene.add(keyLight);
+
+            const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.55);
+            fillLight.position.set(-14, 8, -12);
+            scene.add(fillLight);
+
+            const rimLight = new THREE.DirectionalLight(0xfacc15, 0.45);
+            rimLight.position.set(8, 10, -16);
+            scene.add(rimLight);
+
+            const engineGlowLight = new THREE.PointLight(0xfacc15, 0.85, 9);
+            engineGlowLight.position.set(-0.2, 0.65, 0);
+            scene.add(engineGlowLight);
+
+            // Custom GLSL Uniforms & Shaders
+            const customShaderUniforms = {
+                uTime: { value: 0.0 },
+                uThermalLevel: { value: 0.5 },
+                uBrakeHeat: { value: 0.1 },
+                uScanPos: { value: 0.0 }
+            };
+
+            const blueprintShaderMaterial = new THREE.ShaderMaterial({
+                uniforms: customShaderUniforms,
+                extensions: { derivatives: true },
+                transparent: true,
+                side: THREE.DoubleSide,
+                vertexShader: `
+                    varying vec3 vWorldPos;
+                    varying vec3 vNormal;
+                    varying vec3 vViewPosition;
+                    void main() {
+                        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                        vWorldPos = worldPosition.xyz;
+                        vNormal = normalize(normalMatrix * normal);
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        vViewPosition = -mvPosition.xyz;
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uTime;
+                    uniform float uScanPos;
+                    varying vec3 vWorldPos;
+                    varying vec3 vNormal;
+                    varying vec3 vViewPosition;
+                    void main() {
+                        vec3 viewDir = normalize(vViewPosition);
+                        float fresnel = pow(1.0 - abs(dot(vNormal, viewDir)), 1.75);
+                        vec3 cell = abs(fract(vWorldPos * 3.5) - 0.5);
+                        float gridX = smoothstep(0.44, 0.49, cell.x);
+                        float gridY = smoothstep(0.44, 0.49, cell.y);
+                        float gridZ = smoothstep(0.44, 0.49, cell.z);
+                        float gridPattern = max(max(gridX, gridY), gridZ);
+                        float scanWave = exp(-pow((vWorldPos.x - uScanPos) * 1.6, 2.0));
+                        vec3 baseCol = vec3(0.03, 0.14, 0.32);
+                        vec3 edgeCol = vec3(0.22, 0.78, 1.0);
+                        vec3 scanCol = vec3(0.98, 0.85, 0.25);
+                        vec3 finalCol = mix(baseCol, edgeCol, clamp(fresnel + gridPattern * 0.48, 0.0, 1.0));
+                        finalCol += scanCol * scanWave * 0.75;
+                        float alpha = clamp(0.28 + fresnel * 0.65 + gridPattern * 0.35 + scanWave * 0.4, 0.22, 0.95);
+                        gl_FragColor = vec4(finalCol, alpha);
+                    }
+                `
+            });
+
+            const thermalShaderMaterial = new THREE.ShaderMaterial({
+                uniforms: customShaderUniforms,
+                side: THREE.DoubleSide,
+                vertexShader: `
+                    varying vec3 vWorldPos;
+                    varying vec3 vNormal;
+                    varying vec3 vViewPosition;
+                    void main() {
+                        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                        vWorldPos = worldPosition.xyz;
+                        vNormal = normalize(normalMatrix * normal);
+                        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                        vViewPosition = -mvPosition.xyz;
+                        gl_Position = projectionMatrix * mvPosition;
+                    }
+                `,
+                fragmentShader: `
+                    uniform float uTime;
+                    uniform float uThermalLevel;
+                    uniform float uBrakeHeat;
+                    varying vec3 vWorldPos;
+                    varying vec3 vNormal;
+                    varying vec3 vViewPosition;
+
+                    vec3 heatPalette(float t) {
+                        vec3 c1 = vec3(0.05, 0.08, 0.35);
+                        vec3 c2 = vec3(0.0, 0.65, 0.85);
+                        vec3 c3 = vec3(0.95, 0.82, 0.12);
+                        vec3 c4 = vec3(1.0, 0.18, 0.08);
+                        vec3 c5 = vec3(1.0, 0.96, 0.88);
+                        if (t < 0.25) return mix(c1, c2, t / 0.25);
+                        if (t < 0.55) return mix(c2, c3, (t - 0.25) / 0.30);
+                        if (t < 0.82) return mix(c3, c4, (t - 0.55) / 0.27);
+                        return mix(c4, c5, clamp((t - 0.82) / 0.18, 0.0, 1.0));
+                    }
+
+                    void main() {
+                        float coreZ = exp(-pow(vWorldPos.z * 2.1, 2.0));
+                        float engHeat = exp(-pow((vWorldPos.x - 0.1) * 0.85, 2.0) - pow((vWorldPos.y - 0.72) * 1.8, 2.0)) * coreZ * (0.58 + uThermalLevel * 0.42);
+                        float dbHeat = exp(-pow((vWorldPos.x - 1.55) * 1.6, 2.0) - pow((vWorldPos.y - 1.06) * 2.4, 2.0)) * (0.20 + uBrakeHeat * 0.85);
+                        float eogHeat = exp(-pow((vWorldPos.x - 9.5) * 0.75, 2.0) - pow((vWorldPos.y - 0.42) * 1.9, 2.0)) * coreZ * 0.82;
+                        float discHeat = smoothstep(-0.55, -0.82, vWorldPos.y) * exp(-pow((abs(vWorldPos.z) - 0.35) * 4.5, 2.0)) * (0.35 + uBrakeHeat * 0.65);
+
+                        vec3 viewDir = normalize(vViewPosition);
+                        float lambert = 0.78 + 0.22 * max(0.0, dot(vNormal, normalize(vec3(0.4, 0.9, 0.5))));
+                        float rim = pow(1.0 - abs(dot(vNormal, viewDir)), 1.8) * 0.22;
+
+                        float h = clamp(0.10 + max(max(engHeat, dbHeat), max(eogHeat, discHeat)) + rim, 0.0, 1.0);
+                        gl_FragColor = vec4(heatPalette(h) * lambert, 1.0);
+                    }
+                `
+            });
+
+            // ============================================================================
+            // 3. PBR MATERIALS PALETTE, PROCEDURAL CANVAS LIVERIES & CAD GEOMETRY BUILDERS
+            // ============================================================================
+            function createWdg4gHoodTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 2048;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = '#eab308';
+                ctx.fillRect(0, 0, 2048, 512);
+
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, 2048, 128);
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, 128, 2048, 28);
+
+                for (let x = 0; x < 2048; x += 64) {
+                    ctx.fillStyle = (x / 64) % 2 === 0 ? '#dc2626' : '#f8fafc';
+                    ctx.fillRect(x, 488, 64, 24);
+                }
+
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.55)';
+                ctx.lineWidth = 3;
+                for (let d = 80; d < 1960; d += 110) {
+                    ctx.strokeRect(d, 170, 96, 295);
+                    ctx.fillStyle = '#334155';
+                    ctx.fillRect(d + 78, 310, 10, 26);
+
+                    if ((d > 260 && d < 720) || (d > 1150 && d < 1820)) {
+                        ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+                        for (let y = 190; y < 340; y += 11) {
+                            ctx.fillRect(d + 12, y, 64, 5);
+                        }
+                    }
+                }
+
+                ctx.fillStyle = '#facc15';
+                ctx.font = 'bold 42px Inter, sans-serif';
+                ctx.fillText('भारतीय रेल   •   INDIAN RAILWAYS', 620, 78);
+
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 54px JetBrains Mono, monospace';
+                ctx.fillText('WDG-4G   49001', 740, 435);
+
+                ctx.font = 'bold 28px Inter, sans-serif';
+                ctx.fillStyle = '#b91c1c';
+                ctx.fillText('4500 HP AC-AC • GEVO-12 • ROZA', 765, 472);
+
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.anisotropy = 4;
+                return tex;
+            }
+
+            function createLhbCoachTexture(isEog) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 2048;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+
+                ctx.fillStyle = '#dc2626';
+                ctx.fillRect(0, 0, 2048, 512);
+
+                const grad = ctx.createLinearGradient(0, 110, 0, 310);
+                grad.addColorStop(0, '#cbd5e1');
+                grad.addColorStop(0.5, '#f8fafc');
+                grad.addColorStop(1, '#94a3b8');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 115, 2048, 185);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 103, 2048, 12);
+                ctx.fillRect(0, 300, 2048, 14);
+                ctx.fillRect(0, 468, 2048, 10);
+
+                if (isEog) {
+                    ctx.fillStyle = '#1e293b';
+                    for (let g = 240; g < 1360; g += 260) {
+                        ctx.fillRect(g, 138, 210, 140);
+                        ctx.fillStyle = '#475569';
+                        for (let y = 148; y < 270; y += 12) {
+                            ctx.fillRect(g + 10, y, 190, 6);
+                        }
+                        ctx.fillStyle = '#1e293b';
+                    }
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(1520, 145, 130, 125);
+                    ctx.fillRect(1720, 145, 130, 125);
+                }
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 36px Inter, sans-serif';
+                ctx.fillText(
+                    isEog
+                        ? 'भारतीय रेल  •  LHB EOG POWER CAR (2×500 kVA 750V)  •  LWLRRM'
+                        : 'भारतीय रेल  •  RAJDHANI EXPRESS (AC 3-TIER / EXEC CHAIR)  •  LWACCN',
+                    370,
+                    68
+                );
+
+                ctx.fillStyle = '#fef08a';
+                ctx.font = 'bold 34px JetBrains Mono, monospace';
+                ctx.fillText(
+                    isEog ? 'POWER & GUARD VAN • 160 KM/H FIAT BOGIE' : 'NEW DELHI ⇄ HOWRAH RAJDHANI • B1 / E1',
+                    560,
+                    415
+                );
+
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.anisotropy = 4;
+                return tex;
+            }
+
+            const wdg4gHoodTex = createWdg4gHoodTexture();
+            const lhbEogTex = createLhbCoachTexture(true);
+            const lhbCoachTex = createLhbCoachTexture(false);
+
+            const materials = {
+                irYellowHood: new THREE.MeshStandardMaterial({
+                    color: 0xfacc15,
+                    metalness: 0.34,
+                    roughness: 0.26,
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide
+                }),
+                irYellowTexturedHood: new THREE.MeshStandardMaterial({
+                    map: wdg4gHoodTex,
+                    metalness: 0.32,
+                    roughness: 0.28,
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide
+                }),
+                irDarkBlueTrim: new THREE.MeshStandardMaterial({
+                    color: 0x0f172a,
+                    metalness: 0.48,
+                    roughness: 0.32,
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide
+                }),
+                lhbScarletRed: new THREE.MeshStandardMaterial({
+                    color: 0xdc2626,
+                    metalness: 0.38,
+                    roughness: 0.25,
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide
+                }),
+                lhbEogSideMat: new THREE.MeshStandardMaterial({
+                    map: lhbEogTex,
+                    metalness: 0.35,
+                    roughness: 0.26,
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide
+                }),
+                lhbCoachSideMat: new THREE.MeshStandardMaterial({
+                    map: lhbCoachTex,
+                    metalness: 0.35,
+                    roughness: 0.26,
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide
+                }),
+                lhbRoofSilver: new THREE.MeshStandardMaterial({
+                    color: 0x94a3b8,
+                    metalness: 0.72,
+                    roughness: 0.28,
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide
+                }),
+                lhbWhiteStripe: new THREE.MeshStandardMaterial({
+                    color: 0xf8fafc,
+                    metalness: 0.2,
+                    roughness: 0.3,
+                    transparent: true,
+                    opacity: 1.0
+                }),
+                cabGlass: new THREE.MeshPhysicalMaterial({
+                    color: 0x38bdf8,
+                    metalness: 0.15,
+                    roughness: 0.06,
+                    transparent: true,
+                    opacity: 0.48
+                }),
+                lhbTintedGlass: new THREE.MeshPhysicalMaterial({
+                    color: 0x0f172a,
+                    metalness: 0.25,
+                    roughness: 0.08,
+                    transparent: true,
+                    opacity: 0.42,
+                    side: THREE.DoubleSide
+                }),
+                underframeSteel: new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    metalness: 0.72,
+                    roughness: 0.38
+                }),
+                redBufferBeam: new THREE.MeshStandardMaterial({
+                    color: 0xb91c1c,
+                    metalness: 0.45,
+                    roughness: 0.35
+                }),
+                gevoEngineBlock: new THREE.MeshStandardMaterial({
+                    color: 0x475569,
+                    metalness: 0.76,
+                    roughness: 0.28
+                }),
+                pistonSteel: new THREE.MeshStandardMaterial({
+                    color: 0xf8fafc,
+                    metalness: 0.92,
+                    roughness: 0.14,
+                    emissive: 0x0ea5e9,
+                    emissiveIntensity: 0.12
+                }),
+                alternatorBlue: new THREE.MeshStandardMaterial({
+                    color: 0x0284c7,
+                    metalness: 0.68,
+                    roughness: 0.25
+                }),
+                copperBusbar: new THREE.MeshStandardMaterial({
+                    color: 0xd97706,
+                    metalness: 0.88,
+                    roughness: 0.18,
+                    emissive: 0x7c2d12,
+                    emissiveIntensity: 0.18
+                }),
+                ccaCabinetMat: new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    metalness: 0.58,
+                    roughness: 0.32
+                }),
+                igbtModuleMat: new THREE.MeshStandardMaterial({
+                    color: 0x0ea5e9,
+                    metalness: 0.72,
+                    roughness: 0.20,
+                    emissive: 0x0284c7,
+                    emissiveIntensity: 0.32
+                }),
+                bogieCastSteel: new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    metalness: 0.68,
+                    roughness: 0.38
+                }),
+                wheelSteel: new THREE.MeshStandardMaterial({
+                    color: 0xe2e8f0,
+                    metalness: 0.92,
+                    roughness: 0.15
+                }),
+                brakeDiscMat: new THREE.MeshStandardMaterial({
+                    color: 0x94a3b8,
+                    metalness: 0.88,
+                    roughness: 0.20,
+                    emissive: 0xef4444,
+                    emissiveIntensity: 0.02
+                }),
+                tractionMotorMat: new THREE.MeshStandardMaterial({
+                    color: 0x0f766e,
+                    metalness: 0.70,
+                    roughness: 0.28,
+                    emissive: 0x0d9488,
+                    emissiveIntensity: 0.14
+                }),
+                fuelTankMat: new THREE.MeshStandardMaterial({
+                    color: 0x1e293b,
+                    metalness: 0.58,
+                    roughness: 0.42
+                }),
+                dynamicBrakeGridMat: new THREE.MeshStandardMaterial({
+                    color: 0x64748b,
+                    metalness: 0.72,
+                    roughness: 0.28,
+                    emissive: 0xef4444,
+                    emissiveIntensity: 0.05
+                }),
+                berthBlueMat: new THREE.MeshStandardMaterial({
+                    color: 0x1d4ed8,
+                    metalness: 0.15,
+                    roughness: 0.62
+                }),
+                execChairMat: new THREE.MeshStandardMaterial({
+                    color: 0x991b1b,
+                    metalness: 0.22,
+                    roughness: 0.52
+                }),
+                coachFloorMat: new THREE.MeshStandardMaterial({
+                    color: 0x334155,
+                    metalness: 0.2,
+                    roughness: 0.72
+                }),
+                partitionCreamMat: new THREE.MeshStandardMaterial({
+                    color: 0xe2e8f0,
+                    metalness: 0.15,
+                    roughness: 0.48
+                }),
+                dgGreenMat: new THREE.MeshStandardMaterial({
+                    color: 0x059669,
+                    metalness: 0.58,
+                    roughness: 0.32
+                })
+            };
+
+            // ============================================================================
+            // 3B. CAD-GRADE PROCEDURAL 3D GEOMETRY HELPERS
+            // ============================================================================
+            class HelixCurve extends THREE.Curve {
+                constructor(radius, height, turns) {
+                    super();
+                    this.radius = radius;
+                    this.height = height;
+                    this.turns = turns;
+                }
+                getPoint(t, optionalTarget = new THREE.Vector3()) {
+                    const angle = t * Math.PI * 2 * this.turns;
+                    const x = Math.cos(angle) * this.radius;
+                    const y = (t - 0.5) * this.height;
+                    const z = Math.sin(angle) * this.radius;
+                    return optionalTarget.set(x, y, z);
+                }
+            }
+
+            const cachedSpringGeos = {};
+            function getHelicalSpringGeo(radius, height, turns, wireRadius) {
+                const key = `${radius}_${height}_${turns}_${wireRadius}`;
+                if (!cachedSpringGeos[key]) {
+                    const curve = new HelixCurve(radius, height, turns);
+                    cachedSpringGeos[key] = new THREE.TubeGeometry(curve, turns * 12, wireRadius, 8, false);
+                }
+                return cachedSpringGeos[key];
+            }
+
+            function createContouredRailwayWheel(outerRadius, mat) {
+                const group = new THREE.Group();
+                const pts = [
+                    new THREE.Vector2(0.06, -0.055),
+                    new THREE.Vector2(0.11, -0.055),
+                    new THREE.Vector2(0.12, -0.025),
+                    new THREE.Vector2(outerRadius - 0.055, -0.018),
+                    new THREE.Vector2(outerRadius - 0.045, -0.048),
+                    new THREE.Vector2(outerRadius, -0.048),
+                    new THREE.Vector2(outerRadius + 0.024, 0.032),
+                    new THREE.Vector2(outerRadius + 0.024, 0.048),
+                    new THREE.Vector2(outerRadius - 0.045, 0.048),
+                    new THREE.Vector2(outerRadius - 0.055, 0.018),
+                    new THREE.Vector2(0.12, 0.025),
+                    new THREE.Vector2(0.11, 0.055),
+                    new THREE.Vector2(0.06, 0.055)
+                ];
+                const latheGeo = new THREE.LatheGeometry(pts, 32);
+                latheGeo.rotateX(Math.PI / 2);
+                const wheelMesh = new THREE.Mesh(latheGeo, mat);
+                group.add(wheelMesh);
+
+                const darkCenter = new THREE.Mesh(
+                    new THREE.CylinderGeometry(outerRadius * 0.72, outerRadius * 0.72, 0.042, 24),
+                    materials.underframeSteel
+                );
+                darkCenter.rotation.x = Math.PI / 2;
+                group.add(darkCenter);
+
+                for (let b = 0; b < 4; b++) {
+                    const ang = (b / 4) * Math.PI * 2;
+                    const boss = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.038, 0.038, 0.062, 12),
+                        mat
+                    );
+                    boss.rotation.x = Math.PI / 2;
+                    boss.position.set(Math.cos(ang) * (outerRadius * 0.48), Math.sin(ang) * (outerRadius * 0.48), 0);
+                    group.add(boss);
+                }
+                return group;
+            }
+
+            function create3DPipe(pointsArray, radius, mat, tubularSegs = 24) {
+                const vecs = pointsArray.map(p => new THREE.Vector3(p[0], p[1], p[2]));
+                const curve = new THREE.CatmullRomCurve3(vecs);
+                const geo = new THREE.TubeGeometry(curve, tubularSegs, radius, 10, false);
+                return new THREE.Mesh(geo, mat);
+            }
+
+            function createCentrifugalBlower(scrollRadius, scrollWidth, scrollMat, motorMat) {
+                const g = new THREE.Group();
+                const scroll = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scrollRadius, scrollRadius * 1.06, scrollWidth, 24),
+                    scrollMat
+                );
+                scroll.rotation.x = Math.PI / 2;
+                g.add(scroll);
+
+                const chute = new THREE.Mesh(
+                    new THREE.BoxGeometry(scrollRadius * 1.4, scrollRadius * 0.85, scrollWidth * 0.85),
+                    scrollMat
+                );
+                chute.position.set(scrollRadius * 0.55, -scrollRadius * 0.45, 0);
+                g.add(chute);
+
+                const motor = new THREE.Mesh(
+                    new THREE.CylinderGeometry(scrollRadius * 0.58, scrollRadius * 0.58, scrollWidth * 1.15, 20),
+                    motorMat
+                );
+                motor.rotation.x = Math.PI / 2;
+                motor.position.z = scrollWidth * 0.95;
+                g.add(motor);
+
+                return g;
+            }
+
+            function createTightlockCoupler(dirSign) {
+                const g = new THREE.Group();
+                const shank = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.12, 0.16), materials.bogieCastSteel);
+                shank.position.x = dirSign * 0.16;
+                g.add(shank);
+
+                const head = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.28), materials.bogieCastSteel);
+                head.position.set(dirSign * 0.34, 0, 0.02);
+                g.add(head);
+
+                const knuckle = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.08, 0.08, 0.24, 14),
+                    materials.copperBusbar
+                );
+                knuckle.position.set(dirSign * 0.42, 0, -0.05);
+                g.add(knuckle);
+
+                return g;
+            }
+
+            // 3D Perforated LHB Side Wall Builder with true punched window apertures and tumblehome skirt
+            function createLhbSideWallWith3DWindows(length, height, zSide, isEog, liveryMat, glassMat) {
+                const wallGroup = new THREE.Group();
+                const halfL = length / 2;
+                const halfH = height / 2;
+
+                const wallShape = new THREE.Shape();
+                wallShape.moveTo(-halfL, -halfH);
+                wallShape.lineTo(halfL, -halfH);
+                wallShape.lineTo(halfL, halfH);
+                wallShape.lineTo(-halfL, halfH);
+                wallShape.closePath();
+
+                const numWindows = isEog ? 2 : 9;
+                const startX = isEog ? 1.8 : -halfL + 1.05;
+                const spacing = isEog ? 1.15 : (length - 2.1) / (numWindows - 1);
+
+                for (let i = 0; i < numWindows; i++) {
+                    const wx = startX + i * spacing;
+                    const winW = 0.34, winH = 0.22, r = 0.035;
+                    const hole = new THREE.Path();
+                    hole.moveTo(wx - winW + r, -0.04);
+                    hole.lineTo(wx + winW - r, -0.04);
+                    hole.quadraticCurveTo(wx + winW, -0.04, wx + winW, -0.04 + r);
+                    hole.lineTo(wx + winW, -0.04 + winH * 2 - r);
+                    hole.quadraticCurveTo(wx + winW, -0.04 + winH * 2, wx + winW - r, -0.04 + winH * 2);
+                    hole.lineTo(wx - winW + r, -0.04 + winH * 2);
+                    hole.quadraticCurveTo(wx - winW, -0.04 + winH * 2, wx - winW, -0.04 + winH * 2 - r);
+                    hole.lineTo(wx - winW, -0.04 + r);
+                    hole.quadraticCurveTo(wx - winW, -0.04, wx - winW + r, -0.04);
+                    wallShape.holes.push(hole);
+                }
+
+                [-halfL + 0.36, halfL - 0.36].forEach(dx => {
+                    const doorHole = new THREE.Path();
+                    doorHole.moveTo(dx - 0.20, -halfH + 0.04);
+                    doorHole.lineTo(dx + 0.20, -halfH + 0.04);
+                    doorHole.lineTo(dx + 0.20, halfH - 0.12);
+                    doorHole.lineTo(dx - 0.20, halfH - 0.12);
+                    doorHole.closePath();
+                    wallShape.holes.push(doorHole);
+                });
+
+                const wallGeo = new THREE.ExtrudeGeometry(wallShape, {
+                    depth: 0.032,
+                    bevelEnabled: true,
+                    bevelThickness: 0.006,
+                    bevelSize: 0.006,
+                    bevelSegments: 2
+                });
+                wallGeo.center();
+
+                // Three.js r128 ExtrudeGeometry UV Normalization:
+                // Maps world coords [-halfL, halfL] & [-halfH, halfH] to [0, 1] across the entire LHB carbody
+                const posAttr = wallGeo.attributes.position;
+                const uvAttr = wallGeo.attributes.uv;
+                if (posAttr && uvAttr) {
+                    for (let i = 0; i < posAttr.count; i++) {
+                        const px = posAttr.getX(i);
+                        const py = posAttr.getY(i);
+                        const u = zSide > 0 ? (px + halfL) / length : (halfL - px) / length;
+                        const v = (py + halfH) / height;
+                        uvAttr.setXY(i, Math.max(0, Math.min(1, u)), Math.max(0, Math.min(1, v)));
+                    }
+                    uvAttr.needsUpdate = true;
+                }
+
+                const outerSkin = new THREE.Mesh(wallGeo, liveryMat);
+                wallGroup.add(outerSkin);
+
+                // Continuous interior tinted polycarbonate glazing strip
+                const glassStrip = new THREE.Mesh(
+                    new THREE.BoxGeometry(length - 1.2, 0.48, 0.012),
+                    glassMat
+                );
+                glassStrip.position.set(0, 0.18, zSide > 0 ? -0.015 : 0.015);
+                glassStrip.castShadow = false;
+                wallGroup.add(glassStrip);
+
+                // Lower aerodynamic stainless turn-under skirt (tumblehome)
+                const skirt = new THREE.Mesh(
+                    new THREE.BoxGeometry(length, 0.16, 0.028),
+                    liveryMat
+                );
+                skirt.position.set(0, -halfH - 0.07, zSide > 0 ? -0.03 : 0.03);
+                skirt.rotation.x = zSide > 0 ? 0.24 : -0.24;
+                wallGroup.add(skirt);
+
+                return wallGroup;
+            }
+
+            // Sculpted Contoured S-Curve Executive Chair Builder
+            function createSculptedExecutiveSeat() {
+                const seat = new THREE.Group();
+
+                const backShape = new THREE.Shape();
+                backShape.moveTo(-0.04, 0);
+                backShape.quadraticCurveTo(-0.08, 0.18, -0.02, 0.42);
+                backShape.lineTo(0.05, 0.42);
+                backShape.quadraticCurveTo(0.01, 0.18, 0.04, 0);
+                backShape.closePath();
+
+                const backGeo = new THREE.ExtrudeGeometry(backShape, {
+                    depth: 0.21, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 3
+                });
+                backGeo.center();
+                const backrest = new THREE.Mesh(backGeo, materials.execChairMat);
+                backrest.position.set(0.07, 0.23, 0);
+                backrest.rotation.z = -0.18;
+
+                const cushion = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.04, 0.04, 0.22, 16),
+                    materials.execChairMat
+                );
+                cushion.rotation.x = Math.PI / 2;
+                cushion.scale.set(3.2, 1.0, 1.0);
+
+                const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.10, 0.19), materials.lhbWhiteStripe);
+                headrest.position.set(0.11, 0.43, 0);
+                const trayTable = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.16, 0.18), materials.partitionCreamMat);
+                trayTable.position.set(0.12, 0.22, 0);
+                trayTable.rotation.z = -0.18;
+
+                seat.add(cushion, backrest, headrest, trayTable);
+                return seat;
+            }
+
+            // ============================================================================
+            // 4. PROCEDURAL 3D CONSTRUCTION: WDG4G LOCO + LHB EOG + LHB AC COACH
+            // ============================================================================
+            const consistRoot = new THREE.Group();
+            scene.add(consistRoot);
+
+            const locoRoot = new THREE.Group();
+            const eogCarRoot = new THREE.Group();
+            const acCoachRoot = new THREE.Group();
+            consistRoot.add(locoRoot, eogCarRoot, acCoachRoot);
+
+            const sysGroups = {
+                cab1: new THREE.Group(),
+                hvac1: new THREE.Group(),
+                auxcab: new THREE.Group(),
+                alternator: new THREE.Group(),
+                engine: new THREE.Group(),
+                turbo: new THREE.Group(),
+                lubeoil: new THREE.Group(),
+                dbgrid: new THREE.Group(),
+                radiator: new THREE.Group(),
+                compressor: new THREE.Group(),
+                apu: new THREE.Group(),
+                cab2: new THREE.Group(),
+                hvac2: new THREE.Group(),
+                hood: new THREE.Group(),
+                underframe: new THREE.Group(),
+                fueltank: new THREE.Group(),
+                bogie1: new THREE.Group(),
+                bogie2: new THREE.Group(),
+                motors1: new THREE.Group(),
+                motors2: new THREE.Group(),
+                eogUnderframe: new THREE.Group(),
+                eogInterior: new THREE.Group(),
+                eogShell: new THREE.Group(),
+                eogBogies: new THREE.Group(),
+                coachUnderframe: new THREE.Group(),
+                coachBerths: new THREE.Group(),
+                coachChairs: new THREE.Group(),
+                coachShell: new THREE.Group(),
+                coachRmpu: new THREE.Group(),
+                coachFiatBogies: new THREE.Group()
+            };
+
+            [
+                'cab1', 'hvac1', 'auxcab', 'alternator', 'engine', 'turbo', 'lubeoil',
+                'dbgrid', 'radiator', 'compressor', 'apu', 'cab2', 'hvac2', 'hood',
+                'underframe', 'fueltank', 'bogie1', 'bogie2', 'motors1', 'motors2'
+            ].forEach(k => locoRoot.add(sysGroups[k]));
+
+            ['eogUnderframe', 'eogInterior', 'eogShell', 'eogBogies'].forEach(k => eogCarRoot.add(sysGroups[k]));
+            ['coachUnderframe', 'coachBerths', 'coachChairs', 'coachShell', 'coachRmpu', 'coachFiatBogies'].forEach(k => acCoachRoot.add(sysGroups[k]));
+
+            const componentMeshMap = {
+                cab1: [sysGroups.cab1, sysGroups.hvac1],
+                auxcab: [sysGroups.auxcab],
+                alternator: [sysGroups.alternator],
+                engine: [sysGroups.engine, sysGroups.turbo],
+                lubeoil: [sysGroups.lubeoil],
+                dbgrid: [sysGroups.dbgrid],
+                radiator: [sysGroups.radiator],
+                compressor: [sysGroups.compressor, sysGroups.apu],
+                cab2: [sysGroups.cab2, sysGroups.hvac2],
+                underframe: [sysGroups.underframe, sysGroups.fueltank],
+                bogies: [sysGroups.bogie1, sysGroups.bogie2, sysGroups.motors1, sysGroups.motors2],
+                lhb_eog: [sysGroups.eogInterior, sysGroups.eogUnderframe],
+                lhb_berths: [sysGroups.coachBerths],
+                lhb_chair: [sysGroups.coachChairs],
+                lhb_rmpu: [sysGroups.coachRmpu],
+                fiat_bogie: [sysGroups.coachFiatBogies, sysGroups.eogBogies]
+            };
+
+            // ----------------------------------------------------------------------------
+            // 4.1 EXTENDED INDIAN BROAD GAUGE TRACK BED
+            // ----------------------------------------------------------------------------
+            const trackGroup = new THREE.Group();
+            scene.add(trackGroup);
+
+            const railMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.18 });
+            [-0.62, 0.62].forEach(zRail => {
+                const railFoot = new THREE.Mesh(new THREE.BoxGeometry(50, 0.025, 0.11), railMat);
+                railFoot.position.set(10, -1.155, zRail);
+                const railWeb = new THREE.Mesh(new THREE.BoxGeometry(50, 0.06, 0.032), railMat);
+                railWeb.position.set(10, -1.12, zRail);
+                const railHead = new THREE.Mesh(new THREE.BoxGeometry(50, 0.035, 0.068), railMat);
+                railHead.position.set(10, -1.08, zRail);
+                trackGroup.add(railFoot, railWeb, railHead);
+            });
+
+            const sleeperGeo = new THREE.BoxGeometry(0.19, 0.075, 1.88);
+            const sleeperMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
+            const animatedSleepers = [];
+            for (let i = -32; i <= 76; i++) {
+                const sleeper = new THREE.Mesh(sleeperGeo, sleeperMat);
+                sleeper.position.set(i * 0.42, -1.195, 0);
+                sleeper.receiveShadow = true;
+                trackGroup.add(sleeper);
+                animatedSleepers.push(sleeper);
+            }
+
+            const groundGrid = new THREE.GridHelper(64, 64, 0x38bdf8, 0x1e293b);
+            groundGrid.position.set(10, -1.24, 0);
+            groundGrid.material.opacity = 0.28;
+            groundGrid.material.transparent = true;
+            scene.add(groundGrid);
+
+            // ----------------------------------------------------------------------------
+            // 4.2 WDG4G UNDERFRAME & SLOTTED V-PLOW COWCATCHER
+            // ----------------------------------------------------------------------------
+            const frameMain = new THREE.Mesh(new THREE.BoxGeometry(9.68, 0.18, 1.52), materials.underframeSteel);
+            frameMain.position.set(0, -0.09, 0);
+            sysGroups.underframe.add(frameMain);
+
+            [-0.76, 0.76].forEach(zSide => {
+                const solebar = new THREE.Mesh(new THREE.BoxGeometry(9.70, 0.07, 0.03), materials.irYellowHood);
+                solebar.position.set(0, -0.09, zSide);
+                sysGroups.underframe.add(solebar);
+
+                const topRail = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 6.75, 8), materials.irYellowHood);
+                topRail.rotation.z = Math.PI / 2;
+                topRail.position.set(0, 0.44, zSide * 0.97);
+                sysGroups.underframe.add(topRail);
+
+                for (let s = -3.15; s <= 3.15; s += 0.63) {
+                    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.46, 6), materials.irYellowHood);
+                    post.position.set(s, 0.21, zSide * 0.97);
+                    sysGroups.underframe.add(post);
+                }
+            });
+
+            // Front & Rear Headstocks, AAR Couplers & Upgraded Slotted Steel Bar V-Plow Pilots
+            [-4.85, 4.85].forEach((xPos, idx) => {
+                const sign = idx === 0 ? -1 : 1;
+                const headstock = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.38, 1.54), materials.redBufferBeam);
+                headstock.position.set(xPos, -0.22, 0);
+                sysGroups.underframe.add(headstock);
+
+                const cbc = createTightlockCoupler(sign);
+                cbc.position.set(xPos, -0.22, 0);
+                sysGroups.underframe.add(cbc);
+
+                // Slotted V-Frame Pilot with 5 Horizontal Deflection Bars per Side
+                const plowGroup = new THREE.Group();
+                plowGroup.position.set(xPos + sign * 0.12, -0.55, 0);
+                [-1, 1].forEach(zHalf => {
+                    for (let bar = 0; bar < 5; bar++) {
+                        const barMesh = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.035, 0.032, 0.74),
+                            materials.redBufferBeam
+                        );
+                        barMesh.position.set(sign * (0.14 - bar * 0.018), -0.14 + bar * 0.07, zHalf * 0.33);
+                        barMesh.rotation.y = sign * zHalf * 0.42;
+                        plowGroup.add(barMesh);
+                    }
+                    [-0.18, -0.48].forEach(zRib => {
+                        const strut = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.04, 0.34, 0.04),
+                            materials.underframeSteel
+                        );
+                        strut.position.set(sign * 0.08, 0, zHalf * Math.abs(zRib));
+                        plowGroup.add(strut);
+                    });
+                });
+                sysGroups.underframe.add(plowGroup);
+
+                // Twin Flexible Air Brake Hoses
+                [-0.38, 0.38].forEach((zHose, hIdx) => {
+                    const hose = create3DPipe([
+                        [xPos + sign * 0.08, -0.32, zHose],
+                        [xPos + sign * 0.22, -0.52, zHose * 0.85],
+                        [xPos + sign * 0.18, -0.68, zHose * 0.75]
+                    ], 0.018, new THREE.MeshStandardMaterial({ color: hIdx === 0 ? 0x10b981 : 0xf8fafc }));
+                    sysGroups.underframe.add(hose);
+                });
+            });
+
+            // Contoured 6,000 L Belly Fuel Tank
+            const tankShape = new THREE.Shape();
+            tankShape.moveTo(-0.68, 0.28);
+            tankShape.lineTo(0.68, 0.28);
+            tankShape.lineTo(0.68, -0.05);
+            tankShape.lineTo(0.46, -0.28);
+            tankShape.lineTo(-0.46, -0.28);
+            tankShape.lineTo(-0.68, -0.05);
+            tankShape.closePath();
+
+            const fuelTankGeo = new THREE.ExtrudeGeometry(tankShape, { depth: 2.52, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 3 });
+            fuelTankGeo.rotateY(Math.PI / 2);
+            fuelTankGeo.center();
+            const fuelTankBody = new THREE.Mesh(fuelTankGeo, materials.fuelTankMat);
+            fuelTankBody.position.set(0.0, -0.50, 0);
+            sysGroups.fueltank.add(fuelTankBody);
+
+            [-0.85, -0.28, 0.28, 0.85].forEach(xStrap => {
+                const strap = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.60, 1.40), materials.copperBusbar);
+                strap.position.set(xStrap, -0.50, 0);
+                sysGroups.fueltank.add(strap);
+            });
+
+            [-0.62, 0.62].forEach(xOff => {
+                [0.69, -0.69].forEach(zPos => {
+                    const glowRod = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.022, 0.022, 0.42, 14),
+                        new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+                    );
+                    glowRod.position.set(xOff, -0.46, zPos);
+                    sysGroups.fueltank.add(glowRod);
+
+                    const fillerNeck = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.045, 0.045, 0.16, 14),
+                        materials.redBufferBeam
+                    );
+                    fillerNeck.rotation.x = (zPos > 0 ? 1 : -1) * 0.65;
+                    fillerNeck.position.set(xOff * 1.4, -0.34, zPos * 0.98);
+                    sysGroups.fueltank.add(fillerNeck);
+                });
+            });
+
+            // 32-Cell SLA Battery Boxes
+            [-0.58, 0.58].forEach(zSide => {
+                const battTray = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.16, 0.28), materials.ccaCabinetMat);
+                battTray.position.set(-0.92, -0.28, zSide);
+                sysGroups.fueltank.add(battTray);
+
+                for (let c = 0; c < 8; c++) {
+                    [-0.06, 0.06].forEach(rowZ => {
+                        const cell = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.09, 0.14, 0.09),
+                            new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.28 })
+                        );
+                        cell.position.set(-1.30 + c * 0.105, -0.16, zSide + rowZ);
+                        sysGroups.fueltank.add(cell);
+
+                        const link = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.015, 0.02), materials.copperBusbar);
+                        link.position.set(-1.30 + c * 0.105, -0.085, zSide + rowZ);
+                        sysGroups.fueltank.add(link);
+                    });
+                }
+            });
+
+            // Main Reservoir (MR) Air Tanks
+            [-0.52, 0.52].forEach(zOff => {
+                const mrTank = new THREE.Mesh(new THREE.CylinderGeometry(0.145, 0.145, 0.82, 24), materials.alternatorBlue);
+                mrTank.rotation.z = Math.PI / 2;
+                mrTank.position.set(1.42, -0.45, zOff);
+                sysGroups.fueltank.add(mrTank);
+
+                [-0.41, 0.41].forEach(domeX => {
+                    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.145, 16, 12), materials.alternatorBlue);
+                    dome.position.set(1.42 + domeX, -0.45, zOff);
+                    sysGroups.fueltank.add(dome);
+                });
+            });
+
+            // ----------------------------------------------------------------------------
+            // 4.3 WDG4G Co-Co FABRICATED BOGIES WITH ARCUATE BRAKE SHOES
+            // ----------------------------------------------------------------------------
+            const animatedWheelsets = [];
+            const animatedCoachWheelsets = [];
+            const dynamicSpringCoils = [];
+
+            function buildWDG4GBogie(bogieGroup, motorsGroup, centerX) {
+                const springMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.65, roughness: 0.28 });
+                const coilGeo = getHelicalSpringGeo(0.068, 0.26, 6, 0.016);
+
+                const frameShape = new THREE.Shape();
+                frameShape.moveTo(-1.46, 0.12);
+                frameShape.lineTo(1.46, 0.12);
+                frameShape.lineTo(1.46, -0.16);
+                frameShape.lineTo(1.12, -0.16);
+                frameShape.lineTo(1.06, 0.01);
+                frameShape.lineTo(0.84, 0.01);
+                frameShape.lineTo(0.78, -0.14);
+                frameShape.lineTo(0.18, -0.14);
+                frameShape.lineTo(0.12, 0.01);
+                frameShape.lineTo(-0.12, 0.01);
+                frameShape.lineTo(-0.18, -0.14);
+                frameShape.lineTo(-0.78, -0.14);
+                frameShape.lineTo(-0.84, 0.01);
+                frameShape.lineTo(-1.06, 0.01);
+                frameShape.lineTo(-1.12, -0.16);
+                frameShape.lineTo(-1.46, -0.16);
+                frameShape.closePath();
+
+                const sideFrameGeo = new THREE.ExtrudeGeometry(frameShape, { depth: 0.10, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.012, bevelSegments: 2 });
+                sideFrameGeo.center();
+
+                [-0.67, 0.67].forEach(zSide => {
+                    const sideFrame = new THREE.Mesh(sideFrameGeo, materials.bogieCastSteel);
+                    sideFrame.position.set(centerX, -0.64, zSide);
+                    bogieGroup.add(sideFrame);
+
+                    [-0.96, 0, 0.96].forEach(xOff => {
+                        [-0.08, 0.08].forEach(sPair => {
+                            const coil = new THREE.Mesh(coilGeo, springMat);
+                            coil.position.set(centerX + xOff + sPair, -0.50, zSide * 1.02);
+                            bogieGroup.add(coil);
+                            dynamicSpringCoils.push(coil);
+                        });
+
+                        const axleBox = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.105, 0.105, 0.14, 18),
+                            new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.25 })
+                        );
+                        axleBox.rotation.x = Math.PI / 2;
+                        axleBox.position.set(centerX + xOff, -0.80, zSide * 1.05);
+                        bogieGroup.add(axleBox);
+
+                        const damperBody = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.028, 0.028, 0.28, 12),
+                            materials.redBufferBeam
+                        );
+                        damperBody.position.set(centerX + xOff + 0.18, -0.52, zSide * 1.08);
+                        bogieGroup.add(damperBody);
+                    });
+
+                    // Upgraded Arcuate Contoured Brake Shoes
+                    [-1.22, 0.26, 1.22].forEach(xOff => {
+                        const tbuGroup = new THREE.Group();
+                        tbuGroup.position.set(centerX + xOff, -0.76, zSide * 1.06);
+
+                        const tbuCylinder = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.12), materials.ccaCabinetMat);
+                        const shoeArc = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.33, 0.33, 0.09, 20, 1, true, -0.35, 0.7),
+                            materials.underframeSteel
+                        );
+                        shoeArc.rotation.x = Math.PI / 2;
+                        shoeArc.position.set(xOff > 0 ? -0.06 : 0.06, 0, 0);
+
+                        tbuGroup.add(tbuCylinder, shoeArc);
+                        bogieGroup.add(tbuGroup);
+                    });
+
+                    // Corner Sand Boxes & Delivery Pipes
+                    [-1.38, 1.38].forEach(endX => {
+                        const sandBox = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.11, 0.07, 0.28, 8),
+                            new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.48, roughness: 0.36 })
+                        );
+                        sandBox.position.set(centerX + endX, -0.46, zSide * 1.04);
+                        bogieGroup.add(sandBox);
+
+                        const sandPipe = create3DPipe([
+                            [centerX + endX, -0.58, zSide * 1.02],
+                            [centerX + endX * 0.92, -0.78, zSide * 0.96],
+                            [centerX + endX * 0.84, -0.94, zSide * 0.92]
+                        ], 0.012, materials.underframeSteel, 12);
+                        bogieGroup.add(sandPipe);
+                    });
+                });
+
+                const bolster = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.18, 1.34), materials.bogieCastSteel);
+                bolster.position.set(centerX, -0.44, 0);
+                bogieGroup.add(bolster);
+
+                // 3 Axles with 1092mm Lathe-Turned Wheels & 5GEB24 Motors
+                [-0.96, 0, 0.96].forEach((axleX) => {
+                    const wheelset = new THREE.Group();
+                    wheelset.position.set(centerX + axleX, -0.80, 0);
+
+                    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.078, 1.46, 18), materials.wheelSteel);
+                    axle.rotation.x = Math.PI / 2;
+                    wheelset.add(axle);
+
+                    const bullGear = new THREE.Mesh(new THREE.CylinderGeometry(0.255, 0.255, 0.095, 28), materials.copperBusbar);
+                    bullGear.rotation.x = Math.PI / 2;
+                    bullGear.position.z = 0.42;
+                    wheelset.add(bullGear);
+
+                    [-0.62, 0.62].forEach(zWheel => {
+                        const contouredWheel = createContouredRailwayWheel(0.32, materials.wheelSteel);
+                        contouredWheel.position.z = zWheel;
+                        if (zWheel < 0) contouredWheel.rotation.y = Math.PI;
+                        wheelset.add(contouredWheel);
+                    });
+
+                    bogieGroup.add(wheelset);
+                    animatedWheelsets.push(wheelset);
+
+                    const tmGroup = new THREE.Group();
+                    tmGroup.position.set(centerX + axleX + 0.23, -0.75, -0.04);
+
+                    const tmStator = new THREE.Mesh(new THREE.CylinderGeometry(0.235, 0.235, 0.86, 24), materials.tractionMotorMat);
+                    tmStator.rotation.x = Math.PI / 2;
+                    tmGroup.add(tmStator);
+
+                    for (let r = -0.34; r <= 0.34; r += 0.17) {
+                        const rib = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.012, 8, 24), materials.tractionMotorMat);
+                        rib.position.z = r;
+                        tmGroup.add(rib);
+                    }
+                    motorsGroup.add(tmGroup);
+
+                    const pinionCase = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.40, 0.13), materials.underframeSteel);
+                    pinionCase.position.set(centerX + axleX + 0.12, -0.77, 0.42);
+                    motorsGroup.add(pinionCase);
+
+                    const airBellows = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.44, 14), materials.ccaCabinetMat);
+                    airBellows.position.set(centerX + axleX + 0.23, -0.45, -0.22);
+                    motorsGroup.add(airBellows);
+                });
+            }
+
+            buildWDG4GBogie(sysGroups.bogie1, sysGroups.motors1, -2.7);
+            buildWDG4GBogie(sysGroups.bogie2, sysGroups.motors2, 2.7);
+
+            // ----------------------------------------------------------------------------
+            // 4.4 WDG4G INTERNAL MACHINERY & ARTICULATING SLIDER-CRANK KINEMATICS
+            // ----------------------------------------------------------------------------
+            function buildOperatorCabInterior(cabGroup, hvacGroup, xCenter, facingDir, isCab1) {
+                const deskBase = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.48, 1.28), materials.ccaCabinetMat);
+                deskBase.position.set(xCenter + facingDir * 0.16, 0.38, 0);
+                cabGroup.add(deskBase);
+
+                const deskTop = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 1.32), materials.underframeSteel);
+                deskTop.position.set(xCenter + facingDir * 0.14, 0.64, 0);
+                cabGroup.add(deskTop);
+
+                [-0.28, -0.18, 0.18, 0.28].forEach((zLev, lIdx) => {
+                    const lever = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.012, 0.012, 0.14, 8),
+                        lIdx === 3 ? materials.redBufferBeam : materials.irYellowHood
+                    );
+                    lever.position.set(xCenter + facingDir * 0.02, 0.72, zLev);
+                    lever.rotation.z = facingDir * 0.35;
+                    cabGroup.add(lever);
+                });
+
+                [-0.44, -0.15, 0.15, 0.44].forEach((zOff, idx) => {
+                    const screenBezel = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.21, 0.25), materials.underframeSteel);
+                    screenBezel.position.set(xCenter + facingDir * 0.06, 0.79, zOff);
+                    screenBezel.rotation.z = -facingDir * 0.22;
+                    cabGroup.add(screenBezel);
+
+                    const lcdPanel = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.055, 0.17, 0.21),
+                        new THREE.MeshBasicMaterial({ color: idx % 2 === 0 ? 0x38bdf8 : 0x10b981 })
+                    );
+                    lcdPanel.position.copy(screenBezel.position);
+                    lcdPanel.rotation.copy(screenBezel.rotation);
+                    cabGroup.add(lcdPanel);
+                });
+
+                [-0.42, 0.42].forEach(zSeat => {
+                    const seatGroup = new THREE.Group();
+                    seatGroup.position.set(xCenter - facingDir * 0.26, 0.36, zSeat);
+
+                    const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.28, 12), materials.underframeSteel);
+                    pedestal.position.y = -0.12;
+                    const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.08, 0.28), materials.alternatorBlue);
+                    const backrest = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.46, 0.26), materials.alternatorBlue);
+                    backrest.position.set(-facingDir * 0.11, 0.24, 0);
+                    backrest.rotation.z = facingDir * 0.12;
+                    const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.12, 0.20), materials.irYellowHood);
+                    headrest.position.set(-facingDir * 0.13, 0.48, 0);
+
+                    seatGroup.add(pedestal, cushion, backrest, headrest);
+                    cabGroup.add(seatGroup);
+                });
+
+                const fireExt = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.36, 14), materials.redBufferBeam);
+                fireExt.position.set(xCenter - facingDir * 0.42, 0.28, 0.56);
+                cabGroup.add(fireExt);
+
+                if (isCab1) {
+                    const ca1Cabinet = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.16, 1.24), materials.ccaCabinetMat);
+                    ca1Cabinet.position.set(-3.60, 0.60, 0);
+                    cabGroup.add(ca1Cabinet);
+
+                    for (let r = 0; r < 4; r++) {
+                        const breakerStrip = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.26, 0.06, 0.96),
+                            new THREE.MeshBasicMaterial({ color: r === 0 ? 0xfacc15 : 0x38bdf8 })
+                        );
+                        breakerStrip.position.set(-3.60, 0.36 + r * 0.18, 0);
+                        cabGroup.add(breakerStrip);
+                    }
+                }
+
+                const hvacCasing = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.72, 0.18, 0.82),
+                    new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.65, roughness: 0.3 })
+                );
+                hvacCasing.position.set(xCenter - facingDir * 0.05, 1.32, 0);
+                hvacGroup.add(hvacCasing);
+
+                [-0.22, 0.22].forEach(zFan => {
+                    const fanGrille = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.15, 0.15, 0.20, 18),
+                        materials.underframeSteel
+                    );
+                    fanGrille.position.set(xCenter - facingDir * 0.05, 1.32, zFan);
+                    hvacGroup.add(fanGrille);
+                });
+            }
+
+            buildOperatorCabInterior(sysGroups.cab1, sysGroups.hvac1, -4.15, -1, true);
+            buildOperatorCabInterior(sysGroups.cab2, sysGroups.hvac2, 4.15, 1, false);
+
+                        // Auxiliary Cab (CA-2 to CA-5 + 6x Axle IGBT Phase Inverters + 5GDY102D Centrifugal Blower)
+            const auxCabFrame = new THREE.Group();
+            auxCabFrame.position.set(-2.85, 0.60, 0);
+
+            // Structural Welded Aluminum Rack Framework & Shelf Dividers
+            const rackSpine = new THREE.Mesh(new THREE.BoxGeometry(1.06, 1.18, 0.82), materials.ccaCabinetMat);
+            auxCabFrame.add(rackSpine);
+
+            [-0.51, 0.51].forEach(xCol => {
+                [-0.39, 0.39].forEach(zCol => {
+                    const column = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.20, 0.04), materials.pistonSteel);
+                    column.position.set(xCol, 0, zCol);
+                    auxCabFrame.add(column);
+                });
+            });
+
+            // Control Areas CA-2 to CA-5: 4 Slide-In Eurocard Logic Subracks with Breakers & Diagnostic Test Ports
+            for (let b = 0; b < 4; b++) {
+                const bayGroup = new THREE.Group();
+                bayGroup.position.set(-0.36 + b * 0.24, 0.06, -0.46);
+
+                const caSubrack = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.20, 0.94, 0.14),
+                    new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.72, roughness: 0.25 })
+                );
+                bayGroup.add(caSubrack);
+
+                // Eurocard PCB edge card guide slots & LED diagnostics
+                for (let slot = 0; slot < 5; slot++) {
+                    const cardEdge = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.015, 0.14, 0.15),
+                        new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.5, roughness: 0.3 })
+                    );
+                    cardEdge.position.set(-0.06 + slot * 0.03, -0.15 + slot * 0.08, 0.01);
+                    bayGroup.add(cardEdge);
+
+                    const ledIndicator = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.01, 0.01, 0.01),
+                        new THREE.MeshBasicMaterial({ color: slot % 2 === 0 ? 0x10b981 : 0xfacc15 })
+                    );
+                    ledIndicator.position.set(-0.06 + slot * 0.03, -0.06 + slot * 0.08, 0.08);
+                    bayGroup.add(ledIndicator);
+                }
+
+                // Miniature Circuit Breakers (MCB) Row
+                const mcbStrip = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.03), materials.redBufferBeam);
+                mcbStrip.position.set(0, 0.38, 0.08);
+                bayGroup.add(mcbStrip);
+
+                auxCabFrame.add(bayGroup);
+            }
+
+            // 6x Independent Axle IGBT Inverter Phase Modules (TM1 to TM6) with Heatsink Fins & Gate Drivers
+            for (let i = 0; i < 6; i++) {
+                const side = i < 3 ? 1 : -1;
+                const col = i % 3;
+                const xMod = -0.32 + col * 0.32;
+                const zMod = side * 0.52;
+
+                const igbtModuleGroup = new THREE.Group();
+                igbtModuleGroup.position.set(xMod, 0.06, zMod);
+
+                // Heavy Aluminum Cold Plate Base
+                const coldPlate = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.76, 0.035), materials.pistonSteel);
+                igbtModuleGroup.add(coldPlate);
+
+                // High-Density Extruded Aluminum Cooling Heatsink Fins (7 Fins per Module)
+                for (let fin = -3; fin <= 3; fin++) {
+                    const finBlade = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.24, 0.74, 0.007),
+                        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.22 })
+                    );
+                    finBlade.position.set(0, 0, fin * 0.018 - 0.025);
+                    igbtModuleGroup.add(finBlade);
+                }
+
+                // Tinted Polycarbonate Gate-Driver Cover & Status LEDs
+                const gateCover = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.25, 0.72, 0.04),
+                    new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.4, roughness: 0.2, transparent: true, opacity: 0.85 })
+                );
+                gateCover.position.set(0, 0, 0.035);
+                igbtModuleGroup.add(gateCover);
+
+                // 3-Phase Gate Pulse Status LEDs (Green = RUN, Yellow = GATE, Red = FAULT)
+                [-0.06, 0, 0.06].forEach((ledX, lIdx) => {
+                    const smdLed = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.008, 0.008, 0.015, 8),
+                        new THREE.MeshBasicMaterial({ color: lIdx === 0 ? 0x10b981 : (lIdx === 1 ? 0xfacc15 : 0xef4444) })
+                    );
+                    smdLed.rotation.x = Math.PI / 2;
+                    smdLed.position.set(ledX, 0.24, 0.06);
+                    igbtModuleGroup.add(smdLed);
+                });
+
+                // Heavy 3-Phase Laminated Copper DC Busbars (+DC, -DC, Phase U/V/W)
+                [-0.07, 0, 0.07].forEach(phaseOff => {
+                    const busBar = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.18, 0.16), materials.copperBusbar);
+                    busBar.position.set(phaseOff, 0.44, 0);
+                    const standoffInsulator = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.05, 12), materials.redBufferBeam);
+                    standoffInsulator.position.set(phaseOff, 0.35, 0);
+                    igbtModuleGroup.add(busBar, standoffInsulator);
+                });
+
+                // High-Voltage Orange Flexible Cables leading to Traction Motor Glands
+                const hvCable = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.018, 0.018, 0.36, 12),
+                    new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.3, roughness: 0.6 })
+                );
+                hvCable.position.set(0, -0.48, 0.02);
+                igbtModuleGroup.add(hvCable);
+
+                auxCabFrame.add(igbtModuleGroup);
+            }
+
+            // 5GDY102D Aux Centrifugal Scroll Blower & Transition Air Duct
+            const auxBlower5GDY102D = createCentrifugalBlower(0.20, 0.17, materials.alternatorBlue, materials.tractionMotorMat);
+            auxBlower5GDY102D.position.set(-0.36, -0.36, -0.42);
+            auxCabFrame.add(auxBlower5GDY102D);
+
+            const blowerAirDuct = new THREE.Mesh(
+                new THREE.BoxGeometry(0.28, 0.42, 0.18),
+                new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.6, roughness: 0.35 })
+            );
+            blowerAirDuct.position.set(-0.16, -0.16, -0.42);
+            auxCabFrame.add(blowerAirDuct);
+
+            sysGroups.auxcab.add(auxCabFrame);
+
+            // Blower Cab & 5GMG210B2 Main Alternator
+            const mainAltStator = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.64, 36), materials.alternatorBlue);
+            mainAltStator.rotation.z = Math.PI / 2;
+            mainAltStator.position.set(-1.55, 0.48, 0);
+            sysGroups.alternator.add(mainAltStator);
+
+            for (let f = -1.82; f <= -1.28; f += 0.09) {
+                const fin = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.014, 10, 36), materials.alternatorBlue);
+                fin.rotation.y = Math.PI / 2;
+                fin.position.set(f, 0.48, 0);
+                sysGroups.alternator.add(fin);
+            }
+
+            const copperEndWinding = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.065, 14, 32), materials.copperBusbar);
+            copperEndWinding.rotation.y = Math.PI / 2;
+            copperEndWinding.position.set(-1.86, 0.48, 0);
+            sysGroups.alternator.add(copperEndWinding);
+
+            const auxAltStator = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.28, 32), materials.copperBusbar);
+            auxAltStator.rotation.z = Math.PI / 2;
+            auxAltStator.position.set(-2.02, 0.48, 0);
+            sysGroups.alternator.add(auxAltStator);
+
+            const rectifierBank = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.58, 0.90), materials.ccaCabinetMat);
+            rectifierBank.position.set(-2.24, 0.54, 0);
+            sysGroups.alternator.add(rectifierBank);
+
+            const blower100C = createCentrifugalBlower(0.20, 0.18, materials.alternatorBlue, materials.tractionMotorMat);
+            blower100C.position.set(-2.16, 0.26, 0.44);
+            sysGroups.alternator.add(blower100C);
+
+            const blower91H = createCentrifugalBlower(0.22, 0.18, materials.tractionMotorMat, materials.alternatorBlue);
+            blower91H.position.set(-2.16, 0.26, -0.44);
+            sysGroups.alternator.add(blower91H);
+
+            // Engine Cab: GEVO 12 (4500 HP)
+            [-1.12, 0.68].forEach(xMount => {
+                [-0.44, 0.44].forEach(zMount => {
+                    const isolator = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.10, 0.13, 0.15, 16),
+                        new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.55, roughness: 0.35 })
+                    );
+                    isolator.position.set(xMount, 0.06, zMount);
+                    sysGroups.engine.add(isolator);
+                });
+            });
+
+            const blockShape = new THREE.Shape();
+            blockShape.moveTo(-0.36, 0.06);
+            blockShape.lineTo(0.36, 0.06);
+            blockShape.lineTo(0.44, 0.34);
+            blockShape.lineTo(0.56, 0.68);
+            blockShape.lineTo(0.26, 0.88);
+            blockShape.lineTo(0.0, 0.66);
+            blockShape.lineTo(-0.26, 0.88);
+            blockShape.lineTo(-0.56, 0.68);
+            blockShape.lineTo(-0.44, 0.34);
+            blockShape.closePath();
+
+            const gevoBlockGeo = new THREE.ExtrudeGeometry(blockShape, { depth: 2.18, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2 });
+            gevoBlockGeo.rotateY(Math.PI / 2);
+            gevoBlockGeo.center();
+            const engineCrankcase = new THREE.Mesh(gevoBlockGeo, materials.gevoEngineBlock);
+            engineCrankcase.position.set(-0.22, 0.48, 0);
+            sysGroups.engine.add(engineCrankcase);
+
+            [-1, 1].forEach(bankSign => {
+                for (let c = 0; c < 6; c++) {
+                    const cylX = -1.06 + c * 0.335;
+                    const pwrAssy = new THREE.Group();
+                    pwrAssy.position.set(cylX, 0.86, bankSign * 0.30);
+                    pwrAssy.rotation.x = bankSign * 0.3927;
+
+                    for (let f = 0; f < 4; f++) {
+                        const coolingFin = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.145, 0.145, 0.022, 20),
+                            materials.gevoEngineBlock
+                        );
+                        coolingFin.position.y = f * 0.045;
+                        pwrAssy.add(coolingFin);
+                    }
+
+                    const cylHead = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.132, 0.138, 0.14, 20),
+                        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.82, roughness: 0.22 })
+                    );
+                    cylHead.position.y = 0.21;
+                    pwrAssy.add(cylHead);
+
+                    const rockerCover = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.115, 0.128, 0.09, 16),
+                        materials.alternatorBlue
+                    );
+                    rockerCover.position.y = 0.31;
+                    pwrAssy.add(rockerCover);
+
+                    const injectorLine = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.012, 0.012, 0.22, 8),
+                        materials.copperBusbar
+                    );
+                    injectorLine.position.set(0, 0.20, bankSign * 0.13);
+                    pwrAssy.add(injectorLine);
+
+                    sysGroups.engine.add(pwrAssy);
+                }
+
+                const efiRail = create3DPipe([
+                    [-1.22, 0.94, bankSign * 0.46],
+                    [-0.22, 0.94, bankSign * 0.46],
+                    [0.76, 0.94, bankSign * 0.46]
+                ], 0.026, materials.copperBusbar, 16);
+                sysGroups.engine.add(efiRail);
+
+                const waterHeader = create3DPipe([
+                    [-1.20, 0.72, bankSign * 0.48],
+                    [0.85, 0.72, bankSign * 0.48],
+                    [1.15, 0.52, bankSign * 0.42]
+                ], 0.034, materials.alternatorBlue, 20);
+                sysGroups.engine.add(waterHeader);
+            });
+
+            const exhaustLog = create3DPipe([
+                [-1.15, 1.14, 0],
+                [-0.15, 1.16, 0],
+                [0.82, 1.06, 0]
+            ], 0.105, materials.pistonSteel, 24);
+            sysGroups.engine.add(exhaustLog);
+
+            // Forged Crankshaft & Articulated Slider-Crank Kinematic Linkages
+            const crankRadius = 0.085;
+            const rodLength = 0.29;
+
+            const crankShaftMesh = new THREE.Group();
+            crankShaftMesh.position.set(-0.22, 0.28, 0);
+            const mainJournal = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 2.45, 24), materials.pistonSteel);
+            mainJournal.rotation.z = Math.PI / 2;
+            crankShaftMesh.add(mainJournal);
+
+            for (let cw = 0; cw < 6; cw++) {
+                const web = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.28, 0.16), materials.copperBusbar);
+                web.position.x = -0.84 + cw * 0.335;
+                web.rotation.x = cw * (Math.PI / 3);
+                crankShaftMesh.add(web);
+            }
+            sysGroups.engine.add(crankShaftMesh);
+
+            const animatedPistons = [];
+            for (let i = 0; i < 6; i++) {
+                const xPos = -1.06 + i * 0.335;
+                [-1, 1].forEach((side, sIdx) => {
+                    const pistonGroup = new THREE.Group();
+                    pistonGroup.position.set(xPos, 0.56, 0);
+                    pistonGroup.rotation.x = side * 0.3927;
+
+                    const pistonCrown = new THREE.Group();
+                    const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.108, 0.108, 0.19, 20), materials.pistonSteel);
+                    const wristPin = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.19, 12), materials.copperBusbar);
+                    wristPin.rotation.z = Math.PI / 2;
+
+                    // Articulating Connecting Rod with Wrist Pin Pivot
+                    const conRodPivot = new THREE.Group();
+                    const rodStem = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.018, 0.026, rodLength, 12),
+                        materials.copperBusbar
+                    );
+                    rodStem.position.y = -rodLength / 2;
+                    const bigEndJournal = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.048, 0.048, 0.055, 16),
+                        materials.copperBusbar
+                    );
+                    bigEndJournal.rotation.z = Math.PI / 2;
+                    bigEndJournal.position.y = -rodLength;
+                    conRodPivot.add(rodStem, bigEndJournal);
+
+                    pistonCrown.add(skirt, wristPin, conRodPivot);
+                    pistonGroup.add(pistonCrown);
+
+                    sysGroups.engine.add(pistonGroup);
+                    animatedPistons.push({
+                        mesh: pistonGroup,
+                        conRodPivot: conRodPivot,
+                        phase: i * (Math.PI / 3) + sIdx * (Math.PI / 2)
+                    });
+                });
+            }
+
+            // Model 7S1712 Turbocharger & Charge Air Piping
+            const turboVolute = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.11, 20, 32), materials.pistonSteel);
+            turboVolute.rotation.y = Math.PI / 2;
+            turboVolute.position.set(0.94, 0.94, 0);
+            sysGroups.turbo.add(turboVolute);
+
+            const compressorHousing = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.09, 18, 28), materials.alternatorBlue);
+            compressorHousing.rotation.y = Math.PI / 2;
+            compressorHousing.position.set(1.12, 0.94, 0);
+            sysGroups.turbo.add(compressorHousing);
+
+            [-1, 1].forEach(side => {
+                const chargePipe = create3DPipe([
+                    [1.12, 0.94, side * 0.18],
+                    [1.26, 0.82, side * 0.42],
+                    [0.75, 0.82, side * 0.36],
+                    [-0.85, 0.82, side * 0.36]
+                ], 0.048, materials.pistonSteel, 24);
+                sysGroups.turbo.add(chargePipe);
+            });
+
+            const exhaustStack = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.21, 0.38, 20), materials.underframeSteel);
+            exhaustStack.position.set(0.84, 1.32, 0);
+            sysGroups.turbo.add(exhaustStack);
+
+            [-0.46, 0.46].forEach(zBag => {
+                const baggieBox = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.42, 0.44, 0.28),
+                    new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.45, roughness: 0.35 })
+                );
+                baggieBox.position.set(0.95, 0.54, zBag);
+                sysGroups.turbo.add(baggieBox);
+            });
+
+            // 248-Plate Brazed Lube Cooler & Moatti Filter
+            const plateCoolerGroup = new THREE.Group();
+            plateCoolerGroup.position.set(1.22, 0.32, 0.42);
+            for (let p = -0.20; p <= 0.20; p += 0.032) {
+                const plate = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.46, 0.32), materials.copperBusbar);
+                plate.position.x = p;
+                plateCoolerGroup.add(plate);
+            }
+            sysGroups.lubeoil.add(plateCoolerGroup);
+
+            const moattiFilterBody = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.21, 0.21, 0.58, 28),
+                new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.58, roughness: 0.28 })
+            );
+            moattiFilterBody.position.set(1.25, 0.42, -0.40);
+            const moattiDome = new THREE.Mesh(
+                new THREE.SphereGeometry(0.21, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+                materials.ccaCabinetMat
+            );
+            moattiDome.position.set(1.25, 0.71, -0.40);
+            sysGroups.lubeoil.add(moattiFilterBody, moattiDome);
+
+            const lubePipe = create3DPipe([
+                [1.22, 0.32, 0.24],
+                [1.24, 0.26, 0.0],
+                [1.25, 0.32, -0.22]
+            ], 0.038, materials.copperBusbar, 16);
+            sysGroups.lubeoil.add(lubePipe);
+
+            // 3,230 HP Dynamic Brake Grid with Continuous Serpentine Ribbons
+            [-0.38, 0.38].forEach(zGrid => {
+                const dbCasing = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.26, 0.42), materials.dynamicBrakeGridMat);
+                dbCasing.position.set(1.55, 1.04, zGrid);
+                sysGroups.dbgrid.add(dbCasing);
+
+                // Serpentine Nichrome Ribbon Weave using 3D Pipe
+                const serpentinePts = [];
+                for (let r = 0; r < 6; r++) {
+                    const xL = 1.15 + r * 0.14;
+                    const yTop = 1.16, yBot = 0.92;
+                    serpentinePts.push([xL, r % 2 === 0 ? yBot : yTop, zGrid - 0.12]);
+                    serpentinePts.push([xL, r % 2 === 0 ? yTop : yBot, zGrid + 0.12]);
+                }
+                const ribbonMesh = create3DPipe(serpentinePts, 0.016, materials.copperBusbar, 24);
+                sysGroups.dbgrid.add(ribbonMesh);
+            });
+
+            // Radiator Cores & 72" Fan
+            [-1, 1].forEach(side => {
+                const radCore = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.12, 0.62), materials.copperBusbar);
+                radCore.position.set(2.15, 1.26, side * 0.40);
+                radCore.rotation.x = -side * 0.28;
+                sysGroups.radiator.add(radCore);
+            });
+
+            const radiatorFans = [];
+            const mainRadFan = new THREE.Group();
+            mainRadFan.position.set(2.15, 1.38, 0);
+            const fanShroud = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.045, 16, 36), materials.underframeSteel);
+            fanShroud.rotation.x = Math.PI / 2;
+            const fanHub = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.12, 20), materials.alternatorBlue);
+            mainRadFan.add(fanShroud, fanHub);
+
+            for (let b = 0; b < 10; b++) {
+                const bladeHolder = new THREE.Group();
+                bladeHolder.rotation.y = (b / 10) * Math.PI * 2;
+                const blade = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.018, 0.09), materials.wheelSteel);
+                blade.position.x = 0.27;
+                blade.rotation.x = 0.42;
+                bladeHolder.add(blade);
+                mainRadFan.add(bladeHolder);
+            }
+            sysGroups.radiator.add(mainRadFan);
+            radiatorFans.push(mainRadFan);
+
+            [-0.32, 0.0, 0.32].forEach((xOff) => {
+                const caCab = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.74, 0.24), materials.ccaCabinetMat);
+                caCab.position.set(2.05 + xOff, 0.46, -0.52);
+                sysGroups.radiator.add(caCab);
+            });
+
+            // Rotary Screw Compressor, FastBrake Electronic Air Brake (EAB) & 34.5 kW CPCB-II APU Skid
+            const screwCompAirEnd = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.54, 24), materials.alternatorBlue);
+            screwCompAirEnd.rotation.z = Math.PI / 2;
+            screwCompAirEnd.position.set(2.72, 0.32, -0.36);
+            const oilSeparatorVessel = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.42, 20), materials.copperBusbar);
+            oilSeparatorVessel.position.set(2.96, 0.38, -0.36);
+            sysGroups.compressor.add(screwCompAirEnd, oilSeparatorVessel);
+
+            // FastBrake Electronic Air Brake (EAB) Multi-Part Manifold & Electronic Brake Control Unit (EBCU)
+            const eabGroup = new THREE.Group();
+            eabGroup.position.set(2.82, 0.46, 0.38);
+
+            // Machined Pneumatic Pipe Bracket & Valve Manifold
+            const eabManifold = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.36, 0.38), materials.underframeSteel);
+            eabGroup.add(eabManifold);
+
+            // Electronic Brake Control Unit (EBCU) Microprocessor Housing
+            const ebcuCardCage = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.38, 0.32), materials.ccaCabinetMat);
+            ebcuCardCage.position.set(0, 0.34, 0);
+            eabGroup.add(ebcuCardCage);
+
+            // Electro-Pneumatic Solenoid Pilot Valves (ER, BP, BC, MR)
+            [-0.14, -0.05, 0.05, 0.14].forEach((sX, sIdx) => {
+                const solValve = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.024, 0.024, 0.12, 14),
+                    sIdx === 1 ? materials.redBufferBeam : (sIdx === 0 ? materials.irYellowHood : materials.pistonSteel)
+                );
+                solValve.position.set(sX, 0.18, 0.19);
+                eabGroup.add(solValve);
+            });
+
+            // Round Analog Brass Pressure Gauges: BP (5.0 kg/cm²) & MR (9.5 kg/cm²)
+            [-0.10, 0.10].forEach((gX, gIdx) => {
+                const gaugeBezel = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.025, 20), materials.copperBusbar);
+                gaugeBezel.rotation.x = Math.PI / 2;
+                gaugeBezel.position.set(gX, 0.44, 0.17);
+                const gaugeDial = new THREE.Mesh(
+                    new THREE.CircleGeometry(0.038, 20),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff })
+                );
+                gaugeDial.position.set(gX, 0.44, 0.185);
+                const gaugeNeedle = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.004, 0.03, 0.002),
+                    new THREE.MeshBasicMaterial({ color: gIdx === 0 ? 0xef4444 : 0x0284c7 })
+                );
+                gaugeNeedle.rotation.z = gIdx === 0 ? -0.45 : 0.65;
+                gaugeNeedle.position.set(gX, 0.44, 0.19);
+                eabGroup.add(gaugeBezel, gaugeDial, gaugeNeedle);
+            });
+
+            // Duplex Drain Cocks & Manual Cutout Cock Handles
+            const drainCock = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.08, 10), materials.copperBusbar);
+            drainCock.position.set(0, -0.22, 0.18);
+            const cutoutHandle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.015, 0.02), materials.redBufferBeam);
+            cutoutHandle.position.set(0.03, -0.20, 0.20);
+            eabGroup.add(drainCock, cutoutHandle);
+
+            sysGroups.compressor.add(eabGroup);
+
+            // 34.5 kW CPCB-II Auxiliary Power Unit (APU Skid) with 3-Cyl Diesel, 55 CFM Comp & 120A Alt
+            const apuSkid = new THREE.Group();
+            apuSkid.position.set(3.36, 0.32, -0.32);
+
+            // Heavy Channel Skid Frame with 4 Corner Rubber Anti-Vibration Isolator Mounts
+            const apuBase = new THREE.Mesh(
+                new THREE.BoxGeometry(0.68, 0.06, 0.52),
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 })
+            );
+            apuBase.position.y = -0.16;
+            apuSkid.add(apuBase);
+
+            [-0.28, 0.28].forEach(isoX => {
+                [-0.20, 0.20].forEach(isoZ => {
+                    const rubberMount = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.035, 0.035, 0.04, 12),
+                        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.85 })
+                    );
+                    rubberMount.position.set(isoX, -0.19, isoZ);
+                    apuSkid.add(rubberMount);
+                });
+            });
+
+            // Compact 3-Cylinder Diesel Engine Block & Finned Head
+            const apuEngineBlock = new THREE.Mesh(
+                new THREE.BoxGeometry(0.32, 0.32, 0.26),
+                new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.65, roughness: 0.28 })
+            );
+            apuEngineBlock.position.set(-0.14, 0.04, 0);
+            const apuRockerHead = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.08, 0.22), materials.pistonSteel);
+            apuRockerHead.position.set(-0.14, 0.22, 0);
+            apuSkid.add(apuEngineBlock, apuRockerHead);
+
+            // Miniature Spin-On Lube Filter & Exhaust Muffler
+            const apuFilter = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.12, 14), materials.redBufferBeam);
+            apuFilter.position.set(-0.28, 0.02, 0.12);
+            const apuMuffler = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.28, 16), materials.underframeSteel);
+            apuMuffler.rotation.z = Math.PI / 2;
+            apuMuffler.position.set(-0.14, 0.30, -0.16);
+            apuSkid.add(apuFilter, apuMuffler);
+
+            // 55 CFM Reciprocating Secondary Air Compressor with Finned Head & Copper Discharge Coil
+            const apuCompCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.16, 16), materials.underframeSteel);
+            apuCompCyl.position.set(0.08, 0.06, -0.10);
+            const apuDischargeCoil = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.012, 8, 20), materials.copperBusbar);
+            apuDischargeCoil.position.set(0.08, 0.16, -0.10);
+            apuSkid.add(apuCompCyl, apuDischargeCoil);
+
+            // 78 VDC 120A Auxiliary Alternator with Dual V-Belt Pulleys & Belt Guard
+            const apuAltCasing = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.24, 20), materials.copperBusbar);
+            apuAltCasing.rotation.z = Math.PI / 2;
+            apuAltCasing.position.set(0.18, 0.04, 0.10);
+            const apuPulley = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.03, 16), materials.pistonSteel);
+            apuPulley.rotation.z = Math.PI / 2;
+            apuPulley.position.set(0.04, 0.04, 0.10);
+            apuSkid.add(apuAltCasing, apuPulley);
+
+            sysGroups.apu.add(apuSkid);
+
+            // ----------------------------------------------------------------------------
+            // 4.5 WDG4G CARBODY SHELL, STRUCTURAL A-PILLARS & CAB NOSE
+            // ----------------------------------------------------------------------------
+            const hoodMeshesAll = [];
+            const hoodRightSideMeshes = [];
+
+            function addHoodMesh(mesh, isCutawaySide = false) {
+                sysGroups.hood.add(mesh);
+                hoodMeshesAll.push(mesh);
+                if (isCutawaySide) hoodRightSideMeshes.push(mesh);
+            }
+
+            const roofProfile = new THREE.Shape();
+            roofProfile.moveTo(-0.68, 0);
+            roofProfile.lineTo(-0.56, 0.11);
+            roofProfile.lineTo(0.56, 0.11);
+            roofProfile.lineTo(0.68, 0);
+            roofProfile.closePath();
+
+            const longHoodRoofGeo = new THREE.ExtrudeGeometry(roofProfile, { depth: 6.84, bevelEnabled: false });
+            longHoodRoofGeo.rotateY(Math.PI / 2);
+            longHoodRoofGeo.center();
+            const longHoodRoof = new THREE.Mesh(longHoodRoofGeo, materials.irDarkBlueTrim);
+            longHoodRoof.position.set(0.0, 1.38, 0);
+            addHoodMesh(longHoodRoof, false);
+
+            const gullShape = new THREE.Shape();
+            gullShape.moveTo(-0.82, 0.02);
+            gullShape.lineTo(-0.64, 0.16);
+            gullShape.lineTo(0.64, 0.16);
+            gullShape.lineTo(0.82, 0.02);
+            gullShape.lineTo(0.68, -0.05);
+            gullShape.lineTo(-0.68, -0.05);
+            gullShape.closePath();
+
+            const gullWingGeo = new THREE.ExtrudeGeometry(gullShape, { depth: 1.82, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.02, bevelSegments: 2 });
+            gullWingGeo.rotateY(Math.PI / 2);
+            gullWingGeo.center();
+            const gullWingRoof = new THREE.Mesh(gullWingGeo, materials.irDarkBlueTrim);
+            gullWingRoof.position.set(2.15, 1.46, 0);
+            addHoodMesh(gullWingRoof, false);
+
+            const roofFanGrille = new THREE.Mesh(
+                new THREE.RingGeometry(0.12, 0.48, 32),
+                new THREE.MeshStandardMaterial({ color: 0x0f172a, side: THREE.DoubleSide })
+            );
+            roofFanGrille.rotation.x = Math.PI / 2;
+            roofFanGrille.position.set(2.15, 1.56, 0);
+            addHoodMesh(roofFanGrille, false);
+
+            [-0.68, 0.68].forEach(zSide => {
+                const isFrontSide = zSide > 0;
+                const sideWall = new THREE.Mesh(new THREE.BoxGeometry(6.84, 1.32, 0.035), materials.irYellowTexturedHood);
+                sideWall.position.set(0.0, 0.68, zSide);
+                addHoodMesh(sideWall, isFrontSide);
+            });
+
+            // EN12663 Crashworthy Cabs with 3D Structural A-Pillars & Center Windshield Divider
+            [-4.12, 4.12].forEach((cabX, idx) => {
+                const dir = idx === 0 ? -1 : 1;
+
+                const cabRoof = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.09, 1.48), materials.irDarkBlueTrim);
+                cabRoof.position.set(cabX, 1.28, 0);
+                addHoodMesh(cabRoof, false);
+
+                const noseShape = new THREE.Shape();
+                noseShape.moveTo(0, 0);
+                noseShape.lineTo(0.56, 0);
+                noseShape.lineTo(0.56, 0.56);
+                noseShape.lineTo(0.14, 0.74);
+                noseShape.lineTo(0, 0.74);
+                noseShape.closePath();
+
+                const noseGeo = new THREE.ExtrudeGeometry(noseShape, { depth: 1.42, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 3 });
+                noseGeo.center();
+                if (dir < 0) noseGeo.rotateY(Math.PI);
+                const noseMesh = new THREE.Mesh(noseGeo, materials.irYellowHood);
+                noseMesh.position.set(cabX + dir * 0.44, 0.36, 0);
+                addHoodMesh(noseMesh, false);
+
+                // Windshield Glass Panes
+                [-0.34, 0.34].forEach(zPane => {
+                    const glassPane = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.44, 0.58), materials.cabGlass);
+                    glassPane.position.set(cabX + dir * 0.46, 0.96, zPane);
+                    glassPane.rotation.z = -dir * 0.28;
+                    glassPane.rotation.y = dir * (zPane > 0 ? 0.08 : -0.08);
+                    sysGroups.hood.add(glassPane);
+                });
+
+                // Structural A-Pillars & Center Mullion
+                [-0.68, 0, 0.68].forEach((zPost, pIdx) => {
+                    const pillar = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.065, 0.48, pIdx === 1 ? 0.045 : 0.075),
+                        materials.irYellowHood
+                    );
+                    pillar.position.set(cabX + dir * 0.46, 0.96, zPost);
+                    pillar.rotation.z = -dir * 0.28;
+                    sysGroups.hood.add(pillar);
+                });
+
+                // Dual Pantograph Windshield Wiper Arms
+                [-0.34, 0.34].forEach(zWiper => {
+                    const wiperBlade = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.015, 0.28, 0.015),
+                        materials.irDarkBlueTrim
+                    );
+                    wiperBlade.position.set(cabX + dir * 0.49, 0.94, zWiper);
+                    wiperBlade.rotation.z = -dir * 0.28;
+                    sysGroups.hood.add(wiperBlade);
+                });
+
+                // Headlights & Ditch Lights
+                const hlBezel = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.15, 0.40), materials.irDarkBlueTrim);
+                hlBezel.position.set(cabX + dir * 0.62, 1.24, 0);
+                sysGroups.hood.add(hlBezel);
+
+                [-0.10, 0.10].forEach(zLamp => {
+                    const ledLens = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.05, 0.05, 0.12, 16),
+                        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+                    );
+                    ledLens.rotation.z = Math.PI / 2;
+                    ledLens.position.set(cabX + dir * 0.63, 1.24, zLamp);
+                    sysGroups.hood.add(ledLens);
+                });
+
+                [-0.48, 0.48].forEach(zDitch => {
+                    const ditchLight = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.045, 0.045, 0.08, 14),
+                        new THREE.MeshBasicMaterial({ color: 0xfef9c3 })
+                    );
+                    ditchLight.rotation.z = Math.PI / 2;
+                    ditchLight.position.set(cabX + dir * 0.72, 0.22, zDitch);
+                    sysGroups.hood.add(ditchLight);
+                });
+
+                [-0.08, 0.08].forEach((zHorn, hIdx) => {
+                    const hornBell = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.055, 0.26 + hIdx * 0.06, 16, 1, true),
+                        materials.copperBusbar
+                    );
+                    hornBell.rotation.z = dir < 0 ? Math.PI / 2 : -Math.PI / 2;
+                    hornBell.position.set(cabX - dir * 0.28, 1.38, zHorn);
+                    sysGroups.hood.add(hornBell);
+                });
+
+                [-0.73, 0.73].forEach(zWall => {
+                    const isCutaway = zWall > 0;
+                    const sideSign = zWall > 0 ? 1 : -1;
+
+                    // Formed Outer Cab Side Skin with Recessed Crew Door Pocket
+                    const cabLowerSide = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.72, 0.035), materials.irYellowHood);
+                    cabLowerSide.position.set(cabX, 0.38, zWall);
+                    addHoodMesh(cabLowerSide, isCutaway);
+
+                    // Satin Black Outer Window Frame with Molded Weatherstrip Bevel
+                    const windowFrame = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.72, 0.44, 0.042),
+                        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.75, roughness: 0.3 })
+                    );
+                    windowFrame.position.set(cabX + dir * 0.06, 0.96, zWall);
+                    addHoodMesh(windowFrame, isCutaway);
+
+                    // Fixed Forward Safety Glass Pane
+                    const fixedGlass = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.38, 0.018), materials.cabGlass);
+                    fixedGlass.position.set(cabX + dir * 0.21, 0.96, zWall);
+                    addHoodMesh(fixedGlass, isCutaway);
+
+                    // Sliding Rear Quarter Window Pane with Thumb-Latch Handle & Sash Runner
+                    const slidingGlass = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.018), materials.cabGlass);
+                    slidingGlass.position.set(cabX - dir * 0.09, 0.96, zWall + sideSign * 0.008);
+                    const thumbLatch = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.06, 0.02), materials.pistonSteel);
+                    thumbLatch.position.set(cabX - dir * 0.04, 0.96, zWall + sideSign * 0.022);
+                    addHoodMesh(slidingGlass, isCutaway);
+                    addHoodMesh(thumbLatch, isCutaway);
+
+                    // Recessed Crew Entry Door (Indented by 0.035m) with View Window & Chrome Lever Handle
+                    const doorGroup = new THREE.Group();
+                    doorGroup.position.set(cabX - dir * 0.42, 0.62, zWall - sideSign * 0.02);
+
+                    const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.98, 0.028), materials.irYellowHood);
+                    const doorWindow = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.032), materials.cabGlass);
+                    doorWindow.position.set(0, 0.24, 0);
+                    const doorHandle = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.04), materials.pistonSteel);
+                    doorHandle.position.set(-dir * 0.11, -0.04, sideSign * 0.02);
+                    doorGroup.add(doorPanel, doorWindow, doorHandle);
+                    addHoodMesh(doorGroup, isCutaway);
+
+                    // Vertical Stainless Steel Crew Assistance Grab Rails (Handrails)
+                    [-0.18, 0.18].forEach(gX => {
+                        const grabRail = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.011, 0.011, 0.92, 12),
+                            materials.pistonSteel
+                        );
+                        grabRail.position.set(cabX - dir * 0.42 + gX, 0.60, zWall + sideSign * 0.025);
+                        addHoodMesh(grabRail, isCutaway);
+                    });
+
+                    // Lower Side Skirt Recessed Footstep Stirrups with Traction Ridges
+                    for (let step = 0; step < 2; step++) {
+                        const footStep = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.24, 0.022, 0.06),
+                            materials.underframeSteel
+                        );
+                        footStep.position.set(cabX - dir * 0.42, -0.06 - step * 0.12, zWall - sideSign * 0.01);
+                        addHoodMesh(footStep, isCutaway);
+                    }
+                });
+            });
+
+            const headlightBeamMat = new THREE.MeshBasicMaterial({
+                color: 0xfef08a,
+                transparent: true,
+                opacity: 0.08,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+            const headlightCone = new THREE.Mesh(new THREE.ConeGeometry(1.4, 8.5, 24, 1, true), headlightBeamMat);
+            headlightCone.rotation.z = -Math.PI / 2;
+            headlightCone.position.set(-9.1, 0.15, 0);
+            locoRoot.add(headlightCone);
+
+            const headlightSpot = new THREE.SpotLight(0xfef9c3, 0.6, 28, Math.PI / 5, 0.5, 1.2);
+            headlightSpot.position.set(-4.85, 0.6, 0);
+            headlightSpot.target.position.set(-16, -0.8, 0);
+            locoRoot.add(headlightSpot);
+            locoRoot.add(headlightSpot.target);
+
+            // ============================================================================
+            // 4.6 LHB FIAT HIGH-SPEED BOGIE BUILDER (2,560mm WB, 640mm DISCS)
+            // ============================================================================
+            function buildLhbFiatBogie(targetGroup, centerX) {
+                const bogieSub = new THREE.Group();
+                bogieSub.position.set(centerX, 0, 0);
+
+                const primaryCoilGeo = getHelicalSpringGeo(0.058, 0.22, 5, 0.014);
+                const fiatSpringMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.6, roughness: 0.3 });
+
+                const fiatSideShape = new THREE.Shape();
+                fiatSideShape.moveTo(-0.92, 0.08);
+                fiatSideShape.lineTo(-0.36, 0.08);
+                fiatSideShape.lineTo(-0.22, 0.02);
+                fiatSideShape.lineTo(0.22, 0.02);
+                fiatSideShape.lineTo(0.36, 0.08);
+                fiatSideShape.lineTo(0.92, 0.08);
+                fiatSideShape.lineTo(0.92, -0.08);
+                fiatSideShape.lineTo(0.32, -0.08);
+                fiatSideShape.lineTo(0.18, -0.14);
+                fiatSideShape.lineTo(-0.18, -0.14);
+                fiatSideShape.lineTo(-0.32, -0.08);
+                fiatSideShape.lineTo(-0.92, -0.08);
+                fiatSideShape.closePath();
+
+                const fiatSideGeo = new THREE.ExtrudeGeometry(fiatSideShape, { depth: 0.09, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 2 });
+                fiatSideGeo.center();
+
+                [-0.65, 0.65].forEach(zSide => {
+                    const hSideBeam = new THREE.Mesh(fiatSideGeo, materials.bogieCastSteel);
+                    hSideBeam.position.set(0, -0.66, zSide);
+                    bogieSub.add(hSideBeam);
+
+                    [-0.58, 0.58].forEach(axleX => {
+                        const coil = new THREE.Mesh(primaryCoilGeo, fiatSpringMat);
+                        coil.position.set(axleX, -0.58, zSide * 1.02);
+                        bogieSub.add(coil);
+                        dynamicSpringCoils.push(coil);
+
+                        const ctrlArm = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 0.08), materials.bogieCastSteel);
+                        ctrlArm.position.set(axleX * 0.72, -0.76, zSide * 1.02);
+                        bogieSub.add(ctrlArm);
+
+                        const vertDamper = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.024, 0.024, 0.25, 12),
+                            new THREE.MeshStandardMaterial({ color: 0xfacc15 })
+                        );
+                        vertDamper.position.set(axleX + (axleX > 0 ? 0.14 : -0.14), -0.58, zSide * 1.08);
+                        bogieSub.add(vertDamper);
+                    });
+
+                    const airSpringBellow = new THREE.Mesh(
+                        new THREE.TorusGeometry(0.12, 0.065, 14, 24),
+                        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.65 })
+                    );
+                    airSpringBellow.rotation.x = Math.PI / 2;
+                    airSpringBellow.position.set(0, -0.44, zSide * 0.98);
+                    bogieSub.add(airSpringBellow);
+
+                    const yawDamper = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.025, 0.025, 0.52, 12),
+                        materials.redBufferBeam
+                    );
+                    yawDamper.rotation.z = Math.PI / 2;
+                    yawDamper.position.set(0.28, -0.48, zSide * 1.09);
+                    bogieSub.add(yawDamper);
+                });
+
+                const bolster = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.15, 1.38), materials.bogieCastSteel);
+                bolster.position.set(0, -0.46, 0);
+                bogieSub.add(bolster);
+
+                const antiRollBar = create3DPipe([
+                    [-0.14, -0.44, -0.58],
+                    [-0.25, -0.56, -0.58],
+                    [-0.25, -0.56, 0.58],
+                    [-0.14, -0.44, 0.58]
+                ], 0.022, materials.copperBusbar, 20);
+                bogieSub.add(antiRollBar);
+
+                [-0.58, 0.58].forEach(axleX => {
+                    const wheelset = new THREE.Group();
+                    wheelset.position.set(axleX, -0.83, 0);
+
+                    const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 1.46, 18), materials.wheelSteel);
+                    axle.rotation.x = Math.PI / 2;
+                    wheelset.add(axle);
+
+                    [-0.28, 0.28].forEach(zDisc => {
+                        const brakeDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.215, 0.048, 28), materials.brakeDiscMat);
+                        brakeDisc.rotation.x = Math.PI / 2;
+                        brakeDisc.position.z = zDisc;
+                        wheelset.add(brakeDisc);
+
+                        const caliper = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.16, 0.095), materials.redBufferBeam);
+                        caliper.position.set(axleX + (axleX > 0 ? -0.16 : 0.16), -0.78, zDisc);
+                        bogieSub.add(caliper);
+                    });
+
+                    [-0.62, 0.62].forEach(zWheel => {
+                        const fiatWheel = createContouredRailwayWheel(0.285, materials.wheelSteel);
+                        fiatWheel.position.z = zWheel;
+                        if (zWheel < 0) fiatWheel.rotation.y = Math.PI;
+                        wheelset.add(fiatWheel);
+
+                        const ctrbCap = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.082, 0.082, 0.065, 16),
+                            new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.68 })
+                        );
+                        ctrbCap.rotation.x = Math.PI / 2;
+                        ctrbCap.position.z = zWheel * 1.13;
+                        wheelset.add(ctrbCap);
+                    });
+
+                    bogieSub.add(wheelset);
+                    animatedCoachWheelsets.push(wheelset);
+                });
+
+                targetGroup.add(bogieSub);
+            }
+
+            // ============================================================================
+            // 4.7 COACH #1: LHB EOG POWER VAN (LWLRRM, X = 10.3)
+            // ============================================================================
+            const eogCenterX = 10.3;
+            const eogLength = 9.2;
+
+            const cbcLocoToEog = createTightlockCoupler(-1);
+            cbcLocoToEog.position.set(5.55, -0.22, 0);
+            sysGroups.eogUnderframe.add(cbcLocoToEog);
+
+            const eogDeck = new THREE.Mesh(new THREE.BoxGeometry(eogLength, 0.16, 1.52), materials.underframeSteel);
+            eogDeck.position.set(eogCenterX, -0.12, 0);
+            sysGroups.eogUnderframe.add(eogDeck);
+
+            [-1.15, 1.15].forEach(xTank => {
+                const dgFuelTank = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.36, 1.18), materials.fuelTankMat);
+                dgFuelTank.position.set(eogCenterX + xTank, -0.42, 0);
+                sysGroups.eogUnderframe.add(dgFuelTank);
+            });
+
+            buildLhbFiatBogie(sysGroups.eogBogies, eogCenterX - 2.95);
+            buildLhbFiatBogie(sysGroups.eogBogies, eogCenterX + 2.95);
+
+            // Two 500 kVA DG Skids
+            [-1.65, 0.15].forEach((xOff) => {
+                const dgSkid = new THREE.Group();
+                dgSkid.position.set(eogCenterX + xOff, 0.34, 0);
+
+                const skidRail = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.08, 0.72), materials.underframeSteel);
+                skidRail.position.y = -0.28;
+                dgSkid.add(skidRail);
+
+                // Heavy Cummins V12 Diesel Engine Block & Crankcase Sump
+                const crankcaseSump = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.02, 0.18, 0.52),
+                    new THREE.MeshStandardMaterial({ color: 0x166534, metalness: 0.72, roughness: 0.28 })
+                );
+                crankcaseSump.position.set(-0.24, -0.15, 0);
+                dgSkid.add(crankcaseSump);
+
+                const engineBlockV = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.96, 0.38, 0.46),
+                    materials.dgGreenMat
+                );
+                engineBlockV.position.set(-0.24, 0.12, 0);
+                dgSkid.add(engineBlockV);
+
+                // 60-Degree V12 Left & Right Cylinder Banks with 12 Unitized Rocker Head Covers
+                [-0.16, 0.16].forEach((zBank, bIdx) => {
+                    const bankAngle = bIdx === 0 ? 0.32 : -0.32;
+                    for (let cyl = 0; cyl < 6; cyl++) {
+                        const rockerHead = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.12, 0.09, 0.16),
+                            materials.pistonSteel
+                        );
+                        rockerHead.position.set(-0.58 + cyl * 0.14, 0.34, zBank);
+                        rockerHead.rotation.x = bankAngle;
+                        dgSkid.add(rockerHead);
+
+                        // High-Pressure Fuel Injection Common Rail Pipe
+                        const injPipe = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.007, 0.007, 0.11, 8),
+                            materials.copperBusbar
+                        );
+                        injPipe.position.set(-0.58 + cyl * 0.14, 0.42, zBank * 0.85);
+                        dgSkid.add(injPipe);
+                    }
+                });
+
+                // Dual High-Pressure Holset Turbochargers & Charge-Air Crossover Intercooler Ducts
+                [-0.14, 0.14].forEach(zTurbo => {
+                    const turboCharger = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.09, 0.09, 0.14, 16),
+                        materials.underframeSteel
+                    );
+                    turboCharger.rotation.z = Math.PI / 2;
+                    turboCharger.position.set(0.24, 0.34, zTurbo);
+                    const chargePipe = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.035, 0.035, 0.42, 12),
+                        new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.6, roughness: 0.3 })
+                    );
+                    chargePipe.rotation.z = Math.PI / 2;
+                    chargePipe.position.set(-0.05, 0.44, zTurbo);
+                    dgSkid.add(turboCharger, chargePipe);
+                });
+
+                // Front Serpentine Belt Pulleys & Water Pump Housing
+                const pulleyWheel = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.04, 18), materials.pistonSteel);
+                pulleyWheel.rotation.z = Math.PI / 2;
+                pulleyWheel.position.set(-0.76, 0.04, 0);
+                const fanBelt = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.015, 8, 24), materials.underframeSteel);
+                fanBelt.rotation.y = Math.PI / 2;
+                fanBelt.position.set(-0.76, 0.12, 0);
+                dgSkid.add(pulleyWheel, fanBelt);
+
+                // 500 kVA Stamford / Kirloskar Brushless 750V 3-Phase Alternator with Terminal Conduit Box
+                const alt750V = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.54, 28), materials.alternatorBlue);
+                alt750V.rotation.z = Math.PI / 2;
+                alt750V.position.x = 0.54;
+                const altLouverScreen = new THREE.Mesh(new THREE.RingGeometry(0.08, 0.26, 24), materials.pistonSteel);
+                altLouverScreen.rotation.y = Math.PI / 2;
+                altLouverScreen.position.x = 0.82;
+                const terminalBox750V = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.26), materials.copperBusbar);
+                terminalBox750V.position.set(0.54, 0.36, 0);
+                dgSkid.add(alt750V, altLouverScreen, terminalBox750V);
+
+                // Dual Overhead Industrial Exhaust Silencers Wrapped in Heat Insulation Lagging
+                const exhaustSilencer = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.94, 20), materials.pistonSteel);
+                exhaustSilencer.rotation.z = Math.PI / 2;
+                exhaustSilencer.position.set(0, 0.56, 0);
+                dgSkid.add(exhaustSilencer);
+
+                sysGroups.eogInterior.add(dgSkid);
+            });
+
+            const eogSwitchboard = new THREE.Mesh(new THREE.BoxGeometry(0.86, 1.06, 0.96), materials.ccaCabinetMat);
+            eogSwitchboard.position.set(eogCenterX + 1.85, 0.52, -0.18);
+            sysGroups.eogInterior.add(eogSwitchboard);
+
+            const guardDesk = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.48, 0.82), materials.alternatorBlue);
+            guardDesk.position.set(eogCenterX + 3.25, 0.26, -0.22);
+            sysGroups.eogInterior.add(guardDesk);
+
+            const parcelRacks = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.86, 0.92), materials.copperBusbar);
+            parcelRacks.position.set(eogCenterX - 3.35, 0.42, -0.15);
+            sysGroups.eogInterior.add(parcelRacks);
+
+            const lhbRoofShape = new THREE.Shape();
+            lhbRoofShape.moveTo(-0.76, 0);
+            lhbRoofShape.quadraticCurveTo(0, 0.22, 0.76, 0);
+            lhbRoofShape.lineTo(0.72, -0.05);
+            lhbRoofShape.quadraticCurveTo(0, 0.15, -0.72, -0.05);
+            lhbRoofShape.closePath();
+
+            const eogRoofGeo = new THREE.ExtrudeGeometry(lhbRoofShape, { depth: eogLength, bevelEnabled: false });
+            eogRoofGeo.rotateY(Math.PI / 2);
+            eogRoofGeo.center();
+            const eogRoof = new THREE.Mesh(eogRoofGeo, materials.lhbRoofSilver);
+            eogRoof.position.set(eogCenterX, 1.35, 0);
+            sysGroups.eogShell.add(eogRoof);
+            hoodMeshesAll.push(eogRoof);
+
+            // 3D Punched Window Apertures + Polycarbonate Glazing + Tumblehome Skirts for EOG Car
+            [-0.75, 0.75].forEach(zWall => {
+                const isCutaway = zWall > 0;
+                const eog3DWall = createLhbSideWallWith3DWindows(
+                    eogLength, 1.36, zWall, true, materials.lhbEogSideMat, materials.lhbTintedGlass
+                );
+                eog3DWall.position.set(eogCenterX, 0.60, zWall);
+                sysGroups.eogShell.add(eog3DWall);
+                hoodMeshesAll.push(eog3DWall);
+                if (isCutaway) hoodRightSideMeshes.push(eog3DWall);
+            });
+
+            // ============================================================================
+            // 4.8 COACH #2: LHB AC 3-TIER & EXECUTIVE CHAIR COACH (X = 20.2)
+            // ============================================================================
+            const coachCenterX = 20.2;
+            const coachLength = 9.6;
+
+            for (let b = 0; b < 5; b++) {
+                const bellowRing = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.11, 1.28, 0.94),
+                    new THREE.MeshStandardMaterial({ color: b % 2 === 0 ? 0x0f172a : 0x1e293b, roughness: 0.85 })
+                );
+                bellowRing.position.set(15.0 + b * 0.13, 0.60, 0);
+                sysGroups.coachUnderframe.add(bellowRing);
+            }
+
+            [-0.58, 0.58].forEach(zCable => {
+                const jumper750V = create3DPipe([
+                    [14.88, 0.12, zCable],
+                    [15.16, -0.18, zCable * 1.06],
+                    [15.42, 0.12, zCable]
+                ], 0.022, materials.redBufferBeam, 14);
+                sysGroups.coachUnderframe.add(jumper750V);
+            });
+
+            const coachDeck = new THREE.Mesh(new THREE.BoxGeometry(coachLength, 0.16, 1.52), materials.underframeSteel);
+            coachDeck.position.set(coachCenterX, -0.12, 0);
+            sysGroups.coachUnderframe.add(coachDeck);
+
+            const coachFloor = new THREE.Mesh(new THREE.BoxGeometry(coachLength - 0.1, 0.03, 1.44), materials.coachFloorMat);
+            coachFloor.position.set(coachCenterX, -0.02, 0);
+            sysGroups.coachUnderframe.add(coachFloor);
+
+            [-0.85, 0.85].forEach(xWt => {
+                const waterTank = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.35, 22), materials.pistonSteel);
+                waterTank.rotation.z = Math.PI / 2;
+                waterTank.position.set(coachCenterX + xWt, -0.42, 0);
+                sysGroups.coachUnderframe.add(waterTank);
+            });
+
+            [-4.15, 4.15].forEach(xBio => {
+                const bioTank = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.62, 0.34, 0.58),
+                    new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.45, roughness: 0.38 })
+                );
+                bioTank.position.set(coachCenterX + xBio, -0.38, -0.38);
+                sysGroups.coachUnderframe.add(bioTank);
+            });
+
+            buildLhbFiatBogie(sysGroups.coachFiatBogies, coachCenterX - 3.15);
+            buildLhbFiatBogie(sysGroups.coachFiatBogies, coachCenterX + 3.15);
+
+            // AC 3-Tier Sleeper Bays with Stainless-Steel Suspension Chains, Snack Tables & Reading Lights
+            for (let bay = 0; bay < 3; bay++) {
+                const bayX = 16.95 + bay * 1.12;
+
+                const partition = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.18, 0.92), materials.partitionCreamMat);
+                partition.position.set(bayX - 0.52, 0.58, -0.22);
+                sysGroups.coachBerths.add(partition);
+
+                [-0.32, 0.32].forEach(faceX => {
+                    [0.20, 0.58, 0.96].forEach((berthY, level) => {
+                        const berth = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, 0.88), materials.berthBlueMat);
+                        berth.position.set(bayX + faceX, berthY, -0.22);
+                        sysGroups.coachBerths.add(berth);
+
+                        const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.045, 0.22), materials.lhbWhiteStripe);
+                        pillow.position.set(bayX + faceX, berthY + 0.042, -0.54);
+                        sysGroups.coachBerths.add(pillow);
+
+                        // Diagonal Stainless-Steel Suspension Chains for Middle & Upper Berths
+                        if (level > 0) {
+                            const chain = new THREE.Mesh(
+                                new THREE.CylinderGeometry(0.005, 0.005, 0.78, 6),
+                                materials.wheelSteel
+                            );
+                            chain.position.set(bayX + faceX * 1.25, berthY + 0.18, 0.22);
+                            chain.rotation.z = (faceX > 0 ? -1 : 1) * 0.25;
+                            sysGroups.coachBerths.add(chain);
+                        }
+
+                        // Individual Berth Reading Light
+                        const readingLight = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.015, 0.02, 0.03, 8),
+                            new THREE.MeshBasicMaterial({ color: 0xfef08a })
+                        );
+                        readingLight.position.set(bayX + faceX, berthY + 0.16, -0.62);
+                        sysGroups.coachBerths.add(readingLight);
+                    });
+
+                    // Fold-Down Snack Table & Bottle Holder beneath window
+                    const snackTable = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.025, 0.32), materials.underframeSteel);
+                    snackTable.position.set(bayX, 0.38, -0.60);
+                    sysGroups.coachBerths.add(snackTable);
+                });
+
+                [0.22, 0.88].forEach(sideBerthY => {
+                    const sideBerth = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.06, 0.32), materials.berthBlueMat);
+                    sideBerth.position.set(bayX, sideBerthY, 0.52);
+                    sysGroups.coachBerths.add(sideBerth);
+                });
+
+                const ladderGroup = new THREE.Group();
+                ladderGroup.position.set(bayX - 0.16, 0.52, 0.18);
+                [-0.08, 0.08].forEach(zRail => {
+                    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.98, 8), materials.wheelSteel);
+                    rail.position.z = zRail;
+                    ladderGroup.add(rail);
+                });
+                for (let r = -0.36; r <= 0.36; r += 0.18) {
+                    const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.16, 8), materials.wheelSteel);
+                    rung.rotation.x = Math.PI / 2;
+                    rung.position.y = r;
+                    ladderGroup.add(rung);
+                }
+                sysGroups.coachBerths.add(ladderGroup);
+            }
+
+            // Executive 2×2 Chair Car with Sculpted S-Curve Backrests
+            const glassDivider = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.15, 0.55), materials.cabGlass);
+            glassDivider.position.set(20.15, 0.58, 0.15);
+            sysGroups.coachChairs.add(glassDivider);
+
+            for (let row = 0; row < 5; row++) {
+                const rowX = 20.65 + row * 0.56;
+                [-0.48, -0.20, 0.22, 0.50].forEach(seatZ => {
+                    const sculptedSeat = createSculptedExecutiveSeat();
+                    sculptedSeat.position.set(rowX, 0.18, seatZ);
+                    sysGroups.coachChairs.add(sculptedSeat);
+                });
+            }
+
+            [-0.48, 0.48].forEach(binZ => {
+                const luggageBin = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.12, 0.28), materials.partitionCreamMat);
+                luggageBin.position.set(21.8, 1.08, binZ);
+                sysGroups.coachChairs.add(luggageBin);
+
+                const ledStrip = new THREE.Mesh(
+                    new THREE.BoxGeometry(8.2, 0.025, 0.04),
+                    new THREE.MeshBasicMaterial({ color: 0xfef9c3 })
+                );
+                ledStrip.position.set(coachCenterX, 1.18, binZ * 0.75);
+                sysGroups.coachChairs.add(ledStrip);
+            });
+
+            // LHB Mini-Pantry Galley Assembly: Counter, Beverage Boiler, Hot Case & Deep Freeze
+            const pantryGroup = new THREE.Group();
+            pantryGroup.position.set(23.55, 0.54, -0.38);
+
+            // Stainless Steel Galley Counter & Washing Sink with Chrome Gooseneck Faucet
+            const pantryCounter = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.78, 0.58), materials.pistonSteel);
+            pantryCounter.position.y = -0.15;
+            const sinkBasin = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.26), materials.underframeSteel);
+            sinkBasin.position.set(-0.16, 0.22, 0.05);
+            const swanFaucet = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 10), materials.pistonSteel);
+            swanFaucet.position.set(-0.16, 0.36, -0.12);
+            pantryGroup.add(pantryCounter, sinkBasin, swanFaucet);
+
+            // Cylindrical Electric Beverage Boiler / Geyser with Sight Gauge & Dispense Valve
+            const waterBoiler = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.38, 20), materials.pistonSteel);
+            waterBoiler.position.set(0.16, 0.44, -0.12);
+            const waterGaugeGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.28, 8), materials.cabGlass);
+            waterGaugeGlass.position.set(0.16, 0.44, 0.01);
+            pantryGroup.add(waterBoiler, waterGaugeGlass);
+
+            // Thermally Insulated Meal Heating Hot Case with Clear Glass Door & Wire Shelves
+            const hotCaseCabinet = new THREE.Mesh(
+                new THREE.BoxGeometry(0.36, 0.42, 0.32),
+                new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 })
+            );
+            hotCaseCabinet.position.set(0.12, 0.04, 0.08);
+            const hotCaseGlass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.34, 0.28), materials.cabGlass);
+            hotCaseGlass.position.set(-0.07, 0.04, 0.08);
+            pantryGroup.add(hotCaseCabinet, hotCaseGlass);
+
+            sysGroups.coachChairs.add(pantryGroup);
+
+            // DRDO Anaerobic Bio-Toilet Cubicles with Stainless Pan, Corner Washbasin & Bio-Digester Module
+            [-4.35, 4.35].forEach(endOff => {
+                const toiletGroup = new THREE.Group();
+                toiletGroup.position.set(coachCenterX + endOff, 0.58, -0.36);
+
+                // Partition Cubicle Walls with Frosted Privacy Window
+                const cubicleEnclosure = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.18, 0.64), materials.partitionCreamMat);
+                const privacyWindow = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.03, 0.28, 0.32),
+                    new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7, transparent: true, opacity: 0.8 })
+                );
+                privacyWindow.position.set(0, 0.32, -0.33);
+                toiletGroup.add(cubicleEnclosure, privacyWindow);
+
+                // Stainless Steel Hybrid Toilet Pan (Indian Squat / Western Commode) with Foot Pedal
+                const commodeBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.36), materials.pistonSteel);
+                commodeBase.position.set(-0.12, -0.38, 0.08);
+                const commodeRim = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.022, 10, 20), materials.pistonSteel);
+                commodeRim.rotation.x = Math.PI / 2;
+                commodeRim.position.set(-0.12, -0.21, 0.08);
+                const flushPedal = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 0.08), materials.redBufferBeam);
+                flushPedal.position.set(-0.12, -0.52, 0.28);
+                toiletGroup.add(commodeBase, commodeRim, flushPedal);
+
+                // Corner Stainless Washbasin with Lever Push-Tap & Vanity Mirror Halo
+                const washBasin = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 0.12, 16), materials.pistonSteel);
+                washBasin.position.set(0.18, -0.06, -0.16);
+                const basinTap = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.09, 8), materials.pistonSteel);
+                basinTap.position.set(0.18, 0.04, -0.24);
+                const vanityMirror = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.36, 0.24), materials.pistonSteel);
+                vanityMirror.position.set(0.34, 0.24, -0.16);
+                const mirrorHalo = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.01, 0.38, 0.26),
+                    new THREE.MeshBasicMaterial({ color: 0xfef9c3 })
+                );
+                mirrorHalo.position.set(0.33, 0.24, -0.16);
+                toiletGroup.add(washBasin, basinTap, vanityMirror, mirrorHalo);
+
+                // DRDO Anaerobic Bio-Digester Module (Underslung Tank with Inspection Port)
+                const bioTank = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.18, 0.18, 0.58, 20),
+                    new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.75, roughness: 0.25 })
+                );
+                bioTank.rotation.z = Math.PI / 2;
+                bioTank.position.set(0, -0.85, 0);
+                const inspectionFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.04, 14), materials.copperBusbar);
+                inspectionFlange.position.set(0, -0.66, 0);
+                toiletGroup.add(bioTank, inspectionFlange);
+
+                sysGroups.coachChairs.add(toiletGroup);
+            });
+
+            const coachInteriorLight = new THREE.PointLight(0xfef08a, 0.55, 11);
+            coachInteriorLight.position.set(coachCenterX, 1.05, 0);
+            acCoachRoot.add(coachInteriorLight);
+
+            // Dual 7.0 TR Roof AC Units
+            [-3.45, 3.45].forEach(rmpuOff => {
+                const rmpuGroup = new THREE.Group();
+                rmpuGroup.position.set(coachCenterX + rmpuOff, 1.34, 0);
+
+                const rmpuCasing = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.20, 1.18), materials.pistonSteel);
+                rmpuGroup.add(rmpuCasing);
+
+                [-0.32, 0.32].forEach(zFan => {
+                    const condFan = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.23, 20), materials.alternatorBlue);
+                    condFan.position.set(0, 0.02, zFan);
+                    rmpuGroup.add(condFan);
+                });
+
+                sysGroups.coachRmpu.add(rmpuGroup);
+            });
+
+            const acRoofDuct = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.12, 0.46), materials.lhbRoofSilver);
+            acRoofDuct.position.set(coachCenterX, 1.24, 0);
+            sysGroups.coachRmpu.add(acRoofDuct);
+
+            const coachRoofGeo = new THREE.ExtrudeGeometry(lhbRoofShape, { depth: coachLength, bevelEnabled: false });
+            coachRoofGeo.rotateY(Math.PI / 2);
+            coachRoofGeo.center();
+            const coachRoof = new THREE.Mesh(coachRoofGeo, materials.lhbRoofSilver);
+            coachRoof.position.set(coachCenterX, 1.35, 0);
+            sysGroups.coachShell.add(coachRoof);
+            hoodMeshesAll.push(coachRoof);
+
+            // 3D Punched Window Apertures + Polycarbonate Glazing + Tumblehome Skirts for AC Coach
+            [-0.75, 0.75].forEach(zSide => {
+                const isCutaway = zSide > 0;
+                const coach3DWall = createLhbSideWallWith3DWindows(
+                    coachLength, 1.36, zSide, false, materials.lhbCoachSideMat, materials.lhbTintedGlass
+                );
+                coach3DWall.position.set(coachCenterX, 0.60, zSide);
+                sysGroups.coachShell.add(coach3DWall);
+                hoodMeshesAll.push(coach3DWall);
+                if (isCutaway) hoodRightSideMeshes.push(coach3DWall);
+            });
+
+            // Prevent transparent glass from casting opaque shadows
+            consistRoot.traverse(child => {
+                if (child.isMesh) {
+                    child.userData.origMaterial = child.material;
+                    const isGlass = child.material === materials.cabGlass || child.material === materials.lhbTintedGlass;
+                    child.castShadow = !isGlass;
+                    child.receiveShadow = true;
+                }
+            });
+
+            // ============================================================================
+            // 5. 6-AXLE TRACTION + 750V EOG HOTEL LOAD PARTICLES & EXHAUST PLUME
+            // ============================================================================
+            const powerFlowGroup = new THREE.Group();
+            consistRoot.add(powerFlowGroup);
+
+            const flowParticles = [];
+            const particleGeo = new THREE.SphereGeometry(0.05, 10, 10);
+            for (let i = 0; i < 54; i++) {
+                const isEogHotelParticle = i >= 36;
+                const pMat = new THREE.MeshBasicMaterial({
+                    color: isEogHotelParticle ? 0x10b981 : (i % 2 === 0 ? 0xfacc15 : 0x38bdf8)
+                });
+                const pMesh = new THREE.Mesh(particleGeo, pMat);
+                powerFlowGroup.add(pMesh);
+                flowParticles.push({
+                    mesh: pMesh,
+                    progress: (i % 18) / 18,
+                    bogieTarget: i < 18 ? -1 : 1,
+                    axleIndex: i % 3,
+                    isEogHotel: isEogHotelParticle
+                });
+            }
+
+            const exhaustParticles = [];
+            const smokeGeo = new THREE.SphereGeometry(0.09, 10, 10);
+            for (let i = 0; i < 24; i++) {
+                const isDb = i >= 14;
+                const sMat = new THREE.MeshBasicMaterial({
+                    color: isDb ? 0xf87171 : 0x94a3b8,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const sMesh = new THREE.Mesh(smokeGeo, sMat);
+                locoRoot.add(sMesh);
+                exhaustParticles.push({
+                    mesh: sMesh,
+                    phase: (i / 24),
+                    isDynamicBrake: isDb
+                });
+            }
+
+            // ============================================================================
+            // 6. SPHERICAL CAMERA ORBIT CONTROLS, CONSIST FOCUS & 2D BLUEPRINT CALLOUTS
+            // ============================================================================
+            const camControl = {
+                isDragging: false,
+                prevX: 0,
+                prevY: 0,
+                spherical: new THREE.Spherical(16.5, Math.PI / 2.25, 0.48),
+                targetSpherical: new THREE.Spherical(16.5, Math.PI / 2.25, 0.48),
+                lookAtTarget: new THREE.Vector3(7.5, 0.15, 0),
+                targetLookAt: new THREE.Vector3(7.5, 0.15, 0)
+            };
+
+            function setCameraPreset(radius, phi, theta, tx, ty, tz) {
+                camControl.targetSpherical.radius = radius;
+                camControl.targetSpherical.phi = Math.max(0.25, Math.min(Math.PI - 0.22, phi));
+                camControl.targetSpherical.theta = theta;
+                camControl.targetLookAt.set(tx, ty, tz);
+            }
+
+            function focusCameraOnCar(targetKey) {
+                state.focusTarget = targetKey;
+                document.querySelectorAll('.focus-btn').forEach(btn => {
+                    const active = btn.dataset.focus === targetKey;
+                    btn.className = active
+                        ? 'focus-btn py-1 px-1.5 rounded text-[10px] font-semibold bg-yellow-400 text-slate-950 transition-all'
+                        : 'focus-btn py-1 px-1.5 rounded text-[10px] font-medium bg-slate-800/90 text-slate-300 hover:text-white transition-all';
+                });
+
+                const badge = document.getElementById('active-car-badge');
+                if (targetKey === 'rake') {
+                    badge.textContent = 'Full Rake';
+                    setCameraPreset(19.5, 1.32, 0.46, 8.2, 0.15, 0);
+                } else if (targetKey === 'loco') {
+                    badge.textContent = 'WDG4G Loco';
+                    setCameraPreset(9.8, 1.34, 0.42, 0.0, 0.18, 0);
+                } else if (targetKey === 'eog') {
+                    badge.textContent = 'LHB EOG Car';
+                    setCameraPreset(8.6, 1.34, 0.35, 10.3, 0.22, 0);
+                } else if (targetKey === 'coach') {
+                    badge.textContent = 'LHB AC Coach';
+                    setCameraPreset(8.8, 1.32, 0.32, 20.2, 0.25, 0);
+                }
+            }
+
+            document.querySelectorAll('.focus-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    soundEngine.playUiBeep(880, 0.04, 'sine');
+                    state.isPlayingTimeline = false;
+                    updatePlayPauseUI();
+                    focusCameraOnCar(btn.dataset.focus);
+                });
+            });
+
+            container.addEventListener('pointerdown', (e) => {
+                soundEngine.resumeIfNeeded();
+                camControl.isDragging = true;
+                camControl.prevX = e.clientX;
+                camControl.prevY = e.clientY;
+                state.userInteractingCamera = true;
+                state.userInteractionCooldown = 6.0;
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                if (!camControl.isDragging) return;
+                const dx = e.clientX - camControl.prevX;
+                const dy = e.clientY - camControl.prevY;
+                camControl.prevX = e.clientX;
+                camControl.prevY = e.clientY;
+
+                camControl.targetSpherical.theta -= dx * 0.0065;
+                camControl.targetSpherical.phi = Math.max(
+                    0.25,
+                    Math.min(Math.PI - 0.22, camControl.targetSpherical.phi - dy * 0.0065)
+                );
+            });
+
+            window.addEventListener('pointerup', () => {
+                camControl.isDragging = false;
+            });
+
+            container.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                soundEngine.resumeIfNeeded();
+                state.userInteractingCamera = true;
+                state.userInteractionCooldown = 6.0;
+                camControl.targetSpherical.radius = Math.max(
+                    3.2,
+                    Math.min(34.0, camControl.targetSpherical.radius + e.deltaY * 0.008)
+                );
+            }, { passive: false });
+
+            // 16-System Inspector Tree
+            const componentListEl = document.getElementById('component-list');
+            const clearHighlightBtn = document.getElementById('clear-highlight-btn');
+
+            function selectComponent(compId) {
+                state.selectedComponentId = compId;
+                clearHighlightBtn.classList.toggle('hidden', !compId);
+
+                document.querySelectorAll('.comp-item-btn').forEach(btn => {
+                    const active = btn.dataset.compId === compId;
+                    btn.className = active
+                        ? 'comp-item-btn w-full text-left px-2.5 py-1.5 rounded-lg bg-yellow-400/20 border border-yellow-400/50 text-yellow-300 font-semibold transition-all flex items-center justify-between'
+                        : 'comp-item-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-800/70 text-slate-300 transition-all flex items-center justify-between';
+                });
+
+                Object.keys(componentMeshMap).forEach(key => {
+                    componentMeshMap[key].forEach(grp => {
+                        grp.traverse(child => {
+                            if (child.isMesh && child.material && child.material.emissive) {
+                                if (compId && key === compId) {
+                                    child.material.emissiveIntensity = Math.max(child.material.emissiveIntensity || 0.15, 0.45);
+                                } else if (!compId && child.userData.origMaterial) {
+                                    child.material.emissiveIntensity = 0.12;
+                                }
+                            }
+                        });
+                    });
+                });
+
+                if (compId) {
+                    const item = INSPECTOR_ITEMS.find(i => i.id === compId);
+                    if (item) {
+                        document.getElementById('maint-code-badge').textContent = item.maintBadge;
+                        document.getElementById('maint-sys-title').textContent = item.name;
+                        document.getElementById('maint-sys-specs').innerHTML = item.maintHtml;
+                        setCaption(item.name, item.detail);
+                    }
+                }
+            }
+
+            INSPECTOR_ITEMS.forEach(item => {
+                const btn = document.createElement('button');
+                btn.dataset.compId = item.id;
+                btn.className = 'comp-item-btn w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-800/70 text-slate-300 transition-all flex items-center justify-between';
+                btn.innerHTML = `<span class="truncate pr-2">${item.name}</span><span class="text-[9px] mono text-yellow-400/80 shrink-0">→</span>`;
+                btn.addEventListener('click', () => {
+                    soundEngine.playUiBeep(920, 0.04, 'sine');
+                    state.isPlayingTimeline = false;
+                    updatePlayPauseUI();
+                    if (state.housingMode === 'solid') setHousingMode('cutaway');
+                    selectComponent(item.id);
+                    setCameraPreset(6.4, 1.30, 0.32, item.anchor.x, item.anchor.y * 0.4, 0);
+                });
+                componentListEl.appendChild(btn);
+            });
+
+            clearHighlightBtn.addEventListener('click', () => {
+                soundEngine.playUiBeep(760, 0.04, 'sine');
+                selectComponent(null);
+            });
+
+            // 3D-to-2D SVG Callouts
+            const leaderSvg = document.getElementById('leader-svg');
+            const calloutsContainer = document.getElementById('callouts-container');
+            const activeCalloutElements = new Map();
+
+            function clearAllCallouts() {
+                for (const [, domObj] of activeCalloutElements.entries()) {
+                    domObj.card.remove();
+                    domObj.line.remove();
+                    domObj.dot.remove();
+                }
+                activeCalloutElements.clear();
+            }
+
+            function project3DToScreen(worldVec) {
+                const v = worldVec.clone().project(camera);
+                const visible = v.z >= -1 && v.z <= 1;
+                const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-(v.y * 0.5) + 0.5) * window.innerHeight;
+                return { x, y, visible };
+            }
+
+            function ensureCalloutElement(id, title, sub, badge) {
+                if (activeCalloutElements.has(id)) return activeCalloutElements.get(id);
+
+                const card = document.createElement('div');
+                card.className = 'callout-card glass-panel rounded-lg px-2.5 py-1.5 border border-yellow-400/45 max-w-[235px] shadow-lg';
+                const badgeHtml = badge
+                    ? `<span class="text-[8.5px] mono px-1 py-0.5 rounded bg-yellow-400/20 text-yellow-300 border border-yellow-400/30 ml-1.5">${badge}</span>`
+                    : '';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between text-[10.5px] font-bold text-yellow-300 leading-tight">
+                        <span>${title}</span>${badgeHtml}
+                    </div>
+                    <div class="text-[9.5px] text-slate-300 mt-0.5 leading-snug">${sub}</div>
+                `;
+                calloutsContainer.appendChild(card);
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                line.setAttribute('fill', 'none');
+                line.setAttribute('stroke', '#facc15');
+                line.setAttribute('stroke-width', '1.4');
+                line.setAttribute('stroke-dasharray', '3,2');
+                leaderSvg.appendChild(line);
+
+                const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                dot.setAttribute('r', '3.5');
+                dot.setAttribute('fill', '#facc15');
+                dot.setAttribute('stroke', '#0f172a');
+                dot.setAttribute('stroke-width', '1.5');
+                leaderSvg.appendChild(dot);
+
+                const obj = { card, line, dot };
+                activeCalloutElements.set(id, obj);
+                return obj;
+            }
+
+            function renderCalloutsOverlay() {
+                if (!state.showLabels) {
+                    clearAllCallouts();
+                    return;
+                }
+
+                const itemsToRender = [];
+                if (state.showAllDeepSubLabels) {
+                    INSPECTOR_ITEMS.forEach(item => {
+                        if (item.subCallouts && item.subCallouts.length > 0) {
+                            const primarySub = item.subCallouts[0];
+                            itemsToRender.push({
+                                id: 'all_' + primarySub.id,
+                                title: primarySub.title,
+                                sub: primarySub.sub,
+                                badge: primarySub.badge,
+                                worldPos: primarySub.pos,
+                                offset: primarySub.offset
+                            });
+                        }
+                    });
+                } else if (state.selectedComponentId) {
+                    const item = INSPECTOR_ITEMS.find(i => i.id === state.selectedComponentId);
+                    if (item && item.subCallouts) {
+                        item.subCallouts.forEach(sc => {
+                            itemsToRender.push({
+                                id: sc.id,
+                                title: sc.title,
+                                sub: sc.sub,
+                                badge: sc.badge,
+                                worldPos: sc.pos,
+                                offset: sc.offset
+                            });
+                        });
+                    }
+                } else if (state.explodeFactor > 0.25) {
+                    EXPLODED_LABELS.forEach(exp => {
+                        itemsToRender.push({
+                            id: exp.id,
+                            title: exp.title,
+                            sub: exp.sub,
+                            badge: 'ASSY',
+                            worldPos: exp.pos,
+                            offset: exp.offset
+                        });
+                    });
+                } else if (state.activeStage === 3) {
+                    itemsToRender.push(
+                        { id: 'pf_1', title: 'GEVO 12 → 5GMG210B2', sub: '3070 kW Main (1400 VDC) + 6x IGBT', badge: 'LOCO AC-AC', worldPos: new THREE.Vector3(-0.8, 0.72, 0), offset: { x: -65, y: -95 } },
+                        { id: 'pf_2', title: '6x 5GEB24 Traction Motors', sub: '544 kN Starting TE • 85:18 Gear Ratio', badge: '6 AXLES', worldPos: new THREE.Vector3(-2.7, -0.78, 0.55), offset: { x: -95, y: 80 } },
+                        { id: 'pf_3', title: 'LHB EOG 2×500 kVA DG Sets', sub: '750V 3-Phase 50Hz Hotel Load Bus', badge: '1000 kVA EOG', worldPos: new THREE.Vector3(10.1, 0.62, 0), offset: { x: 0, y: -95 } },
+                        { id: 'pf_4', title: 'LHB AC Coach 2×7 TR RMPUs', sub: '85,303 BTU/hr Roof AC + 3-Tier & Chair Interior', badge: 'LHB EXPRESS', worldPos: new THREE.Vector3(19.8, 1.15, 0), offset: { x: 65, y: -95 } }
+                    );
+                } else if (state.activeStage === 4) {
+                    itemsToRender.push(
+                        { id: 'th_1', title: 'GEVO-12 & 7S1712 Thermal Core', sub: 'Exhaust Manifold & Turbocharger Peak Heat', badge: 'THERMAL GLSL', worldPos: new THREE.Vector3(0.4, 0.92, 0), offset: { x: -75, y: -95 } },
+                        { id: 'th_2', title: '3,230 HP Dynamic Brake Grid', sub: '0.526 Ω Box Resistance @ 1,126 V DC Link', badge: 'DB HEAT', worldPos: new THREE.Vector3(1.55, 1.08, 0), offset: { x: 45, y: -100 } },
+                        { id: 'th_3', title: 'FIAT Bogie 640×110 mm Brake Discs', sub: '2 Ventilated Discs/Axle + 4-Axle WSP', badge: 'DISC BRAKE', worldPos: new THREE.Vector3(17.1, -0.78, 0.45), offset: { x: 85, y: 85 } }
+                    );
+                }
+
+                const validIds = new Set(itemsToRender.map(i => i.id));
+                for (const [existingId, domObj] of activeCalloutElements.entries()) {
+                    if (!validIds.has(existingId)) {
+                        domObj.card.remove();
+                        domObj.line.remove();
+                        domObj.dot.remove();
+                        activeCalloutElements.delete(existingId);
+                    }
+                }
+
+                itemsToRender.forEach(item => {
+                    const screen = project3DToScreen(item.worldPos);
+                    const entry = ensureCalloutElement(item.id, item.title, item.sub, item.badge);
+                    if (!screen.visible) {
+                        entry.card.style.opacity = '0';
+                        entry.line.style.opacity = '0';
+                        entry.dot.style.opacity = '0';
+                        return;
+                    }
+
+                    const cx = Math.max(125, Math.min(window.innerWidth - 125, screen.x + item.offset.x));
+                    const cy = Math.max(75, Math.min(window.innerHeight - 95, screen.y + item.offset.y));
+
+                    entry.card.style.opacity = '1';
+                    entry.card.style.left = `${cx}px`;
+                    entry.card.style.top = `${cy}px`;
+
+                    const elbowX = screen.x + item.offset.x * 0.45;
+                    const elbowY = cy;
+                    entry.line.setAttribute('points', `${screen.x},${screen.y} ${elbowX},${elbowY} ${cx},${cy}`);
+                    entry.line.style.opacity = '0.9';
+
+                    entry.dot.setAttribute('cx', screen.x);
+                    entry.dot.setAttribute('cy', screen.y);
+                    entry.dot.style.opacity = '1';
+                });
+            }
+
+            // ============================================================================
+            // 7. MULTI-TRACE OSCILLOSCOPE
+            // ============================================================================
+            const scopeCanvas = document.getElementById('scope-canvas');
+            const scopeCtx = scopeCanvas.getContext('2d');
+
+            function renderOscilloscope() {
+                if (!scopeCanvas || !scopeCtx) return;
+                const dpr = window.devicePixelRatio || 1;
+                const targetW = Math.max(1, Math.floor(scopeCanvas.clientWidth * dpr));
+                const targetH = Math.max(1, Math.floor(scopeCanvas.clientHeight * dpr));
+                if (scopeCanvas.width !== targetW || scopeCanvas.height !== targetH) {
+                    scopeCanvas.width = targetW;
+                    scopeCanvas.height = targetH;
+                }
+                const w = scopeCanvas.width;
+                const h = scopeCanvas.height;
+                scopeCtx.clearRect(0, 0, w, h);
+
+                scopeCtx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+                scopeCtx.lineWidth = 1;
+                scopeCtx.beginPath();
+                scopeCtx.moveTo(0, h / 2);
+                scopeCtx.lineTo(w, h / 2);
+                scopeCtx.stroke();
+
+                const dcY = h * 0.82 - (state.dcLinkVolts / 1400) * (h * 0.65);
+                scopeCtx.strokeStyle = '#facc15';
+                scopeCtx.lineWidth = 1.5 * dpr;
+                scopeCtx.setLineDash([4, 3]);
+                scopeCtx.beginPath();
+                scopeCtx.moveTo(0, dcY);
+                scopeCtx.lineTo(w, dcY);
+                scopeCtx.stroke();
+                scopeCtx.setLineDash([]);
+
+                const freqCycles = 1.6 + (state.locoSpeedKmh / 120) * 3.4;
+                const amp = h * (0.15 + (state.dcLinkVolts / 1400) * 0.20);
+                scopeCtx.strokeStyle = '#fb7185';
+                scopeCtx.lineWidth = 1.6 * dpr;
+                scopeCtx.beginPath();
+                for (let x = 0; x <= w; x += 3) {
+                    const normX = x / w;
+                    const angle = normX * Math.PI * 2 * freqCycles - state.electricalAngle * 2.2;
+                    const y = h / 2 + Math.sin(angle) * amp;
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+
+                scopeCtx.strokeStyle = '#34d399';
+                scopeCtx.lineWidth = 1.6 * dpr;
+                scopeCtx.beginPath();
+                for (let x = 0; x <= w; x += 4) {
+                    const normX = x / w;
+                    const couplerWave = (state.couplerForceKn / 550) * (h * 0.35) +
+                        Math.sin(normX * 10 - state.electricalAngle * 1.4) * (state.physics.joltImpulse * 8 + 2);
+                    const y = h * 0.55 - couplerWave;
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+
+                scopeCtx.strokeStyle = '#38bdf8';
+                scopeCtx.lineWidth = 1.4 * dpr;
+                scopeCtx.beginPath();
+                for (let x = 0; x <= w; x += 4) {
+                    const normX = x / w;
+                    const bounce = Math.sin(normX * 14 - state.wheelAngle * 1.8) * (4 + state.physics.joltImpulse * 18);
+                    const y = h * 0.5 + bounce;
+                    if (x === 0) scopeCtx.moveTo(x, y);
+                    else scopeCtx.lineTo(x, y);
+                }
+                scopeCtx.stroke();
+            }
+
+            // ============================================================================
+            // 8. GLSL SHADER & SHELL MODES, EXPLODED BLUEPRINT & TIMELINE
+            // ============================================================================
+            function setHousingMode(mode) {
+                state.housingMode = mode;
+                const labelEl = document.getElementById('housing-mode-label');
+                document.querySelectorAll('.housing-btn').forEach(btn => {
+                    const active = btn.dataset.housing === mode;
+                    btn.className = active
+                        ? 'housing-btn py-1 rounded text-[9.5px] font-semibold bg-yellow-400 text-slate-950 transition-all'
+                        : 'housing-btn py-1 rounded text-[9.5px] font-medium text-slate-300 hover:text-white transition-all';
+                });
+
+                consistRoot.traverse(child => {
+                    if (child.isMesh && child.userData.origMaterial) {
+                        child.material = child.userData.origMaterial;
+                    }
+                });
+
+                if (mode === 'solid') {
+                    labelEl.textContent = 'Full IR Livery';
+                    hoodMeshesAll.forEach(m => { m.visible = true; });
+                    [materials.irYellowHood, materials.irYellowTexturedHood, materials.irDarkBlueTrim, materials.lhbScarletRed, materials.lhbEogSideMat, materials.lhbCoachSideMat, materials.lhbRoofSilver].forEach(mat => { mat.opacity = 1.0; });
+                } else if (mode === 'cutaway') {
+                    labelEl.textContent = 'Cutaway Interior';
+                    hoodMeshesAll.forEach(m => { m.visible = true; });
+                    hoodRightSideMeshes.forEach(m => { m.visible = false; });
+                    [materials.irYellowHood, materials.irYellowTexturedHood, materials.irDarkBlueTrim, materials.lhbScarletRed, materials.lhbEogSideMat, materials.lhbCoachSideMat, materials.lhbRoofSilver].forEach(mat => { mat.opacity = 0.96; });
+                } else if (mode === 'xray') {
+                    labelEl.textContent = 'X-Ray Glass';
+                    hoodMeshesAll.forEach(m => { m.visible = true; });
+                    [materials.irYellowHood, materials.irYellowTexturedHood, materials.lhbScarletRed, materials.lhbEogSideMat, materials.lhbCoachSideMat].forEach(mat => { mat.opacity = 0.18; });
+                    [materials.irDarkBlueTrim, materials.lhbRoofSilver].forEach(mat => { mat.opacity = 0.22; });
+                } else if (mode === 'blueprint') {
+                    labelEl.textContent = 'GLSL Blueprint';
+                    hoodMeshesAll.forEach(m => { m.visible = true; });
+                    hoodRightSideMeshes.forEach(m => { m.visible = false; });
+                    consistRoot.traverse(child => {
+                        if (child.isMesh) child.material = blueprintShaderMaterial;
+                    });
+                } else if (mode === 'thermal') {
+                    labelEl.textContent = 'GLSL Thermal IR';
+                    hoodMeshesAll.forEach(m => { m.visible = true; });
+                    hoodRightSideMeshes.forEach(m => { m.visible = false; });
+                    consistRoot.traverse(child => {
+                        if (child.isMesh) child.material = thermalShaderMaterial;
+                    });
+                }
+            }
+
+            function setExplodedPos(grp, x, y, z) {
+                if (!grp) return;
+                grp.userData.explodeX = x;
+                grp.userData.explodeY = y;
+                grp.userData.explodeZ = z;
+                grp.position.set(x, y, z);
+            }
+
+            function applyExplodedDisplacements(f) {
+                setExplodedPos(sysGroups.hood, 0, f * 1.55, 0);
+                setExplodedPos(sysGroups.cab1, -f * 1.15, f * 0.18, 0);
+                setExplodedPos(sysGroups.hvac1, -f * 1.15, f * 0.85, 0);
+                setExplodedPos(sysGroups.auxcab, -f * 0.72, f * 0.36, 0);
+                setExplodedPos(sysGroups.alternator, -f * 0.35, f * 0.25, 0);
+                setExplodedPos(sysGroups.engine, 0, f * 0.28, 0);
+                setExplodedPos(sysGroups.turbo, f * 0.25, f * 0.82, 0);
+                setExplodedPos(sysGroups.lubeoil, f * 0.40, -f * 0.18, f * 0.55);
+                setExplodedPos(sysGroups.dbgrid, f * 0.50, f * 0.72, 0);
+                setExplodedPos(sysGroups.radiator, f * 0.72, f * 1.05, 0);
+                setExplodedPos(sysGroups.compressor, f * 0.90, f * 0.28, 0);
+                setExplodedPos(sysGroups.apu, f * 1.05, f * 0.42, -f * 0.45);
+                setExplodedPos(sysGroups.cab2, f * 1.20, f * 0.18, 0);
+                setExplodedPos(sysGroups.hvac2, f * 1.20, f * 0.85, 0);
+                setExplodedPos(sysGroups.underframe, 0, -f * 0.25, 0);
+                setExplodedPos(sysGroups.fueltank, 0, -f * 0.72, 0);
+                setExplodedPos(sysGroups.bogie1, -f * 0.75, -f * 0.58, 0);
+                setExplodedPos(sysGroups.motors1, -f * 0.75, -f * 0.32, f * 0.48);
+                setExplodedPos(sysGroups.bogie2, f * 0.75, -f * 0.58, 0);
+                setExplodedPos(sysGroups.motors2, f * 0.75, -f * 0.32, f * 0.48);
+
+                setExplodedPos(sysGroups.eogUnderframe, 0, -f * 0.25, 0);
+                setExplodedPos(sysGroups.eogShell, 0, f * 1.45, 0);
+                setExplodedPos(sysGroups.eogInterior, 0, f * 0.38, 0);
+                setExplodedPos(sysGroups.eogBogies, 0, -f * 0.62, 0);
+
+                setExplodedPos(sysGroups.coachUnderframe, 0, -f * 0.25, 0);
+                setExplodedPos(sysGroups.coachShell, 0, f * 1.45, 0);
+                setExplodedPos(sysGroups.coachRmpu, 0, f * 1.95, 0);
+                setExplodedPos(sysGroups.coachBerths, -f * 0.35, f * 0.35, -f * 0.25);
+                setExplodedPos(sysGroups.coachChairs, f * 0.35, f * 0.35, f * 0.25);
+                setExplodedPos(sysGroups.coachFiatBogies, 0, -f * 0.62, 0);
+            }
+
+            function setNotchByIndex(idx) {
+                const clamped = Math.max(0, Math.min(9, idx));
+                state.notchIndex = clamped;
+                const row = CAMTECH_WDG4G_NOTCH_TABLE[clamped];
+                state.targetRpm = row.rpm;
+                state.targetVolts = state.dynamicBrakeActive ? 1126 : row.vdc;
+                state.targetSpeedKmh = state.dynamicBrakeActive ? Math.max(18, row.speedKmh * 0.45) : row.speedKmh;
+
+                document.getElementById('notch-slider').value = clamped;
+                document.getElementById('notch-slider-val').textContent = `${row.label} (${row.rpm} RPM)`;
+                document.getElementById('notch-badge').textContent = row.label;
+                document.getElementById('hp-readout').textContent = state.dynamicBrakeActive ? `3230 HP DB` : `${row.hp} HP`;
+                document.getElementById('te-readout').textContent = state.dynamicBrakeActive ? `-270 kN DB` : `${row.teKn} kN TE`;
+            }
+
+            function setCaption(title, sub) {
+                document.getElementById('caption-title').textContent = title;
+                document.getElementById('caption-sub').textContent = sub;
+            }
+
+            function updateStageButtonsUI(stageIdx) {
+                state.activeStage = stageIdx;
+                document.querySelectorAll('.stage-btn').forEach(btn => {
+                    const s = parseInt(btn.dataset.stage, 10);
+                    btn.className = s === stageIdx
+                        ? 'stage-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-yellow-400 text-slate-950 shadow-sm'
+                        : 'stage-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/70 transition-all';
+                });
+
+                document.getElementById('flowchart-bar').classList.toggle('hidden', stageIdx !== 3);
+            }
+
+            function applyTimelineDirector(t) {
+                const stageBanner = document.getElementById('timeline-stage-name');
+
+                if (t < 9) {
+                    if (state.activeStage !== 0) updateStageButtonsUI(0);
+                    stageBanner.textContent = 'STAGE 1: WDG4G + COUPLED LHB EXPRESS CONSIST & INTERIOR CUTAWAY';
+                    state.targetExplode = 0;
+                    state.showPowerFlow = false;
+                    state.dynamicBrakeActive = false;
+                    setNotchByIndex(4);
+                    if (t < 3.5) {
+                        setHousingMode('solid');
+                        setCaption(
+                            'Indian Railways WDG4G (GE ES43ACmi) Hauling Coupled LHB Express Consist',
+                            'WDG4G Dual-Cab Loco + LHB LWLRRM EOG Generator Van (2×500 kVA) + LHB LWACCN/EC AC Express Coach'
+                        );
+                    } else {
+                        setHousingMode('cutaway');
+                        setCaption(
+                            'Full Consist Interior Cutaway — Engine Room, 2×500 kVA EOG & LHB Passenger Bays',
+                            'Revealing GEVO-12 V12, 5GMG210B2, EOG DG sets, AC 3-Tier Berths with Chains, S-Curve Chairs, Bio-Toilets & FIAT Bogies'
+                        );
+                    }
+                    if (!state.userInteractingCamera) setCameraPreset(18.5, 1.32, 0.42 + t * 0.03, 8.5, 0.15, 0);
+                } else if (t < 19) {
+                    if (state.activeStage !== 1) updateStageButtonsUI(1);
+                    stageBanner.textContent = 'STAGE 2: WDG4G COMPARTMENTS & LHB 3D COACH INTERIOR TOUR (16 SYSTEMS)';
+                    setHousingMode('cutaway');
+                    state.targetExplode = 0;
+                    state.showPowerFlow = false;
+                    setNotchByIndex(4);
+
+                    const tourIndices = [0, 3, 11, 12, 13, 14, 15];
+                    const pick = tourIndices[Math.min(tourIndices.length - 1, Math.floor(((t - 9) / 10) * tourIndices.length))];
+                    const comp = INSPECTOR_ITEMS[pick];
+                    if (state.selectedComponentId !== comp.id) selectComponent(comp.id);
+                    if (!state.userInteractingCamera) setCameraPreset(7.4, 1.30, 0.34, comp.anchor.x, 0.25, 0);
+                } else if (t < 28) {
+                    if (state.activeStage !== 2) {
+                        updateStageButtonsUI(2);
+                        selectComponent(null);
+                    }
+                    stageBanner.textContent = 'STAGE 3: GLSL CAD BLUEPRINT SHADER & EXPLODED CONSIST ARCHITECTURE';
+                    setHousingMode('blueprint');
+                    const subT = (t - 19) / 9;
+                    state.targetExplode = subT < 0.72 ? Math.min(1.0, subT / 0.5) : Math.max(0.0, (1.0 - subT) / 0.28);
+                    document.getElementById('explode-slider').value = Math.round(state.targetExplode * 100);
+                    document.getElementById('explode-val').textContent = `${Math.round(state.targetExplode * 100)}%`;
+
+                    setCaption(
+                        'GLSL Blueprint Shader & Coaxial/Vertical Exploded Consist',
+                        'Fresnel CAD Blueprint Grid + Laser Scanwave across WDG4G Assemblies, LHB Perforated Shells, 2×7 TR RMPUs & FIAT H-Bogies'
+                    );
+                    if (!state.userInteractingCamera) setCameraPreset(18.0, 1.25, 0.52 + (t - 19) * 0.03, 8.5, 0.25, 0);
+                } else if (t < 36) {
+                    if (state.activeStage !== 3) {
+                        updateStageButtonsUI(3);
+                        selectComponent(null);
+                    }
+                    stageBanner.textContent = 'STAGE 4: 5GMG210B2 TRACTION + LHB 750V 3-PHASE EOG HOTEL LOAD PIPELINE';
+                    setHousingMode('cutaway');
+                    state.targetExplode = 0;
+                    state.showPowerFlow = true;
+                    state.dynamicBrakeActive = false;
+                    setNotchByIndex(7);
+
+                    const flowStep = Math.floor(((t - 28) / 8) * 6) % 6;
+                    document.querySelectorAll('.flow-step').forEach((el, idx) => {
+                        el.classList.toggle('active', idx === flowStep);
+                    });
+
+                    setCaption(
+                        'Dual Power Architecture: 1,400 VDC Traction Link + 750 VAC 3-Phase EOG Hotel Load',
+                        '5GMG210B2 feeds 6x 5GEB24 Axle Motors while LHB EOG 2×500 kVA DG sets power the 2×7.0 TR Roof AC Units & Coach Lighting'
+                    );
+                    if (!state.userInteractingCamera) setCameraPreset(14.5, 1.34, 0.32, 7.2, 0.1, 0);
+                } else {
+                    if (state.activeStage !== 4) {
+                        updateStageButtonsUI(4);
+                        selectComponent(null);
+                    }
+                    stageBanner.textContent = 'STAGE 5: GLSL THERMAL SHADER, 3230HP DB GRID & 640mm FIAT DISC BRAKE PHYSICS';
+                    setHousingMode('thermal');
+                    state.targetExplode = 0;
+                    state.showPowerFlow = true;
+
+                    const isBraking = t > 40.2;
+                    state.dynamicBrakeActive = isBraking;
+                    setNotchByIndex(isBraking ? 4 : 9);
+
+                    setCaption(
+                        isBraking
+                            ? 'Full Dynamic + Electro-Pneumatic Disc Braking: 3,230 HP DB Grid + 640×110 mm FIAT Discs'
+                            : 'Notch 8 Express Run (120 km/h) — GLSL Infrared Thermal Signature Analysis',
+                        isBraking
+                            ? 'CBC Tightlock couplers compress in Buff (-185 kN) while 3,230 HP DB grids and 8 axle-mounted 640 mm FIAT brake discs glow hot'
+                            : 'Real-time thermal distribution across GEVO-12 cylinders, 7S1712 turbocharger, 5GEB24 motors, and 2×500 kVA EOG generators'
+                    );
+                    if (!state.userInteractingCamera) setCameraPreset(14.8, 1.28, -0.38 + (t - 36) * 0.06, 7.5, 0.15, 0);
+                }
+            }
+
+            // ============================================================================
+            // 9. UI EVENT LISTENERS
+            // ============================================================================
+            function updatePlayPauseUI() {
+                const btn = document.getElementById('play-pause-btn');
+                btn.textContent = state.isPlayingTimeline ? '⏸' : '▶';
+            }
+
+            document.getElementById('play-pause-btn').addEventListener('click', () => {
+                soundEngine.playUiBeep(820, 0.04, 'sine');
+                state.isPlayingTimeline = !state.isPlayingTimeline;
+                updatePlayPauseUI();
+            });
+
+            document.getElementById('timeline-scrubber').addEventListener('input', (e) => {
+                soundEngine.resumeIfNeeded();
+                state.isPlayingTimeline = false;
+                updatePlayPauseUI();
+                state.timelineTime = parseFloat(e.target.value);
+                applyTimelineDirector(state.timelineTime);
+            });
+
+            document.querySelectorAll('.stage-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    soundEngine.playUiBeep(980, 0.045, 'triangle');
+                    const stage = parseInt(btn.dataset.stage, 10);
+                    const stageTimes = [4.0, 9.5, 21.5, 28.5, 37.0];
+                    state.timelineTime = stageTimes[stage];
+                    state.userInteractingCamera = false;
+                    applyTimelineDirector(state.timelineTime);
+                });
+            });
+
+            document.querySelectorAll('.housing-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    soundEngine.playUiBeep(740, 0.04, 'sine');
+                    state.isPlayingTimeline = false;
+                    updatePlayPauseUI();
+                    setHousingMode(btn.dataset.housing);
+                });
+            });
+
+            document.getElementById('notch-slider').addEventListener('input', (e) => {
+                soundEngine.resumeIfNeeded();
+                state.isPlayingTimeline = false;
+                updatePlayPauseUI();
+                setNotchByIndex(parseInt(e.target.value, 10));
+            });
+
+            document.getElementById('explode-slider').addEventListener('input', (e) => {
+                soundEngine.resumeIfNeeded();
+                state.isPlayingTimeline = false;
+                updatePlayPauseUI();
+                const val = parseFloat(e.target.value);
+                state.targetExplode = val / 100;
+                document.getElementById('explode-val').textContent = `${Math.round(val)}%`;
+                if (val > 10 && state.housingMode === 'solid') setHousingMode('cutaway');
+            });
+
+            const hornBtn = document.getElementById('horn-btn');
+            hornBtn.addEventListener('pointerdown', () => soundEngine.setHorn(true));
+            window.addEventListener('pointerup', () => {
+                if (state.hornActive) soundEngine.setHorn(false);
+            });
+
+            document.getElementById('sound-toggle-btn').addEventListener('click', () => {
+                soundEngine.setEnabled(!state.soundEnabled);
+            });
+
+            document.getElementById('volume-slider').addEventListener('input', (e) => {
+                const v = parseFloat(e.target.value) / 100;
+                document.getElementById('volume-val').textContent = `${Math.round(v * 100)}%`;
+                soundEngine.setVolume(v);
+            });
+
+            document.getElementById('toggle-flux-btn').addEventListener('click', () => {
+                soundEngine.playUiBeep(1040, 0.04, 'sine');
+                state.showPowerFlow = !state.showPowerFlow;
+                if (state.showPowerFlow && state.housingMode === 'solid') setHousingMode('cutaway');
+            });
+
+            document.getElementById('toggle-dynbrake-btn').addEventListener('click', () => {
+                soundEngine.playUiBeep(640, 0.06, 'sawtooth');
+                state.isPlayingTimeline = false;
+                updatePlayPauseUI();
+                state.dynamicBrakeActive = !state.dynamicBrakeActive;
+                if (state.dynamicBrakeActive && state.housingMode === 'solid') setHousingMode('thermal');
+                setNotchByIndex(state.notchIndex);
+            });
+
+            document.getElementById('jolt-physics-btn').addEventListener('click', () => {
+                soundEngine.playTrackClack(1.0);
+                setTimeout(() => soundEngine.playTrackClack(0.85), 110);
+                state.physics.joltImpulse = 1.0;
+                setCaption(
+                    'Track Turnout / Rail Joint Impulse Injected into Consist Suspension',
+                    'Observing Co-Co primary helical springs compressing, FIAT bogie secondary air springs, anti-roll bars, and CBC coupler damping'
+                );
+            });
+
+            const nightBtn = document.getElementById('toggle-night-btn');
+            nightBtn.addEventListener('click', () => {
+                soundEngine.playUiBeep(720, 0.04, 'sine');
+                state.nightMode = !state.nightMode;
+                if (state.nightMode) {
+                    ambientLight.intensity = 0.22;
+                    keyLight.intensity = 0.35;
+                    headlightBeamMat.opacity = 0.28;
+                    headlightSpot.intensity = 2.4;
+                    coachInteriorLight.intensity = 1.65;
+                    nightBtn.className = 'px-2 py-1.5 rounded-lg text-[10.5px] font-semibold border border-indigo-400 bg-indigo-500 text-white transition-all flex items-center justify-center gap-1 shadow';
+                } else {
+                    ambientLight.intensity = 0.72;
+                    keyLight.intensity = 1.45;
+                    headlightBeamMat.opacity = 0.08;
+                    headlightSpot.intensity = 0.6;
+                    coachInteriorLight.intensity = 0.55;
+                    nightBtn.className = 'px-2 py-1.5 rounded-lg text-[10.5px] font-medium border border-indigo-500/40 bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25 transition-all flex items-center justify-center gap-1';
+                }
+            });
+
+            const deepLabelsBtn = document.getElementById('toggle-deep-labels-btn');
+            deepLabelsBtn.addEventListener('click', () => {
+                soundEngine.playUiBeep(880, 0.04, 'sine');
+                state.showAllDeepSubLabels = !state.showAllDeepSubLabels;
+                if (state.showAllDeepSubLabels) {
+                    state.showLabels = true;
+                    state.isPlayingTimeline = false;
+                    updatePlayPauseUI();
+                    if (state.housingMode === 'solid') setHousingMode('cutaway');
+                    deepLabelsBtn.className = 'px-2 py-1.5 rounded-lg text-[10.5px] font-semibold border border-yellow-400 bg-yellow-400 text-slate-950 transition-all flex items-center justify-center gap-1 shadow';
+                } else {
+                    deepLabelsBtn.className = 'px-2 py-1.5 rounded-lg text-[10.5px] font-medium border border-yellow-500/40 bg-yellow-500/15 text-yellow-300 hover:bg-yellow-500/25 transition-all flex items-center justify-center gap-1';
+                }
+            });
+
+            document.getElementById('bogie-cam-btn').addEventListener('click', () => {
+                soundEngine.playUiBeep(780, 0.045, 'triangle');
+                state.isPlayingTimeline = false;
+                updatePlayPauseUI();
+                selectComponent('fiat_bogie');
+                setCameraPreset(4.8, 1.48, 0.42, 17.05, -0.65, 0);
+            });
+
+            document.getElementById('reset-cam-btn').addEventListener('click', () => {
+                soundEngine.playUiBeep(900, 0.04, 'sine');
+                state.userInteractingCamera = false;
+                selectComponent(null);
+                focusCameraOnCar('rake');
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            setHousingMode('cutaway');
+
+            // ============================================================================
+            // 10. MAIN REAL-TIME RENDER, SHADER & MULTI-BODY SUSPENSION LOOP
+            // ============================================================================
+            let lastFrameTime = performance.now();
+
+            const locoSprungGroups = [
+                sysGroups.cab1, sysGroups.hvac1, sysGroups.auxcab, sysGroups.alternator,
+                sysGroups.engine, sysGroups.turbo, sysGroups.lubeoil, sysGroups.dbgrid,
+                sysGroups.radiator, sysGroups.compressor, sysGroups.apu, sysGroups.cab2,
+                sysGroups.hvac2, sysGroups.hood, sysGroups.underframe, sysGroups.fueltank
+            ];
+
+            function animate(now) {
+                requestAnimationFrame(animate);
+                const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+                lastFrameTime = now;
+                const timeSec = now * 0.001;
+
+                if (state.isPlayingTimeline) {
+                    state.timelineTime += dt;
+                    if (state.timelineTime >= state.duration) state.timelineTime = 0;
+                    document.getElementById('timeline-scrubber').value = state.timelineTime;
+                    applyTimelineDirector(state.timelineTime);
+                }
+
+                if (state.userInteractingCamera) {
+                    state.userInteractionCooldown -= dt;
+                    if (state.userInteractionCooldown <= 0) state.userInteractingCamera = false;
+                }
+
+                const mins = Math.floor(state.timelineTime / 60);
+                const secs = Math.floor(state.timelineTime % 60);
+                document.getElementById('time-current').textContent =
+                    `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+                state.prevSpeedKmh = state.locoSpeedKmh;
+                state.rpm += (state.targetRpm - state.rpm) * Math.min(1, dt * 4.5);
+                state.dcLinkVolts += (state.targetVolts - state.dcLinkVolts) * Math.min(1, dt * 4.5);
+                state.locoSpeedKmh += (state.targetSpeedKmh - state.locoSpeedKmh) * Math.min(1, dt * 2.8);
+                state.longitudinalAccel = (state.locoSpeedKmh - state.prevSpeedKmh) / Math.max(0.001, dt);
+
+                state.explodeFactor += (state.targetExplode - state.explodeFactor) * Math.min(1, dt * 6.0);
+                applyExplodedDisplacements(state.explodeFactor);
+
+                const row = CAMTECH_WDG4G_NOTCH_TABLE[state.notchIndex];
+                const targetCouplerKn = state.dynamicBrakeActive ? -185 : (row.teKn * 0.65 + state.longitudinalAccel * 12);
+                state.couplerForceKn += (targetCouplerKn - state.couplerForceKn) * Math.min(1, dt * 5.0);
+
+                const targetTemp = 72 + ((state.rpm - 330) / (1050 - 330)) * 22 + (state.dynamicBrakeActive ? 14 : 0);
+                state.coolantTemp += (targetTemp - state.coolantTemp) * dt * 1.6;
+                const targetDiscTemp = state.dynamicBrakeActive ? 310 : 55 + (state.locoSpeedKmh * 0.35);
+                state.discBrakeTempC += (targetDiscTemp - state.discBrakeTempC) * dt * 2.2;
+
+                customShaderUniforms.uTime.value = timeSec;
+                customShaderUniforms.uThermalLevel.value = (state.rpm - 330) / (1050 - 330);
+                customShaderUniforms.uBrakeHeat.value = state.dynamicBrakeActive ? 0.95 : Math.min(0.4, state.longitudinalAccel < -1 ? 0.65 : 0.12);
+                customShaderUniforms.uScanPos.value = -5.5 + ((timeSec * 4.8) % 32.0);
+
+                // Multi-Body Suspension: Pin Bogie Wheelsets to Rails & Compress Helical Springs
+                state.physics.joltImpulse = Math.max(0, state.physics.joltImpulse - dt * 1.45);
+                const speedNorm = state.locoSpeedKmh / 120;
+                const jolt = state.physics.joltImpulse;
+
+                const targetLocoPitch = (state.dynamicBrakeActive ? 0.014 : -state.longitudinalAccel * 0.0022) +
+                    Math.sin(timeSec * 6.5) * (0.002 * speedNorm + jolt * 0.016);
+                state.physics.locoPitch += (targetLocoPitch - state.physics.locoPitch) * dt * 8.0;
+                state.physics.locoBounce = Math.sin(timeSec * 9.0) * (0.008 * speedNorm + jolt * 0.045);
+                state.physics.locoRoll = Math.sin(timeSec * 4.2) * (0.004 * speedNorm + jolt * 0.022);
+
+                // LocoRoot remains at Y = 0 so wheels never sink through rails
+                locoRoot.position.y = 0;
+                locoSprungGroups.forEach(grp => {
+                    const ex = grp.userData.explodeX || 0;
+                    const ey = grp.userData.explodeY || 0;
+                    const ez = grp.userData.explodeZ || 0;
+                    grp.position.set(ex, ey + state.physics.locoBounce, ez);
+                    grp.rotation.z = state.physics.locoPitch;
+                    grp.rotation.x = state.physics.locoRoll;
+                });
+
+                // Compress 3D Helical Springs in real time
+                const springScale = 1.0 - state.physics.locoBounce * 3.5;
+                dynamicSpringCoils.forEach(coil => {
+                    coil.scale.y = Math.max(0.72, Math.min(1.28, springScale));
+                });
+
+                const slackTarget = (state.couplerForceKn / 500) * 0.08;
+                state.physics.eogSlackX += (slackTarget - state.physics.eogSlackX) * dt * 6.0;
+                state.physics.coachSlackX += (slackTarget * 1.65 - state.physics.coachSlackX) * dt * 5.0;
+
+                eogCarRoot.position.x = state.physics.eogSlackX;
+                eogCarRoot.position.y = 0;
+                const eogBounce = Math.sin(timeSec * 8.5 - 1.1) * (0.006 * speedNorm + jolt * 0.038);
+                const eogPitch = Math.sin(timeSec * 5.8 - 1.1) * (0.0018 * speedNorm + jolt * 0.012);
+                const eogRoll = Math.sin(timeSec * 3.8 - 0.9) * (0.0025 * speedNorm + jolt * 0.015);
+                [sysGroups.eogUnderframe, sysGroups.eogInterior, sysGroups.eogShell].forEach(grp => {
+                    const ex = grp.userData.explodeX || 0;
+                    const ey = grp.userData.explodeY || 0;
+                    const ez = grp.userData.explodeZ || 0;
+                    grp.position.set(ex, ey + eogBounce, ez);
+                    grp.rotation.z = eogPitch;
+                    grp.rotation.x = eogRoll;
+                });
+
+                acCoachRoot.position.x = state.physics.coachSlackX;
+                acCoachRoot.position.y = 0;
+                const coachBounce = Math.sin(timeSec * 8.5 - 2.2) * (0.006 * speedNorm + jolt * 0.036);
+                const coachPitch = Math.sin(timeSec * 5.8 - 2.2) * (0.0018 * speedNorm + jolt * 0.012);
+                const coachRoll = Math.sin(timeSec * 3.8 - 1.8) * (0.0022 * speedNorm + jolt * 0.014);
+                [sysGroups.coachUnderframe, sysGroups.coachBerths, sysGroups.coachChairs, sysGroups.coachShell, sysGroups.coachRmpu].forEach(grp => {
+                    const ex = grp.userData.explodeX || 0;
+                    const ey = grp.userData.explodeY || 0;
+                    const ez = grp.userData.explodeZ || 0;
+                    grp.position.set(ex, ey + coachBounce, ez);
+                    grp.rotation.z = coachPitch;
+                    grp.rotation.x = coachRoll;
+                });
+
+                document.getElementById('rpm-readout').textContent = Math.round(state.rpm);
+                document.getElementById('volt-readout').textContent = Math.round(state.dcLinkVolts);
+                document.getElementById('speed-readout').textContent = Math.round(state.locoSpeedKmh);
+                document.getElementById('temp-readout').textContent = state.dynamicBrakeActive
+                    ? state.discBrakeTempC.toFixed(0)
+                    : state.coolantTemp.toFixed(1);
+
+                const rpmPct = Math.max(8, ((state.rpm - 330) / (1050 - 330)) * 100);
+                document.getElementById('rpm-bar').style.width = `${rpmPct}%`;
+                document.getElementById('volt-bar').style.width = `${(state.dcLinkVolts / 1400) * 100}%`;
+
+                const couplerSign = state.couplerForceKn >= 0 ? '+' : '';
+                document.getElementById('freq-readout').textContent =
+                    `${Math.round(state.dcLinkVolts)} VDC • ${couplerSign}${Math.round(state.couplerForceKn)} kN CBC`;
+
+                // Articulated Connecting Rod Slider-Crank Trigonometry
+                const crankRadPerSec = (state.rpm / 60) * Math.PI * 2 * 0.25;
+                state.crankAngle += crankRadPerSec * dt;
+                state.electricalAngle += dt * (2.5 + (state.locoSpeedKmh / 120) * 9.0);
+
+                crankShaftMesh.rotation.x = state.crankAngle;
+                animatedPistons.forEach(p => {
+                    const theta = state.crankAngle * 2.5 + p.phase;
+                    const sinT = Math.sin(theta);
+                    const cosT = Math.cos(theta);
+                    const yWrist = crankRadius * cosT + Math.sqrt(rodLength * rodLength - crankRadius * crankRadius * sinT * sinT) - rodLength;
+                    const rodAngle = -Math.asin((crankRadius * sinT) / rodLength);
+
+                    p.mesh.children[0].position.y = yWrist;
+                    p.conRodPivot.rotation.z = rodAngle;
+                });
+
+                radiatorFans.forEach(fan => {
+                    fan.rotation.y += dt * (6.5 + (state.rpm / 1050) * 18.0);
+                });
+
+                const wheelRadPerSec = (state.locoSpeedKmh / 3.6) / 0.546;
+                state.wheelAngle -= wheelRadPerSec * dt;
+                animatedWheelsets.forEach(ws => {
+                    ws.rotation.z = state.wheelAngle;
+                });
+
+                state.coachWheelAngle -= (wheelRadPerSec * (1092 / 915)) * dt;
+                animatedCoachWheelsets.forEach(ws => {
+                    ws.rotation.z = state.coachWheelAngle;
+                });
+
+                const trackSpeed = (state.locoSpeedKmh / 3.6) * 0.35;
+                animatedSleepers.forEach(sl => {
+                    sl.position.x += trackSpeed * dt;
+                    if (sl.position.x > 31.9) sl.position.x -= 45.36;
+                });
+
+                const dbGlowTarget = state.dynamicBrakeActive ? 1.85 : 0.06;
+                materials.dynamicBrakeGridMat.emissiveIntensity +=
+                    (dbGlowTarget - materials.dynamicBrakeGridMat.emissiveIntensity) * dt * 5.0;
+                materials.brakeDiscMat.emissiveIntensity +=
+                    ((state.dynamicBrakeActive ? 1.45 : 0.02) - materials.brakeDiscMat.emissiveIntensity) * dt * 4.5;
+
+                engineGlowLight.color.setHex(state.dynamicBrakeActive ? 0xef4444 : 0xfacc15);
+                engineGlowLight.intensity = state.dynamicBrakeActive ? 1.65 : 0.55 + (state.rpm / 1050) * 0.9;
+
+                powerFlowGroup.visible = state.showPowerFlow;
+                if (state.showPowerFlow) {
+                    flowParticles.forEach(fp => {
+                        const dir = state.dynamicBrakeActive && !fp.isEogHotel ? -1 : 1;
+                        fp.progress = (fp.progress + dir * dt * (0.28 + (state.rpm / 1050) * 0.45) + 1) % 1;
+                        const p = fp.progress;
+
+                        if (fp.isEogHotel) {
+                            const curX = 9.5 + p * 14.2;
+                            const curY = p > 0.45 ? 1.24 : 0.52 + (p / 0.45) * 0.72;
+                            fp.mesh.position.set(curX, curY, (fp.axleIndex - 1) * 0.28);
+                        } else if (p < 0.25) {
+                            const tSeg = p / 0.25;
+                            fp.mesh.position.set(-0.2 - tSeg * 1.45, 0.48, (fp.bogieTarget * 0.2));
+                        } else if (p < 0.5) {
+                            const tSeg = (p - 0.25) / 0.25;
+                            fp.mesh.position.set(-1.65 - tSeg * 1.2, 0.48 + tSeg * 0.2, fp.bogieTarget * 0.48);
+                        } else {
+                            const tSeg = (p - 0.5) / 0.5;
+                            const targetBogieX = (fp.bogieTarget < 0 ? -2.7 : 2.7) + (fp.axleIndex - 1) * 0.95;
+                            const curX = -2.85 + (targetBogieX - (-2.85)) * tSeg;
+                            const curY = 0.68 + (-0.76 - 0.68) * Math.min(1, tSeg * 1.35);
+                            fp.mesh.position.set(curX, curY, fp.bogieTarget * 0.45);
+                        }
+                    });
+                }
+
+                exhaustParticles.forEach(ep => {
+                    if (ep.isDynamicBrake && !state.dynamicBrakeActive) {
+                        ep.mesh.visible = false;
+                        return;
+                    }
+                    ep.mesh.visible = true;
+                    ep.phase = (ep.phase + dt * (0.55 + (state.rpm / 1050) * 0.95)) % 1;
+                    const baseX = ep.isDynamicBrake ? 1.55 : 0.82;
+                    const baseY = ep.isDynamicBrake ? 1.42 : 1.48;
+                    ep.mesh.position.set(
+                        baseX + ep.phase * (0.45 + state.locoSpeedKmh * 0.012),
+                        baseY + ep.phase * 1.15,
+                        Math.sin(ep.phase * 8 + now * 0.005) * 0.14
+                    );
+                    const s = 0.65 + ep.phase * 1.8;
+                    ep.mesh.scale.set(s, s, s);
+                    ep.mesh.material.color.setHex(ep.isDynamicBrake ? 0xf87171 : 0x94a3b8);
+                    ep.mesh.material.opacity = (1 - ep.phase) * 0.36;
+                });
+
+                camControl.spherical.radius += (camControl.targetSpherical.radius - camControl.spherical.radius) * 0.08;
+                camControl.spherical.phi += (camControl.targetSpherical.phi - camControl.spherical.phi) * 0.08;
+                camControl.spherical.theta += (camControl.targetSpherical.theta - camControl.spherical.theta) * 0.08;
+                camControl.lookAtTarget.lerp(camControl.targetLookAt, 0.08);
+
+                camera.position.setFromSpherical(camControl.spherical).add(camControl.lookAtTarget);
+                camera.lookAt(camControl.lookAtTarget);
+
+                soundEngine.update();
+                renderOscilloscope();
+                renderCalloutsOverlay();
+
+                renderer.render(scene, camera);
+            }
+
+            requestAnimationFrame(animate);
+        })();
+    

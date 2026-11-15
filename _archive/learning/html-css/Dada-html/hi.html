@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LuxeEstate Apex | The Definitive Collection</title>
+    <meta name="theme-color" content="#030303">
+
+    <!-- 1. Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,600&family=Manrope:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- 2. Tailwind CSS & Theme Config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['"Manrope"', 'sans-serif'], 
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        display: ['"Cinzel"', 'serif']
+                    },
+                    colors: { 
+                        brand: { 
+                            gold: '#D4AF37', 
+                            goldLight: '#F3E5AB',
+                            goldDim: '#8A701E',
+                            dark: '#030303', 
+                            card: '#0A0A0A',
+                            surface: 'rgba(255, 255, 255, 0.03)' 
+                        } 
+                    },
+                    animation: { 
+                        'marquee': 'marquee 45s linear infinite', 
+                        'float': 'float 8s ease-in-out infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                        'reveal': 'reveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                    },
+                    keyframes: { 
+                        marquee: { '0%': { transform: 'translateX(0%)' }, '100%': { transform: 'translateX(-100%)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-15px)' } },
+                        reveal: { '0%': { transform: 'translateY(100%)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 3. LIBRARY ARSENAL -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.29/dist/lenis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+    <script src="https://unpkg.com/split-type"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/granim/2.0.0/granim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/scale.css"/>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chocolat@1.0.4/dist/css/chocolat.css">
+    <script src="https://cdn.jsdelivr.net/npm/chocolat@1.0.4/dist/js/chocolat.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <!-- Polyfill for wNumb -->
+    <script>window.wNumb = window.wNumb || function(o){return{to:v=>o.prefix+Math.round(v)+o.suffix,from:v=>Number(v.replace(o.prefix,'').replace(o.suffix,''))}};</script>
+
+    <style>
+        /* --- System Variables (Theming) --- */
+        :root {
+            --brand-color: #D4AF37;
+            --brand-dim: #8A701E;
+        }
+
+        /* --- Base & Scroll --- */
+        body { background-color: #030303; color: #e2e8f0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #030303; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--brand-color); }
+        
+        /* --- Glass Architecture --- */
+        .glass-nav { background: rgba(3, 3, 3, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
+        .glass-card { background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%); border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(5px); }
+        
+        /* --- Interactive & Motion --- */
+        .btn-primary { background: var(--brand-color); color: #000; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; transition: all 0.3s; }
+        .btn-primary:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 10px 25px -10px var(--brand-dim); }
+        
+        /* --- Drawers & Modals --- */
+        .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 100%; max-width: 500px; background: #080808; z-index: 70; transform: translateX(100%); transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); border-left: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
+        .drawer.open { transform: translateX(0); }
+        .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+        .backdrop.open { opacity: 1; pointer-events: all; }
+        .compare-dock { position: fixed; bottom: -200px; left: 0; width: 100%; background: #0A0A0A; border-top: 1px solid var(--brand-color); z-index: 55; transition: bottom 0.4s ease; padding: 1.5rem; box-shadow: 0 -10px 40px rgba(0,0,0,0.8); }
+        .compare-dock.active { bottom: 0; }
+        
+        /* Modals */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 80; opacity: 0; pointer-events: none; transition: opacity 0.3s; display: flex; justify-content: center; align-items: center; }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal-content { background: #0A0A0A; border: 1px solid rgba(255,255,255,0.1); width: 95%; max-width: 1400px; height: 95vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+
+        /* Map Dark Mode */
+        .leaflet-layer, .leaflet-control-zoom-in, .leaflet-control-zoom-out, .leaflet-control-attribution { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+        .leaflet-container { background: #030303; font-family: 'Manrope', sans-serif; }
+
+        /* Chat UI */
+        .chat-bubble { max-width: 80%; padding: 12px 16px; border-radius: 12px; font-size: 0.9rem; margin-bottom: 10px; animation: slideUp 0.3s ease-out; }
+        .chat-ai { background: rgba(255,255,255,0.08); color: #fff; border-bottom-left-radius: 2px; }
+        .chat-user { background: var(--brand-color); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; margin-left: auto; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Custom Cursor (Desktop Only) */
+        @media (pointer: fine) {
+            body { cursor: none; }
+            #cursor-dot { position: fixed; width: 6px; height: 6px; background: var(--brand-color); border-radius: 50%; pointer-events: none; z-index: 10000; transform: translate(-50%, -50%); transition: background-color 0.3s; }
+            #cursor-ring { position: fixed; width: 40px; height: 40px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, background-color 0.3s, border-color 0.3s; }
+            body.hovering #cursor-ring { width: 70px; height: 70px; background: rgba(255, 255, 255, 0.05); border-color: transparent; backdrop-filter: blur(2px); }
+        }
+        @media (pointer: coarse) { #cursor-dot, #cursor-ring { display: none; } }
+
+        /* Mobile Bottom Nav */
+        .mobile-nav { display: none; }
+        @media (max-width: 768px) {
+            .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(3,3,3,0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1); z-index: 100; justify-content: space-around; padding: 12px 0; }
+            .mobile-nav button { color: #888; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+            .mobile-nav button.active { color: var(--brand-color); }
+            #main-nav { top: 0 !important; }
+            .compare-dock { bottom: 70px !important; }
+        }
+
+        /* 3D Container */
+        #canvas-3d { width: 100%; height: 400px; border-radius: 16px; overflow: hidden; position: relative; z-index: 10; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Cookie Banner */
+        #cookie-banner { position: fixed; bottom: 0; left: 0; width: 100%; background: #0A0A0A; border-top: 1px solid rgba(255,255,255,0.1); padding: 1rem; z-index: 90; transform: translateY(100%); transition: transform 0.5s; }
+        #cookie-banner.visible { transform: translateY(0); }
+        
+        /* Text Reveal Fix */
+        .reveal-text span { display: inline-block; opacity: 0; transform: translateY(100%); }
+    </style>
+</head>
+<body>
+
+    <!-- UI: Cursor -->
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+
+    <!-- UI: Loader -->
+    <div id="loader" class="fixed inset-0 bg-[#030303] z-[100] flex flex-col items-center justify-center transition-opacity duration-700">
+        <div class="relative w-24 h-24 mb-6">
+            <svg class="animate-spin-slow w-full h-full" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" stroke="#1A1A1A" stroke-width="1" fill="none"/>
+                <path d="M50 5 A 45 45 0 0 1 95 50" stroke="#D4AF37" stroke-width="2" fill="none" />
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center font-display text-3xl text-brand-gold">A</div>
+        </div>
+        <div class="text-brand-gold font-serif text-sm tracking-[0.4em] uppercase animate-pulse">Apex Edition</div>
+    </div>
+
+    <!-- UI: Sticky Note -->
+    <div class="draggable-note" id="drag-note" style="display:none"></div>
+
+    <!-- UI: Top Bar (Desktop) -->
+    <div class="fixed top-0 w-full h-8 bg-[#080808] z-50 flex justify-between items-center px-6 border-b border-brand-border text-[10px] uppercase tracking-widest text-white/40 hidden md:flex">
+        <div class="flex gap-4">
+            <span id="world-clock">NYC 12:00</span>
+            <span><i class="ph-fill ph-chart-line-up text-brand-gold"></i> Gold: $2,342/oz</span>
+        </div>
+        <div class="flex gap-4 items-center">
+            <button onclick="App.toggleCurrency()" id="currency-toggle" class="hover:text-white transition-colors">USD</button>
+            <div class="w-[1px] h-3 bg-white/10"></div>
+            <button onclick="App.toggleUnits()" id="unit-toggle" class="hover:text-white transition-colors">SQFT</button>
+            <div class="w-[1px] h-3 bg-white/10"></div>
+            <button class="hover:text-white transition-colors">EN</button>
+        </div>
+    </div>
+
+    <!-- UI: Navbar -->
+    <nav class="fixed top-0 md:top-8 w-full z-40 glass-nav h-16 md:h-20 flex items-center transition-all duration-300" id="main-nav">
+        <div class="w-full max-w-[1920px] mx-auto px-6 flex justify-between items-center">
+            <a href="#" class="flex items-center gap-3 group" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+                <i class="ph-fill ph-hexagon text-2xl text-brand-gold group-hover:rotate-180 transition-transform duration-700"></i>
+                <div class="flex flex-col">
+                    <span class="font-display text-xl text-white tracking-widest leading-none">Luxe<span class="text-brand-gold">Apex</span></span>
+                    <span class="text-[8px] text-white/40 uppercase tracking-[0.3em] leading-none mt-1 hidden md:block">Sovereign Real Estate</span>
+                </div>
+            </a>
+
+            <div class="hidden lg:flex items-center gap-10 text-xs font-bold uppercase tracking-widest text-white/60">
+                <button onclick="App.scrollTo('featured')" class="hover:text-brand-gold transition-colors">Curated</button>
+                <button onclick="App.scrollTo('collection')" class="hover:text-brand-gold transition-colors">Collection</button>
+                <button onclick="App.scrollTo('technology')" class="hover:text-brand-gold transition-colors">Innovation</button>
+                <button onclick="App.toggleDrawer('concierge')" class="hover:text-brand-gold transition-colors">Concierge</button>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button onclick="App.toggleSearch()" class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white hover:border-brand-gold hover:text-brand-gold transition-all" title="Search">
+                    <i class="ph ph-magnifying-glass text-lg"></i>
+                </button>
+                <button onclick="App.toggleDrawer('user')" class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 transition-all hidden md:flex">
+                    <i class="ph ph-user text-lg"></i>
+                </button>
+                <button onclick="App.toggleDrawer('wishlist')" class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white hover:bg-white/5 transition-all relative hidden md:flex">
+                    <i class="ph ph-heart text-lg"></i>
+                    <span id="wishlist-count" class="absolute -top-1 -right-1 w-4 h-4 bg-brand-gold text-black text-[9px] font-bold rounded-full flex items-center justify-center hidden">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- UI: Mobile Bottom Nav -->
+    <div class="mobile-nav">
+        <button onclick="App.scrollTo('featured')" class="active"><i class="ph-fill ph-house text-xl"></i> Home</button>
+        <button onclick="App.toggleSearch()"><i class="ph-fill ph-magnifying-glass text-xl"></i> Search</button>
+        <button onclick="App.toggleDrawer('wishlist')"><i class="ph-fill ph-heart text-xl"></i> Saved</button>
+        <button onclick="App.toggleDrawer('user')"><i class="ph-fill ph-user text-xl"></i> Account</button>
+        <button onclick="App.toggleDrawer('concierge')"><i class="ph-fill ph-chat-centered-text text-xl"></i> Chat</button>
+    </div>
+
+    <!-- Global Backdrop -->
+    <div id="backdrop" class="backdrop" onclick="App.closeAll()"></div>
+
+    <!-- DRAWER: Concierge -->
+    <div id="drawer-concierge" class="drawer flex flex-col">
+        <div class="p-6 border-b border-white/10 flex justify-between items-center bg-[#0A0A0A]">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-brand-gold flex items-center justify-center text-black font-serif text-lg">AI</div>
+                <div><h2 class="font-serif text-white text-lg">Apex Concierge</h2><p class="text-[10px] text-white/40 uppercase tracking-widest">Active</p></div>
+            </div>
+            <button onclick="App.closeAll()" class="text-white/50 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+        </div>
+        <div id="chat-container" class="flex-1 p-6 flex flex-col overflow-y-auto">
+            <div class="bg-white/5 text-white p-4 rounded-lg rounded-tl-none self-start max-w-[85%] text-sm mb-4">
+                Welcome to the Apex tier. I can arrange private aviation, schedule viewings, or visualize renovation potential. How may I assist?
+            </div>
+        </div>
+        <div class="p-6 border-t border-white/10 bg-[#0A0A0A]">
+            <form onsubmit="event.preventDefault(); App.sendChat()" class="relative">
+                <input type="text" id="chat-input" placeholder="Inquire..." class="w-full bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white focus:border-brand-gold outline-none pr-12 text-sm">
+                <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-brand-gold rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform"><i class="ph-bold ph-paper-plane-right"></i></button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DRAWER: Wishlist -->
+    <div id="drawer-wishlist" class="drawer p-8 flex flex-col">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="font-serif text-2xl text-white italic">Portfolio</h2>
+            <button onclick="App.closeAll()" class="text-white/50 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+        </div>
+        <div id="wishlist-content" class="flex-1 space-y-4 overflow-y-auto">
+            <div class="text-center mt-20 text-white/30"><i class="ph ph-heart-break text-4xl mb-2"></i><p class="text-sm font-light">No properties saved.</p></div>
+        </div>
+        <div class="space-y-2 mt-4 pt-4 border-t border-white/10">
+            <button onclick="App.toggleCompareDock()" class="w-full bg-white/10 hover:bg-brand-gold hover:text-black text-white py-3 rounded text-xs uppercase tracking-widest transition-all font-bold">Open Comparator</button>
+            <button onclick="App.generatePDF()" class="w-full border border-white/20 text-white py-3 rounded text-xs uppercase tracking-widest hover:bg-white/5 flex items-center justify-center gap-2"><i class="ph ph-file-pdf"></i> Download Brief</button>
+        </div>
+    </div>
+
+    <!-- DOCK: Compare -->
+    <div id="compare-dock" class="compare-dock flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <span class="text-brand-gold font-serif text-xl">Comparator</span>
+            <span class="text-white/50 text-xs border-l border-white/20 pl-4 hidden md:inline uppercase tracking-widest">Select 3 Items</span>
+        </div>
+        <div class="flex items-center gap-4" id="compare-slots">
+            <div class="compare-slot"><i class="ph ph-plus text-white/20"></i></div>
+            <div class="compare-slot"><i class="ph ph-plus text-white/20"></i></div>
+            <div class="compare-slot"><i class="ph ph-plus text-white/20"></i></div>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="App.clearCompare()" class="px-4 py-2 text-white/50 hover:text-white text-xs uppercase tracking-widest">Clear</button>
+            <button onclick="App.showComparison()" class="bg-brand-gold text-black px-6 py-2 rounded text-xs uppercase tracking-widest font-bold hover:bg-white transition-colors">Analyze</button>
+        </div>
+    </div>
+
+    <!-- MODAL: Comparison -->
+    <div id="comparison-modal" class="fixed inset-0 z-[90] bg-[#050505] hidden overflow-y-auto">
+        <div class="max-w-7xl mx-auto px-6 py-12">
+            <div class="flex justify-between items-center mb-12">
+                <h2 class="text-4xl font-serif text-white">Analysis Matrix</h2>
+                <button onclick="document.getElementById('comparison-modal').classList.add('hidden')" class="text-white hover:text-brand-gold"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            <div id="comparison-content" class="grid grid-cols-1 md:grid-cols-3 gap-8"></div>
+        </div>
+    </div>
+
+    <!-- MODAL: Property (Flagship) -->
+    <div id="property-modal" class="modal-overlay hidden">
+        <div class="modal-content relative w-full max-w-[95vw] h-[95vh] bg-[#0A0A0A] flex flex-col md:flex-row overflow-hidden rounded-xl border border-white/10">
+            <button onclick="App.closeAll()" class="absolute top-6 right-6 z-50 w-12 h-12 rounded-full bg-black/50 backdrop-blur text-white flex items-center justify-center hover:bg-brand-gold hover:text-black transition-colors"><i class="ph ph-x text-lg"></i></button>
+            
+            <!-- Left: Visuals -->
+            <div class="w-full md:w-2/3 h-1/2 md:h-full relative group bg-black">
+                <img id="modal-img" src="" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
+                <div class="absolute bottom-8 left-8 right-8">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="bg-brand-gold text-black text-[10px] font-bold px-3 py-1 rounded uppercase tracking-wide">For Sale</span>
+                    </div>
+                    <h2 id="modal-title" class="text-4xl md:text-6xl font-display text-white mb-2"></h2>
+                    <p id="modal-loc" class="text-white/70 text-lg flex items-center gap-2"><i class="ph-fill ph-map-pin text-brand-gold"></i> <span></span></p>
+                </div>
+                <button onclick="App.initVR('vr-container')" class="absolute top-6 left-6 bg-white/10 backdrop-blur border border-white/20 text-white px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/20 flex gap-2"><i class="ph-fill ph-goggles"></i> 360 Tour</button>
+            </div>
+
+            <!-- Right: Info -->
+            <div class="w-full md:w-1/3 h-1/2 md:h-full bg-[#0F0F0F] border-l border-white/10 flex flex-col">
+                <div class="p-8 border-b border-white/5">
+                    <p class="text-xs text-white/40 uppercase tracking-widest mb-1">Listing Price</p>
+                    <h3 id="modal-price" class="text-4xl font-serif text-brand-gold"></h3>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-8 space-y-8">
+                    <p id="modal-desc" class="text-white/70 leading-relaxed font-light text-sm"></p>
+                    
+                    <div class="grid grid-cols-3 gap-2 py-4 border-y border-white/5">
+                        <div class="text-center"><span class="block text-xl text-white font-serif" id="modal-beds"></span><span class="text-[9px] uppercase text-white/40">Beds</span></div>
+                        <div class="text-center"><span class="block text-xl text-white font-serif" id="modal-baths"></span><span class="text-[9px] uppercase text-white/40">Baths</span></div>
+                        <div class="text-center"><span class="block text-xl text-white font-serif" id="modal-sqft"></span><span class="text-[9px] uppercase text-white/40">Area</span></div>
+                    </div>
+
+                    <!-- Neighborhood Pulse -->
+                    <div>
+                        <h4 class="text-white font-serif mb-3">Neighborhood Pulse</h4>
+                        <div class="flex gap-2 flex-wrap">
+                            <span class="bg-white/5 px-3 py-1 rounded text-xs text-white border border-white/10">Walk Score: 98</span>
+                            <span class="bg-white/5 px-3 py-1 rounded text-xs text-white border border-white/10">Transit: 100</span>
+                        </div>
+                    </div>
+
+                    <!-- Financials -->
+                    <div class="bg-green-900/10 border border-green-900/30 p-4 rounded-lg">
+                        <div class="flex justify-between text-sm mb-1"><span class="text-white/60">5-Yr Projected Value</span><span class="text-green-400 font-bold" id="modal-roi"></span></div>
+                        <div class="w-full bg-white/10 h-1 rounded-full"><div class="bg-green-500 h-full" style="width: 85%"></div></div>
+                    </div>
+                </div>
+
+                <div class="p-6 border-t border-white/10 bg-[#080808]">
+                    <button class="w-full btn-primary py-4 rounded text-xs uppercase tracking-widest font-bold shadow-lg" onclick="Toastify({text:'Viewing Requested', style:{background:'#D4AF37',color:'black'}}).showToast()">Request Private Tour</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VR Overlay -->
+    <div id="vr-overlay" class="fixed inset-0 z-[90] bg-black hidden"><div id="vr-container" class="w-full h-full"></div><button onclick="document.getElementById('vr-overlay').classList.add('hidden')" class="absolute top-4 right-4 z-[100] text-white text-2xl"><i class="ph ph-x"></i></button></div>
+
+    <!-- SEARCH MODAL -->
+    <div id="search-overlay" class="modal-overlay hidden">
+        <div class="bg-[#0F0F0F] w-full max-w-3xl rounded-2xl border border-white/10 overflow-hidden">
+            <div class="p-6 border-b border-white/10 flex items-center gap-4">
+                <i class="ph ph-magnifying-glass text-2xl text-brand-gold"></i>
+                <input type="text" id="global-search" placeholder="Type to search portfolio..." class="w-full bg-transparent text-2xl font-serif text-white placeholder-white/30 focus:outline-none" oninput="App.handleSearch(this.value)">
+                <button onclick="App.closeAll()" class="text-white/40 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div id="search-results" class="p-6 max-h-[50vh] overflow-y-auto">
+                <div class="text-center py-12 text-white/30"><i class="ph ph-compass text-4xl mb-3"></i><p>Enter a location or keyword.</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <header class="relative h-screen min-h-[700px] flex items-center justify-center px-6 overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-b from-black/80 via-black/30 to-[#030303] z-10"></div>
+            <video autoplay muted loop playsinline poster="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1600" class="w-full h-full object-cover opacity-60 scale-105 animate-float">
+                <source src="https://vjs.zencdn.net/v/oceans.mp4" type="video/mp4">
+            </video>
+        </div>
+        <div class="relative z-30 text-center max-w-5xl">
+            <div class="mb-8 flex justify-center gap-4"><span class="py-1 px-4 border border-white/20 rounded-full text-white/90 text-[10px] uppercase tracking-[0.2em] backdrop-blur-md bg-white/5">Apex Edition</span></div>
+            <h1 class="text-6xl md:text-9xl font-display text-white leading-[0.95] mb-8 drop-shadow-2xl">
+                <span class="reveal-text"><span>Legacy</span></span> <br/> 
+                <span class="reveal-text italic text-brand-gold font-serif"><span>Defined</span></span>
+            </h1>
+            <div class="flex flex-col md:flex-row gap-4 justify-center">
+                <button onclick="App.scrollTo('collection')" class="btn-primary px-10 py-4 rounded-full text-xs font-bold uppercase tracking-widest shadow-[0_0_40px_rgba(212,175,55,0.4)]">Explore Portfolio</button>
+                <button onclick="App.openVideo()" class="bg-white/10 backdrop-blur border border-white/20 text-white px-10 py-4 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/20 transition-colors flex items-center justify-center gap-2">
+                    <i class="ph-fill ph-play-circle text-lg"></i> Watch Film
+                </button>
+            </div>
+        </div>
+        <!-- Ticker -->
+        <div class="absolute bottom-0 w-full bg-white/5 backdrop-blur-md border-t border-white/10 py-3 overflow-hidden z-20">
+            <div class="animate-marquee whitespace-nowrap flex gap-20 text-xs uppercase tracking-widest text-white/40 font-medium">
+                <span><span class="text-brand-gold">NYC</span> 14:02 EST</span><span><span class="text-brand-gold">LDN</span> 19:02 GMT</span><span><span class="text-white">BTC</span> $64,230</span><span><span class="text-white">GOLD</span> $2,340</span>
+                <span><span class="text-brand-gold">NYC</span> 14:02 EST</span><span><span class="text-brand-gold">LDN</span> 19:02 GMT</span><span><span class="text-white">BTC</span> $64,230</span><span><span class="text-white">GOLD</span> $2,340</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 3D TERRAIN VISUALIZATION ("Future Living") -->
+    <section id="technology" class="py-24 bg-[#080808] border-y border-white/5">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div>
+                <span class="text-brand-gold text-xs uppercase tracking-widest">Innovation</span>
+                <h2 class="text-5xl font-display text-white mt-4 mb-6">Digital Terrain</h2>
+                <p class="text-white/60 mb-8 leading-relaxed">
+                    Analyzing topographical data for precision development. We use lidar scanning to ensure every foundation respects the natural landscape.
+                </p>
+                <div class="flex gap-4">
+                    <div class="text-center p-4 bg-white/5 rounded-lg border border-white/10"><span class="block text-2xl font-serif text-white">4mm</span><span class="text-[10px] text-white/40 uppercase">Precision</span></div>
+                    <div class="text-center p-4 bg-white/5 rounded-lg border border-white/10"><span class="block text-2xl font-serif text-white">100%</span><span class="text-[10px] text-white/40 uppercase">Compliance</span></div>
+                </div>
+            </div>
+            <!-- Three.js Canvas -->
+            <div id="three-container" class="h-[400px] w-full rounded-2xl overflow-hidden relative border border-white/10 bg-black/50"></div>
+        </div>
+    </section>
+
+    <!-- COLLECTION (Isotope Grid) -->
+    <section id="collection" class="py-24 px-6 max-w-[1920px] mx-auto">
+        <div class="mb-12 flex justify-between items-center flex-wrap gap-4">
+            <h2 class="text-4xl font-display text-white">The Collection</h2>
+            <div class="flex gap-2" id="filters">
+                <button class="px-5 py-2 rounded-full border border-brand-gold bg-brand-gold text-black text-xs uppercase tracking-wide font-bold filter-btn" data-filter="*">All</button>
+                <button class="px-5 py-2 rounded-full border border-white/10 text-white/60 hover:text-white hover:border-white text-xs uppercase tracking-wide transition-colors filter-btn" data-filter=".villa">Villa</button>
+                <button class="px-5 py-2 rounded-full border border-white/10 text-white/60 hover:text-white hover:border-white text-xs uppercase tracking-wide transition-colors filter-btn" data-filter=".penthouse">Penthouse</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8" id="property-grid">
+            <!-- Items injected by JS -->
+        </div>
+    </section>
+
+    <!-- AUDIO TOGGLE -->
+    <button id="sound-toggle" class="fixed bottom-24 md:bottom-8 right-8 z-50 w-12 h-12 rounded-full glass-panel flex items-center justify-center text-brand-gold hover:scale-110 transition-transform shadow-lg shadow-brand-gold/20"><i class="ph-fill ph-speaker-slash text-xl"></i></button>
+
+    <!-- Video Overlay -->
+    <div id="video-overlay" class="fixed inset-0 z-[100] bg-black hidden flex items-center justify-center">
+        <button onclick="App.closeVideo()" class="absolute top-8 right-8 text-white z-50"><i class="ph ph-x text-3xl"></i></button>
+        <div class="w-full max-w-6xl aspect-video px-4"><div id="video-container" class="w-full h-full bg-black rounded-xl overflow-hidden shadow-2xl"></div></div>
+    </div>
+    
+    <!-- Cookie Banner -->
+    <div id="cookie-banner" class="fixed bottom-0 left-0 w-full bg-[#0A0A0A] border-t border-white/10 p-4 z-90 transform translate-y-full transition-transform duration-500 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-white/60 text-xs">We use cookies to ensure you get the best experience on our website.</p>
+        <div class="flex gap-4">
+            <button onclick="document.getElementById('cookie-banner').classList.remove('visible')" class="text-white/40 hover:text-white text-xs">Decline</button>
+            <button onclick="document.getElementById('cookie-banner').classList.remove('visible')" class="bg-brand-gold text-black px-4 py-1.5 rounded text-xs font-bold hover:bg-white transition-colors">Accept</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        const App = {
+            state: {
+                currency: 'USD', rate: 1, unit: 'SQFT', lang: 'EN', compare: [],
+                properties: [
+                    { id: 1, title: "The Onyx Villa", price: 18500000, loc: "Dubai, UAE", beds: 6, baths: 7, sqft: 12000, img: "https://images.unsplash.com/photo-1600596542815-2495db98cfa4?w=800", type: "villa", roi: "+18%", year: 2024 },
+                    { id: 2, title: "Highland Estate", price: 6200000, loc: "Scotland, UK", beds: 8, baths: 5, sqft: 9500, img: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800", type: "estate", roi: "+5%", year: 1890 },
+                    { id: 3, title: "Kyoto Gardens", price: 4800000, loc: "Kyoto, Japan", beds: 4, baths: 3, sqft: 3200, img: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800", type: "villa", roi: "+8%", year: 2020 },
+                    { id: 4, title: "Fifth Ave Penthouse", price: 22000000, loc: "New York, USA", beds: 3, baths: 4, sqft: 4500, img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800", type: "penthouse", roi: "+12%", year: 2022 },
+                    { id: 5, title: "Azure Coast", price: 11500000, loc: "Nice, France", beds: 5, baths: 5, sqft: 6000, img: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800", type: "villa", roi: "+7%", year: 2018 },
+                    { id: 6, title: "Desert Mirage", price: 8900000, loc: "Arizona, USA", beds: 4, baths: 5, sqft: 4200, img: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800", type: "estate", roi: "+15%", year: 2023 }
+                ],
+                isotope: null,
+                wishlist: []
+            },
+
+            init() {
+                // Immediate Boot
+                this.startSystems();
+
+                // Graceful Loader Removal
+                const loader = document.getElementById('loader');
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 800);
+                    document.getElementById('cookie-banner').classList.add('visible');
+                    this.introAnimation();
+                }, 1000);
+            },
+
+            startSystems() {
+                this.renderGrid();
+                this.initInteraction();
+                this.initAudio();
+                
+                // Safe Inits
+                try { this.initThreeJS(); } catch(e) { console.warn("ThreeJS failed", e); }
+                try { this.initIsotope(); } catch(e) { console.warn("Isotope failed", e); }
+                try { this.updateClock(); setInterval(() => this.updateClock(), 1000); } catch(e) {}
+            },
+            
+            introAnimation() {
+                gsap.to(".reveal-text span", { y: 0, opacity: 1, duration: 1.2, stagger: 0.2, ease: "power3.out" });
+            },
+
+            // --- Features ---
+            toggleSearch() {
+                const el = document.getElementById('search-overlay');
+                el.classList.toggle('hidden');
+                setTimeout(() => {
+                    el.classList.toggle('opacity-0');
+                    if(!el.classList.contains('hidden')) document.getElementById('global-search').focus();
+                }, 10);
+            },
+
+            handleSearch(val) {
+                const res = document.getElementById('search-results');
+                if(!val) { res.innerHTML = `<div class="text-center py-12 text-white/30"><i class="ph ph-compass text-4xl mb-3"></i><p>Type to search.</p></div>`; return; }
+                const hits = this.state.properties.filter(p => p.title.toLowerCase().includes(val.toLowerCase()) || p.loc.toLowerCase().includes(val.toLowerCase()));
+                if(hits.length === 0) { res.innerHTML = `<div class="text-center text-white/40 py-8">No results.</div>`; return; }
+                res.innerHTML = hits.map(p => `
+                    <div class="flex items-center gap-4 p-3 hover:bg-white/5 rounded-lg cursor-pointer transition-colors" onclick="App.openPropertyModal(${p.id})">
+                        <img src="${p.img}" class="w-16 h-16 object-cover rounded">
+                        <div><h4 class="text-white font-serif">${p.title}</h4><p class="text-brand-gold text-xs">$${(p.price/1000000).toFixed(1)}M</p></div>
+                    </div>`).join('');
+            },
+
+            openPropertyModal(id) {
+                this.closeAll();
+                const p = this.state.properties.find(x => x.id === id);
+                const modal = document.getElementById('property-modal');
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.add('open'), 10);
+                
+                document.getElementById('modal-img').src = p.img;
+                document.getElementById('modal-title').innerText = p.title;
+                document.getElementById('modal-loc').querySelector('span').innerText = p.loc;
+                document.getElementById('modal-price').innerText = this.formatPrice(p.price);
+                document.getElementById('modal-desc').innerText = "Experience the pinnacle of luxury living. " + (p.desc || "");
+                document.getElementById('modal-beds').innerText = p.beds;
+                document.getElementById('modal-baths').innerText = p.baths;
+                document.getElementById('modal-sqft').innerText = this.formatArea(p.sqft);
+                document.getElementById('modal-roi').innerText = p.roi;
+            },
+
+            // --- Drag & Drop ---
+            initInteraction() {
+                interact('.draggable-card').draggable({
+                    onmove: (event) => {
+                        const target = event.target;
+                        const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                        const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                        target.style.transform = `translate(${x}px, ${y}px)`;
+                        target.setAttribute('data-x', x);
+                        target.setAttribute('data-y', y);
+                    },
+                    onend: (event) => {
+                        event.target.style.transform = 'translate(0px, 0px)';
+                        event.target.setAttribute('data-x', 0);
+                        event.target.setAttribute('data-y', 0);
+                    }
+                });
+
+                interact('.compare-slot').dropzone({
+                    accept: '.draggable-card',
+                    ondrop: (event) => {
+                        const id = parseInt(event.relatedTarget.dataset.id);
+                        this.addToCompare(id);
+                    },
+                    ondragenter: (event) => event.target.classList.add('drop-active'),
+                    ondragleave: (event) => event.target.classList.remove('drop-active')
+                });
+            },
+
+            addToCompare(id) {
+                if(this.state.compare.includes(id)) return;
+                if(this.state.compare.length >= 3) { Toastify({text:'Max 3 Items', style:{background:'#ef4444'}}).showToast(); return; }
+                this.state.compare.push(id);
+                this.updateCompareDock();
+                Toastify({text:'Added to Compare', style:{background:'#D4AF37', color:'black'}}).showToast();
+            },
+
+            updateCompareDock() {
+                document.getElementById('compare-dock').classList.add('active');
+                const slots = document.querySelectorAll('.compare-slot');
+                this.state.compare.forEach((id, i) => {
+                    const p = this.state.properties.find(x => x.id === id);
+                    slots[i].innerHTML = `<img src="${p.img}" class="w-full h-full object-cover">`;
+                    slots[i].classList.add('filled');
+                });
+            },
+            
+            clearCompare() {
+                this.state.compare = [];
+                document.getElementById('compare-dock').classList.remove('active');
+                document.querySelectorAll('.compare-slot').forEach(s => {
+                    s.innerHTML = '<i class="ph ph-plus text-white/20"></i>';
+                    s.classList.remove('filled');
+                });
+            },
+
+            // --- Visuals ---
+            initThreeJS() {
+                const container = document.getElementById('three-container');
+                if(!container) return;
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, container.clientWidth/container.clientHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                container.appendChild(renderer.domElement);
+
+                // Digital Terrain (Grid)
+                const geometry = new THREE.PlaneGeometry(10, 10, 30, 30);
+                const material = new THREE.MeshBasicMaterial({ color: 0xD4AF37, wireframe: true });
+                const plane = new THREE.Mesh(geometry, material);
+                plane.rotation.x = -Math.PI / 2;
+                scene.add(plane);
+
+                camera.position.set(0, 3, 5);
+                camera.lookAt(0, 0, 0);
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    // Waves
+                    const positions = geometry.attributes.position;
+                    for(let i=0; i<positions.count; i++) {
+                        const z = 0.2 * Math.sin(i/5 + (Date.now() * 0.001));
+                        positions.setZ(i, z);
+                    }
+                    positions.needsUpdate = true;
+                    plane.rotation.z += 0.001;
+                    renderer.render(scene, camera);
+                };
+                animate();
+            },
+
+            // --- Rendering ---
+            renderGrid() {
+                const g = document.getElementById('property-grid');
+                g.innerHTML = '';
+                this.state.properties.forEach(p => {
+                    const d = document.createElement('div');
+                    d.className = `group glass-panel rounded-xl overflow-hidden hover:border-brand-gold/30 transition-all duration-500 cursor-pointer draggable-card ${p.type}`;
+                    d.setAttribute('data-id', p.id);
+                    d.onclick = (e) => { if(!e.target.closest('.card-action')) this.openPropertyModal(p.id); };
+                    d.innerHTML = `
+                        <div class="h-64 overflow-hidden relative">
+                            <img src="${p.img}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy">
+                            <button class="card-action absolute top-3 right-3 bg-black/50 backdrop-blur p-2 rounded-full text-white hover:text-brand-gold transition-colors" onclick="App.toggleWishlist(${p.id})">
+                                <i class="ph ${this.state.wishlist.includes(p.id) ? 'ph-heart-fill text-brand-gold' : 'ph-heart'}"></i>
+                            </button>
+                        </div>
+                        <div class="p-6 text-white">
+                            <div class="flex justify-between items-start mb-2"><h3 class="text-lg font-serif group-hover:text-brand-gold transition-colors">${p.title}</h3><span class="text-brand-gold font-medium font-serif">${this.formatPrice(p.price)}</span></div>
+                            <p class="text-white/40 text-xs uppercase tracking-widest mb-4">${p.loc}</p>
+                            <div class="flex gap-4 text-xs text-white/50 border-t border-white/5 pt-4"><span><i class="ph ph-bed"></i> ${p.beds} Beds</span><span><i class="ph ph-shower"></i> ${p.baths} Baths</span><span><i class="ph ph-ruler"></i> ${this.formatArea(p.sqft)}</span></div>
+                        </div>
+                    `;
+                    g.appendChild(d);
+                });
+            },
+
+            initIsotope() {
+                this.state.isotope = new Isotope('#property-grid', { itemSelector: '.group', layoutMode: 'fitRows' });
+                
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const filter = e.target.getAttribute('data-filter');
+                        this.state.isotope.arrange({ filter: filter });
+                        // Style active
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.replace('bg-brand-gold', 'text-white/60'));
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.replace('text-black', 'hover:text-white'));
+                        e.target.classList.add('bg-brand-gold', 'text-black');
+                        e.target.classList.remove('text-white/60', 'hover:text-white');
+                    });
+                });
+            },
+
+            // --- Utilities ---
+            formatPrice(p) { return new Intl.NumberFormat('en-US', { style: 'currency', currency: this.state.currency, maximumFractionDigits: 0 }).format(p * this.state.rate); },
+            formatArea(s) { return this.state.unit === 'M2' ? Math.round(s * 0.0929) + ' m²' : Intl.NumberFormat('en-US').format(s) + ' sqft'; },
+            
+            toggleCurrency() {
+                const map = { 'USD': {r:1, n:'EUR'}, 'EUR': {r:0.92, n:'GBP'}, 'GBP': {r:0.79, n:'USD'} };
+                const next = map[this.state.currency];
+                this.state.currency = next.n;
+                this.state.rate = next.r;
+                document.getElementById('currency-toggle').innerText = next.n;
+                this.renderGrid();
+            },
+            
+            toggleUnits() {
+                this.state.unit = this.state.unit === 'SQFT' ? 'M2' : 'SQFT';
+                document.getElementById('unit-toggle').innerText = this.state.unit;
+                this.renderGrid();
+            },
+
+            updateClock() {
+                const now = new Date();
+                const ny = now.toLocaleTimeString('en-US', {timeZone:'America/New_York', hour:'2-digit', minute:'2-digit', hour12:false});
+                document.getElementById('world-clock').innerText = `NYC ${ny}`;
+            },
+
+            // --- Drawer Logic ---
+            toggleDrawer(id) {
+                this.closeAll();
+                document.getElementById(`drawer-${id}`).classList.add('open');
+                document.getElementById('backdrop').classList.add('open');
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeAll() {
+                document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open'));
+                document.querySelectorAll('.modal-overlay').forEach(m => {
+                    m.classList.remove('open');
+                    m.classList.add('hidden');
+                });
+                document.getElementById('backdrop').classList.remove('open');
+                document.body.style.overflow = '';
+                document.getElementById('vr-overlay').classList.add('hidden');
+                document.getElementById('video-modal').style.opacity = '0';
+                document.getElementById('video-modal').style.pointerEvents = 'none';
+                document.getElementById('video-container').innerHTML = '';
+            },
+
+            scrollTo(id) { document.getElementById(id).scrollIntoView({ behavior: 'smooth' }); },
+
+            // --- Simple Features ---
+            toggleWishlist(id) {
+                if(this.state.wishlist.includes(id)) {
+                    this.state.wishlist = this.state.wishlist.filter(item => item !== id);
+                    Toastify({text:'Removed', style:{background:'#333'}}).showToast();
+                } else {
+                    this.state.wishlist.push(id);
+                    Toastify({text:'Saved', style:{background:'#D4AF37', color:'black'}}).showToast();
+                }
+                const badge = document.getElementById('wishlist-count');
+                badge.innerText = this.state.wishlist.length;
+                badge.style.display = this.state.wishlist.length ? 'flex' : 'none';
+                
+                // Update Drawer Content
+                const content = document.getElementById('wishlist-content');
+                if(this.state.wishlist.length === 0) content.innerHTML = '<div class="text-center mt-20 text-white/30"><i class="ph ph-heart-break text-4xl mb-2"></i><p>No items.</p></div>';
+                else content.innerHTML = this.state.wishlist.map(wid => {
+                    const p = this.state.properties.find(x => x.id === wid);
+                    return `<div class="flex gap-4 items-center bg-white/5 p-3 rounded mb-2"><img src="${p.img}" class="w-10 h-10 rounded"><div><p class="text-sm text-white">${p.title}</p><p class="text-xs text-brand-gold">${this.formatPrice(p.price)}</p></div></div>`;
+                }).join('');
+            },
+
+            initAudio() {
+                const sound = new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3'], loop: true, volume: 0.1 });
+                let playing = false;
+                document.getElementById('sound-toggle').addEventListener('click', function() {
+                    playing = !playing;
+                    if(playing) { sound.play(); this.classList.add('text-brand-gold'); } 
+                    else { sound.pause(); this.classList.remove('text-brand-gold'); }
+                });
+            },
+            
+            openVideo() {
+                const modal = document.getElementById('video-modal');
+                const container = document.getElementById('video-container');
+                container.innerHTML = '<iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+                modal.style.opacity = '1';
+                modal.style.pointerEvents = 'all';
+            },
+
+            closeVideo() {
+                const modal = document.getElementById('video-modal');
+                const container = document.getElementById('video-container');
+                container.innerHTML = '';
+                modal.style.opacity = '0';
+                modal.style.pointerEvents = 'none';
+            },
+
+            // --- VR ---
+            initVR(containerId) {
+                document.getElementById('vr-overlay').classList.remove('hidden');
+                pannellum.viewer('vr-container', { type: "equirectangular", panorama: "https://pannellum.org/images/alma.jpg", autoLoad: true, autoRotate: -2 });
+            },
+
+            // --- PDF ---
+            generatePDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("LuxeEstate Portfolio", 10, 10);
+                this.state.wishlist.forEach((id, i) => {
+                    const p = this.state.properties.find(x => x.id === id);
+                    doc.text(`${p.title} - ${this.formatPrice(p.price)}`, 10, 20 + (i*10));
+                });
+                doc.save("Portfolio.pdf");
+            }
+        };
+
+        window.addEventListener('load', () => App.init());
+        
+        // VanillaTilt Injection
+        const s = document.createElement('script');
+        s.src = "https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js";
+        document.body.appendChild(s);
+    </script>
+</body>
+</html>

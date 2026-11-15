@@ -1,0 +1,5 @@
+.idh-brand-mark{display:block;flex-shrink:0;width:44px;height:44px;filter:drop-shadow(0 3px 3px #12244920);transition:transform .25s ease,filter .25s ease}
+.group:hover .idh-brand-mark{transform:perspective(180px) rotateY(-12deg) rotateX(5deg);filter:drop-shadow(3px 5px 4px #12244924)}
+@media(prefers-reduced-motion:reduce){.idh-brand-mark{transition:none}.group:hover .idh-brand-mark{transform:none}}
+
+@media(max-width:639px){.idh-brand-mark{width:36px;height:36px}}

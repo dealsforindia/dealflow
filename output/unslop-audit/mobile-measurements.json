@@ -1,0 +1,56 @@
+[
+  {
+    "page": "discounts",
+    "scrollWidth": 387,
+    "title": "Top Discounts & Flash Loots",
+    "width": 393
+  },
+  {
+    "page": "worth",
+    "scrollWidth": 387,
+    "title": "Highest Worth Score Deals",
+    "width": 393
+  },
+  {
+    "page": "saved",
+    "scrollWidth": 387,
+    "title": "Your Bookmarked Deals",
+    "width": 393
+  },
+  {
+    "page": "profile",
+    "scrollWidth": 387,
+    "title": "Guest Shopper",
+    "width": 393
+  },
+  {
+    "page": "about",
+    "scrollWidth": 387,
+    "title": "Retail discoveries & clearer price evidence",
+    "width": 393
+  },
+  {
+    "page": "verify",
+    "scrollWidth": 387,
+    "title": "How Deals Are Verified",
+    "width": 393
+  },
+  {
+    "page": "community",
+    "scrollWidth": 387,
+    "title": "Wall of Happiness",
+    "width": 393
+  },
+  {
+    "page": "contact",
+    "scrollWidth": 387,
+    "title": "Contact & Curation Desk",
+    "width": 393
+  },
+  {
+    "page": "submit",
+    "scrollWidth": 387,
+    "title": "Submit a Deal or Loot Drop",
+    "width": 393
+  }
+]

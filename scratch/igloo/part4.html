@@ -1,0 +1,1376 @@
+
+/* ------------------------------------------------------------------ */
+/* 07 — Camera rig (scroll-driven keyframes)                           */
+/* ------------------------------------------------------------------ */
+
+const CAM_KEYS = [
+    { t: 0.000, p: [0.0, 3.90, 24.0], l: [0.0, 2.70, 0.0] },
+    { t: 0.070, p: [2.60, 4.20, 22.6], l: [0.0, 2.60, 0.0] },
+    { t: 0.130, p: [1.60, 3.40, 17.2], l: [0.0, 2.90, 0.0] },
+    { t: 0.180, p: [0.20, -6.00, 16.5], l: [0.0, -16.0, 0.0] },
+    { t: 0.230, p: [0.00, -36.0, 12.5], l: [0.0, -41.5, 0.0] },
+    { t: 0.290, p: [3.60, -38.6, 12.8], l: [0.0, -41.8, 0.0] },
+    { t: 0.350, p: [1.20, -39.6, 11.2], l: [0.0, -41.6, 0.0] },
+    { t: 0.420, p: [0.00, -78.0, 13.0], l: [0.0, -83.6, 0.0] },
+    { t: 0.480, p: [-3.20, -80.2, 12.2], l: [0.0, -83.8, 0.0] },
+    { t: 0.540, p: [-1.00, -81.0, 11.0], l: [0.0, -83.6, 0.0] },
+    { t: 0.580, p: [2.20, -103.5, 12.0], l: [0.0, -116.0, 0.0] },
+    { t: 0.640, p: [0.80, -106.0, 6.5], l: [0.0, -118.0, 0.0] },
+    { t: 0.690, p: [0.00, -112.0, 2.6], l: [0.0, -119.0, 0.0] },
+    { t: 0.735, p: [0.00, -122.0, 3.2], l: [0.0, -131.0, 0.0] },
+    { t: 0.800, p: [0.00, -146.5, 20.0], l: [0.0, -151.0, 0.0] },
+    { t: 0.880, p: [-3.40, -146.0, 18.0], l: [0.0, -150.5, 0.0] },
+    { t: 0.950, p: [-1.00, -147.6, 14.6], l: [0.0, -149.6, 0.0] },
+    { t: 1.000, p: [0.00, -146.4, 11.6], l: [0.0, -148.8, 0.0] }
+];
+
+CAM_KEYS.forEach(k => {
+    k.pv = new THREE.Vector3(k.p[0], k.p[1], k.p[2]);
+    k.lv = new THREE.Vector3(k.l[0], k.l[1], k.l[2]);
+});
+
+const _camp = new THREE.Vector3();
+const _camL = new THREE.Vector3();
+
+function sampleCamera(t) {
+    t = clamp(t, 0, 1);
+    let i = 0;
+    while (i < CAM_KEYS.length - 2 && t > CAM_KEYS[i + 1].t) i++;
+    const a = CAM_KEYS[i], b = CAM_KEYS[i + 1];
+    const local = clamp((t - a.t) / Math.max(0.0001, b.t - a.t), 0, 1);
+    const e = smoother(0, 1, local);
+    _camp.copy(a.pv).lerp(b.pv, e);
+    _camL.copy(a.lv).lerp(b.lv, e);
+    return { pos: _camp, look: _camL };
+}
+
+/* ------------------------------------------------------------------ */
+/* 08 — Text scrambling (SDF-atlas UV offset simulation)               */
+/* ------------------------------------------------------------------ */
+
+const CIPHER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-_/[]{}<>~!=';
+
+class Scrambler {
+    constructor(el, text) {
+        this.el = el;
+        this.text = text;
+        this.front = text.length;
+        this.active = false;
+        this.brush = -1;
+        this.brushTimer = 0;
+        this.speed = 0.9;
+        el.textContent = text;
+    }
+
+    set(text) {
+        this.text = text;
+        this.front = 0;
+        this.active = true;
+        this.speed = 1.05;
+    }
+
+    burst() {
+        this.front = 0;
+        this.active = true;
+        this.speed = 1.6;
+    }
+
+    caretIndex(x, y) {
+        if (document.caretRangeFromPoint) {
+            const r = document.caretRangeFromPoint(x, y);
+            if (r && this.el.contains(r.startContainer)) return r.startOffset;
+        } else if (document.caretPositionFromPoint) {
+            const p = document.caretPositionFromPoint(x, y);
+            if (p && this.el.contains(p.offsetNode)) return p.offset;
+        }
+        const rect = this.el.getBoundingClientRect();
+        const frac = clamp((y - rect.top) / Math.max(1, rect.height), 0, 0.999);
+        return Math.floor(frac * this.text.length);
+    }
+
+    brushAt(x, y) {
+        this.brush = this.caretIndex(x, y);
+        this.brushTimer = 0.32;
+        if (!this.active && this.front >= this.text.length) {
+            this.active = true;
+            this.front = this.text.length;
+        }
+    }
+
+    update(dt) {
+        if (this.brushTimer > 0) {
+            this.brushTimer -= dt;
+            if (this.brushTimer <= 0) this.brush = -1;
+        }
+        if (!this.active) return;
+
+        this.front += dt * (this.text.length + 8) * this.speed * 1.15;
+        if (this.front >= this.text.length + 6 && this.brush < 0) {
+            this.el.textContent = this.text;
+            this.active = false;
+            return;
+        }
+
+        const tq = Math.floor(performance.now() / 48);
+        let out = '';
+        for (let i = 0; i < this.text.length; i++) {
+            const ch = this.text[i];
+            if (ch === ' ' || ch === '\n' || ch === '—') { out += ch; continue; }
+            const unresolved = i >= this.front;
+            const brushed = this.brush >= 0 && Math.abs(i - this.brush) < 15;
+            if (unresolved || brushed) {
+                const h = hash11(i * 12.9898 + tq * 7.13 + (brushed ? 3.7 : 0));
+                out += CIPHER[Math.floor(h * CIPHER.length) % CIPHER.length];
+            } else {
+                out += ch;
+            }
+        }
+        this.el.textContent = out;
+    }
+}
+
+const el = {
+    wordmark: document.getElementById('wordmark'),
+    copyright: document.getElementById('copyright'),
+    manifestoHead: document.getElementById('manifesto-head'),
+    manifestoBody: document.getElementById('manifesto-body'),
+    scrollPrompt: document.getElementById('scroll-prompt'),
+    soundBtn: document.getElementById('sound-btn'),
+    soundLabel: document.getElementById('sound-label'),
+    stageLabel: document.getElementById('stage-label'),
+    sceneNav: document.getElementById('scene-nav'),
+    hint: document.getElementById('hint'),
+    preloader: document.getElementById('preloader'),
+    preloaderAscii: document.getElementById('preloader-ascii'),
+    flare: document.getElementById('flare'),
+    modal: document.getElementById('modal'),
+    modalInner: document.getElementById('modal-inner'),
+    modalKicker: document.getElementById('modal-kicker'),
+    modalTitle: document.getElementById('modal-title'),
+    modalMeta: document.getElementById('modal-meta'),
+    modalBody: document.getElementById('modal-body'),
+    modalClose: document.getElementById('modal-close'),
+    modalDiscover: document.getElementById('modal-discover'),
+    modalLink: document.getElementById('modal-link'),
+    modalLinkLabel: document.getElementById('modal-link-label'),
+    daisLinks: document.getElementById('dais-links'),
+    daisPrev: document.getElementById('dais-prev'),
+    daisNext: document.getElementById('dais-next')
+};
+
+const scCopyright = new Scrambler(el.copyright, '// Copyright © 2026\nIgloo, Inc. All Rights Reserved.');
+const scManifesto = new Scrambler(el.manifestoBody, 'Our mission is to build the next generation of consumer brands at the intersection of Community, AI, and crypto.');
+const scManifestoHead = new Scrambler(el.manifestoHead, '///// Manifesto');
+const scModal = new Scrambler(el.modalBody, '');
+
+scCopyright.active = false;
+scManifesto.active = false;
+scManifestoHead.active = false;
+
+el.manifestoBody.addEventListener('mousemove', (e) => scManifesto.brushAt(e.clientX, e.clientY));
+el.manifestoHead.addEventListener('mousemove', (e) => scManifestoHead.brushAt(e.clientX, e.clientY));
+el.copyright.addEventListener('click', () => { scCopyright.burst(); initAudio(); });
+el.wordmark.addEventListener('click', () => { goToScene(1); initAudio(); });
+
+/* ------------------------------------------------------------------ */
+/* 09 — Portfolio data, freeze/thaw modals, history routing            */
+/* ------------------------------------------------------------------ */
+
+const PROJECTS = {
+    pudgy: {
+        slug: 'pudgy-penguins',
+        title: 'Pudgy Penguins',
+        kicker: '///// Summary <span>— 01</span>',
+        date: '01.02.2020',
+        metaRole: 'PORTFOLIO CO. 01',
+        text:
+`Pudgy Penguins is an intellectual property powerhouse built directly from onchain roots. What began as a collection of 8,888 characters became a globally recognised consumer brand through viral reach, physical toy distribution in major retail channels and decentralised brand stewardship.
+
+The igloo treats the collection as a frozen artefact: a single crystal grown around the character, catalogued with its own temperature record and dated the day the archive was sealed.`,
+        link: 'https://pudgypenguins.com',
+        linkLabel: 'pudgypenguins.com ↗'
+    },
+    overpass: {
+        slug: 'overpass',
+        title: 'Overpass',
+        kicker: '///// Summary <span>— 02</span>',
+        date: '06.01.2023',
+        metaRole: 'PORTFOLIO CO. 02',
+        text:
+`Overpass is a decentralised licensing marketplace rebuilding how brands monetise their intellectual property. Rights holders and creators negotiate, track royalties and verify onchain ownership in one place, turning licensing from a legal bottleneck into an open protocol.
+
+Crystallised as the second artefact in the archive, the badge keeps its recessed mark readable through several centimetres of faceted ice.`,
+        link: 'https://overpass.ip',
+        linkLabel: 'overpass.ip ↗'
+    }
+};
+
+const FX = { darken: 0, darkenTarget: 0, thaw: 0, glitch: 0, veil: 0 };
+
+function routeURL(path) {
+    try {
+        if (location.protocol === 'file:') throw new Error('file protocol');
+        window.history.pushState({}, '', path);
+    } catch (err) {
+        window.history.pushState({}, '', '#' + path.replace(/^\//, ''));
+    }
+}
+
+function openProject(key) {
+    const p = PROJECTS[key];
+    if (!p || S.modal === key) return;
+
+    S.modal = key;
+    el.modalKicker.innerHTML = p.kicker;
+    el.modalTitle.textContent = p.title;
+    el.modalMeta.innerHTML = `<span>ROLE <b>${p.metaRole}</b></span><span>D <b>${p.date}</b></span><span>STATE <b>FROZEN</b></span>`;
+    el.modalLink.href = p.link;
+    el.modalLinkLabel.textContent = p.linkLabel;
+    el.modalDiscover.style.display = 'flex';
+
+    scModal.set(p.text);
+
+    el.modal.classList.add('active');
+    el.modal.setAttribute('aria-hidden', 'false');
+    el.modalInner.scrollTop = 0;
+    el.wordmark.classList.add('bright');
+
+    FX.darkenTarget = 1;
+    routeURL('/portfolio/' + p.slug);
+    impact(64, 0.5);
+    chime([1600, 2400], 0.12);
+
+    if (S.stageActivePill) S.stageActivePill.classList.remove('active');
+}
+
+function closeProject() {
+    if (!S.modal) return;
+    S.modal = null;
+
+    el.modal.classList.remove('active');
+    el.modal.setAttribute('aria-hidden', 'true');
+    el.wordmark.classList.remove('bright');
+
+    FX.darkenTarget = 0;
+    FX.thaw = 1.0;
+    FX.glitch = Math.max(FX.glitch, 0.85);
+    routeURL('/');
+    impact(110, 0.32);
+    thawSound();
+}
+
+el.modalClose.addEventListener('click', (e) => { e.stopPropagation(); closeProject(); });
+el.modal.addEventListener('click', (e) => { if (e.target === el.modal || e.target.classList.contains('modal-scrim')) closeProject(); });
+el.modalBody.addEventListener('mousemove', (e) => {
+    if (!S.modal) return;
+    scModal.brushAt(e.clientX, e.clientY);
+    if (Math.random() < 0.16) tick();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && S.modal) closeProject();
+});
+
+window.addEventListener('popstate', () => {
+    const hash = location.hash.replace(/^#\/?/, '').replace(/\/$/, '');
+    const pathMatch = /portfolio\/([a-z-]+)/.exec(location.pathname);
+    const slug = pathMatch ? pathMatch[1] : hash;
+    const key = Object.keys(PROJECTS).find(k => PROJECTS[k].slug === slug);
+    if (key) openProject(key);
+    else closeProject();
+});
+
+/* ------------------------------------------------------------------ */
+/* 10 — Web Audio: wind bed, pad, hover thuds, impacts, vortex         */
+/* ------------------------------------------------------------------ */
+
+let actx = null, master = null, windGain = null, windFilter = null;
+let vortexGain = null, vortexFilter = null, padGain = null;
+let lastThud = 0;
+
+function makeNoiseBuffer(seconds = 2.0) {
+    const len = Math.floor(actx.sampleRate * seconds);
+    const buffer = actx.createBuffer(1, len, actx.sampleRate);
+    const d = buffer.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) {
+        const white = Math.random() * 2 - 1;
+        last = (last + 0.02 * white) / 1.02;
+        d[i] = last * 3.2;
+    }
+    return buffer;
+}
+
+function makeWhiteBuffer(seconds = 1.0) {
+    const len = Math.floor(actx.sampleRate * seconds);
+    const buffer = actx.createBuffer(1, len, actx.sampleRate);
+    const d = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    return buffer;
+}
+
+function initAudio() {
+    if (S.audio) {
+        if (actx && actx.state === 'suspended') actx.resume();
+        return;
+    }
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        actx = new AC();
+
+        const comp = actx.createDynamicsCompressor();
+        comp.threshold.value = -16;
+        comp.knee.value = 20;
+        comp.ratio.value = 4;
+        comp.attack.value = 0.006;
+        comp.release.value = 0.25;
+
+        master = actx.createGain();
+        master.gain.value = CFG.audioVolume;
+        master.connect(comp);
+        comp.connect(actx.destination);
+
+        // --- ambient wind bed ---
+        const windSrc = actx.createBufferSource();
+        windSrc.buffer = makeNoiseBuffer(3.0);
+        windSrc.loop = true;
+
+        windFilter = actx.createBiquadFilter();
+        windFilter.type = 'lowpass';
+        windFilter.frequency.value = 430;
+        windFilter.Q.value = 0.9;
+
+        windGain = actx.createGain();
+        windGain.gain.value = 0.10;
+
+        windSrc.connect(windFilter);
+        windFilter.connect(windGain);
+        windGain.connect(master);
+        windSrc.start();
+
+        const lfo = actx.createOscillator();
+        lfo.frequency.value = 0.07;
+        const lfoGain = actx.createGain();
+        lfoGain.gain.value = 0.045;
+        lfo.connect(lfoGain);
+        lfoGain.connect(windGain.gain);
+        lfo.start();
+
+        // --- distant synth pad ---
+        padGain = actx.createGain();
+        padGain.gain.value = 0.0;
+        const padFilter = actx.createBiquadFilter();
+        padFilter.type = 'lowpass';
+        padFilter.frequency.value = 520;
+        padFilter.Q.value = 1.2;
+        padFilter.connect(padGain);
+        padGain.connect(master);
+
+        [55, 82.41, 110.0].forEach((f, i) => {
+            const o = actx.createOscillator();
+            o.type = i === 2 ? 'triangle' : 'sine';
+            o.frequency.value = f;
+            o.detune.value = (i - 1) * 7;
+            const g = actx.createGain();
+            g.gain.value = i === 2 ? 0.18 : 0.34;
+            o.connect(g);
+            g.connect(padFilter);
+            o.start();
+        });
+
+        // --- particle vortex noise, modulated by average speed ---
+        const vortexSrc = actx.createBufferSource();
+        vortexSrc.buffer = makeWhiteBuffer(2.0);
+        vortexSrc.loop = true;
+        vortexFilter = actx.createBiquadFilter();
+        vortexFilter.type = 'bandpass';
+        vortexFilter.frequency.value = 700;
+        vortexFilter.Q.value = 2.6;
+        vortexGain = actx.createGain();
+        vortexGain.gain.value = 0.0;
+        vortexSrc.connect(vortexFilter);
+        vortexFilter.connect(vortexGain);
+        vortexGain.connect(master);
+        vortexSrc.start();
+
+        S.audio = true;
+    } catch (err) {
+        console.warn('Audio unavailable', err);
+    }
+}
+
+function panned(pan) {
+    if (!actx.createStereoPanner) return null;
+    const p = actx.createStereoPanner();
+    p.pan.value = clamp(pan, -0.7, 0.7);
+    return p;
+}
+
+function thud(pan = 0) {
+    if (!actx || !S.sound) return;
+    const now = actx.currentTime;
+    if (now - lastThud < 0.045) return;
+    lastThud = now;
+
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    const p = panned(pan);
+    o.type = 'sine';
+    const f0 = 96 + rand(-9, 9);
+    o.frequency.setValueAtTime(f0, now);
+    o.frequency.exponentialRampToValueAtTime(38, now + 0.13);
+    g.gain.setValueAtTime(0.20, now);
+    g.gain.exponentialRampToValueAtTime(0.0008, now + 0.17);
+    o.connect(g);
+    if (p) { g.connect(p); p.connect(master); } else g.connect(master);
+    o.start(now);
+    o.stop(now + 0.19);
+}
+
+function tick() {
+    if (!actx || !S.sound) return;
+    const now = actx.currentTime;
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = 1900 + Math.random() * 1200;
+    g.gain.setValueAtTime(0.018, now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.022);
+    o.connect(g); g.connect(master);
+    o.start(now); o.stop(now + 0.026);
+}
+
+function impact(freq = 60, dur = 0.45) {
+    if (!actx || !S.sound) return;
+    const now = actx.currentTime;
+
+    const o = actx.createOscillator();
+    const g = actx.createGain();
+    const f = actx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 360;
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(freq, now);
+    o.frequency.exponentialRampToValueAtTime(26, now + dur);
+    g.gain.setValueAtTime(0.42, now);
+    g.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+    o.connect(f); f.connect(g); g.connect(master);
+    o.start(now); o.stop(now + dur + 0.05);
+
+    // ice crack transient
+    const n = actx.createBufferSource();
+    n.buffer = makeWhiteBuffer(0.4);
+    const nf = actx.createBiquadFilter();
+    nf.type = 'bandpass';
+    nf.frequency.value = 2600;
+    nf.Q.value = 1.4;
+    const ng = actx.createGain();
+    ng.gain.setValueAtTime(0.10, now);
+    ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+    n.connect(nf); nf.connect(ng); ng.connect(master);
+    n.start(now); n.stop(now + 0.3);
+}
+
+function thawSound() {
+    if (!actx || !S.sound) return;
+    const now = actx.currentTime;
+    const n = actx.createBufferSource();
+    n.buffer = makeWhiteBuffer(0.6);
+    const f = actx.createBiquadFilter();
+    f.type = 'highpass';
+    f.frequency.setValueAtTime(900, now);
+    f.frequency.exponentialRampToValueAtTime(3200, now + 0.4);
+    const g = actx.createGain();
+    g.gain.setValueAtTime(0.08, now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+    n.connect(f); f.connect(g); g.connect(master);
+    n.start(now); n.stop(now + 0.5);
+}
+
+function chime(freqs, gain = 0.05) {
+    if (!actx || !S.sound) return;
+    const now = actx.currentTime;
+    freqs.forEach((f, i) => {
+        const o = actx.createOscillator();
+        const g = actx.createGain();
+        o.type = 'sine';
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, now + i * 0.035);
+        g.gain.exponentialRampToValueAtTime(gain, now + i * 0.035 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.035 + 0.9);
+        o.connect(g); g.connect(master);
+        o.start(now + i * 0.035);
+        o.stop(now + i * 0.035 + 1.0);
+    });
+}
+
+el.soundBtn.addEventListener('click', () => {
+    initAudio();
+    S.sound = !S.sound;
+    const now = actx ? actx.currentTime : 0;
+    if (master && actx) {
+        master.gain.cancelScheduledValues(now);
+        master.gain.setValueAtTime(master.gain.value, now);
+        master.gain.linearRampToValueAtTime(S.sound ? CFG.audioVolume : 0.0, now + 0.3);
+    }
+    el.soundLabel.textContent = S.sound ? 'Sound: On' : 'Sound: Off';
+    el.soundBtn.classList.toggle('off', !S.sound);
+    el.soundBtn.setAttribute('aria-pressed', String(S.sound));
+});
+
+['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, () => initAudio(), { once: true, passive: true });
+});
+
+/* ------------------------------------------------------------------ */
+/* 11 — Scroll orchestration                                           */
+/* ------------------------------------------------------------------ */
+
+S.hasScrolled = false;
+S.looping = false;
+S.stage = 1;
+S.stageActivePill = document.querySelector('.nav-pill.active');
+S.morphFrom = 0;
+S.morphMix = 1;
+S.morphGlow = 0;
+
+const STAGES = [
+    { min: -1, max: 0.06, id: 0, label: '<b>01</b> — Intro' },
+    { min: 0.06, max: 0.215, id: 1, label: '<b>02</b> — Igloo' },
+    { min: 0.215, max: 0.435, id: 2, label: '<b>03</b> — Pudgy Penguins' },
+    { min: 0.435, max: 0.60, id: 3, label: '<b>04</b> — Overpass' },
+    { min: 0.60, max: 0.715, id: 4, label: '<b>05</b> — Portal' },
+    { min: 0.715, max: 0.955, id: 5, label: '<b>06</b> — Particle Dais' },
+    { min: 0.955, max: 2, id: 6, label: '<b>07</b> — Loop' }
+];
+
+function stageAt(t) {
+    for (const s of STAGES) if (t >= s.min && t < s.max) return s;
+    return STAGES[STAGES.length - 1];
+}
+
+function setStage(stage) {
+    if (S.stage === stage.id) return;
+    S.stage = stage.id;
+    el.stageLabel.innerHTML = stage.label;
+
+    const pills = el.sceneNav.querySelectorAll('.nav-pill');
+    pills.forEach(p => p.classList.toggle('active', Number(p.dataset.scene) === stage.id));
+    S.stageActivePill = el.sceneNav.querySelector('.nav-pill.active');
+
+    const daisOn = stage.id === 5;
+    el.daisLinks.classList.toggle('show', daisOn);
+    el.daisPrev.classList.toggle('on', daisOn);
+    el.daisNext.classList.toggle('on', daisOn);
+
+    if (daisOn && !S.daisChimed) {
+        S.daisChimed = true;
+        chime([2400, 3200, 4200, 4700], 0.045);
+        if (padGain && actx) {
+            padGain.gain.cancelScheduledValues(actx.currentTime);
+            padGain.gain.linearRampToValueAtTime(0.10, actx.currentTime + 1.4);
+        }
+    } else if (!daisOn) {
+        S.daisChimed = false;
+        if (padGain && actx) {
+            padGain.gain.cancelScheduledValues(actx.currentTime);
+            padGain.gain.linearRampToValueAtTime(0.03, actx.currentTime + 1.0);
+        }
+    }
+}
+
+function goToScene(id) {
+    const targets = [0.0, 0.03, 0.285, 0.50, 0.685, 0.845, 0.995];
+    if (id === 0) {
+        S.t = 0;
+        S.scroll = 0;
+        replayIntro();
+        return;
+    }
+    if (id === 6) {
+        S.t = 0.985;
+        return;
+    }
+    S.t = targets[id];
+}
+
+el.sceneNav.querySelectorAll('.nav-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+        initAudio();
+        goToScene(Number(pill.dataset.scene));
+    });
+});
+
+// reveal the nav rail when the pointer nears the bottom edge
+let navHideTimer = 0;
+function showNav() {
+    el.sceneNav.classList.add('show');
+    clearTimeout(navHideTimer);
+    navHideTimer = setTimeout(() => el.sceneNav.classList.remove('show'), 2600);
+}
+window.addEventListener('mousemove', (e) => {
+    if (e.clientY > window.innerHeight - 120) showNav();
+}, { passive: true });
+
+function addScroll(delta) {
+    if (S.modal) return;
+    S.t = clamp(S.t + delta, 0, 1);
+    if (!S.hasScrolled) {
+        S.hasScrolled = true;
+        el.scrollPrompt.classList.add('hidden');
+    }
+}
+
+window.addEventListener('wheel', (e) => {
+    if (S.modal) return;
+    let d = e.deltaY;
+    if (e.deltaMode === 1) d *= 16;
+    if (e.deltaMode === 2) d *= window.innerHeight;
+    addScroll(d * CFG.scrollSensitivity);
+}, { passive: true });
+
+let touchY = null;
+window.addEventListener('touchstart', (e) => {
+    if (S.modal) return;
+    touchY = e.touches[0].clientY;
+}, { passive: true });
+window.addEventListener('touchmove', (e) => {
+    if (S.modal || touchY === null) return;
+    const y = e.touches[0].clientY;
+    const dy = touchY - y;
+    touchY = y;
+    addScroll(dy * 0.0026);
+    e.preventDefault();
+}, { passive: false });
+window.addEventListener('touchend', () => { touchY = null; });
+
+// drag to scroll
+let dragging = false, dragY = 0;
+window.addEventListener('pointerdown', (e) => {
+    if (S.modal || e.target.closest('button, a, .modal-inner')) return;
+    dragging = true;
+    dragY = e.clientY;
+    document.body.classList.add('dragging');
+});
+window.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    addScroll((dragY - e.clientY) * 0.0022);
+    dragY = e.clientY;
+});
+window.addEventListener('pointerup', () => {
+    dragging = false;
+    document.body.classList.remove('dragging');
+});
+
+document.addEventListener('keydown', (e) => {
+    if (S.modal) return;
+    if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(e.key)) {
+        addScroll(e.key === ' ' ? 0.07 : 0.045);
+        e.preventDefault();
+    } else if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(e.key)) {
+        addScroll(-0.045);
+        e.preventDefault();
+    } else if (e.key === 'Home') {
+        S.t = 0;
+    } else if (e.key === 'End') {
+        S.t = 1;
+    }
+});
+
+// pointer tracking (normalised position + smoothed velocity in pixels/frame)
+let prevPx = window.innerWidth * 0.5, prevPy = window.innerHeight * 0.5;
+
+window.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+    S.mouseActive = true;
+    const px = e.clientX, py = e.clientY;
+    S.mousePx.set(px, py);
+    S.mouse.x = (px / window.innerWidth) * 2 - 1;
+    S.mouse.y = -(py / window.innerHeight) * 2 + 1;
+    const dx = px - prevPx, dy = py - prevPy;
+    prevPx = px; prevPy = py;
+    S.mouseVel = lerp(S.mouseVel, Math.min(80, Math.hypot(dx, dy)), 0.35);
+}, { passive: true });
+
+/* ------------------------------------------------------------------ */
+/* 12 — Intro timeline, loop reset, dais controls                      */
+/* ------------------------------------------------------------------ */
+
+let introStart = performance.now();
+let introDone = false;
+const ASCII_FRAMES = ['=+==--==++', '-+=+==--==', '==+--+==-=', '=--==++==+', '-==++==+=-', '+==--==++='];
+
+function replayIntro() {
+    introStart = performance.now();
+    introDone = false;
+    S.intro = 0;
+    revealUniform.value = 0;
+    el.preloader.classList.remove('gone');
+    el.preloader.style.opacity = '';
+    el.scrollPrompt.classList.remove('hidden');
+    el.hint.style.opacity = '1';
+    S.hasScrolled = false;
+    scCopyright.active = false;
+    scManifesto.active = false;
+    scManifestoHead.active = false;
+}
+
+function loopReset() {
+    if (S.looping) return;
+    S.looping = true;
+
+    // the prompt has served its purpose for good once the loop rolls over
+    S.hasScrolled = true;
+    el.scrollPrompt.classList.add('hidden');
+
+    el.flare.style.opacity = '1';
+    impact(46, 0.7);
+    setTimeout(() => { el.flare.style.opacity = '0'; }, 520);
+    FX.glitch = 1.0;
+
+    setTimeout(() => {
+        S.t = 0.012;
+        S.scroll = 0.0;
+        bricks.forEach(b => {
+            b.offset = rand(1.4, 3.2);
+            b.target = 0;
+        });
+        scManifesto.burst();
+        scCopyright.burst();
+        S.looping = false;
+    }, 340);
+}
+
+function setMorph(index) {
+    initAudio();
+    if (index === S.morph) return;
+    S.morphFrom = S.morph;
+    S.morph = index;
+    S.morphMix = 0;
+    S.morphGlow = 1;
+    tick();
+    document.querySelectorAll('.dais-link').forEach(b => {
+        b.classList.toggle('active', Number(b.dataset.shape) === index);
+    });
+}
+
+document.querySelectorAll('.dais-link').forEach(btn => {
+    btn.addEventListener('click', () => setMorph(Number(btn.dataset.shape)));
+});
+el.daisPrev.addEventListener('click', () => setMorph((S.morph + 2) % 3));
+el.daisNext.addEventListener('click', () => setMorph((S.morph + 1) % 3));
+
+/* ------------------------------------------------------------------ */
+/* 13 — HUD canvas                                                     */
+/* ------------------------------------------------------------------ */
+
+const _v3 = new THREE.Vector3();
+function project(v) {
+    _v3.copy(v).project(camera);
+    return {
+        x: (_v3.x * 0.5 + 0.5) * window.innerWidth,
+        y: (-_v3.y * 0.5 + 0.5) * window.innerHeight,
+        z: _v3.z
+    };
+}
+
+const temp = {
+    pudgy: { a: 35.14, b: 1.75 },
+    overpass: { a: 29.66, b: -1.30 }
+};
+
+function drawBrickHud(lifted) {
+    if (!lifted.length) return;
+    const ctx = hudCtx;
+    ctx.save();
+    ctx.font = "9.5px 'JetBrains Mono', monospace";
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 1;
+
+    // connecting polylines between neighbouring nodes
+    ctx.strokeStyle = 'rgba(255,255,255,0.32)';
+    for (let i = 0; i < lifted.length; i++) {
+        for (let j = i + 1; j < lifted.length; j++) {
+            const dx = lifted[i].x - lifted[j].x;
+            const dy = lifted[i].y - lifted[j].y;
+            if (dx * dx + dy * dy < 7000) {
+                ctx.beginPath();
+                ctx.moveTo(lifted[i].x, lifted[i].y);
+                ctx.lineTo(lifted[j].x, lifted[j].y);
+                ctx.stroke();
+            }
+        }
+    }
+
+    // nodes + ids
+    lifted.forEach((p, i) => {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+        ctx.fillStyle = 'rgba(255,255,255,0.72)';
+        ctx.fillText(String(p.id), p.x + 7, p.y - 6);
+
+        if (i === 0) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x + 34, p.y - 34);
+            ctx.lineTo(p.x + 96, p.y - 34);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.fillText('BRICK_' + String(p.id).padStart(3, '0'), p.x + 38, p.y - 40);
+        }
+    });
+    ctx.restore();
+}
+
+function drawIntroIds() {
+    if (S.intro > 0.72) return;
+    const ctx = hudCtx;
+    ctx.save();
+    ctx.font = "8.5px 'JetBrains Mono', monospace";
+    ctx.fillStyle = 'rgba(180,225,255,' + (0.55 * (1 - S.intro / 0.72)) + ')';
+    for (let i = 0; i < bricks.length; i += 5) {
+        const b = bricks[i];
+        const p = project(b.mesh.position);
+        if (p.z > 1) continue;
+        ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+        ctx.fillText(String(b.id), p.x + 5, p.y - 4);
+    }
+    ctx.restore();
+}
+
+function drawIceHud(key, group, date, index) {
+    const ctx = hudCtx;
+    const centre = project(group.position);
+    if (centre.z > 1) return;
+
+    const w = window.innerWidth;
+    const onLeft = centre.x < w * 0.5;
+    const dir = onLeft ? 1 : -1;
+    const x0 = centre.x;
+    const y0 = centre.y;
+
+    const leftX = clamp(x0 - 210, 60, w - 320);
+    const rightX = clamp(x0 + 120, 100, w - 240);
+    const topY = clamp(y0 - 130, 90, window.innerHeight - 200);
+
+    ctx.save();
+    ctx.font = "9.5px 'JetBrains Mono', monospace";
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 1;
+
+    // leader polyline to the crystal
+    ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+    ctx.beginPath();
+    ctx.moveTo(leftX + 104, topY);
+    ctx.lineTo(leftX + 132, topY + 18);
+    ctx.lineTo(x0 - 46, y0 - 26);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillRect(leftX + 122, topY + 16, 3, 3);
+
+    // portfolio label
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
+    ctx.fillText('PORTFOLIO_CO_0' + index, leftX, topY);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.fillText(key === 'pudgy' ? 'PUDGY PENGUINS' : 'OVERPASS', leftX, topY + 15);
+
+    // telemetry
+    ctx.font = "9.5px 'JetBrains Mono', monospace";
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
+    ctx.fillText('TEMP', rightX, topY);
+    const t = temp[key];
+    const sign = t.b >= 0 ? '+' : '−';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(t.a.toFixed(2), rightX, topY + 15);
+    ctx.fillText(sign + Math.abs(t.b).toFixed(2).padStart(5, '0'), rightX, topY + 28);
+
+    const barW = 74;
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.fillRect(rightX, topY + 39, barW, 1);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillRect(rightX, topY + 39, barW * clamp((t.a - 28) / 9, 0.05, 1), 1);
+
+    // date + CTA
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
+    ctx.fillText('D ' + date, rightX, y0 + 112);
+    const pulse = 0.55 + 0.45 * Math.sin(S.time * 2.4);
+    ctx.fillStyle = `rgba(255,255,255,${0.45 + pulse * 0.45})`;
+    ctx.fillText('CLICK TO EXPLORE', rightX, y0 + 128);
+
+    // corner reticle
+    const rx = x0 - 118, ry = y0 - 92, rw = 236, rh = 184;
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    const c = 14;
+    [[rx, ry, 1, 1], [rx + rw, ry, -1, 1], [rx, ry + rh, 1, -1], [rx + rw, ry + rh, -1, -1]].forEach(([x, y, sx, sy]) => {
+        ctx.beginPath();
+        ctx.moveTo(x + c * sx, y);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x, y + c * sy);
+        ctx.stroke();
+    });
+
+    ctx.restore();
+}
+
+function drawHud(liftedBricks) {
+    const ctx = hudCtx;
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    if (S.stage === 1) {
+        drawBrickHud(liftedBricks);
+    }
+    drawIntroIds();
+
+    if (S.stage === 2 && iceA.visible) drawIceHud('pudgy', iceA, '01.02.2020', 1);
+    if (S.stage === 3 && iceB.visible) drawIceHud('overpass', iceB, '06.01.2023', 2);
+}
+
+/* ------------------------------------------------------------------ */
+/* 14 — Interaction: raycast hover, picks                              */
+/* ------------------------------------------------------------------ */
+
+const raycaster = new THREE.Raycaster();
+const hoverIds = new Set();
+let lastHoverId = -1;
+
+function pickCrystals() {
+    raycaster.setFromCamera(S.mouse, camera);
+    const hits = raycaster.intersectObjects(pickables, false);
+    if (!hits.length) return;
+    if (hits[0].object === crystalA) openProject('pudgy');
+    else if (hits[0].object === crystalB) openProject('overpass');
+}
+
+window.addEventListener('click', (e) => {
+    if (S.modal || e.target.closest('button, a, .scene-nav, .dais-links')) return;
+    pickCrystals();
+});
+
+/* ------------------------------------------------------------------ */
+/* 15 — Main loop                                                      */
+/* ------------------------------------------------------------------ */
+
+let firstFrame = true;
+const CROSS = [];
+for (let i = 0; i < CAM_KEYS.length - 1; i++) {
+    CROSS.push({ t: (CAM_KEYS[i].t + CAM_KEYS[i + 1].t) * 0.5, w: 0.032 });
+}
+
+function band(t, centre, width) {
+    return clamp(1 - Math.abs(t - centre) / width, 0, 1);
+}
+
+/* fog + light levels blend between the arctic surface and the ice caverns */
+const FOG_SURFACE = new THREE.Color(0x8ea6bd);
+const FOG_CAVE = new THREE.Color(0x0b1a26);
+let caveMix = 0;
+
+function frame(now) {
+    requestAnimationFrame(frame);
+
+    const dt = firstFrame ? 0.016 : Math.min((now - S.last) / 1000, 0.05);
+    firstFrame = false;
+    S.last = now;
+    S.time = now * 0.001;
+    timeUniform.value = S.time;
+    compositeUniforms.uTime.value = S.time;
+
+    /* --- pointer smoothing --- */
+    S.mouseLerp.x += (S.mouse.x - S.mouseLerp.x) * damp(6, dt);
+    S.mouseLerp.y += (S.mouse.y - S.mouseLerp.y) * damp(6, dt);
+    S.mouseVel *= Math.exp(-3.2 * dt);
+
+    /* --- scroll smoothing --- */
+    S.scroll += (S.t - S.scroll) * damp(6.5, dt);
+    if (Math.abs(S.t - S.scroll) < 0.00015) S.scroll = S.t;
+
+    // any real progress retires the scroll prompt permanently
+    if (S.t > 0.02 && !S.hasScrolled) {
+        S.hasScrolled = true;
+        el.scrollPrompt.classList.add('hidden');
+    }
+
+    if (S.t > 0.985 && S.scroll > 0.975 && !S.looping && !S.modal) loopReset();
+
+    const stage = stageAt(S.scroll);
+    setStage(stage);
+
+    /* --- intro timeline --- */
+    const sinceIntro = (now - introStart) / 1000;
+    if (sinceIntro < 1.15) {
+        const idx = Math.floor(sinceIntro * 9) % ASCII_FRAMES.length;
+        el.preloaderAscii.textContent = ASCII_FRAMES[idx];
+    } else if (sinceIntro < 3.9) {
+        el.preloader.classList.add('gone');
+        const p = smoother(1.15, 3.75, sinceIntro);
+        S.intro = p;
+        revealUniform.value = p * 66.0;
+        el.hint.style.opacity = sinceIntro > 3.2 ? '0' : '1';
+    } else if (!introDone) {
+        introDone = true;
+        S.intro = 1;
+        revealUniform.value = 999;
+        scCopyright.burst();
+        scManifestoHead.burst();
+        scManifesto.burst();
+        el.scrollPrompt.classList.add('hidden');
+        setTimeout(() => { if (!S.hasScrolled) el.scrollPrompt.classList.remove('hidden'); }, 1500);
+    }
+
+    const introFade = 1 - smoothstep(0.05, 0.75, S.intro);
+    edgeMat.opacity = 0.55 * introFade;
+    edgeMat.transparent = true;
+    brickEdges.visible = edgeMat.opacity > 0.01;
+
+    const plexus = plexusGroup.userData;
+    const plexOpacity = S.intro < 1 ? smoothstep(0.0, 0.25, S.intro) * (1 - smoothstep(0.55, 1.0, S.intro)) : 0;
+    plexus.lineMat.opacity = plexOpacity * 0.42;
+    plexus.dotMat.opacity = plexOpacity * 0.75;
+    plexusGroup.visible = plexOpacity > 0.001;
+
+    /* --- camera --- */
+    const cam = sampleCamera(S.scroll);
+    const px = S.reduced ? 0 : 0.85;
+    camera.position.set(
+        cam.pos.x + S.mouseLerp.x * px + Math.sin(S.time * 0.21) * 0.05,
+        cam.pos.y + S.mouseLerp.y * px * 0.55 + Math.sin(S.time * 0.17) * 0.04,
+        cam.pos.z
+    );
+    camera.lookAt(
+        cam.look.x + S.mouseLerp.x * 0.32,
+        cam.look.y + S.mouseLerp.y * 0.22,
+        cam.look.z
+    );
+    if (!S.reduced) camera.rotateZ(S.mouseLerp.x * 0.010);
+
+    skyDome.position.copy(camera.position);
+
+    /* --- depth grade: bright arctic air up top, cavern haze below --- */
+    const caveTarget = smoothstep(0.14, 0.24, S.scroll);
+    caveMix += (caveTarget - caveMix) * damp(2.4, dt);
+    scene.fog.color.copy(FOG_SURFACE).lerp(FOG_CAVE, caveMix);
+    scene.fog.density = lerp(0.0092, 0.0050, caveMix);
+    hemi.intensity = lerp(0.34, 0.12, caveMix);
+    sun.intensity = lerp(2.15, 0.30, caveMix);
+    rim.intensity = lerp(0.72, 0.34, caveMix);
+    skyDome.visible = caveMix < 0.98;
+
+    /* --- scene visibility --- */
+    igloo.visible = S.scroll < 0.30;
+    snowField.visible = S.scroll < 0.32;
+    iceA.visible = S.scroll > 0.155 && S.scroll < 0.44;
+    iceB.visible = S.scroll > 0.38 && S.scroll < 0.63;
+    portal.visible = S.scroll > 0.55 && S.scroll < 0.83;
+    dais.visible = S.scroll > 0.63;
+
+    /* --- transition FX --- */
+    let trans = 0;
+    trans = Math.max(trans, band(S.scroll, 0.172, 0.045));
+    trans = Math.max(trans, band(S.scroll, 0.428, 0.042));
+    trans = Math.max(trans, band(S.scroll, 0.622, 0.038));
+    trans = Math.max(trans, band(S.scroll, 0.712, 0.052));
+    FX.veil = trans * 0.86;
+
+    FX.glitch = Math.max(FX.glitch * Math.exp(-3.4 * dt), trans * trans * 0.85);
+    FX.darken += (FX.darkenTarget - FX.darken) * damp(7.5, dt);
+    FX.thaw = Math.max(0, FX.thaw - dt * 1.7);
+
+    compositeUniforms.uFogVeil.value = FX.veil;
+    compositeUniforms.uGlitch.value = FX.glitch;
+    compositeUniforms.uDarken.value = FX.darken * 0.82;
+    compositeUniforms.uThaw.value = FX.thaw * 0.55;
+    compositeUniforms.uAberration.value = 0.35 + FX.glitch * 1.6 + FX.thaw * 1.1;
+    compositeUniforms.uGrain.value = S.reduced ? 0.012 : 0.032;
+
+    // transition veil thickens the air but keeps the depth grade colour
+    scene.fog.density = lerp(0.0092, 0.0050, caveMix) + trans * 0.075;
+
+    /* --- bricks --- */
+    let lifted = [];
+    let hoverStrength = 0;
+
+    if (S.stage === 1 && igloo.visible && S.mouseActive && !S.modal) {
+        raycaster.setFromCamera(S.mouse, camera);
+        const hits = raycaster.intersectObjects(brickMeshes, false);
+        if (hits.length) {
+            const hit = hits[0];
+            S.hoverPoint.copy(hit.point);
+            const hitId = hit.object.userData.data.id;
+            if (hitId !== lastHoverId) {
+                lastHoverId = hitId;
+                thud(S.mouse.x * 0.6);
+            }
+        }
+        hoverIds.clear();
+        const hp = hits.length ? hits[0].point : null;
+
+        for (let i = 0; i < bricks.length; i++) {
+            const b = bricks[i];
+            let w = 0;
+            if (hp) {
+                const d = b.restPos.distanceTo(hp);
+                if (d < CFG.clusterRadius) w = Math.pow(1 - d / CFG.clusterRadius, 2.1);
+            }
+            b.target = w * CFG.maxDisplacement;
+            hoverStrength = Math.max(hoverStrength, w);
+            if (w > 0.05) hoverIds.add(b.id);
+        }
+
+        hoverLight.position.copy(hp || S.hoverPoint);
+    } else {
+        for (let i = 0; i < bricks.length; i++) bricks[i].target = 0;
+        hoverLight.intensity *= Math.exp(-6 * dt);
+    }
+
+    for (let i = 0; i < bricks.length; i++) {
+        const b = bricks[i];
+        const k = b.target > b.offset ? CFG.popK : CFG.returnK;
+        b.offset += (b.target - b.offset) * damp(k, dt);
+        if (b.offset < 0.0015 && b.target === 0) b.offset = 0;
+
+        b.mesh.position.copy(b.restPos).addScaledVector(b.restNormal, b.offset);
+        b.mesh.quaternion.copy(b.restQuat);
+        if (b.offset > 0.001) {
+            b.mesh.rotateX(b.offset * 0.26);
+            b.mesh.rotateZ(b.offset * 0.16);
+        }
+        if (b.edges) {
+            b.edges.position.copy(b.mesh.position);
+            b.edges.quaternion.copy(b.mesh.quaternion);
+        }
+        if (b.offset > 0.11) {
+            const p = project(b.mesh.position);
+            if (p.z < 1) lifted.push({ id: b.id, x: p.x, y: p.y });
+        }
+    }
+
+    hoverLight.intensity += ((hoverStrength * 7.0 + (hoverStrength > 0.02 ? 1.2 : 0)) - hoverLight.intensity) * damp(9, dt);
+    coreLight.intensity = 2.6 + Math.sin(S.time * 1.7) * 0.18 + hoverStrength * 1.5;
+
+    /* --- ice blocks --- */
+    if (iceA.visible) {
+        iceA.rotation.y = Math.sin(S.time * 0.22) * 0.32 + S.mouseLerp.x * 0.30;
+        iceA.rotation.x = -S.mouseLerp.y * 0.16 + Math.sin(S.time * 0.31) * 0.05;
+        penguin.rotation.y = Math.sin(S.time * 0.45) * 0.22;
+    }
+    if (iceB.visible) {
+        iceB.rotation.y = Math.sin(S.time * 0.19 + 1.4) * 0.30 + S.mouseLerp.x * 0.28;
+        iceB.rotation.x = -S.mouseLerp.y * 0.14 + Math.cos(S.time * 0.27) * 0.05;
+        badge.rotation.z = Math.sin(S.time * 0.35) * 0.06;
+    }
+
+    /* --- telemetry drift (measured reference rates) --- */
+    if (iceA.visible) {
+        temp.pudgy.a += dt * 0.050;
+        temp.pudgy.b += dt * 0.027;
+    }
+    if (iceB.visible) {
+        temp.overpass.a -= dt * 0.042;
+        temp.overpass.b -= dt * 0.023;
+    }
+
+    /* --- drifting technical text in the cavern fog --- */
+    for (let i = 0; i < techTexts.length; i++) {
+        const m = techTexts[i];
+        const d = m.userData.drift;
+        m.position.x = d.x0 + Math.sin(S.time * d.speed + d.phase) * d.amp;
+        m.material.opacity = d.baseOpacity * (0.72 + 0.28 * Math.sin(S.time * d.speed * 1.6 + d.phase));
+    }
+
+    /* --- portal --- */
+    if (portal.visible) {
+        const converge = smoothstep(0.605, 0.685, S.scroll);
+        portalOuter.rotation.z += dt * (0.22 + (1 - converge) * 0.55);
+        portalInner.rotation.z -= dt * (0.34 + (1 - converge) * 0.85);
+
+        portalOuter.children.forEach((m, i) => {
+            m.rotation.z = m.userData.base + (1 - converge) * m.userData.off;
+        });
+        portalInner.children.forEach((m, i) => {
+            m.rotation.z = m.userData.base - (1 - converge) * m.userData.off * 0.7;
+        });
+
+        // motes already swirl in the ring when viewed face-on, then flare as
+        // the camera passes through the opening
+        const appear = smoothstep(0.620, 0.660, S.scroll) * (1 - smoothstep(0.760, 0.795, S.scroll));
+        const flash = smoothstep(0.678, 0.712, S.scroll) * (1 - smoothstep(0.720, 0.756, S.scroll));
+        burstMat.uniforms.uIntensity.value = appear * 0.55 + flash * 1.05;
+        portalGlowSoft.material.opacity = appear * 0.07 + flash * 0.30;
+        portalGlow.material.color.setRGB(1, 1, 1);
+        portal.scale.setScalar(1 + flash * 0.05);
+    }
+
+    /* --- particle dais --- */
+    if (dais.visible && S.scroll > 0.66) {
+        S.morphMix = Math.min(1, S.morphMix + dt / 0.85);
+        S.morphGlow = Math.max(0, S.morphGlow - dt * 0.9);
+        particleMat.uniforms.uGlow.value = S.morphGlow;
+
+        const from = shapes[S.morphFrom];
+        const to = shapes[S.morph];
+        const mixT = smoother(0, 1, S.morphMix);
+
+        // pointer → dais local space on the figure plane
+        const localMouse = new THREE.Vector3();
+        {
+            const v = new THREE.Vector3(S.mouse.x, S.mouse.y, 0.5).unproject(camera);
+            const dir = v.sub(camera.position).normalize();
+            const planeY = dais.position.y + FIG_Y;
+            const dist = (planeY - camera.position.y) / Math.max(0.15, dir.y);
+            const world = camera.position.clone().add(dir.multiplyScalar(dist));
+            localMouse.copy(world);
+            localMouse.y = planeY - dais.position.y;
+            dais.worldToLocal(localMouse);
+        }
+
+        const speedInput = clamp(S.mouseVel / 26, 0, 1.6) + 0.12;
+        const curlT = S.time * 0.9;
+        let total = 0;
+
+        for (let i = 0; i < pCount; i++) {
+            const i3 = i * 3;
+            const px = pPos[i3], py = pPos[i3 + 1], pz = pPos[i3 + 2];
+            let vx = pVel[i3], vy = pVel[i3 + 1], vz = pVel[i3 + 2];
+
+            const tx = from[i3] + (to[i3] - from[i3]) * mixT;
+            const ty = from[i3 + 1] + (to[i3 + 1] - from[i3 + 1]) * mixT;
+            const tz = from[i3 + 2] + (to[i3 + 2] - from[i3 + 2]) * mixT;
+
+            // spring toward the volumetric target
+            vx += (tx - px) * 7.2 * dt;
+            vy += (ty - py) * 7.2 * dt;
+            vz += (tz - pz) * 7.2 * dt;
+
+            // pointer vortex: tangential swirl + updraft + curl noise
+            const dxm = px - localMouse.x;
+            const dzm = pz - localMouse.z;
+            const dMouse = Math.sqrt(dxm * dxm + dzm * dzm);
+            if (dMouse < 5.2) {
+                const w = Math.pow(1 - dMouse / 5.2, 1.6) * speedInput;
+                const inv = 1 / (dMouse + 0.18);
+                vx += (-dzm * inv * 5.4 + Math.sin(py * 1.7 + curlT) * 0.55) * w * dt * 8.0;
+                vz += (dxm * inv * 5.4 + Math.cos(py * 1.9 + curlT) * 0.55) * w * dt * 8.0;
+                vy += (1.9 + Math.sin(px * 1.3 + curlT) * 0.6) * w * dt * 6.5;
+            }
+
+            // gentle drift so the volume breathes at rest
+            vx += Math.sin(py * 0.9 + curlT + i * 0.01) * 0.20 * dt;
+            vy += Math.cos(px * 0.8 + curlT * 0.7) * 0.16 * dt;
+            vz += Math.sin(pz * 0.7 + curlT * 0.9) * 0.20 * dt;
+
+            const d = Math.exp(-2.4 * dt);
+            vx *= d; vy *= d; vz *= d;
+
+            pVel[i3] = vx; pVel[i3 + 1] = vy; pVel[i3 + 2] = vz;
+
+            pPos[i3] = px + vx * dt * 3.4;
+            pPos[i3 + 1] = py + vy * dt * 3.4;
+            pPos[i3 + 2] = pz + vz * dt * 3.4;
+
+            const sp = Math.sqrt(vx * vx + vy * vy + vz * vz);
+            total += sp;
+            const f = smoothstep(0.15, 1.6, sp);
+            const g = S.morphGlow * 0.55;
+            pCol[i3] = 0.20 + f * 0.78 + g;
+            pCol[i3 + 1] = 0.24 + f * 0.74 + g;
+            pCol[i3 + 2] = 0.30 + f * 0.68 + g;
+        }
+
+        particleGeo.attributes.position.needsUpdate = true;
+        particleGeo.attributes.color.needsUpdate = true;
+
+        S.avgSpeed = total / pCount;
+        if (vortexFilter && vortexGain && actx) {
+            const cutoff = 420 + S.avgSpeed * 2600;
+            vortexFilter.frequency.setTargetAtTime(cutoff, actx.currentTime, 0.08);
+            vortexGain.gain.setTargetAtTime(clamp(S.avgSpeed * 0.10, 0, 0.16), actx.currentTime, 0.1);
+        }
+    } else if (vortexGain && actx) {
+        vortexGain.gain.setTargetAtTime(0, actx.currentTime, 0.15);
+    }
+
+    /* --- text scramblers --- */
+    scCopyright.update(dt);
+    scManifesto.update(dt);
+    scManifestoHead.update(dt);
+    scModal.update(dt);
+
+    /* --- HUD --- */
+    drawHud(lifted);
+
+    /* --- render --- */
+    iceUniforms.uResolution.value.set(W, H);
+
+    if (iceA.visible || iceB.visible) {
+        crystalA.visible = false;
+        crystalB.visible = false;
+        renderer.setRenderTarget(rtRefract);
+        renderer.render(scene, camera);
+        crystalA.visible = true;
+        crystalB.visible = true;
+        renderer.setRenderTarget(null);
+    }
+
+    renderer.setRenderTarget(rtMain);
+    renderer.render(scene, camera);
+
+    // bloom: threshold → 3 blur passes
+    brightMat.uniforms.tDiffuse.value = rtMain.texture;
+    blit(brightMat, rtBloomA);
+
+    blurMat.uniforms.uDir.value.set(1, 0);
+    blurMat.uniforms.uRadius.value = 1.25;
+    blurMat.uniforms.tDiffuse.value = rtBloomA.texture;
+    blit(blurMat, rtBloomB);
+
+    blurMat.uniforms.uDir.value.set(0, 1);
+    blurMat.uniforms.tDiffuse.value = rtBloomB.texture;
+    blit(blurMat, rtBloomA);
+
+    blurMat.uniforms.uDir.value.set(1.4, 0.6);
+    blurMat.uniforms.uRadius.value = 2.1;
+    blurMat.uniforms.tDiffuse.value = rtBloomA.texture;
+    blit(blurMat, rtBloomB);
+
+    blurMat.uniforms.uDir.value.set(-0.4, 1.5);
+    blurMat.uniforms.uRadius.value = 2.6;
+    blurMat.uniforms.tDiffuse.value = rtBloomB.texture;
+    blit(blurMat, rtBloomA);
+
+    compositeUniforms.tDiffuse.value = rtMain.texture;
+    compositeUniforms.tBloom.value = rtBloomA.texture;
+    compositeUniforms.uBloom.value = CFG.bloomStrength * (0.85 + trans * 0.7);
+    blit(compositeMat, null);
+}
+
+// portal child bookkeeping (base angles + counter-rotation offsets)
+portalOuter.children.forEach((m, i) => {
+    m.userData.base = m.rotation.z;
+    m.userData.off = hash11(i * 3.77) * 1.4;
+});
+portalInner.children.forEach((m, i) => {
+    m.userData.base = m.rotation.z;
+    m.userData.off = hash11(i * 5.21 + 2.0) * 1.1;
+});
+
+// brick edge refs
+bricks.forEach((b, i) => { b.edges = brickEdges.children[i]; });
+
+// initial state
+el.stageLabel.innerHTML = '<b>02</b> — Igloo';
+replayIntro();
+
+// debug handle (harmless in production, used for visual tuning)
+window.__IG = {
+    CFG, S, scene, camera, renderer, compositeUniforms, hemi, sun, rim, coreLight,
+    terrainMat, terrainUniforms, brickMat, skyMat, brightMat, blurMat, compositeMat,
+    rtMain, rtBloomA, rtBloomB, revealUniform, timeUniform, snowField, bricks, techTexts
+};
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,373 @@
+/* ==========================================================================
+   LUDO NEO 2026 - Board Geometry, Cells, Yards & Token Styling
+   ========================================================================== */
+
+/* Main Board Stage */
+.board-container {
+  position: relative;
+  width: var(--board-size);
+  height: var(--board-size);
+  background: radial-gradient(circle at center, #101730 0%, #080c1a 100%);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(0, 210, 255, 0.15),
+    inset 0 0 30px rgba(0, 0, 0, 0.6);
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 15x15 Interactive Grid */
+.ludo-board {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  gap: 2px;
+  background: rgba(5, 8, 20, 0.8);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+/* Base Cells */
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(25, 33, 62, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.2s ease;
+  overflow: visible;
+}
+
+/* Track Path Highlights */
+.cell.track-cell {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.cell.track-cell:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Safe Stars */
+.cell.safe-star {
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.18) 0%, rgba(255, 255, 255, 0.04) 80%);
+}
+
+.cell.safe-star::before {
+  content: '★';
+  position: absolute;
+  font-size: calc(var(--cell-size) * 0.55);
+  color: rgba(255, 215, 0, 0.7);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  pointer-events: none;
+  z-index: 1;
+  animation: starPulse 3s infinite ease-in-out;
+}
+
+@keyframes starPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 0.95; }
+}
+
+/* Start Launch Cells */
+.cell.launch-cell {
+  border-width: 1.5px;
+}
+.cell.launch-red {
+  background: var(--red-bg);
+  border-color: var(--red-color);
+  box-shadow: inset 0 0 12px var(--red-glow);
+}
+.cell.launch-green {
+  background: var(--green-bg);
+  border-color: var(--green-color);
+  box-shadow: inset 0 0 12px var(--green-glow);
+}
+.cell.launch-yellow {
+  background: var(--yellow-bg);
+  border-color: var(--yellow-color);
+  box-shadow: inset 0 0 12px var(--yellow-glow);
+}
+.cell.launch-blue {
+  background: var(--blue-bg);
+  border-color: var(--blue-color);
+  box-shadow: inset 0 0 12px var(--blue-glow);
+}
+
+.cell.launch-cell::after {
+  content: '▲';
+  position: absolute;
+  font-size: calc(var(--cell-size) * 0.35);
+  color: #fff;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.cell.launch-red::after { transform: rotate(90deg); color: var(--red-color); }
+.cell.launch-green::after { transform: rotate(180deg); color: var(--green-color); }
+.cell.launch-yellow::after { transform: rotate(270deg); color: var(--yellow-color); }
+.cell.launch-blue::after { transform: rotate(0deg); color: var(--blue-color); }
+
+/* Home Runways */
+.cell.home-runway-red {
+  background: var(--red-bg);
+  border-color: rgba(255, 42, 95, 0.3);
+}
+.cell.home-runway-green {
+  background: var(--green-bg);
+  border-color: rgba(0, 255, 136, 0.3);
+}
+.cell.home-runway-yellow {
+  background: var(--yellow-bg);
+  border-color: rgba(255, 183, 0, 0.3);
+}
+.cell.home-runway-blue {
+  background: var(--blue-bg);
+  border-color: rgba(0, 210, 255, 0.3);
+}
+
+/* Base / Yards (6x6 Big Quarters) */
+.yard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+}
+
+.yard.yard-red {
+  grid-column: 1 / 7;
+  grid-row: 1 / 7;
+  background: linear-gradient(135deg, rgba(255, 42, 95, 0.25) 0%, rgba(20, 10, 25, 0.95) 100%);
+  border-color: rgba(255, 42, 95, 0.4);
+}
+
+.yard.yard-green {
+  grid-column: 10 / 16;
+  grid-row: 1 / 7;
+  background: linear-gradient(225deg, rgba(0, 255, 136, 0.25) 0%, rgba(10, 25, 20, 0.95) 100%);
+  border-color: rgba(0, 255, 136, 0.4);
+}
+
+.yard.yard-yellow {
+  grid-column: 10 / 16;
+  grid-row: 10 / 16;
+  background: linear-gradient(315deg, rgba(255, 183, 0, 0.25) 0%, rgba(25, 22, 10, 0.95) 100%);
+  border-color: rgba(255, 183, 0, 0.4);
+}
+
+.yard.yard-blue {
+  grid-column: 1 / 7;
+  grid-row: 10 / 16;
+  background: linear-gradient(45deg, rgba(0, 210, 255, 0.25) 0%, rgba(10, 20, 35, 0.95) 100%);
+  border-color: rgba(0, 210, 255, 0.4);
+}
+
+.yard-inner {
+  width: 80%;
+  height: 80%;
+  background: rgba(10, 15, 30, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.yard-dock {
+  position: relative;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.yard-red .yard-dock { border-color: rgba(255, 42, 95, 0.3); }
+.yard-green .yard-dock { border-color: rgba(0, 255, 136, 0.3); }
+.yard-yellow .yard-dock { border-color: rgba(255, 183, 0, 0.3); }
+.yard-blue .yard-dock { border-color: rgba(0, 210, 255, 0.3); }
+
+/* Center Goal Area (3x3 Center) */
+.center-goal {
+  grid-column: 7 / 10;
+  grid-row: 7 / 10;
+  position: relative;
+  background: #080c1a;
+  overflow: hidden;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Center 4 Triangles */
+.center-triangle {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.triangle-red {
+  clip-path: polygon(0% 0%, 50% 50%, 0% 100%);
+  background: linear-gradient(90deg, rgba(255, 42, 95, 0.7), transparent);
+}
+
+.triangle-green {
+  clip-path: polygon(0% 0%, 100% 0%, 50% 50%);
+  background: linear-gradient(180deg, rgba(0, 255, 136, 0.7), transparent);
+}
+
+.triangle-yellow {
+  clip-path: polygon(100% 0%, 100% 100%, 50% 50%);
+  background: linear-gradient(270deg, rgba(255, 183, 0, 0.7), transparent);
+}
+
+.triangle-blue {
+  clip-path: polygon(0% 100%, 50% 50%, 100% 100%);
+  background: linear-gradient(0deg, rgba(0, 210, 255, 0.7), transparent);
+}
+
+.center-core {
+  position: relative;
+  width: 38%;
+  height: 38%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #1e293b 80%);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.center-trophy {
+  font-size: 16px;
+  animation: trophySpin 8s linear infinite;
+}
+
+@keyframes trophySpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Finished Tokens in Home Center */
+.finished-token-container {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
+.finished-red { left: 8%; top: 50%; transform: translateY(-50%); }
+.finished-green { top: 8%; left: 50%; transform: translateX(-50%); }
+.finished-yellow { right: 8%; top: 50%; transform: translateY(-50%); }
+.finished-blue { bottom: 8%; left: 50%; transform: translateX(-50%); }
+
+/* ==========================================================================
+   GAME TOKENS (Next-Gen Holographic Pucks)
+   ========================================================================== */
+.ludo-token {
+  position: absolute;
+  width: calc(var(--cell-size) * 0.74);
+  height: calc(var(--cell-size) * 0.74);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+  box-shadow: 
+    0 4px 10px rgba(0, 0, 0, 0.7),
+    0 0 12px currentColor;
+}
+
+.ludo-token::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, currentColor 60%, #000 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.6);
+}
+
+.ludo-token::after {
+  content: '';
+  position: absolute;
+  width: 32%;
+  height: 32%;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 6px #fff;
+  z-index: 2;
+}
+
+.token-red { color: var(--red-color); }
+.token-green { color: var(--green-color); }
+.token-yellow { color: var(--yellow-color); }
+.token-blue { color: var(--blue-color); }
+
+/* Movable Token Aura */
+.ludo-token.movable {
+  cursor: pointer;
+  animation: movableBounce 1s infinite alternate ease-in-out;
+}
+
+.ludo-token.movable::after {
+  background: #fff;
+  box-shadow: 0 0 10px #fff, 0 0 20px currentColor;
+}
+
+@keyframes movableBounce {
+  0% { transform: scale(1) translateY(0); filter: brightness(1); }
+  100% { transform: scale(1.18) translateY(-4px); filter: brightness(1.3); }
+}
+
+/* Token Multi-Stack Layout inside a Single Cell */
+.cell.stacked-2 .ludo-token { width: calc(var(--cell-size) * 0.52); height: calc(var(--cell-size) * 0.52); }
+.cell.stacked-3 .ludo-token { width: calc(var(--cell-size) * 0.45); height: calc(var(--cell-size) * 0.45); }
+.cell.stacked-4 .ludo-token { width: calc(var(--cell-size) * 0.38); height: calc(var(--cell-size) * 0.38); }
+
+/* Ghost Move Preview */
+.ghost-destination {
+  position: absolute;
+  width: calc(var(--cell-size) * 0.75);
+  height: calc(var(--cell-size) * 0.75);
+  border-radius: 50%;
+  border: 2px dashed #00d2ff;
+  background: rgba(0, 210, 255, 0.25);
+  box-shadow: 0 0 16px rgba(0, 210, 255, 0.6);
+  pointer-events: none;
+  z-index: 15;
+  animation: ghostPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes ghostPulse {
+  0%, 100% { transform: scale(0.9); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 1; }
+}

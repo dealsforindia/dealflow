@@ -1,0 +1,204 @@
+/* ==========================================================================
+   LUDO NEO 2026 - 3D Tumbling Physics Dice Engine
+   ========================================================================== */
+
+.dice-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dice-scene {
+  width: 64px;
+  height: 64px;
+  perspective: 600px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dice-cube {
+  width: 60px;
+  height: 60px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(-20deg) rotateY(25deg);
+  transition: transform 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+/* Rolling Animation */
+.dice-cube.rolling {
+  animation: diceTumble 0.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+@keyframes diceTumble {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.9); }
+  25% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg) scale(1.1); }
+  50% { transform: rotateX(360deg) rotateY(270deg) rotateZ(180deg) scale(1.15); }
+  75% { transform: rotateX(540deg) rotateY(360deg) rotateZ(270deg) scale(1.05); }
+  100% { transform: rotateX(720deg) rotateY(540deg) rotateZ(360deg) scale(1); }
+}
+
+/* Cube Faces */
+.dice-face {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: rgba(18, 25, 50, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: grid;
+  padding: 8px;
+  box-shadow: 
+    inset 0 0 12px rgba(0, 0, 0, 0.8),
+    0 0 15px rgba(0, 210, 255, 0.2);
+}
+
+/* Face 3D Placements */
+.face-1 { transform: rotateY(0deg) translateZ(30px); }
+.face-2 { transform: rotateX(-90deg) translateZ(30px); }
+.face-3 { transform: rotateY(90deg) translateZ(30px); }
+.face-4 { transform: rotateY(-90deg) translateZ(30px); }
+.face-5 { transform: rotateX(90deg) translateZ(30px); }
+.face-6 { transform: rotateY(180deg) translateZ(30px); }
+
+/* Pips (Dots) */
+.pip {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff, 0 0 14px currentColor;
+  justify-self: center;
+  align-self: center;
+}
+
+/* Face 1: Center */
+.face-1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.face-1 .pip {
+  width: 14px;
+  height: 14px;
+}
+
+/* Face 2: Top-Right & Bottom-Left */
+.face-2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.face-2 .pip:nth-child(1) { grid-column: 2; grid-row: 1; }
+.face-2 .pip:nth-child(2) { grid-column: 1; grid-row: 2; }
+
+/* Face 3: Diagonal 3 */
+.face-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+.face-3 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+.face-3 .pip:nth-child(2) { grid-column: 2; grid-row: 2; }
+.face-3 .pip:nth-child(3) { grid-column: 3; grid-row: 3; }
+
+/* Face 4: 4 Corners */
+.face-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* Face 5: 4 Corners + Center */
+.face-5 {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+.face-5 .pip:nth-child(1) { grid-column: 1; grid-row: 1; }
+.face-5 .pip:nth-child(2) { grid-column: 3; grid-row: 1; }
+.face-5 .pip:nth-child(3) { grid-column: 2; grid-row: 2; }
+.face-5 .pip:nth-child(4) { grid-column: 1; grid-row: 3; }
+.face-5 .pip:nth-child(5) { grid-column: 3; grid-row: 3; }
+
+/* Face 6: 2 Columns of 3 */
+.face-6 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+}
+
+/* Player Themed Dice Glow */
+.dice-cube.theme-red .pip { color: var(--red-color); box-shadow: 0 0 10px var(--red-glow); }
+.dice-cube.theme-green .pip { color: var(--green-color); box-shadow: 0 0 10px var(--green-glow); }
+.dice-cube.theme-yellow .pip { color: var(--yellow-color); box-shadow: 0 0 10px var(--yellow-glow); }
+.dice-cube.theme-blue .pip { color: var(--blue-color); box-shadow: 0 0 10px var(--blue-glow); }
+
+/* Roll Button */
+.roll-btn {
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.25), rgba(0, 100, 255, 0.35));
+  border: 1px solid var(--blue-color);
+  color: #fff;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(0, 210, 255, 0.3);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roll-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 25px rgba(0, 210, 255, 0.6);
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.4), rgba(0, 100, 255, 0.55));
+}
+
+.roll-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Number Callout Flash (e.g. "ROLLED A 6!") */
+.roll-callout {
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 15, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.roll-callout.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-6px);
+}
+
+.roll-callout.hype-six {
+  border-color: #ffd700;
+  color: #ffd700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  animation: sixShake 0.4s ease;
+}
+
+@keyframes sixShake {
+  0%, 100% { transform: translateX(-50%) translateY(-6px) scale(1); }
+  25% { transform: translateX(-54%) translateY(-6px) scale(1.15) rotate(-3deg); }
+  75% { transform: translateX(-46%) translateY(-6px) scale(1.15) rotate(3deg); }
+}

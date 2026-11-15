@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Fluffy Cat: Cosmic Dash 🐾✨</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: #0b0f19;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #fff;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100vw;
+      max-width: 960px;
+      height: 100vh;
+      max-height: 600px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 40px rgba(168, 85, 247, 0.25);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* UI Overlay */
+    .overlay-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(11, 15, 25, 0.88);
+      backdrop-filter: blur(10px);
+      z-index: 20;
+      transition: opacity 0.3s ease;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    h1.game-title {
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #f472b6, #c084fc, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+      filter: drop-shadow(0 4px 12px rgba(192, 132, 252, 0.4));
+    }
+
+    .cat-badge {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 4px solid #f472b6;
+      box-shadow: 0 0 30px rgba(244, 114, 182, 0.6);
+      margin-bottom: 16px;
+      object-fit: cover;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(3deg); }
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: #fff;
+      font-size: 1.25rem;
+      font-weight: 700;
+      padding: 14px 42px;
+      border-radius: 9999px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.4);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 12px 30px rgba(236, 72, 153, 0.6);
+    }
+
+    .btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .controls-hint {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+      font-size: 0.9rem;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .key-badge {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-weight: bold;
+      border: 1px solid #334155;
+    }
+
+    /* In-game HUD */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .hud-card {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(8px);
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+    }
+
+    .score-val {
+      font-size: 1.5rem;
+      color: #facc15;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .lives-val {
+      color: #f43f5e;
+      letter-spacing: 2px;
+      font-size: 1.25rem;
+    }
+
+    /* Mobile On-Screen Buttons */
+    #mobile-controls {
+      position: absolute;
+      bottom: 16px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 15;
+      pointer-events: auto;
+    }
+
+    .touch-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      user-select: none;
+      touch-action: manipulation;
+    }
+
+    .touch-btn:active {
+      transform: scale(0.92);
+      background: rgba(236, 72, 153, 0.85);
+      border-color: #fff;
+    }
+
+    @media (min-width: 768px) {
+      #mobile-controls {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <canvas id="gameCanvas" width="960" height="600"></canvas>
+
+    <!-- In-Game HUD -->
+    <div id="hud">
+      <div style="display: flex; gap: 12px;">
+        <div class="hud-card">
+          <span>🐟 SCORE:</span>
+          <span id="score" class="score-val">0</span>
+        </div>
+        <div class="hud-card">
+          <span>HIGH:</span>
+          <span id="highScore" style="color: #38bdf8;">0</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <div class="hud-card">
+          <span id="multiplier" style="color: #a855f7;">1x MULTI</span>
+        </div>
+        <div class="hud-card">
+          <span id="lives" class="lives-val">❤️❤️❤️</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="overlay-screen">
+      <img src="cat.jpg" alt="Fluffy Cat" class="cat-badge" onerror="this.src='https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=200'">
+      <h1 class="game-title">FLUFFY CAT DASH</h1>
+      <p style="color: #cbd5e1; font-size: 1.1rem; max-width: 460px; line-height: 1.5; margin-bottom: 8px;">
+        Help our fluffy kitten collect golden fish, dodge deadly cucumbers and roomba vacuums, and blast through the cosmos!
+      </p>
+
+      <button id="start-btn" class="btn">
+        <span>🚀 PLAY NOW</span>
+      </button>
+
+      <div class="controls-hint">
+        <div><span class="key-badge">SPACE / UP</span> Jump & Double Jump</div>
+        <div><span class="key-badge">DOWN</span> Fast Drop</div>
+        <div><span class="key-badge">SHIFT</span> Super Dash</div>
+      </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over-screen" class="overlay-screen hidden">
+      <h1 class="game-title" style="background: linear-gradient(135deg, #f43f5e, #fb923c); -webkit-background-clip: text;">
+        MEOW OVER! 😿
+      </h1>
+      <p id="final-stats" style="color: #e2e8f0; font-size: 1.25rem; margin: 16px 0 24px;">
+        Score: 0 | Distance: 0m
+      </p>
+      <button id="restart-btn" class="btn">
+        <span>🔄 PLAY AGAIN</span>
+      </button>
+    </div>
+
+    <!-- Mobile Touch Controls -->
+    <div id="mobile-controls">
+      <button id="touch-dash" class="touch-btn">⚡</button>
+      <div style="display: flex; gap: 16px;">
+        <button id="touch-drop" class="touch-btn">⬇️</button>
+        <button id="touch-jump" class="touch-btn" style="background: rgba(236, 72, 153, 0.6);">🐾</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // AUDIO SYNTHESIZER (Pure Web Audio API)
+    // ==========================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.soundEnabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playJump() {
+        if (!this.soundEnabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(260, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(620, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.15);
+      }
+
+      playDoubleJump() {
+        if (!this.soundEnabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(950, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+      }
+
+      playCoin() {
+        if (!this.soundEnabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(850, this.ctx.currentTime);
+        osc.frequency.setValueAtTime(1300, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+      }
+
+      playHurt() {
+        if (!this.soundEnabled || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.3);
+      }
+
+      playPowerup() {
+        if (!this.soundEnabled || !this.ctx) return;
+        const notes = [320, 480, 640, 800, 960];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          const time = this.ctx.currentTime + (idx * 0.05);
+          gain.gain.setValueAtTime(0.2, time);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(time);
+          osc.stop(time + 0.1);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // ==========================================
+    // GAME STATE & ENGINE
+    // ==========================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const catImg = new Image();
+    catImg.src = 'cat.jpg';
+
+    let isGameRunning = false;
+    let score = 0;
+    let highScore = parseInt(localStorage.getItem('fluffy_cat_high_score') || '0');
+    let distance = 0;
+    let lives = 3;
+    let multiplier = 1;
+    let comboTimer = 0;
+    let screenShake = 0;
+    let gameSpeed = 6;
+    let frameCount = 0;
+
+    document.getElementById('highScore').innerText = highScore;
+
+    // Cat Player Object
+    const cat = {
+      x: 120,
+      y: 380,
+      width: 64,
+      height: 64,
+      vy: 0,
+      gravity: 0.72,
+      jumpForce: -14.5,
+      isGrounded: false,
+      jumpsLeft: 2,
+      dashTimer: 0,
+      isDashing: false,
+      invulnerableTimer: 0,
+      squash: 1,
+      stretch: 1,
+      hasJetpack: false,
+      jetpackTimer: 0
+    };
+
+    const GROUND_Y = 460;
+    let particles = [];
+    let collectibles = [];
+    let obstacles = [];
+    let stars = [];
+
+    // Background Stars Setup
+    for (let i = 0; i < 80; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * (GROUND_Y - 40),
+        size: Math.random() * 2.5 + 1,
+        speed: Math.random() * 0.8 + 0.2,
+        alpha: Math.random() * 0.8 + 0.2
+      });
+    }
+
+    // Input handlers
+    window.addEventListener('keydown', (e) => {
+      if (!isGameRunning) return;
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        triggerJump();
+      }
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        e.preventDefault();
+        triggerFastDrop();
+      }
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyJ') {
+        triggerDash();
+      }
+    });
+
+    // Touch events for mobile
+    document.getElementById('touch-jump').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      triggerJump();
+    });
+    document.getElementById('touch-drop').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      triggerFastDrop();
+    });
+    document.getElementById('touch-dash').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      triggerDash();
+    });
+
+    function triggerJump() {
+      if (cat.jumpsLeft > 0) {
+        cat.vy = cat.jumpForce;
+        cat.squash = 0.7;
+        cat.stretch = 1.35;
+        cat.isGrounded = false;
+        if (cat.jumpsLeft === 2) {
+          sound.playJump();
+        } else {
+          sound.playDoubleJump();
+          spawnSparkles(cat.x + 32, cat.y + 48, '#c084fc', 12);
+        }
+        cat.jumpsLeft--;
+      }
+    }
+
+    function triggerFastDrop() {
+      if (!cat.isGrounded) {
+        cat.vy += 12;
+        cat.squash = 1.3;
+        cat.stretch = 0.8;
+      }
+    }
+
+    function triggerDash() {
+      if (cat.dashTimer <= 0) {
+        cat.isDashing = true;
+        cat.dashTimer = 20;
+        sound.playPowerup();
+        spawnSparkles(cat.x, cat.y + 32, '#38bdf8', 15);
+      }
+    }
+
+    function spawnSparkles(x, y, color, count = 8) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          size: Math.random() * 4 + 2,
+          color,
+          alpha: 1,
+          life: 25
+        });
+      }
+    }
+
+    // ==========================================
+    // SPAWNERS
+    // ==========================================
+    function spawnWave() {
+      // Spawn Collectible
+      if (Math.random() < 0.04) {
+        const types = ['fish', 'fish', 'fish', 'yarn', 'milk', 'rocket'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        collectibles.push({
+          x: canvas.width + 50,
+          y: GROUND_Y - 40 - Math.random() * 180,
+          size: 28,
+          type,
+          bobOffset: Math.random() * Math.PI * 2
+        });
+      }
+
+      // Spawn Obstacle
+      if (Math.random() < 0.018 && obstacles.length < 3) {
+        const types = ['cucumber', 'vacuum', 'laser'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        
+        let y = GROUND_Y - 45;
+        let w = 40, h = 40;
+        
+        if (type === 'cucumber') {
+          y = GROUND_Y - 40;
+          w = 34; h = 34;
+        } else if (type === 'vacuum') {
+          y = GROUND_Y - 50;
+          w = 54; h = 44;
+        } else if (type === 'laser') {
+          y = GROUND_Y - 140;
+          w = 30; h = 140;
+        }
+
+        obstacles.push({
+          x: canvas.width + 60,
+          y,
+          width: w,
+          height: h,
+          type
+        });
+      }
+    }
+
+    // ==========================================
+    // GAME LOOP & LOGIC
+    // ==========================================
+    function update() {
+      frameCount++;
+      distance += Math.floor(gameSpeed / 2);
+      gameSpeed = 6 + Math.min(6, distance / 2000);
+
+      // Dash countdown
+      if (cat.dashTimer > 0) {
+        cat.dashTimer--;
+        if (cat.dashTimer === 0) cat.isDashing = false;
+        spawnSparkles(cat.x + 10, cat.y + 32, '#f472b6', 2);
+      }
+
+      // Jetpack timer
+      if (cat.hasJetpack) {
+        cat.jetpackTimer--;
+        cat.vy = -1.2; // Hover effect
+        spawnSparkles(cat.x + 10, cat.y + 50, '#f59e0b', 3);
+        if (cat.jetpackTimer <= 0) {
+          cat.hasJetpack = false;
+        }
+      }
+
+      // Invulnerability countdown
+      if (cat.invulnerableTimer > 0) {
+        cat.invulnerableTimer--;
+      }
+
+      // Gravity & Velocity
+      if (!cat.hasJetpack) {
+        cat.vy += cat.gravity;
+      }
+      cat.y += cat.vy;
+
+      // Ground Collision
+      if (cat.y + cat.height >= GROUND_Y) {
+        cat.y = GROUND_Y - cat.height;
+        cat.vy = 0;
+        if (!cat.isGrounded) {
+          cat.squash = 1.3;
+          cat.stretch = 0.7;
+          spawnSparkles(cat.x + 32, cat.y + 60, '#94a3b8', 4);
+        }
+        cat.isGrounded = true;
+        cat.jumpsLeft = 2;
+      } else {
+        cat.isGrounded = false;
+      }
+
+      // Smooth squash/stretch recovery
+      cat.squash += (1 - cat.squash) * 0.15;
+      cat.stretch += (1 - cat.stretch) * 0.15;
+
+      // Screen shake decay
+      if (screenShake > 0) screenShake *= 0.85;
+
+      // Multiplier decay
+      if (comboTimer > 0) {
+        comboTimer--;
+        if (comboTimer === 0) multiplier = 1;
+      }
+      document.getElementById('multiplier').innerText = multiplier + 'x MULTI';
+
+      // Parallax Stars
+      stars.forEach(s => {
+        s.x -= s.speed * (gameSpeed / 4);
+        if (s.x < 0) s.x = canvas.width;
+      });
+
+      // Update Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 1 / p.life;
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+
+      // Update Collectibles
+      for (let i = collectibles.length - 1; i >= 0; i--) {
+        const c = collectibles[i];
+        c.x -= gameSpeed;
+        c.y += Math.sin(frameCount * 0.08 + c.bobOffset) * 0.8;
+
+        const dist = Math.hypot((cat.x + 32) - (c.x + 14), (cat.y + 32) - (c.y + 14));
+        if (dist < 46) {
+          collectItem(c);
+          collectibles.splice(i, 1);
+          continue;
+        }
+
+        if (c.x < -60) collectibles.splice(i, 1);
+      }
+
+      // Update Obstacles
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const o = obstacles[i];
+        o.x -= gameSpeed;
+
+        // Collision detection
+        if (
+          cat.x + 15 < o.x + o.width &&
+          cat.x + cat.width - 15 > o.x &&
+          cat.y + 15 < o.y + o.height &&
+          cat.y + cat.height - 10 > o.y
+        ) {
+          if (cat.isDashing || cat.hasJetpack) {
+            // Smash through obstacle
+            sound.playPowerup();
+            screenShake = 12;
+            spawnSparkles(o.x + o.width / 2, o.y + o.height / 2, '#f43f5e', 20);
+            obstacles.splice(i, 1);
+            score += 100 * multiplier;
+            continue;
+          } else if (cat.invulnerableTimer <= 0) {
+            handleHit();
+            obstacles.splice(i, 1);
+            continue;
+          }
+        }
+
+        if (o.x < -80) obstacles.splice(i, 1);
+      }
+
+      spawnWave();
+    }
+
+    function collectItem(item) {
+      if (item.type === 'fish') {
+        score += 20 * multiplier;
+        comboTimer = 180;
+        multiplier = Math.min(8, multiplier + 1);
+        sound.playCoin();
+        spawnSparkles(item.x, item.y, '#facc15', 8);
+      } else if (item.type === 'yarn') {
+        score += 50 * multiplier;
+        sound.playCoin();
+        spawnSparkles(item.x, item.y, '#ec4899', 12);
+      } else if (item.type === 'milk') {
+        score += 80;
+        cat.invulnerableTimer = 180;
+        sound.playPowerup();
+        spawnSparkles(item.x, item.y, '#38bdf8', 16);
+      } else if (item.type === 'rocket') {
+        cat.hasJetpack = true;
+        cat.jetpackTimer = 240;
+        sound.playPowerup();
+        screenShake = 8;
+        spawnSparkles(cat.x + 32, cat.y + 32, '#fb923c', 25);
+      }
+      document.getElementById('score').innerText = score;
+    }
+
+    function handleHit() {
+      lives--;
+      sound.playHurt();
+      screenShake = 15;
+      cat.invulnerableTimer = 75;
+      spawnSparkles(cat.x + 32, cat.y + 32, '#ef4444', 20);
+
+      let hearts = '';
+      for (let i = 0; i < lives; i++) hearts += '❤️';
+      document.getElementById('lives').innerText = hearts;
+
+      if (lives <= 0) {
+        gameOver();
+      }
+    }
+
+    function gameOver() {
+      isGameRunning = false;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('fluffy_cat_high_score', highScore);
+        document.getElementById('highScore').innerText = highScore;
+      }
+      document.getElementById('final-stats').innerHTML = 
+        `Score: <strong style="color:#facc15">${score}</strong> &nbsp;|&nbsp; Distance: <strong>${distance}m</strong>`;
+      document.getElementById('game-over-screen').classList.remove('hidden');
+    }
+
+    // ==========================================
+    // RENDER PIPELINE
+    // ==========================================
+    function draw() {
+      ctx.save();
+
+      // Screen Shake
+      if (screenShake > 0) {
+        const shakeX = (Math.random() - 0.5) * screenShake;
+        const shakeY = (Math.random() - 0.5) * screenShake;
+        ctx.translate(shakeX, shakeY);
+      }
+
+      // Sky Gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+      skyGrad.addColorStop(0, '#0f172a');
+      skyGrad.addColorStop(0.6, '#1e1b4b');
+      skyGrad.addColorStop(1, '#3b0764');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Distant Parallax Neon Buildings
+      ctx.fillStyle = 'rgba(76, 29, 149, 0.35)';
+      for (let i = 0; i < 8; i++) {
+        const x = ((i * 150) - (distance * 0.15) % 150) - 50;
+        ctx.fillRect(x, GROUND_Y - 160 - (i % 3) * 40, 110, 180);
+      }
+
+      // Stars
+      stars.forEach(s => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Neon Moon
+      ctx.shadowColor = '#c084fc';
+      ctx.shadowBlur = 40;
+      ctx.fillStyle = '#fdf4ff';
+      ctx.beginPath();
+      ctx.arc(780, 100, 48, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Ground Floor
+      const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, canvas.height);
+      groundGrad.addColorStop(0, '#ec4899');
+      groundGrad.addColorStop(0.1, '#4c1d95');
+      groundGrad.addColorStop(1, '#090514');
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+      // Glowing Ground Grid Lines
+      ctx.strokeStyle = 'rgba(236, 72, 153, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, GROUND_Y);
+      ctx.lineTo(canvas.width, GROUND_Y);
+      ctx.stroke();
+
+      const gridOffset = (distance * 2) % 40;
+      for (let x = -gridOffset; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, GROUND_Y);
+        ctx.lineTo(x - 30, canvas.height);
+        ctx.stroke();
+      }
+
+      // Draw Collectibles
+      collectibles.forEach(c => {
+        ctx.save();
+        ctx.translate(c.x + 14, c.y + 14);
+        ctx.font = '28px sans-serif';
+        if (c.type === 'fish') ctx.fillText('🐟', -14, 10);
+        else if (c.type === 'yarn') ctx.fillText('🧶', -14, 10);
+        else if (c.type === 'milk') ctx.fillText('🥛', -14, 10);
+        else if (c.type === 'rocket') ctx.fillText('🚀', -14, 10);
+        ctx.restore();
+      });
+
+      // Draw Obstacles
+      obstacles.forEach(o => {
+        ctx.save();
+        if (o.type === 'cucumber') {
+          ctx.font = '36px sans-serif';
+          ctx.fillText('🥒', o.x, o.y + 30);
+        } else if (o.type === 'vacuum') {
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.roundRect(o.x, o.y + 10, o.width, o.height - 10, 10);
+          ctx.fill();
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.arc(o.x + 10, o.y + 25, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = '20px sans-serif';
+          ctx.fillText('🤖', o.x + o.width / 2 - 10, o.y + 12);
+        } else if (o.type === 'laser') {
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+          ctx.fillRect(o.x, o.y, o.width, o.height);
+          ctx.strokeStyle = '#f43f5e';
+          ctx.lineWidth = 4;
+          ctx.shadowColor = '#f43f5e';
+          ctx.shadowBlur = 15;
+          ctx.strokeRect(o.x, o.y, o.width, o.height);
+          ctx.shadowBlur = 0;
+          ctx.font = '22px sans-serif';
+          ctx.fillText('⚡', o.x + 4, o.y + o.height / 2);
+        }
+        ctx.restore();
+      });
+
+      // Draw Particles
+      particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // ==========================================
+      // DRAW THE FLUFFY CAT (Player Avatar)
+      // ==========================================
+      ctx.save();
+      ctx.translate(cat.x + cat.width / 2, cat.y + cat.height / 2);
+
+      if (cat.isDashing) {
+        ctx.scale(1.4, 0.8);
+      } else {
+        ctx.scale(cat.squash, cat.stretch);
+      }
+
+      if (cat.hasJetpack) {
+        ctx.shadowColor = '#f59e0b';
+        ctx.shadowBlur = 25;
+      }
+
+      if (cat.invulnerableTimer > 0 && Math.floor(frameCount / 4) % 2 === 0) {
+        ctx.globalAlpha = 0.4;
+      }
+
+      // Circular clip mask for photo
+      ctx.beginPath();
+      ctx.arc(0, 0, 30, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+
+      if (catImg.complete && catImg.naturalWidth > 0) {
+        ctx.drawImage(catImg, -30, -30, 60, 60);
+      } else {
+        ctx.fillStyle = '#fce7f3';
+        ctx.fill();
+        ctx.font = '32px sans-serif';
+        ctx.fillText('🐱', -16, 12);
+      }
+
+      ctx.restore();
+
+      // Outer Glowing Ring & Ears
+      ctx.save();
+      ctx.translate(cat.x + cat.width / 2, cat.y + cat.height / 2);
+      ctx.beginPath();
+      ctx.arc(0, 0, 31, 0, Math.PI * 2);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = cat.hasJetpack ? '#f59e0b' : (cat.invulnerableTimer > 0 ? '#38bdf8' : '#ec4899');
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.shadowBlur = 14;
+      ctx.stroke();
+
+      // Pink Cat Ears
+      ctx.fillStyle = '#f472b6';
+      ctx.beginPath();
+      ctx.moveTo(-20, -26);
+      ctx.lineTo(-10, -42);
+      ctx.lineTo(0, -28);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(20, -26);
+      ctx.lineTo(10, -42);
+      ctx.lineTo(0, -28);
+      ctx.fill();
+
+      ctx.restore();
+
+      ctx.restore(); // Restore shake
+    }
+
+    function gameLoop() {
+      if (isGameRunning) {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // ==========================================
+    // START & RESTART
+    // ==========================================
+    function startGame() {
+      sound.init();
+      isGameRunning = true;
+      score = 0;
+      distance = 0;
+      lives = 3;
+      multiplier = 1;
+      gameSpeed = 6;
+      collectibles = [];
+      obstacles = [];
+      particles = [];
+
+      cat.x = 120;
+      cat.y = 380;
+      cat.vy = 0;
+      cat.hasJetpack = false;
+      cat.invulnerableTimer = 0;
+      cat.dashTimer = 0;
+
+      document.getElementById('score').innerText = '0';
+      document.getElementById('lives').innerText = '❤️❤️❤️';
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('game-over-screen').classList.add('hidden');
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('restart-btn').addEventListener('click', startGame);
+  </script>
+</body>
+</html>

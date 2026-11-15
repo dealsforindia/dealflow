@@ -1,0 +1,31 @@
+.frame{
+  background: #3FAF82;
+  position:absolute;
+  width: 400px;
+  height: 400px;
+  top: 50%;
+  left: 50%;
+  margin-top: -200px;
+  margin-left: -200px ;
+  border-radius: 7px;
+  box-shadow: 1px 2px 10px 0 rgba(0, 0, 0, 0.342);
+}
+.line-1,.line-2,.line-3{
+  height: 10px;
+  width: 100px;
+  position: absolute;
+  background: #ffffff;
+  border-radius: 3px;
+}
+.line-2{
+top: 25px;
+}
+.line-3{
+top: 50px;
+}
+.center{
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%,-50%);
+}

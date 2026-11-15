@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "security-audit": {
+      "source": "../.agents/skills/security-audit",
+      "sourceType": "local",
+      "computedHash": "dcb986c15c10ca1ed67909b0c606a288f10a08b677406311a1f6aed23234face"
+    }
+  }
+}

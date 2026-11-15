@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IndiaDealHunts · 3D Brand Concept</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#10213b;background:#f5f8ff}main{max-width:1120px;margin:auto;padding:32px 24px}header{display:flex;align-items:center;justify-content:space-between;gap:16px}a{color:#245eea;text-decoration:none;font-size:14px;font-weight:600}a:focus-visible,button:focus-visible{outline:3px solid #93baff;outline-offset:5px}.wordmark{font-size:18px;font-weight:850;letter-spacing:-.05em}.wordmark span{color:#245eea}.layout{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:48px;min-height:70vh}.eyebrow{text-transform:uppercase;letter-spacing:.16em;color:#245eea;font-size:11px;font-weight:800}h1{font-size:clamp(34px,5vw,60px);letter-spacing:-.055em;line-height:1.05;max-width:460px;margin:18px 0}p{color:#64748b;line-height:1.8;font-size:15px;max-width:430px}.stage{position:relative;perspective:1000px;display:grid;place-items:center;min-height:420px;border:1px solid #dbe5f5;border-radius:32px;background:radial-gradient(ellipse at 50% 42%,#dce9ff 0%,#fff 65%);overflow:hidden}.stage.dark{background:radial-gradient(ellipse at 50% 42%,#163b75,#0e172b 70%);border-color:#1f3454}.emblem{width:82%;max-width:420px;height:auto;display:block;transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));will-change:transform;transition:transform .24s ease-out;filter:drop-shadow(0 22px 18px #163b7520);pointer-events:none}.controls{display:flex;gap:6px;padding:5px;position:absolute;bottom:18px;border:1px solid #dbe5f5;border-radius:24px;background:#ffffffec}.controls button{border:0;background:none;color:#64748b;border-radius:20px;padding:10px 16px;min-height:44px;font-weight:650;cursor:pointer}.controls button[aria-pressed=true]{background:#132541;color:white}.caption{font-size:12px;text-align:center;margin:12px auto;max-width:none}.variants{display:flex;gap:18px;align-items:center;margin-top:28px;padding:20px;border:1px solid #e0e7f2;border-radius:18px;background:#fff}.variants img{width:48px;height:48px;object-fit:contain}.variants small{font-size:11px;color:#64748b;display:block;margin-top:4px}.variant-name{font-weight:750;letter-spacing:-.025em}.fine{font-size:12px;max-width:none;border-top:1px solid #dbe5f5;padding-top:20px}.fine a{font-size:12px}@media(max-width:760px){main{padding:24px 18px}.layout{grid-template-columns:1fr;gap:16px;min-height:0;margin-top:38px}h1{font-size:40px;max-width:360px}.stage{min-height:340px}.emblem{max-width:300px}.variants{margin-top:20px}}@media(prefers-reduced-motion:reduce){.emblem{transition:none;transform:none!important;will-change:auto}}
+  </style>
+</head>
+<body>
+  <main>
+    <header><div class="wordmark">INDIA<span>DEAL</span>HUNTS</div><a href="/">Back to storefront ↗</a></header>
+    <div class="layout">
+      <section><div class="eyebrow">Tiranga · Chakra concept 03</div><h1>An Indian spirit. A smarter hunt.</h1><p>Saffron, pearl white and India green, framed in polished silver. A navy Ashoka Chakra completes the Tiranga medallion. No lightning mark.</p><div class="variants"><img src="/brand/indiadealhunts-chakra-3d-v2.png" alt=""><div><div class="variant-name">IndiaDealHunts</div><small>Small-size logo preview · 48 pixels</small></div></div></section>
+      <section aria-label="Interactive logo preview"><div class="stage" id="stage"><img class="emblem" id="emblem" src="/brand/indiadealhunts-chakra-3d-v2.png" alt="Tiranga three-dimensional medallion with saffron, white and green bands, a navy Ashoka Chakra and silver bevel"><div class="controls" aria-label="Preview background"><button type="button" data-theme="light" aria-pressed="true">Light</button><button type="button" data-theme="dark" aria-pressed="false">Dark</button></div></div><p class="caption">Move your pointer over the emblem to tilt it.</p></section>
+    </div>
+    <p class="fine">This is an image with an interactive tilt, not a rotating 3D model. It requires no WebGL or Three.js. The storefront uses a compact vector version for crisp rendering. <a href="/brand/indiadealhunts-chakra-3d-v2.png" download>Download transparent logo ↗</a></p>
+  </main>
+  <script>
+    const stage=document.getElementById('stage'),emblem=document.getElementById('emblem');
+    const canTilt=matchMedia('(hover: hover) and (pointer: fine)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
+    const reset=()=>{emblem.style.setProperty('--rx','0deg');emblem.style.setProperty('--ry','0deg')};
+    stage.addEventListener('pointermove',e=>{if(!canTilt.matches||reduced.matches)return;const rect=stage.getBoundingClientRect();emblem.style.setProperty('--rx',`${-(e.clientY-rect.top-rect.height/2)/rect.height*14}deg`);emblem.style.setProperty('--ry',`${(e.clientX-rect.left-rect.width/2)/rect.width*18}deg`)});
+    stage.addEventListener('pointerleave',reset);reduced.addEventListener('change',reset);
+    document.querySelectorAll('[data-theme]').forEach(button=>button.addEventListener('click',()=>{stage.classList.toggle('dark',button.dataset.theme==='dark');document.querySelectorAll('[data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)))}));
+  </script>
+</body>
+</html>
+

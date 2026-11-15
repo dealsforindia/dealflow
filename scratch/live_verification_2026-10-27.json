@@ -1,0 +1,116 @@
+{
+  "health": {
+    "status": 200,
+    "seconds": 0.2,
+    "keys": [
+      "status",
+      "redis",
+      "mongodb",
+      "ws_clients",
+      "ts"
+    ],
+    "health": {
+      "status": "ok",
+      "redis": true,
+      "mongodb": true,
+      "ws_clients": 2,
+      "ts": 1793112602.948426
+    }
+  },
+  "rules": {
+    "status": 200,
+    "seconds": 0.22,
+    "keys": [
+      "enabled",
+      "rules",
+      "updated_at"
+    ],
+    "enabled_field_present": true,
+    "enabled": true,
+    "rules_count": 4
+  },
+  "pending_authorized": {
+    "status": 200,
+    "seconds": 0.27,
+    "keys": [
+      "deals",
+      "total",
+      "skip",
+      "limit",
+      "cluster_stats"
+    ],
+    "returned": 3,
+    "total": 1677
+  },
+  "pending_without_credentials": {
+    "status": 401,
+    "seconds": 0,
+    "error": "HTTP 401"
+  },
+  "recent": {
+    "status": 200,
+    "seconds": 0.26,
+    "keys": [
+      "deals",
+      "total"
+    ],
+    "returned": 30,
+    "total": 30
+  },
+  "public": {
+    "status": 200,
+    "seconds": 0.28,
+    "keys": [
+      "deals",
+      "total",
+      "limit",
+      "skip",
+      "has_more"
+    ],
+    "returned": 30,
+    "total": 25211
+  },
+  "channels": {
+    "status": 200,
+    "seconds": 0.21,
+    "keys": [
+      "channels",
+      "total"
+    ],
+    "total": 48
+  },
+  "videos": {
+    "status": 200,
+    "seconds": 0.26,
+    "keys": [
+      "status",
+      "total",
+      "deals"
+    ],
+    "returned": 3,
+    "total": 3
+  },
+  "storefront": {
+    "status": 200,
+    "seconds": 1.06,
+    "script_assets": [
+      "/assets/index-BWnEvxJo.js"
+    ]
+  },
+  "admin": {
+    "status": 200,
+    "seconds": 0.86,
+    "script_assets": [
+      "https://telegram.org/js/telegram-web-app.js",
+      "/assets/index-jzWvLK5F.js"
+    ]
+  },
+  "publication_crosscheck": {
+    "matched_recent_public_ids": 30,
+    "admin_recent_sample": 30,
+    "public_sample": 30,
+    "matched_statuses": [
+      "auto_posted"
+    ]
+  }
+}

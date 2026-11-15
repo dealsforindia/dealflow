@@ -1,0 +1,50 @@
+{
+  "success": true,
+  "canonical_key": "slug:jbl-tune-520bt-wireless-on-ear-headphones-with-mic",
+  "history_source": "DealFlow Verified Price History",
+  "price_intelligence": {
+    "history": [
+      [
+        1793236469168,
+        2999.0
+      ],
+      [
+        1793236469183,
+        2999.0
+      ],
+      [
+        1793241316037,
+        3999.0
+      ],
+      [
+        1793241316052,
+        3999.0
+      ]
+    ],
+    "lowest": 2999.0,
+    "highest": 3999.0,
+    "avg": 3499.0,
+    "drop_percentage": 0.0,
+    "is_lowest": false,
+    "observations": 4,
+    "verdict": "DealFlow Verified Price History"
+  },
+  "history": [
+    [
+      1793236469168,
+      2999.0
+    ],
+    [
+      1793236469183,
+      2999.0
+    ],
+    [
+      1793241316037,
+      3999.0
+    ],
+    [
+      1793241316052,
+      3999.0
+    ]
+  ]
+}

@@ -1,0 +1,12 @@
+const fs=require('node:fs'); const vm=require('node:vm'); const assert=require('node:assert/strict');
+const ts=require('../../rudranil-deals-web/node_modules/typescript');
+const code=ts.transpileModule(fs.readFileSync('rudranil-deals-web/src/utils/visitorTracking.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+const storage=new Map(), events=[]; let today='2026-11-02'; let next=0;
+const context={exports:{},location:{hostname:'www.indiadealhunts.me'}, document:{visibilityState:'visible'},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},Intl:{DateTimeFormat:class {format(){return today}}},crypto:{getRandomValues:array=>{array.fill(++next); return array}},fetch:async (url,options)=>{events.push(JSON.parse(options.body)); return {ok:true}}};
+vm.runInNewContext(code,context); const track=context.exports.trackStorefrontVisit;
+track();track(); assert.equal(events[0].visitor_id,events[1].visitor_id);
+today='2026-11-03';track(); assert.notEqual(events[1].visitor_id,events[2].visitor_id);
+context.location.hostname='localhost';track(); assert.equal(events.length,3);
+context.location.hostname='www.indiadealhunts.me';context.document.visibilityState='hidden';track();assert.equal(events.length,3);
+context.document.visibilityState='visible';context.localStorage.getItem=()=>{throw Error('blocked')};track();assert.equal(events.length,3);
+console.log('PASS: daily ID reuse, midnight rotation, local/hidden exclusions, blocked-storage exclusion');

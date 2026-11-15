@@ -1,0 +1,418 @@
+{
+  "ok": false,
+  "strict": false,
+  "browserSkipped": true,
+  "lint": {
+    "ok": false,
+    "errorCount": 20,
+    "warningCount": 1,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "root_missing_composition_id",
+        "severity": "error",
+        "message": "Root composition is missing `data-composition-id`.",
+        "selector": "#bgm",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Add a stable `data-composition-id` to the entry composition wrapper."
+      },
+      {
+        "code": "root_missing_dimensions",
+        "severity": "error",
+        "message": "Root composition is missing `data-width` or `data-height`.",
+        "selector": "#bgm",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Set numeric `data-width` and `data-height` on the entry composition root."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets autoAlpha on a clip element. Selector \"#scene1\" resolves to element <div id=\"scene1\" class=\"scene clip\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#scene1",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets autoAlpha on a clip element. Selector \"#scene2\" resolves to element <div id=\"scene2\" class=\"scene clip\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#scene2",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets autoAlpha on a clip element. Selector \"#scene3\" resolves to element <div id=\"scene3\" class=\"scene clip\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#scene3",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_animates_clip_element",
+        "severity": "error",
+        "message": "GSAP animation sets autoAlpha on a clip element. Selector \"#scene4\" resolves to element <div id=\"scene4\" class=\"scene clip\">. The framework manages clip visibility, and autoAlpha writes visibility as well as opacity. Do not animate these properties on clip elements.",
+        "selector": "#scene4",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove the visibility/display/autoAlpha tween, or move the content into a child <div> and target that instead."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s1-badge\" has CSS `transform: translateY(-10px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s1-badge",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(-10px)` from CSS and replace with GSAP properties: y: -10. Example: tl.fromTo('#s1-badge', { y: -10 }, { y: -10, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s1-title\" has CSS `transform: scale(0.92)` and a GSAP tween animates scale. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s1-title",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: scale(0.92)` from CSS and replace with GSAP properties: scale: 0.92. Example: tl.fromTo('#s1-title', { scale: 0.92 }, { scale: 0.92, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s1-sub\" has CSS `transform: translateY(15px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s1-sub",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(15px)` from CSS and replace with GSAP properties: y: 15. Example: tl.fromTo('#s1-sub', { y: 15 }, { y: 15, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s2-header\" has CSS `transform: translateY(-20px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s2-header",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(-20px)` from CSS and replace with GSAP properties: y: -20. Example: tl.fromTo('#s2-header', { y: -20 }, { y: -20, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#heroCard\" has CSS `transform: scale(0.85) translateY(40px)` and a GSAP tween animates y/scale. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#heroCard",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: scale(0.85) translateY(40px)` from CSS and replace with GSAP properties: y: 40, scale: 0.85. Example: tl.fromTo('#heroCard', { y: 40, scale: 0.85 }, { y: 40, scale: 0.85, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s3-header\" has CSS `transform: translateY(-20px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s3-header",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(-20px)` from CSS and replace with GSAP properties: y: -20. Example: tl.fromTo('#s3-header', { y: -20 }, { y: -20, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#card1\" has CSS `transform: translateY(50px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#card1",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(50px)` from CSS and replace with GSAP properties: y: 50. Example: tl.fromTo('#card1', { y: 50 }, { y: 50, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#card2\" has CSS `transform: translateY(50px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#card2",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(50px)` from CSS and replace with GSAP properties: y: 50. Example: tl.fromTo('#card2', { y: 50 }, { y: 50, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#card3\" has CSS `transform: translateY(50px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#card3",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(50px)` from CSS and replace with GSAP properties: y: 50. Example: tl.fromTo('#card3', { y: 50 }, { y: 50, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s3-footer\" has CSS `transform: translateY(20px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s3-footer",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(20px)` from CSS and replace with GSAP properties: y: 20. Example: tl.fromTo('#s3-footer', { y: 20 }, { y: 20, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s4-logo\" has CSS `transform: scale(0.6)` and a GSAP tween animates scale. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s4-logo",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: scale(0.6)` from CSS and replace with GSAP properties: scale: 0.6. Example: tl.fromTo('#s4-logo', { scale: 0.6 }, { scale: 0.6, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s4-headline\" has CSS `transform: translateY(20px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s4-headline",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(20px)` from CSS and replace with GSAP properties: y: 20. Example: tl.fromTo('#s4-headline', { y: 20 }, { y: 20, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s4-domain\" has CSS `transform: scale(0.9)` and a GSAP tween animates scale. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s4-domain",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: scale(0.9)` from CSS and replace with GSAP properties: scale: 0.9. Example: tl.fromTo('#s4-domain', { scale: 0.9 }, { scale: 0.9, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "gsap_css_transform_conflict",
+        "severity": "error",
+        "message": "\"#s4-badges\" has CSS `transform: translateY(15px)` and a GSAP tween animates y. GSAP will overwrite the full CSS transform, discarding any translateX(-50%) centering or CSS scale value.",
+        "selector": "#s4-badges",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Remove `transform: translateY(15px)` from CSS and replace with GSAP properties: y: 15. Example: tl.fromTo('#s4-badges', { y: 15 }, { y: 15, ...yourAnimation }). tl.fromTo is exempt from this rule."
+      },
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "Track 0 has 4 timed elements in this HTML file. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "E:\\Rudranildocs0066543\\html-yt\\brag-output\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into separate .html files under compositions/ and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      }
+    ],
+    "filesScanned": 1
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "duration": 0,
+    "samples": [],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 0,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [],
+    "checked": 0,
+    "passed": 0
+  },
+  "craft": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "step": 0,
+    "samples": 0
+  },
+  "audio": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": false,
+    "files": [],
+    "times": [],
+    "findingFiles": []
+  }
+}

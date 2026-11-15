@@ -1,41 +1,45 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-extract_frames/
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Backend scripts and environment variables
+# Dependencies & Build
+node_modules/
+dist/
+build/
+.venv/
+venv/
 __pycache__/
 *.pyc
-*.py
-!dealflow/**/*.py
-*.mp4
+
+# Secrets & Environment variables
 .env
 .env.*
+*.env
+*.session
+*.session-journal
+*.pem
+*.key
+id_rsa*
 
-# Agent configs and metadata
-.agents/
-.claude/
-.impeccable/
-agent/
-skills-lock.json
+# Backend systems (Excluded per directive)
+dealbot_backend/
+**/dealbot_backend/
+dealbot/
+**/dealbot/
+
+# Logs
+*.log
+logs/
+nohup.out
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+
+# Large media
+*.mp4
+*.mkv
+*.tar.gz
+*.zip
+
+# Submodules / nested git repositories
+fast-jev-compaction/
+jev-ultrafast/
+nis-graphics-frame/
+screenpipe_src/

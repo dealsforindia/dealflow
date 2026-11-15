@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "commerce-engine-v2"
+version = "2.0.0"
+description = "Evidence-based merchant extraction and shopping discovery"
+requires-python = ">=3.11"
+dependencies = ["aiohttp>=3.12,<4", "lxml>=5,<7"]
+
+[project.scripts]
+commerce = "commerce_engine.cli:main"
+
+[tool.setuptools]
+packages = ["commerce_engine"]
+py-modules = ["store_scraper", "google_shopping"]

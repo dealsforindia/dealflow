@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://indiadealhunts.vercel.app/sitemap.xml
+Sitemap: https://dealflow-edge.pottemasshippo.workers.dev/sitemap.xml

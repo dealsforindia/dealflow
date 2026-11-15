@@ -1,0 +1,290 @@
+{
+  "dealflow-edge/.agents/skills/security-audit/report-schema.json": {
+    "mtime": 1789725964.6769886,
+    "seen": 1793849749.231178,
+    "ast_hash": "e705ada366ad4025f55f943c95d9f590",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/validate-coverage-ledger.cjs": {
+    "mtime": 1789725964.6769886,
+    "seen": 1793849749.231178,
+    "ast_hash": "5a66be64317f177ecef5d150b1abf1d9",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/validate-coverage-ledger.test.cjs": {
+    "mtime": 1789725964.6777382,
+    "seen": 1793849749.231178,
+    "ast_hash": "3bc35b09cbd0d46c65457de04cef10a3",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/validate-findings.cjs": {
+    "mtime": 1789725964.6784885,
+    "seen": 1793849749.231178,
+    "ast_hash": "b924a4aca31ed6095f6c1603b97a552c",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/validate-findings.test.cjs": {
+    "mtime": 1789725964.679238,
+    "seen": 1793849749.231178,
+    "ast_hash": "135077736a6939252acbff7ca706c32a",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/report-schema.json": {
+    "mtime": 1789725964.6769886,
+    "seen": 1793849749.231178,
+    "ast_hash": "e705ada366ad4025f55f943c95d9f590",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/validate-coverage-ledger.cjs": {
+    "mtime": 1789725964.6769886,
+    "seen": 1793849749.231178,
+    "ast_hash": "5a66be64317f177ecef5d150b1abf1d9",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/validate-coverage-ledger.test.cjs": {
+    "mtime": 1789725964.6777382,
+    "seen": 1793849749.231178,
+    "ast_hash": "3bc35b09cbd0d46c65457de04cef10a3",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/validate-findings.cjs": {
+    "mtime": 1789725964.6784885,
+    "seen": 1793849749.231178,
+    "ast_hash": "b924a4aca31ed6095f6c1603b97a552c",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/validate-findings.test.cjs": {
+    "mtime": 1789725964.679238,
+    "seen": 1793849749.231178,
+    "ast_hash": "135077736a6939252acbff7ca706c32a",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/package.json": {
+    "mtime": 1791106678.2966268,
+    "seen": 1793849749.231178,
+    "ast_hash": "c059e1c700c0926b71a91e09cb2d2a66",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/skills-lock.json": {
+    "mtime": 1793382084.7968688,
+    "seen": 1793849749.231178,
+    "ast_hash": "fc0ce55843015e833d74e3e1d2e82548",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/src/index.ts": {
+    "mtime": 1793767244.0625741,
+    "seen": 1793849749.231178,
+    "ast_hash": "a5d49bc4cf198bde2f783da5e3f5abd0",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/tsconfig.json": {
+    "mtime": 1791106678.2976267,
+    "seen": 1793849749.231178,
+    "ast_hash": "f637dc1bc8906f035612b447b5c486ac",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/AI-AND-LLM.md": {
+    "mtime": 1789725964.6686392,
+    "seen": 1793849749.231178,
+    "ast_hash": "c5abfaece0f58d5d5058fa07b29791ad",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/ATTACK-CLASSES.md": {
+    "mtime": 1789725964.6693907,
+    "seen": 1793849749.231178,
+    "ast_hash": "b33b760ff50ffdc0eda5d928f80fb107",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/CLIENT-SIDE.md": {
+    "mtime": 1789725964.6693907,
+    "seen": 1793849749.231178,
+    "ast_hash": "f535193f9c655e348e5b904f7f67d34e",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/CLOUD-AND-DEPLOYMENT.md": {
+    "mtime": 1789725964.6701417,
+    "seen": 1793849749.231178,
+    "ast_hash": "3396934a06bfa86a84596e661f875300",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/DATA-ISOLATION-AND-LIFECYCLE.md": {
+    "mtime": 1789725964.6708925,
+    "seen": 1793849749.231178,
+    "ast_hash": "33d0561cb12415d388a6449d90d2ff3f",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/DESKTOP-MOBILE-AND-LOCAL-IPC.md": {
+    "mtime": 1789725964.67164,
+    "seen": 1793849749.231178,
+    "ast_hash": "f0d96ab77876c447d64ba1cef6f3da5e",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/HUNTING.md": {
+    "mtime": 1789725964.6724823,
+    "seen": 1793849749.231178,
+    "ast_hash": "5cb64bcc2971ceb4a7f955ffd741d25f",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/MEMORY-SAFETY-AND-BINARY.md": {
+    "mtime": 1789725964.6732664,
+    "seen": 1793849749.231178,
+    "ast_hash": "8d3d5783e9710a299c2c1cbef8ca7463",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/PROTOCOLS-RPC-AND-MESSAGING.md": {
+    "mtime": 1789725964.6732664,
+    "seen": 1793849749.231178,
+    "ast_hash": "5137eb203d4b236a081210bb77b21131",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/README.md": {
+    "mtime": 1789725964.6678896,
+    "seen": 1793849749.231178,
+    "ast_hash": "051e692267872e9db4dc7e9edaaf3eed",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/RECONNAISSANCE.md": {
+    "mtime": 1789725964.6739888,
+    "seen": 1793849749.231178,
+    "ast_hash": "95ea170b99be883a9f704bfee29b9443",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/RESOURCE-EXHAUSTION-AND-AVAILABILITY.md": {
+    "mtime": 1789725964.6747384,
+    "seen": 1793849749.231178,
+    "ast_hash": "92a3e104467a5fc71a6ba34bf97828ef",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/SKILL.md": {
+    "mtime": 1789725964.6747384,
+    "seen": 1793849749.231178,
+    "ast_hash": "cec212c92a709bfffce1cbb1daca0df1",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/SUPPLY-CHAIN-AND-RELEASE.md": {
+    "mtime": 1789725964.6754885,
+    "seen": 1793849749.231178,
+    "ast_hash": "ea6e73711ef3d3acc1201633a172d4b0",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/VALIDATION-AND-REPORTING.md": {
+    "mtime": 1789725964.676239,
+    "seen": 1793849749.231178,
+    "ast_hash": "df9bbf7f5058f0f7eaba098b4ce830a2",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/.agents/skills/security-audit/WEB-PROTOCOL-AND-AUTH.md": {
+    "mtime": 1789725964.676239,
+    "seen": 1793849749.231178,
+    "ast_hash": "53943d99f2a3484ce8f37de2be783f8b",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/AGENTS.md": {
+    "mtime": 1793382353.605639,
+    "seen": 1793849749.231178,
+    "ast_hash": "76470613a9b840f37f0859a572a6d6a0",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/AI-AND-LLM.md": {
+    "mtime": 1789725964.6686392,
+    "seen": 1793849749.231178,
+    "ast_hash": "c5abfaece0f58d5d5058fa07b29791ad",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/ATTACK-CLASSES.md": {
+    "mtime": 1789725964.6693907,
+    "seen": 1793849749.231178,
+    "ast_hash": "b33b760ff50ffdc0eda5d928f80fb107",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/CLIENT-SIDE.md": {
+    "mtime": 1789725964.6693907,
+    "seen": 1793849749.231178,
+    "ast_hash": "f535193f9c655e348e5b904f7f67d34e",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/CLOUD-AND-DEPLOYMENT.md": {
+    "mtime": 1789725964.6701417,
+    "seen": 1793849749.231178,
+    "ast_hash": "3396934a06bfa86a84596e661f875300",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/DATA-ISOLATION-AND-LIFECYCLE.md": {
+    "mtime": 1789725964.6708925,
+    "seen": 1793849749.231178,
+    "ast_hash": "33d0561cb12415d388a6449d90d2ff3f",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/DESKTOP-MOBILE-AND-LOCAL-IPC.md": {
+    "mtime": 1789725964.67164,
+    "seen": 1793849749.231178,
+    "ast_hash": "f0d96ab77876c447d64ba1cef6f3da5e",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/HUNTING.md": {
+    "mtime": 1789725964.6724823,
+    "seen": 1793849749.231178,
+    "ast_hash": "5cb64bcc2971ceb4a7f955ffd741d25f",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/MEMORY-SAFETY-AND-BINARY.md": {
+    "mtime": 1789725964.6732664,
+    "seen": 1793849749.231178,
+    "ast_hash": "8d3d5783e9710a299c2c1cbef8ca7463",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/PROTOCOLS-RPC-AND-MESSAGING.md": {
+    "mtime": 1789725964.6732664,
+    "seen": 1793849749.231178,
+    "ast_hash": "5137eb203d4b236a081210bb77b21131",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/README.md": {
+    "mtime": 1789725964.6678896,
+    "seen": 1793849749.231178,
+    "ast_hash": "051e692267872e9db4dc7e9edaaf3eed",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/RECONNAISSANCE.md": {
+    "mtime": 1789725964.6739888,
+    "seen": 1793849749.231178,
+    "ast_hash": "95ea170b99be883a9f704bfee29b9443",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/RESOURCE-EXHAUSTION-AND-AVAILABILITY.md": {
+    "mtime": 1789725964.6747384,
+    "seen": 1793849749.231178,
+    "ast_hash": "92a3e104467a5fc71a6ba34bf97828ef",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/SKILL.md": {
+    "mtime": 1793382083.3802795,
+    "seen": 1793849749.231178,
+    "ast_hash": "73488449d1540a82b0ea37b877e3171f",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/SUPPLY-CHAIN-AND-RELEASE.md": {
+    "mtime": 1789725964.6754885,
+    "seen": 1793849749.231178,
+    "ast_hash": "ea6e73711ef3d3acc1201633a172d4b0",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/VALIDATION-AND-REPORTING.md": {
+    "mtime": 1789725964.676239,
+    "seen": 1793849749.231178,
+    "ast_hash": "df9bbf7f5058f0f7eaba098b4ce830a2",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/agent/skills/security-audit/WEB-PROTOCOL-AND-AUTH.md": {
+    "mtime": 1789725964.676239,
+    "seen": 1793849749.231178,
+    "ast_hash": "53943d99f2a3484ce8f37de2be783f8b",
+    "semantic_hash": ""
+  },
+  "dealflow-edge/package-lock.json": {
+    "mtime": 1791106678.2956276,
+    "seen": 1793849749.231178,
+    "ast_hash": "f0d38727f7b82acd91865ec40290177c",
+    "semantic_hash": ""
+  }
+}

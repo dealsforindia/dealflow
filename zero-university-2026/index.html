@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Zero — Human Infrastructure to Get Hired</title>
+  <meta name="description" content="Recreating Zero University: An immersive, scroll-driven WebGL narrative built with modern 2025/2026 creative engineering." />
+
+  <script>
+    window.__ERRORS__ = [];
+    window.addEventListener('error', (e) => {
+      console.error('[UNCAUGHT ERROR]', e.message, e.filename, e.lineno);
+      window.__ERRORS__.push({ msg: e.message, file: e.filename, line: e.lineno });
+    });
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('[UNHANDLED REJECTION]', e.reason);
+      window.__ERRORS__.push({ reason: String(e.reason) });
+    });
+  </script>
+
+  <!-- Google Fonts: Caveat (Handwritten notes), Newsreader (Editorial Serif), Google Sans Code, Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Google+Sans+Code:wght@400;700&family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet" />
+
+  <!-- Import Map for Modern 2026 ES Modules -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+      "three/": "https://cdn.jsdelivr.net/npm/three@0.128.0/"
+    }
+  }
+  </script>
+
+  <!-- External Libraries: GSAP & Canvas Confetti -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Background radial gradient matching live why.zero.university specifications -->
+  <div id="bg-gradient" aria-hidden="true"></div>
+
+  <!-- Pre-canvas 99 placeholder from original case study -->
+  <div id="pre-canvas-99" aria-hidden="true">99</div>
+
+  <!-- 3D WebGL Canvas -->
+  <canvas id="webgl" role="img" aria-label="ZERO interactive 3D experience"></canvas>
+
+  <!-- Gesture Recognition Drawing Layer (Draw "0" to Unlock) -->
+  <div id="draw-overlay">
+    <canvas id="draw-canvas"></canvas>
+    
+    <div id="draw-prompt-card">
+      <div class="prompt-pill">GESTURE UNLOCK</div>
+      <h2 class="prompt-title">Draw <span class="zero-highlight">0</span> to break the ice</h2>
+      <p class="prompt-sub">Click & drag your cursor (or swipe finger) to complete a circle</p>
+      
+      <!-- Live gesture feedback ring -->
+      <div id="gesture-tracker">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="4" />
+          <circle id="tracker-progress" cx="32" cy="32" r="28" fill="none" stroke="#22d3ee" stroke-width="4" stroke-dasharray="176" stroke-dashoffset="176" stroke-linecap="round" />
+        </svg>
+        <span id="tracker-icon">⭕</span>
+      </div>
+      
+      <button id="skip-unlock-btn">or click here to bypass</button>
+    </div>
+  </div>
+
+  <!-- UI & Navigation HUD Layer -->
+  <header id="hud-header">
+    <div class="hud-brand">
+      <span class="zero-logo">ZERO</span>
+      <span class="zero-subtag">UNIVERSITY</span>
+    </div>
+
+    <div class="hud-center-stats">
+      <span id="scene-counter">-100 BZ</span>
+      <span class="hud-divider">|</span>
+      <span id="scroll-percentage">0% EXPLORED</span>
+    </div>
+
+    <div class="hud-controls">
+      <button id="audio-toggle-btn" class="hud-btn" title="Toggle Soundscape">
+        <span id="audio-icon">🔊</span> SOUND
+      </button>
+      <a href="https://why.zero.university" target="_blank" rel="noopener" class="hud-btn cta-btn">
+        APPLY NOW ↗
+      </a>
+    </div>
+  </header>
+
+  <!-- Authentic BZ (Before Zero) Stage Ruler -->
+  <nav id="stage-ruler" aria-label="Timeline Navigation">
+    <div class="ruler-line"></div>
+    <button class="ruler-step active" data-stage="1" data-target="0.05" title="Stage 1: -100 BZ">
+      <span class="step-dot"></span>
+      <span class="step-label">-100 BZ</span>
+    </button>
+    <button class="ruler-step" data-stage="2" data-target="0.28" title="Stage 2: -75 BZ">
+      <span class="step-dot"></span>
+      <span class="step-label">-75 BZ</span>
+    </button>
+    <button class="ruler-step" data-stage="3" data-target="0.52" title="Stage 3: -50 BZ">
+      <span class="step-dot"></span>
+      <span class="step-label">-50 BZ</span>
+    </button>
+    <button class="ruler-step" data-stage="4" data-target="0.75" title="Stage 4: -25 BZ">
+      <span class="step-dot"></span>
+      <span class="step-label">-25 BZ</span>
+    </button>
+    <button class="ruler-step" data-stage="5" data-target="0.96" title="Stage 5: 0 BZ">
+      <span class="step-dot"></span>
+      <span class="step-label">0 BZ</span>
+    </button>
+  </nav>
+
+  <!-- Narrative Text Overlays (Driven by Scroll Spline) -->
+  <main id="narrative-container">
+    
+    <!-- Scene 1: -100 BZ (The Broken Degree & The Hands) -->
+    <section class="story-scene active" id="scene-1" data-index="1">
+      <div class="stage-tag">-100 BZ &bull; STAGE 01</div>
+      <div class="handwritten-note">Exhibit A: The $100,000 Illusion</div>
+      <h1 class="headline-editorial">
+        A frozen piece of paper <br />
+        <em>that guarantees nothing.</em>
+      </h1>
+      <p class="body-description">
+        For four years, you paid millions for theory while the world transformed. 
+        In the age of autonomous AI agents, legacy degrees are melting into obsolescence.
+      </p>
+      <div class="scroll-instruction">
+        <div class="mouse-icon"><div class="wheel"></div></div>
+        <span>SCROLL TO BURN THE ILLUSION</span>
+      </div>
+    </section>
+
+    <!-- Scene 2: -75 BZ (Shatter the Mold / Human Agency) -->
+    <section class="story-scene" id="scene-2" data-index="2">
+      <div class="stage-tag">-75 BZ &bull; STAGE 02</div>
+      <div class="handwritten-note">Exhibit B: Reverse-Engineering Work</div>
+      <h1 class="headline-editorial">
+        They taught you obedience. <br />
+        <em>We teach you to build.</em>
+      </h1>
+      <p class="body-description">
+        Real competence isn’t memorizing textbook definitions. It’s shattering the mold, 
+        running agentic loops, and shipping production software with your own hands.
+      </p>
+    </section>
+
+    <!-- Scene 3: -50 BZ (The Currency Vortex / Burning Pedigree) -->
+    <section class="story-scene" id="scene-3" data-index="3">
+      <div class="stage-tag">-50 BZ &bull; STAGE 03</div>
+      <div class="handwritten-note">Exhibit C: Burning The Sunk Cost</div>
+      <h1 class="headline-editorial">
+        Paper credentials burn. <br />
+        <em>Code and craft endure.</em>
+      </h1>
+      <p class="body-description">
+        The prestige premium is evaporating. Companies don’t care where you sat for lectures; 
+        they care what you deploy to production on day one.
+      </p>
+    </section>
+
+    <!-- Scene 4: -25 BZ (The Monolith & The AI Warp Tunnel) -->
+    <section class="story-scene" id="scene-4" data-index="4">
+      <div class="stage-tag">-25 BZ &bull; STAGE 04</div>
+      <div class="handwritten-note">Exhibit D: The Autonomous Frontier</div>
+      <h1 class="headline-editorial">
+        The frontier has moved. <br />
+        <em>Enter the hyper-structure.</em>
+      </h1>
+      <p class="body-description">
+        Zero is human infrastructure built from first principles. Real-world projects, 
+        unfiltered accountability, and direct talent pipelines into cutting-edge companies.
+      </p>
+    </section>
+
+    <!-- Scene 5: 0 BZ (Zero University / Proof of Work) -->
+    <section class="story-scene" id="scene-5" data-index="5">
+      <div class="stage-tag">0 BZ &bull; ZERO UNIVERSITY</div>
+      <div class="handwritten-note">Exhibit E: Zero Debt. Real Careers.</div>
+      <h1 class="headline-editorial">
+        Skip the pedigree. <br />
+        <em>Get hired on proof of work.</em>
+      </h1>
+      <p class="body-description">
+        A global campus with zero tuition upfront. Train alongside elite builders, 
+        master modern AI tooling, and get hired on what you actually build.
+      </p>
+      <div class="cta-actions">
+        <a href="https://why.zero.university" target="_blank" rel="noopener" class="cta-primary-pill" id="launch-confetti-btn">
+          APPLY TO ZERO UNIVERSITY ↗
+        </a>
+        <button class="cta-secondary-pill" id="replay-btn">
+          ↺ RESTART JOURNEY
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Stage 5 City Map Navigation Controls (Pan & Zoom Metropolis) -->
+  <div id="map-controls-panel" class="hidden">
+    <div class="map-chip-badge">
+      <span class="pulse-dot"></span> ZERO UNIVERSITY CAMPUS BEACON
+    </div>
+    <div class="map-btn-group">
+      <button id="zoom-in-btn" class="map-action-btn" title="Zoom In (+)">+</button>
+      <button id="zoom-out-btn" class="map-action-btn" title="Zoom Out (-)">−</button>
+      <button id="recenter-btn" class="map-action-btn" title="Center on Beacon">🎯</button>
+    </div>
+    <div class="map-drag-hint">DRAG TO EXPLORE 3D CITY &bull; SCROLL TO ZOOM</div>
+  </div>
+
+  <!-- Global Progress Line on Bottom -->
+  <div id="progress-bar-track">
+    <div id="progress-bar-fill"></div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

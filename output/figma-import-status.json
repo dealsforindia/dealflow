@@ -1,0 +1,594 @@
+{
+  "fileKey": "NHBlNgxVFpw7WRxaCjlFOv",
+  "url": "https://www.figma.com/design/NHBlNgxVFpw7WRxaCjlFOv",
+  "team": "tppo",
+  "restored": true,
+  "build": "passed",
+  "desktop": [
+    {
+      "name": "Home",
+      "node": "2-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Saved",
+      "node": "4-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Profile",
+      "node": "5-2",
+      "view": "desktop"
+    },
+    {
+      "name": "About",
+      "node": "6-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Verification",
+      "node": "7-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Community",
+      "node": "8-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Contact",
+      "node": "9-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Submit deal",
+      "node": "10-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Price lookup",
+      "node": "14-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Tool gst",
+      "node": "18-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Tool emi",
+      "node": "22-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Tool customs",
+      "node": "20-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Tool returns",
+      "node": "25-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Tool budget",
+      "node": "29-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Verification guide",
+      "node": "47-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Tool unit_price",
+      "node": "46-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Tool qcommerce",
+      "node": "51-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Tool energy",
+      "node": "56-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Product details",
+      "node": "61-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Privacy policy",
+      "node": "62-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Price radar",
+      "node": "66-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Saved price goals",
+      "node": "63-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Sign in",
+      "node": "68-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Email verification",
+      "node": "69-2",
+      "view": "desktop"
+    },
+    {
+      "name": "Submit deal dialog",
+      "node": "72-2",
+      "view": "desktop"
+    }
+  ],
+  "phone": [
+    {
+      "name": "Value ranking",
+      "node": "79-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Saved",
+      "node": "73-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Profile",
+      "node": "74-2",
+      "view": "mobile"
+    },
+    {
+      "name": "About",
+      "node": "75-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Verification",
+      "node": "78-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Community",
+      "node": "80-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Contact",
+      "node": "81-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Submit deal",
+      "node": "82-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Price lookup",
+      "node": "83-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Price alert",
+      "node": "86-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Tool gst",
+      "node": "88-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Tool qcommerce",
+      "node": "92-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Tool returns",
+      "node": "96-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Tool warranty",
+      "node": "99-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Product details",
+      "node": "101-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Terms of service",
+      "node": "103-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Price radar",
+      "node": "105-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Specification comparison",
+      "node": "104-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Sign in",
+      "node": "107-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Email verification",
+      "node": "108-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Mobile filters",
+      "node": "109-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Submit deal dialog",
+      "node": "110-2",
+      "view": "mobile"
+    },
+    {
+      "name": "Affiliate disclosure",
+      "node": "111-2",
+      "view": "mobile"
+    }
+  ],
+  "pending": [
+    {
+      "name": "Top discounts",
+      "path": "?tab=ending_soon",
+      "id": "8907babd-3fa1-48be-83f3-69aad7fed8b1",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Value ranking",
+      "path": "?tab=best_worth",
+      "id": "f1dcb780-273f-44cf-88bf-c55d07be0596",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Search palette",
+      "path": "?modal=search",
+      "id": "f4ef46ba-d229-4e98-8b87-105e95461576",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Comparison",
+      "path": "?modal=compare",
+      "id": "6832c920-8254-4877-b232-75b25b2523b2",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Price alert",
+      "path": "?modal=alert",
+      "id": "edd2a1f2-6c23-44ac-93e6-4ab12b2468ff",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Verification guide",
+      "path": "?modal=verify",
+      "id": "a18f11e5-e8cc-4cc8-b2f3-2771c9fe6673",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Tool bank_offers",
+      "path": "?modal=tools&tool=bank_offers",
+      "id": "f225e94b-af15-4934-841b-2d65a7820b9f",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Tool qcommerce",
+      "path": "?modal=tools&tool=qcommerce",
+      "id": "8cc5a78e-3373-495e-8ad9-25f1a3d0966b",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Tool unit_price",
+      "path": "?modal=tools&tool=unit_price",
+      "id": "ced1bf4e-6cee-4b17-8537-1f9097f8aadd",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Tool subs",
+      "path": "?modal=tools&tool=subs",
+      "id": "724bbd05-2d52-4f5f-8005-74ba79c781ea",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Tool exchange",
+      "path": "?modal=tools&tool=exchange",
+      "id": "9802d2b1-a6b1-4558-978c-6f14e50ffb13",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Tool energy",
+      "path": "?modal=tools&tool=energy",
+      "id": "54b74c5e-908f-47cc-a08f-edf7532410b2",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Tool warranty",
+      "path": "?modal=tools&tool=warranty",
+      "id": "99347dc0-fce8-4f1c-87c1-5d5306095ed5",
+      "view": "desktop",
+      "status": "processing"
+    },
+    {
+      "name": "Top discounts",
+      "path": "?tab=ending_soon",
+      "id": "8c548802-fd4d-4893-b13b-3fa21e69f66e",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Home",
+      "path": "",
+      "id": "70a170bb-5c0f-402b-b913-b87b12985b62",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Value ranking",
+      "path": "?tab=best_worth",
+      "id": "675a69f4-207b-4451-ab48-a1534a938858",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Search palette",
+      "path": "?modal=search",
+      "id": "c2c9398f-c38c-4030-b204-9f26885dbffa",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Comparison",
+      "path": "?modal=compare",
+      "id": "3a32facc-86b4-4954-b7f6-318b9de9d6e1",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Price alert",
+      "path": "?modal=alert",
+      "id": "eb4f35e6-f9e8-4925-b1aa-6d39385bccb3",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool bank_offers",
+      "path": "?modal=tools&tool=bank_offers",
+      "id": "8ad91711-4a43-4134-84d1-9e9e969ff22c",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool emi",
+      "path": "?modal=tools&tool=emi",
+      "id": "ce3187a6-ec08-4f64-b9f6-fafadde4cce8",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool customs",
+      "path": "?modal=tools&tool=customs",
+      "id": "b850af0a-f38b-47fe-8050-554d2f0a52b3",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool subs",
+      "path": "?modal=tools&tool=subs",
+      "id": "0952f5a9-469f-4667-88cf-771c728ba783",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool returns",
+      "path": "?modal=tools&tool=returns",
+      "id": "0c685be0-949b-4502-afc0-9c93708eac9a",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool exchange",
+      "path": "?modal=tools&tool=exchange",
+      "id": "1ecdfd6f-1a22-4b85-9d3c-68fc1e8cdd39",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool warranty",
+      "path": "?modal=tools&tool=warranty",
+      "id": "e3b56aa4-d7a9-49a2-a399-e8c76f4f330e",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool budget",
+      "path": "?modal=tools&tool=budget",
+      "id": "360be630-92a8-45db-9063-b474819b23fe",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Home",
+      "path": "",
+      "id": "f0be4664-95d3-44db-b06b-e94c4e6c0bbc",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Top discounts",
+      "path": "?tab=ending_soon",
+      "id": "c4bca68a-9060-4a54-9708-0926ac1d0a64",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Search palette",
+      "path": "?modal=search",
+      "id": "8cee7111-3f37-4cfc-aac8-db46daab7c0d",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Comparison",
+      "path": "?modal=compare",
+      "id": "e9066b8a-5fcb-4b36-941b-7a0d4a924d78",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Verification guide",
+      "path": "?modal=verify",
+      "id": "13ca0314-1ab5-447b-83de-6d66a6481f72",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool bank_offers",
+      "path": "?modal=tools&tool=bank_offers",
+      "id": "2a402f89-15c9-45af-888c-3a92be0fa78c",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool emi",
+      "path": "?modal=tools&tool=emi",
+      "id": "9880839a-dcc4-4e75-9073-b2741da7f992",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool unit_price",
+      "path": "?modal=tools&tool=unit_price",
+      "id": "6ac29ae4-cb93-4be7-b8a3-c5e4762e0ca7",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool customs",
+      "path": "?modal=tools&tool=customs",
+      "id": "0bf57ef5-18b3-4157-8091-18d0163b4f26",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool subs",
+      "path": "?modal=tools&tool=subs",
+      "id": "d026d26a-b420-45c0-93aa-7cefe9628599",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool exchange",
+      "path": "?modal=tools&tool=exchange",
+      "id": "6c66651e-d011-477d-bd21-edf5ef151a74",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool energy",
+      "path": "?modal=tools&tool=energy",
+      "id": "61c5c416-7f17-4434-a1bf-72d880240496",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Tool budget",
+      "path": "?modal=tools&tool=budget",
+      "id": "58cb1591-6b68-458c-a0da-de8fe09529ee",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Terms of service",
+      "path": "?captureLegal=terms",
+      "id": "c33ce00e-cdce-43af-9e91-db0558b0d484",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Affiliate disclosure",
+      "path": "?captureLegal=disclosure",
+      "id": "ecab0ee8-05db-4e8c-b4b2-5c7c185a4ce4",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Specification comparison",
+      "path": "?modal=compare&captureView=specs",
+      "id": "aa63cea5-c598-481d-abe4-0d21565f49ef",
+      "view": "mobile",
+      "status": "pending"
+    },
+    {
+      "name": "Search results",
+      "path": "?captureSearch=shoes",
+      "id": "aecfa3c1-afd2-48e9-b40f-ca6197893ef1",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Mobile filters",
+      "path": "?captureView=filters",
+      "id": "06c0697f-4535-44de-9054-2a573bb89d31",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Privacy policy",
+      "path": "?captureLegal=privacy",
+      "id": "f93fb207-9b98-4d6c-b4f7-099765d601f5",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Saved price goals",
+      "path": "?modal=lookup&captureView=watches",
+      "id": "8142c00e-0dfa-451c-beda-503ad70b74d8",
+      "view": "mobile",
+      "status": "processing"
+    },
+    {
+      "name": "Search results",
+      "path": "?captureSearch=shoes",
+      "id": "8a9799d4-5f81-4617-ac1f-e091ba973cc0",
+      "view": "mobile",
+      "status": "pending"
+    }
+  ],
+  "notes": [
+    "Some original mobile-design captures were actually desktop size and are staging only. Verified phone captures target page 59:2 and are width 393.",
+    "Temporary source capture helpers removed. Preexisting ProductPriceHistory.tsx edit preserved.",
+    "Remaining conversion jobs returned processing repeatedly; full-site import incomplete."
+  ]
+}

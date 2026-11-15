@@ -1,0 +1,37 @@
+{
+  "fileKey": "NHBlNgxVFpw7WRxaCjlFOv",
+  "pageId": "139:2",
+  "sessionId": "58e7ec65-cf7e-4565-bc0c-57a2382e3872",
+  "screens": [
+    {
+      "id": "142:2",
+      "name": "Desktop 1440 · light · Exploration 01",
+      "width": 1440,
+      "height": 1303
+    },
+    {
+      "id": "142:180",
+      "name": "Mobile 393 · light · Exploration 01",
+      "width": 393,
+      "height": 1723
+    },
+    {
+      "id": "142:358",
+      "name": "Desktop 1440 · dark · Exploration 01",
+      "width": 1440,
+      "height": 1303
+    },
+    {
+      "id": "142:536",
+      "name": "Mobile 393 · dark · Exploration 01",
+      "width": 393,
+      "height": 1723
+    }
+  ],
+  "notes": [
+    "Four editable static exploration frames, not production changes.",
+    "Individual product images sourced from the live public directory on 2026-10-29.",
+    "Final Figma adjustments preserve original brand mark and shorten mobile merchant action labels.",
+    "All four final frames visually inspected."
+  ]
+}

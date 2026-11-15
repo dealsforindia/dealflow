@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Amano Zen Nature Aquarium — Interactive 3D Biotope</title>
+  <style>
+    :root {
+      --bg: #07090b;
+      --card-bg: rgba(13, 18, 22, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #2dd4bf;
+      --accent-glow: rgba(45, 212, 191, 0.35);
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      color: var(--text);
+    }
+
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      outline: none;
+    }
+
+    /* Top Header Bar */
+    .header-bar {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(45, 212, 191, 0.12);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      backdrop-filter: blur(8px);
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+      }
+    }
+
+    .title-group h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+    }
+
+    .title-group p {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* Floating Control Glass Deck */
+    .controls-deck {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 6px 10px;
+      border-radius: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      max-width: 95vw;
+      overflow-x: auto;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-1px);
+    }
+
+    .btn.active {
+      background: var(--accent);
+      color: #041312;
+      border-color: var(--accent);
+      font-weight: 600;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .btn-feed {
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+    }
+
+    .btn-feed:hover {
+      background: linear-gradient(135deg, #fbbf24, #f87171);
+      transform: translateY(-1px) scale(1.02);
+    }
+
+    .divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.12);
+      margin: 0 2px;
+    }
+
+    /* Quick Telemetry & Instruction Panel */
+    .telemetry-card {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      z-index: 20;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      pointer-events: none;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .telemetry-val {
+      color: var(--text);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hint-toast {
+      position: absolute;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      color: #cbd5e1;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0.9;
+      transition: opacity 0.5s ease;
+      z-index: 20;
+    }
+
+    /* Sound Pill Indicator */
+    .sound-toggle {
+      cursor: pointer;
+    }
+
+    /* Loading Overlay */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: #060809;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), visibility 1s;
+    }
+
+    #loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(45, 212, 191, 0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s infinite linear;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loader-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+    }
+
+    .loader-sub {
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+
+  <!-- Load Three.js & OrbitControls from fast, rock-solid CDNs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+
+  <!-- Loading State -->
+  <div id="loader">
+    <div class="loader-spinner"></div>
+    <div class="loader-title">Planting The Nature Biotope</div>
+    <div class="loader-sub">Generating Iwagumi hardscape, aquatic flora & flocking school&hellip;</div>
+  </div>
+
+  <!-- Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Top Left Header -->
+  <div class="header-bar">
+    <div class="badge">
+      <div class="badge-dot"></div>
+      <span>Ada Aquascape v2.0</span>
+    </div>
+    <div class="title-group">
+      <h1>Amano Zen Nature Aquarium</h1>
+      <p>Iwagumi Hardscape &bull; Dynamic Flocking Boids &bull; Procedural Caustics</p>
+    </div>
+  </div>
+
+  <!-- Telemetry Card Top Right -->
+  <div class="telemetry-card">
+    <div class="telemetry-row">
+      <span>FPS</span>
+      <span class="telemetry-val" id="fps-val">60</span>
+    </div>
+    <div class="telemetry-row">
+      <span>Fauna (Neon Tetras)</span>
+      <span class="telemetry-val" id="fish-count">48</span>
+    </div>
+    <div class="telemetry-row">
+      <span>Flora (Instanced Blades)</span>
+      <span class="telemetry-val">1,850</span>
+    </div>
+    <div class="telemetry-row">
+      <span>Water Temp</span>
+      <span class="telemetry-val">24.2 °C</span>
+    </div>
+  </div>
+
+  <!-- Interactive Click Hint -->
+  <div class="hint-toast" id="hint-toast">
+    💡 Drag to rotate &bull; Scroll to zoom &bull; Click anywhere in the tank to feed the school!
+  </div>
+
+  <!-- Bottom Glassmorphic Control Deck -->
+  <div class="controls-deck">
+    <!-- Feeding Action -->
+    <button class="btn btn-feed" id="btn-feed" title="Drop food flakes for fish">
+      <span>🪱</span> Drop Food
+    </button>
+
+    <div class="divider"></div>
+
+    <!-- Lighting Presets -->
+    <button class="btn active" id="btn-light-day" data-preset="day">☀️ ADA Studio</button>
+    <button class="btn" id="btn-light-sunset" data-preset="sunset">🌅 Sunset</button>
+    <button class="btn" id="btn-light-moon" data-preset="moon">🌌 Moonlight</button>
+
+    <div class="divider"></div>
+
+    <!-- Camera Presets -->
+    <button class="btn active" id="btn-cam-orbit">🎥 Orbit</button>
+    <button class="btn" id="btn-cam-front">👁️ Front Face</button>
+    <button class="btn" id="btn-cam-macro">🔍 Macro Reef</button>
+
+    <div class="divider"></div>
+
+    <!-- Web Audio Zen Ambience -->
+    <button class="btn sound-toggle" id="btn-audio">
+      <span id="audio-icon">🔇</span> Zen Audio
+    </button>
+  </div>
+
+  <!-- Simulation Core Script -->
+  <script>
+    /* ==========================================================================
+       AMANO NATURE AQUARIUM SIMULATION ENGINE
+       - Dual-layer substrate with river sand valley & ADA Aqua Soil
+       - Procedural Iwagumi Seiryu stones with noise-displaced vertices
+       - Procedural Hairgrass & Stem Plants with water current vertex sway
+       - 3D Craig Reynolds Boids Flocking Simulation with collision steering
+       - Interactive food flake spawning & predatory feeding behavior
+       - Procedural caustic light projection & rising aeration bubble filter
+       - Web Audio API procedural sound synthesizer (water filter & harmonic drone)
+       ========================================================================== */
+
+    const TANK_WIDTH = 12.0;
+    const TANK_HEIGHT = 6.5;
+    const TANK_DEPTH = 6.0;
+    const WATER_LEVEL = 5.8;
+
+    // --- State & Setup ---
+    let scene, camera, renderer, controls;
+    let clock = new THREE.Clock();
+    let animId;
+    let boids = [];
+    let foodFlakes = [];
+    let bubbles = [];
+    let plants = [];
+    let causticsPlane, causticsCanvas, causticsCtx, causticsTexture;
+    let sunLight, ambientLight, waterTintLight;
+    let isAutoRotating = true;
+    let isAudioPlaying = false;
+    let audioCtx, bubbleOsc, filterNode, droneGain;
+
+    // Dimensions container
+    const container = document.getElementById('canvas-container');
+
+    // Initialize 3D Engine
+    function init() {
+      // 1. Scene & Camera
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x06090c);
+      scene.fog = new THREE.FogExp2(0x0a141a, 0.038); // Underwater depth fog
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(-11, 7.5, 13);
+
+      // 2. Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      container.appendChild(renderer.domElement);
+
+      // 3. Orbit Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2 - 0.02; // Keep above floor
+      controls.minDistance = 4.5;
+      controls.maxDistance = 25;
+      controls.target.set(0, 2.5, 0);
+
+      // 4. Build Aquarium Elements
+      buildCabinetAndRoom();
+      buildTankGlass();
+      buildSubstrateAndRocks();
+      buildFlora();
+      buildCausticsSystem();
+      buildAerationFilter();
+      initFauna(48);
+
+      // 5. Lighting Setup
+      setupLighting();
+
+      // 6. Event Listeners
+      setupEvents();
+
+      // Hide Loader
+      setTimeout(() => {
+        const loader = document.getElementById('loader');
+        if (loader) loader.classList.add('hidden');
+      }, 700);
+
+      animate();
+    }
+
+    // --- 1. Cabinet Stand, Floor & Overhead Lamp Fixture ---
+    function buildCabinetAndRoom() {
+      // Pedestal Stand (ADA Style Dark Walnut / Smoked Oak)
+      const standGeo = new THREE.BoxGeometry(TANK_WIDTH + 0.4, 4.0, TANK_DEPTH + 0.4);
+      const standMat = new THREE.MeshStandardMaterial({
+        color: 0x151618,
+        roughness: 0.4,
+        metalness: 0.1
+      });
+      const stand = new THREE.Mesh(standGeo, standMat);
+      stand.position.set(0, -2.0, 0);
+      stand.receiveShadow = true;
+      scene.add(stand);
+
+      // Ambient Floor Room
+      const floorGeo = new THREE.PlaneGeometry(60, 60);
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: 0x07080a,
+        roughness: 0.85,
+        metalness: 0.2
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.y = -4.0;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      // Overhead Pendant ADA Solar RGB Lamp Hanging Bar
+      const armMat = new THREE.MeshStandardMaterial({ color: 0x88929b, metalness: 0.85, roughness: 0.2 });
+
+      const barGeo = new THREE.CylinderGeometry(0.06, 0.06, TANK_WIDTH * 0.9, 16);
+      const bar = new THREE.Mesh(barGeo, armMat);
+      bar.rotation.z = Math.PI / 2;
+      bar.position.set(0, TANK_HEIGHT + 2.2, 0);
+      scene.add(bar);
+
+      // Lamp Shade Housing
+      const lampHousingGeo = new THREE.BoxGeometry(TANK_WIDTH * 0.75, 0.25, 1.4);
+      const lampHousingMat = new THREE.MeshStandardMaterial({ color: 0x1e242a, metalness: 0.6, roughness: 0.3 });
+      const lamp = new THREE.Mesh(lampHousingGeo, lampHousingMat);
+      lamp.position.set(0, TANK_HEIGHT + 2.1, 0);
+      scene.add(lamp);
+
+      // Lamp Diffuser Glow Panel
+      const diffuserGeo = new THREE.PlaneGeometry(TANK_WIDTH * 0.73, 1.25);
+      const diffuserMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const diffuser = new THREE.Mesh(diffuserGeo, diffuserMat);
+      diffuser.rotation.x = Math.PI / 2;
+      diffuser.position.set(0, TANK_HEIGHT + 1.97, 0);
+      scene.add(diffuser);
+    }
+
+    // --- 2. Ultra-Clear Rimless Optiwhite Glass Tank & Water Volume ---
+    function buildTankGlass() {
+      // Outer Glass Tank (5 Faces - Open Top)
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.28,
+        roughness: 0.05,
+        metalness: 0.1,
+        transmission: 0.92,
+        ior: 1.52,
+        thickness: 0.35,
+        reflectivity: 0.9
+      });
+
+      // Front Glass
+      const front = new THREE.Mesh(new THREE.PlaneGeometry(TANK_WIDTH, TANK_HEIGHT), glassMat);
+      front.position.set(0, TANK_HEIGHT / 2, TANK_DEPTH / 2);
+      scene.add(front);
+
+      // Back Glass (With subtle frosty biotope backdrop)
+      const backMat = new THREE.MeshStandardMaterial({
+        color: 0x08151c,
+        roughness: 0.6
+      });
+      const back = new THREE.Mesh(new THREE.PlaneGeometry(TANK_WIDTH, TANK_HEIGHT), backMat);
+      back.position.set(0, TANK_HEIGHT / 2, -TANK_DEPTH / 2);
+      scene.add(back);
+
+      // Left & Right Glass
+      const left = new THREE.Mesh(new THREE.PlaneGeometry(TANK_DEPTH, TANK_HEIGHT), glassMat);
+      left.rotation.y = Math.PI / 2;
+      left.position.set(-TANK_WIDTH / 2, TANK_HEIGHT / 2, 0);
+      scene.add(left);
+
+      const right = new THREE.Mesh(new THREE.PlaneGeometry(TANK_DEPTH, TANK_HEIGHT), glassMat);
+      right.rotation.y = -Math.PI / 2;
+      right.position.set(TANK_WIDTH / 2, TANK_HEIGHT / 2, 0);
+      scene.add(right);
+
+      // Water Surface with gentle ripples
+      const waterSurfaceGeo = new THREE.PlaneGeometry(TANK_WIDTH - 0.05, TANK_DEPTH - 0.05, 32, 32);
+      const waterSurfaceMat = new THREE.MeshPhysicalMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.65,
+        roughness: 0.15,
+        metalness: 0.1,
+        transmission: 0.8,
+        ior: 1.333
+      });
+      const waterSurface = new THREE.Mesh(waterSurfaceGeo, waterSurfaceMat);
+      waterSurface.rotation.x = -Math.PI / 2;
+      waterSurface.position.set(0, WATER_LEVEL, 0);
+      scene.add(waterSurface);
+      scene.userData.waterSurface = waterSurface;
+    }
+
+    // --- 3. Substrate & Iwagumi Stones ---
+    function buildSubstrateAndRocks() {
+      // Substrate: Sloped Sand River & Aqua Soil Banks
+      const subWidth = TANK_WIDTH - 0.1;
+      const subDepth = TANK_DEPTH - 0.1;
+      const subGeo = new THREE.PlaneGeometry(subWidth, subDepth, 64, 48);
+      subGeo.rotateX(-Math.PI / 2);
+
+      const pos = subGeo.attributes.position;
+      const colors = [];
+      const colSoil = new THREE.Color(0x191410); // Dark rich aqua soil
+      const colSand = new THREE.Color(0xd7c49e); // ADA Colorado Cosmetic Sand
+      const tempCol = new THREE.Color();
+
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+
+        // Sloping elevation: Higher towards the rear-corners, valley in the center (Aquascaping Triangle / V-shape)
+        const rearElevation = Math.max(0, -z + 1.5) * 0.45;
+        const flankElevation = Math.pow(Math.abs(x) / (TANK_WIDTH * 0.45), 2.2) * 1.2;
+
+        // Central winding river path
+        const riverDistance = Math.abs(x - Math.sin(z * 0.7) * 0.8);
+        const isRiver = riverDistance < 1.4;
+
+        let y = rearElevation + flankElevation;
+        if (isRiver) {
+          y = Math.min(y, 0.25 + Math.sin(z * 0.5) * 0.08);
+          // River color interpolation
+          const mixFactor = THREE.MathUtils.smoothstep(riverDistance, 0.4, 1.4);
+          tempCol.copy(colSand).lerp(colSoil, mixFactor);
+        } else {
+          // Add micro gravel noise
+          y += Math.sin(x * 12.0) * Math.cos(z * 12.0) * 0.04;
+          tempCol.copy(colSoil);
+        }
+
+        pos.setY(i, y + 0.1);
+        colors.push(tempCol.r, tempCol.g, tempCol.b);
+      }
+
+      subGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      subGeo.computeVertexNormals();
+
+      const subMat = new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        roughness: 0.9,
+        metalness: 0.05
+      });
+      const substrate = new THREE.Mesh(subGeo, subMat);
+      substrate.receiveShadow = true;
+      scene.add(substrate);
+
+      // Procedural Iwagumi Seiryu Stones (Main "Oyaishi" Stone + Supporting "Fukuishi" & "Soeishi" Stones)
+      const stoneMat = new THREE.MeshStandardMaterial({
+        color: 0x475569, // Grey-slate Seiryu tone with white calc vein highlights
+        roughness: 0.85,
+        metalness: 0.15
+      });
+
+      // Rock placement configs [x, y, z, scaleX, scaleY, scaleZ, rotX, rotY, rotZ]
+      const rockConfigs = [
+        // Main Oyaishi rock (leaning dramatically at 60 degrees into the flow)
+        [-1.8, 1.4, -0.6, 1.5, 2.4, 1.4, 0.25, 0.6, -0.4],
+        // Supporting Fukuishi rock
+        [-3.4, 0.9, -1.2, 1.1, 1.6, 1.0, -0.2, 0.3, 0.35],
+        // Right companion Oyaishi
+        [1.6, 1.2, -0.8, 1.3, 1.9, 1.2, 0.3, -0.5, 0.28],
+        // Foreground accent Soeishi stones
+        [-0.9, 0.5, 0.8, 0.6, 0.7, 0.6, 0.1, 0.8, -0.2],
+        [2.8, 0.7, -0.2, 0.8, 1.1, 0.7, -0.3, -0.7, 0.15],
+        [0.8, 0.35, 1.4, 0.45, 0.5, 0.45, 0.2, 0.2, 0.1]
+      ];
+
+      rockConfigs.forEach(cfg => {
+        const stoneGeo = createDeformedRockGeometry(cfg[3], cfg[4], cfg[5]);
+        const stone = new THREE.Mesh(stoneGeo, stoneMat);
+        stone.position.set(cfg[0], cfg[1], cfg[2]);
+        stone.rotation.set(cfg[6], cfg[7], cfg[8]);
+        stone.castShadow = true;
+        stone.receiveShadow = true;
+        scene.add(stone);
+
+        // Add velvety moss caps to rock crests
+        const mossGeo = new THREE.SphereGeometry(cfg[3] * 0.4, 12, 12);
+        mossGeo.scale(1, 0.35, 1);
+        const mossMat = new THREE.MeshStandardMaterial({
+          color: 0x2e7d32,
+          roughness: 0.95
+        });
+        const moss = new THREE.Mesh(mossGeo, mossMat);
+        moss.position.set(cfg[0] - 0.1, cfg[1] + cfg[4] * 0.45, cfg[2]);
+        scene.add(moss);
+      });
+    }
+
+    // Helper: Deformed craggy rock geometry with procedural noise
+    function createDeformedRockGeometry(sx, sy, sz) {
+      const geo = new THREE.DodecahedronGeometry(1, 2);
+      geo.scale(sx, sy, sz);
+      const pos = geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i);
+        let y = pos.getY(i);
+        let z = pos.getZ(i);
+        // Add craggy fractures
+        const noise = (Math.sin(x * 4.2) + Math.cos(y * 3.8) + Math.sin(z * 4.5)) * 0.12;
+        const sheer = (y > 0) ? 1.0 - (y / sy) * 0.15 : 1.0;
+        pos.setXYZ(i, (x + noise) * sheer, (y + noise), (z + noise) * sheer);
+      }
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    // --- 4. Aquatic Flora (Instanced Hairgrass & Stem Plants) ---
+    function buildFlora() {
+      // 1. Dwarf Hairgrass (Eleocharis acicularis) - Instanced
+      const grassBladeCount = 1400;
+      const bladeGeo = new THREE.ConeGeometry(0.025, 0.75, 4);
+      bladeGeo.translate(0, 0.375, 0); // Origin at bottom
+
+      const bladeMat = new THREE.MeshStandardMaterial({
+        color: 0x4ade80,
+        roughness: 0.6,
+        metalness: 0.05,
+        side: THREE.DoubleSide
+      });
+
+      const grassInstanced = new THREE.InstancedMesh(bladeGeo, bladeMat, grassBladeCount);
+      const dummy = new THREE.Object3D();
+      let added = 0;
+
+      for (let i = 0; i < grassBladeCount; i++) {
+        const x = (Math.random() - 0.5) * (TANK_WIDTH - 1.2);
+        const z = (Math.random() - 0.5) * (TANK_DEPTH - 1.2);
+
+        // Keep out of pure cosmetic sand river center
+        const riverDist = Math.abs(x - Math.sin(z * 0.7) * 0.8);
+        if (riverDist < 1.1 && Math.random() > 0.15) continue;
+
+        const y = 0.2 + (Math.abs(x) / 5) * 0.4 + (z < 0 ? -z * 0.15 : 0);
+        const scaleY = 0.5 + Math.random() * 0.7;
+
+        dummy.position.set(x, y, z);
+        dummy.rotation.set(
+          (Math.random() - 0.5) * 0.3,
+          Math.random() * Math.PI,
+          (Math.random() - 0.5) * 0.3
+        );
+        dummy.scale.set(1, scaleY, 1);
+        dummy.updateMatrix();
+
+        grassInstanced.setMatrixAt(added++, dummy.matrix);
+      }
+      grassInstanced.instanceMatrix.needsUpdate = true;
+      grassInstanced.receiveShadow = true;
+      scene.add(grassInstanced);
+
+      // Store for animated current sway
+      plants.push({ mesh: grassInstanced, isGrass: true });
+
+      // 2. Background Tall Stem Plants (Rotala rotundifolia)
+      const stemCount = 35;
+      for (let s = 0; s < stemCount; s++) {
+        const stemX = (Math.random() - 0.5) * (TANK_WIDTH - 2.0);
+        const stemZ = -TANK_DEPTH * 0.35 + (Math.random() - 0.5) * 1.0;
+        const stemHeight = 2.8 + Math.random() * 2.2;
+
+        const stemGroup = new THREE.Group();
+        stemGroup.position.set(stemX, 0.4, stemZ);
+
+        // Main flexible stem line
+        const stemCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(Math.sin(s) * 0.15, stemHeight * 0.35, 0),
+          new THREE.Vector3(Math.sin(s + 1) * 0.3, stemHeight * 0.7, 0),
+          new THREE.Vector3(Math.sin(s + 2) * 0.45, stemHeight, 0)
+        ]);
+
+        const stemTubeGeo = new THREE.TubeGeometry(stemCurve, 16, 0.035, 6, false);
+        const stemMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.7 });
+        const stemMesh = new THREE.Mesh(stemTubeGeo, stemMat);
+        stemGroup.add(stemMesh);
+
+        // Clustered leaves branching off the stem
+        const leafGeo = new THREE.SphereGeometry(0.12, 6, 6);
+        leafGeo.scale(1.8, 0.2, 0.7);
+        const leafMat = new THREE.MeshStandardMaterial({
+          color: (s % 3 === 0) ? 0xf43f5e : 0x22c55e, // Pink/orange Rotala tips
+          roughness: 0.5
+        });
+
+        const numLeaves = 18;
+        for (let l = 0; l < numLeaves; l++) {
+          const t = 0.2 + (l / numLeaves) * 0.78;
+          const pt = stemCurve.getPoint(t);
+          const leaf = new THREE.Mesh(leafGeo, leafMat);
+          leaf.position.copy(pt);
+          leaf.rotation.set(0.2, l * 1.4, (l % 2 === 0 ? 0.6 : -0.6));
+          stemGroup.add(leaf);
+        }
+
+        scene.add(stemGroup);
+        plants.push({ group: stemGroup, initialX: stemGroup.rotation.x, speed: 1.2 + Math.random() * 0.8 });
+      }
+    }
+
+    // --- 5. Dynamic Procedural Caustics Projection ---
+    function buildCausticsSystem() {
+      // Offscreen canvas for generating moving Voronoi caustics
+      causticsCanvas = document.createElement('canvas');
+      causticsCanvas.width = 256;
+      causticsCanvas.height = 256;
+      causticsCtx = causticsCanvas.getContext('2d');
+
+      causticsTexture = new THREE.CanvasTexture(causticsCanvas);
+      causticsTexture.wrapS = THREE.RepeatWrapping;
+      causticsTexture.wrapT = THREE.RepeatWrapping;
+      causticsTexture.repeat.set(3, 3);
+
+      // Projected Decal Plane right above substrate
+      const causticsGeo = new THREE.PlaneGeometry(TANK_WIDTH - 0.2, TANK_DEPTH - 0.2);
+      const causticsMat = new THREE.MeshBasicMaterial({
+        map: causticsTexture,
+        transparent: true,
+        opacity: 0.35,
+        blending: THREE.AdditiveBlending
+      });
+      causticsPlane = new THREE.Mesh(causticsGeo, causticsMat);
+      causticsPlane.rotation.x = -Math.PI / 2;
+      causticsPlane.position.set(0, 0.45, 0);
+      scene.add(causticsPlane);
+    }
+
+    // Render animated caustics texture via sine wave interference
+    function updateCaustics(time) {
+      if (!causticsCtx) return;
+      const w = causticsCanvas.width;
+      const h = causticsCanvas.height;
+      const imgData = causticsCtx.createImageData(w, h);
+      const data = imgData.data;
+
+      const t = time * 2.2;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const u = x / w * 18.0;
+          const v = y / h * 18.0;
+          // Dual overlapping wave function creates biological caustic webbing
+          const wave1 = Math.sin(u + t) + Math.cos(v + t * 0.8);
+          const wave2 = Math.sin(u * 1.3 - t * 0.9) + Math.cos(v * 1.4 + t * 1.1);
+          const val = Math.pow(Math.max(0, (wave1 + wave2) * 0.25 + 0.5), 3.2);
+
+          const idx = (y * w + x) * 4;
+          data[idx] = Math.min(255, val * 180 + 30);     // Red
+          data[idx + 1] = Math.min(255, val * 240 + 60); // Green
+          data[idx + 2] = Math.min(255, val * 255 + 80); // Blue
+          data[idx + 3] = Math.min(255, val * 200);      // Alpha
+        }
+      }
+      causticsCtx.putImageData(imgData, 0, 0);
+      causticsTexture.needsUpdate = true;
+    }
+
+    // --- 6. Aeration Bubble Filter System ---
+    function buildAerationFilter() {
+      // Lily pipe / Airstone diffuser in back-right corner
+      const airstoneGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.3, 12);
+      const airstoneMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+      const airstone = new THREE.Mesh(airstoneGeo, airstoneMat);
+      airstone.position.set(TANK_WIDTH * 0.4, 0.35, -TANK_DEPTH * 0.35);
+      scene.add(airstone);
+
+      // Pre-instantiate bubble meshes
+      const bubbleGeo = new THREE.SphereGeometry(1, 8, 8);
+      const bubbleMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.5,
+        roughness: 0.1,
+        transmission: 0.9,
+        ior: 1.1
+      });
+
+      for (let i = 0; i < 45; i++) {
+        const bubble = new THREE.Mesh(bubbleGeo, bubbleMat);
+        resetBubble(bubble, true);
+        scene.add(bubble);
+        bubbles.push(bubble);
+      }
+    }
+
+    function resetBubble(bubble, randomizeY = false) {
+      const originX = TANK_WIDTH * 0.4 + (Math.random() - 0.5) * 0.2;
+      const originZ = -TANK_DEPTH * 0.35 + (Math.random() - 0.5) * 0.2;
+      const scale = 0.03 + Math.random() * 0.06;
+
+      bubble.scale.set(scale, scale, scale);
+      bubble.position.set(
+        originX,
+        randomizeY ? 0.4 + Math.random() * (WATER_LEVEL - 0.6) : 0.4,
+        originZ
+      );
+      bubble.userData.speedY = 0.03 + Math.random() * 0.04;
+      bubble.userData.wobblePhase = Math.random() * Math.PI * 2;
+    }
+
+    function updateBubbles() {
+      bubbles.forEach(b => {
+        b.position.y += b.userData.speedY;
+        b.position.x += Math.sin(b.userData.wobblePhase) * 0.008;
+        b.position.z += Math.cos(b.userData.wobblePhase) * 0.008;
+        b.userData.wobblePhase += 0.08;
+
+        // Pop at water surface
+        if (b.position.y >= WATER_LEVEL) {
+          resetBubble(b, false);
+        }
+      });
+    }
+
+    // --- 7. Living Fauna: Neon Tetras with Reynolds Boids Flocking ---
+    class Boid {
+      constructor(x, y, z) {
+        this.position = new THREE.Vector3(x, y, z);
+        this.velocity = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.04,
+          (Math.random() - 0.5) * 0.02,
+          (Math.random() - 0.5) * 0.04
+        );
+        this.acceleration = new THREE.Vector3();
+        this.maxSpeed = 0.065;
+        this.maxForce = 0.0035;
+        this.swimCycle = Math.random() * Math.PI * 2;
+
+        this.mesh = this.createFishMesh();
+        this.mesh.position.copy(this.position);
+        scene.add(this.mesh);
+      }
+
+      createFishMesh() {
+        const fishGroup = new THREE.Group();
+
+        // 1. Torso (Torpedo shaped Neon Tetra body)
+        const bodyGeo = new THREE.ConeGeometry(0.12, 0.75, 8);
+        bodyGeo.rotateX(Math.PI / 2); // Point forward along Z
+        const bodyMat = new THREE.MeshStandardMaterial({
+          color: 0x1e293b,
+          roughness: 0.3,
+          metalness: 0.4
+        });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        fishGroup.add(body);
+
+        // 2. Iridescent Cyan/Blue Lateral Neon Stripe
+        const stripeGeo = new THREE.BoxGeometry(0.02, 0.04, 0.55);
+        const stripeMat = new THREE.MeshBasicMaterial({
+          color: 0x00f5ff
+        });
+        const stripeLeft = new THREE.Mesh(stripeGeo, stripeMat);
+        stripeLeft.position.set(0.09, 0.02, 0.05);
+        fishGroup.add(stripeLeft);
+
+        const stripeRight = new THREE.Mesh(stripeGeo, stripeMat);
+        stripeRight.position.set(-0.09, 0.02, 0.05);
+        fishGroup.add(stripeRight);
+
+        // 3. Cardinal Red Tail Section
+        const redGeo = new THREE.BoxGeometry(0.08, 0.06, 0.3);
+        const redMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+        const redSection = new THREE.Mesh(redGeo, redMat);
+        redSection.position.set(0, -0.01, -0.22);
+        fishGroup.add(redSection);
+
+        // 4. Flexible Caudal Fin (Tail Fin)
+        const finGeo = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+          0, 0, 0,
+          0, 0.16, -0.25,
+          0, -0.16, -0.25
+        ]);
+        finGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        const finMat = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.5,
+          side: THREE.DoubleSide
+        });
+        const caudalFin = new THREE.Mesh(finGeo, finMat);
+        caudalFin.position.set(0, 0, -0.38);
+        fishGroup.add(caudalFin);
+        fishGroup.userData.caudalFin = caudalFin;
+
+        fishGroup.scale.set(1.1, 1.1, 1.1);
+        return fishGroup;
+      }
+
+      update() {
+        this.velocity.add(this.acceleration);
+        this.velocity.clampLength(0, this.maxSpeed);
+        this.position.add(this.velocity);
+        this.acceleration.set(0, 0, 0);
+
+        // Update mesh position and face heading direction
+        this.mesh.position.copy(this.position);
+        if (this.velocity.lengthSq() > 0.0001) {
+          const targetRot = this.position.clone().add(this.velocity);
+          this.mesh.lookAt(targetRot);
+        }
+
+        // Biological tail swish oscillation
+        this.swimCycle += this.velocity.length() * 25.0 + 0.1;
+        if (this.mesh.userData.caudalFin) {
+          this.mesh.userData.caudalFin.rotation.y = Math.sin(this.swimCycle) * 0.45;
+        }
+      }
+
+      applyForce(force) {
+        this.acceleration.add(force);
+      }
+
+      // Craig Reynolds' Flocking Rules + Tank Obstacle Avoidance
+      flock(allBoids, foodTargets) {
+        const sep = this.separate(allBoids).multiplyScalar(1.5);
+        const ali = this.align(allBoids).multiplyScalar(1.0);
+        const coh = this.cohere(allBoids).multiplyScalar(1.0);
+        const bnd = this.boundWalls().multiplyScalar(2.2);
+
+        this.applyForce(sep);
+        this.applyForce(ali);
+        this.applyForce(coh);
+        this.applyForce(bnd);
+
+        // Feeding pursuit behavior
+        if (foodTargets.length > 0) {
+          const foodForce = this.seekFood(foodTargets).multiplyScalar(2.8);
+          this.applyForce(foodForce);
+        }
+      }
+
+      // 1. Separation
+      separate(allBoids) {
+        const desiredSeparation = 0.75;
+        const steer = new THREE.Vector3();
+        let count = 0;
+        for (let other of allBoids) {
+          const d = this.position.distanceTo(other.position);
+          if (d > 0 && d < desiredSeparation) {
+            const diff = this.position.clone().sub(other.position).normalize().divideScalar(d);
+            steer.add(diff);
+            count++;
+          }
+        }
+        if (count > 0) {
+          steer.divideScalar(count);
+          steer.setLength(this.maxSpeed);
+          steer.sub(this.velocity);
+          steer.clampLength(0, this.maxForce);
+        }
+        return steer;
+      }
+
+      // 2. Alignment
+      align(allBoids) {
+        const neighborDist = 2.2;
+        const sum = new THREE.Vector3();
+        let count = 0;
+        for (let other of allBoids) {
+          const d = this.position.distanceTo(other.position);
+          if (d > 0 && d < neighborDist) {
+            sum.add(other.velocity);
+            count++;
+          }
+        }
+        if (count > 0) {
+          sum.divideScalar(count);
+          sum.setLength(this.maxSpeed);
+          const steer = sum.sub(this.velocity);
+          steer.clampLength(0, this.maxForce);
+          return steer;
+        }
+        return new THREE.Vector3();
+      }
+
+      // 3. Cohesion
+      cohere(allBoids) {
+        const neighborDist = 2.4;
+        const sum = new THREE.Vector3();
+        let count = 0;
+        for (let other of allBoids) {
+          const d = this.position.distanceTo(other.position);
+          if (d > 0 && d < neighborDist) {
+            sum.add(other.position);
+            count++;
+          }
+        }
+        if (count > 0) {
+          sum.divideScalar(count);
+          return this.seek(sum);
+        }
+        return new THREE.Vector3();
+      }
+
+      seek(target) {
+        const desired = target.clone().sub(this.position);
+        desired.setLength(this.maxSpeed);
+        const steer = desired.sub(this.velocity);
+        steer.clampLength(0, this.maxForce);
+        return steer;
+      }
+
+      // 4. Tank Boundary Wall Avoidance (Soft repulsive boundary)
+      boundWalls() {
+        const force = new THREE.Vector3();
+        const marginX = TANK_WIDTH * 0.42;
+        const marginZ = TANK_DEPTH * 0.42;
+        const minY = 1.0;
+        const maxY = WATER_LEVEL - 0.4;
+
+        if (this.position.x < -marginX) force.x = this.maxSpeed;
+        else if (this.position.x > marginX) force.x = -this.maxSpeed;
+
+        if (this.position.z < -marginZ) force.z = this.maxSpeed;
+        else if (this.position.z > marginZ) force.z = -this.maxSpeed;
+
+        if (this.position.y < minY) force.y = this.maxSpeed;
+        else if (this.position.y > maxY) force.y = -this.maxSpeed;
+
+        return force;
+      }
+
+      // 5. Seek Nearest Food Flake
+      seekFood(foodTargets) {
+        let closestFood = null;
+        let minDist = 4.0;
+        for (let food of foodTargets) {
+          const d = this.position.distanceTo(food.position);
+          if (d < minDist) {
+            minDist = d;
+            closestFood = food;
+          }
+        }
+        if (closestFood) {
+          // If close enough, eat the food flake
+          if (minDist < 0.25) {
+            closestFood.eaten = true;
+            // Play eating bubble pop sound if audio enabled
+            triggerFeedingBip();
+          }
+          return this.seek(closestFood.position);
+        }
+        return new THREE.Vector3();
+      }
+    }
+
+    function initFauna(count) {
+      boids = [];
+      for (let i = 0; i < count; i++) {
+        const x = (Math.random() - 0.5) * (TANK_WIDTH * 0.6);
+        const y = 2.0 + Math.random() * 2.5;
+        const z = (Math.random() - 0.5) * (TANK_DEPTH * 0.6);
+        boids.push(new Boid(x, y, z));
+      }
+      document.getElementById('fish-count').innerText = count;
+    }
+
+    // --- 8. Interactive Food Flake Dropping ---
+    function spawnFood(worldX, worldZ) {
+      const flakeCount = 10;
+      const flakeGeo = new THREE.DodecahedronGeometry(0.045, 0);
+      const flakeMat = new THREE.MeshStandardMaterial({
+        color: 0xf59e0b, // Golden Spirulina fish flake
+        roughness: 0.9
+      });
+
+      for (let i = 0; i < flakeCount; i++) {
+        const flake = new THREE.Mesh(flakeGeo, flakeMat);
+        flake.position.set(
+          worldX + (Math.random() - 0.5) * 0.8,
+          WATER_LEVEL - 0.05,
+          worldZ + (Math.random() - 0.5) * 0.8
+        );
+        flake.userData = {
+          fallSpeed: 0.012 + Math.random() * 0.008,
+          wobble: Math.random() * Math.PI * 2,
+          wobbleSpeed: 0.05 + Math.random() * 0.05,
+          eaten: false
+        };
+        scene.add(flake);
+        foodFlakes.push(flake);
+      }
+    }
+
+    function updateFood() {
+      for (let i = foodFlakes.length - 1; i >= 0; i--) {
+        const f = foodFlakes[i];
+        f.position.y -= f.userData.fallSpeed;
+        f.position.x += Math.sin(f.userData.wobble) * 0.003;
+        f.userData.wobble += f.userData.wobbleSpeed;
+
+        // Despawn if eaten or reaches substrate floor
+        if (f.userData.eaten || f.position.y <= 0.4) {
+          scene.remove(f);
+          foodFlakes.splice(i, 1);
+        }
+      }
+    }
+
+    // --- 9. Lighting Setup & Presets ---
+    function setupLighting() {
+      // Main Sunlight from pendant
+      sunLight = new THREE.DirectionalLight(0xfff8ee, 1.8);
+      sunLight.position.set(0, TANK_HEIGHT + 2.0, 0);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.width = 1024;
+      sunLight.shadow.mapSize.height = 1024;
+      sunLight.shadow.camera.near = 0.5;
+      sunLight.shadow.camera.far = 15;
+      sunLight.shadow.camera.left = -TANK_WIDTH / 2;
+      sunLight.shadow.camera.right = TANK_WIDTH / 2;
+      sunLight.shadow.camera.top = TANK_DEPTH / 2;
+      sunLight.shadow.camera.bottom = -TANK_DEPTH / 2;
+      sunLight.shadow.bias = -0.0005;
+      scene.add(sunLight);
+
+      // Diffuse Ambient Lighting
+      ambientLight = new THREE.AmbientLight(0x0f2733, 1.2);
+      scene.add(ambientLight);
+
+      // Underwater Cyan Up-scattering
+      waterTintLight = new THREE.PointLight(0x2dd4bf, 1.5, 12);
+      waterTintLight.position.set(0, 1.5, 0);
+      scene.add(waterTintLight);
+    }
+
+    function setLightingPreset(preset) {
+      if (preset === 'day') {
+        scene.background.set(0x06090c);
+        scene.fog.color.set(0x0a141a);
+        sunLight.color.set(0xfff8ee);
+        sunLight.intensity = 1.8;
+        ambientLight.color.set(0x0f2733);
+        ambientLight.intensity = 1.2;
+        waterTintLight.color.set(0x2dd4bf);
+        waterTintLight.intensity = 1.5;
+        renderer.toneMappingExposure = 1.15;
+      } else if (preset === 'sunset') {
+        scene.background.set(0x120a07);
+        scene.fog.color.set(0x241209);
+        sunLight.color.set(0xfb923c); // Warm amber
+        sunLight.intensity = 2.4;
+        ambientLight.color.set(0x311a13);
+        ambientLight.intensity = 1.0;
+        waterTintLight.color.set(0xf97316);
+        waterTintLight.intensity = 1.8;
+        renderer.toneMappingExposure = 1.3;
+      } else if (preset === 'moon') {
+        scene.background.set(0x020407);
+        scene.fog.color.set(0x040810);
+        sunLight.color.set(0x60a5fa); // Ice blue moonlight
+        sunLight.intensity = 0.45;
+        ambientLight.color.set(0x030712);
+        ambientLight.intensity = 0.6;
+        waterTintLight.color.set(0x38bdf8);
+        waterTintLight.intensity = 2.2;
+        renderer.toneMappingExposure = 1.0;
+      }
+    }
+
+    // --- 10. Web Audio API Procedural Sound Engine ---
+    function initWebAudio() {
+      if (audioCtx) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+
+        // 1. Water Bubble / Filter Trickle Noise
+        const bufferSize = audioCtx.sampleRate * 2;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1; // White noise
+        }
+
+        const whiteNoise = audioCtx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+
+        // Bandpass Filter to shape into gentle aquatic flow
+        filterNode = audioCtx.createBiquadFilter();
+        filterNode.type = 'bandpass';
+        filterNode.frequency.value = 650;
+        filterNode.Q.value = 4.0;
+
+        const noiseGain = audioCtx.createGain();
+        noiseGain.gain.value = 0.08;
+
+        whiteNoise.connect(filterNode);
+        filterNode.connect(noiseGain);
+        noiseGain.connect(audioCtx.destination);
+        whiteNoise.start();
+
+        // 2. Meditative Ambient Drone (Harmonic 432Hz Chord)
+        const freqs = [108, 162, 216, 324];
+        droneGain = audioCtx.createGain();
+        droneGain.gain.value = 0.04;
+
+        freqs.forEach(freq => {
+          const osc = audioCtx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          osc.connect(droneGain);
+          osc.start();
+        });
+        droneGain.connect(audioCtx.destination);
+
+        isAudioPlaying = true;
+        document.getElementById('audio-icon').innerText = '🔊';
+        document.getElementById('btn-audio').classList.add('active');
+      } catch (e) {
+        console.warn("Web Audio not supported or blocked", e);
+      }
+    }
+
+    function toggleWebAudio() {
+      if (!audioCtx) {
+        initWebAudio();
+        return;
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+        isAudioPlaying = true;
+        document.getElementById('audio-icon').innerText = '🔊';
+        document.getElementById('btn-audio').classList.add('active');
+      } else if (audioCtx.state === 'running') {
+        audioCtx.suspend();
+        isAudioPlaying = false;
+        document.getElementById('audio-icon').innerText = '🔇';
+        document.getElementById('btn-audio').classList.remove('active');
+      }
+    }
+
+    // Feeding Bip Sound
+    function triggerFeedingBip() {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800 + Math.random() * 400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.08);
+
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch (e) { }
+    }
+
+    // --- 11. User Interactions & Event Handlers ---
+    function setupEvents() {
+      window.addEventListener('resize', onWindowResize);
+
+      // Canvas Click -> Drop Food at Click Position
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      renderer.domElement.addEventListener('pointerdown', (e) => {
+        // Stop hint
+        const hint = document.getElementById('hint-toast');
+        if (hint) hint.style.opacity = '0';
+
+        // Check if clicked inside tank
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+
+        if (scene.userData.waterSurface) {
+          const intersects = raycaster.intersectObject(scene.userData.waterSurface);
+          if (intersects.length > 0) {
+            const pt = intersects[0].point;
+            spawnFood(pt.x, pt.z);
+          }
+        }
+      });
+
+      // Bottom Control Buttons
+      document.getElementById('btn-feed').addEventListener('click', () => {
+        spawnFood((Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 3.0);
+      });
+
+      // Lighting Presets
+      const lightBtns = [
+        document.getElementById('btn-light-day'),
+        document.getElementById('btn-light-sunset'),
+        document.getElementById('btn-light-moon')
+      ];
+      lightBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          lightBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          setLightingPreset(btn.dataset.preset);
+        });
+      });
+
+      // Camera Presets
+      const btnOrbit = document.getElementById('btn-cam-orbit');
+      const btnFront = document.getElementById('btn-cam-front');
+      const btnMacro = document.getElementById('btn-cam-macro');
+
+      btnOrbit.addEventListener('click', () => {
+        [btnOrbit, btnFront, btnMacro].forEach(b => b.classList.remove('active'));
+        btnOrbit.classList.add('active');
+        isAutoRotating = true;
+        animateCameraTo(new THREE.Vector3(-11, 7.5, 13), new THREE.Vector3(0, 2.5, 0));
+      });
+
+      btnFront.addEventListener('click', () => {
+        [btnOrbit, btnFront, btnMacro].forEach(b => b.classList.remove('active'));
+        btnFront.classList.add('active');
+        isAutoRotating = false;
+        animateCameraTo(new THREE.Vector3(0, 3.2, 11), new THREE.Vector3(0, 3.0, 0));
+      });
+
+      btnMacro.addEventListener('click', () => {
+        [btnOrbit, btnFront, btnMacro].forEach(b => b.classList.remove('active'));
+        btnMacro.classList.add('active');
+        isAutoRotating = false;
+        animateCameraTo(new THREE.Vector3(-2.8, 2.2, 3.2), new THREE.Vector3(-1.8, 1.6, -0.6));
+      });
+
+      // Audio Toggle
+      document.getElementById('btn-audio').addEventListener('click', toggleWebAudio);
+
+      // Stop auto-rotation upon manual user orbit drag
+      controls.addEventListener('start', () => {
+        isAutoRotating = false;
+        btnOrbit.classList.remove('active');
+      });
+    }
+
+    function animateCameraTo(targetPos, targetLookAt) {
+      const startPos = camera.position.clone();
+      const startLook = controls.target.clone();
+      let progress = 0;
+
+      function step() {
+        progress += 0.035;
+        const ease = 0.5 - Math.cos(progress * Math.PI) / 2; // Smooth cosine ease
+        camera.position.lerpVectors(startPos, targetPos, ease);
+        controls.target.lerpVectors(startLook, targetLookAt, ease);
+        controls.update();
+
+        if (progress < 1.0) {
+          requestAnimationFrame(step);
+        }
+      }
+      step();
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // --- 12. Main Simulation & Render Loop ---
+    let frameCounter = 0;
+    let lastFpsTime = performance.now();
+    const fpsElem = document.getElementById('fps-val');
+
+    function animate() {
+      animId = requestAnimationFrame(animate);
+
+      const delta = clock.getDelta();
+      const elapsedTime = clock.getElapsedTime();
+
+      // FPS Counter
+      frameCounter++;
+      const now = performance.now();
+      if (now - lastFpsTime >= 1000) {
+        if (fpsElem) fpsElem.innerText = frameCounter;
+        frameCounter = 0;
+        lastFpsTime = now;
+      }
+
+      // Gentle auto camera pan in orbit mode
+      if (isAutoRotating) {
+        const camAngle = elapsedTime * 0.08;
+        const radius = 16.5;
+        camera.position.x = Math.sin(camAngle) * radius;
+        camera.position.z = Math.cos(camAngle) * radius;
+        controls.target.set(0, 2.5, 0);
+      }
+      controls.update();
+
+      // 1. Update Caustic Light Projection
+      updateCaustics(elapsedTime);
+
+      // 2. Update Bubbles
+      updateBubbles();
+
+      // 3. Update Falling Food
+      updateFood();
+
+      // 4. Update Fauna (School of Neon Tetras)
+      boids.forEach(b => {
+        b.flock(boids, foodFlakes);
+        b.update();
+      });
+
+      // 5. Sway Flora with Water Current
+      plants.forEach((p, idx) => {
+        if (p.group) {
+          // Sway stem plant tips
+          p.group.rotation.x = Math.sin(elapsedTime * p.speed + idx) * 0.06;
+          p.group.rotation.z = Math.cos(elapsedTime * p.speed * 0.8 + idx) * 0.04;
+        }
+      });
+
+      // 6. Water Surface Undulation
+      if (scene.userData.waterSurface) {
+        const waterPos = scene.userData.waterSurface.geometry.attributes.position;
+        for (let i = 0; i < waterPos.count; i++) {
+          const u = waterPos.getX(i);
+          const v = waterPos.getY(i);
+          const zOffset = Math.sin(u * 1.5 + elapsedTime * 2.0) * Math.cos(v * 1.5 + elapsedTime * 1.8) * 0.04;
+          waterPos.setZ(i, zOffset);
+        }
+        waterPos.needsUpdate = true;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // Start Engine
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>

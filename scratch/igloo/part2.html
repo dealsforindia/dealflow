@@ -1,0 +1,1001 @@
+
+<script>
+'use strict';
+/* ============================================================================
+   IGLOO INC. — MASTER WEBGL EXPERIENCE
+   Scroll-driven reconstruction of the igloo.inc interaction system.
+
+   Architecture
+   ├─ 01  Renderer, camera rig, HDR post pipeline (bloom · aberration · grain)
+   ├─ 02  Arctic terrain, plexus cage, fractured 84-brick igloo + hover physics
+   ├─ 03  Refractive portfolio ice blocks (render-target dispersion)
+   ├─ 04  Segmented portal rings + volumetric particle dais (mouse vortex)
+   ├─ 05  SDF-style scramble text, freeze/thaw modals, history routing
+   └─ 06  Reactive Web Audio bus + scroll orchestration
+   ========================================================================= */
+
+/* ------------------------------------------------------------------ */
+/* 00 — Math, noise, config                                            */
+/* ------------------------------------------------------------------ */
+
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+const smoother = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * t * (t * (t * 6 - 15) + 10); };
+const damp = (k, dt) => 1 - Math.exp(-k * dt);
+const rand = (a, b) => a + Math.random() * (b - a);
+const TAU = Math.PI * 2;
+
+function hash11(n) { const s = Math.sin(n * 127.1) * 43758.5453123; return s - Math.floor(s); }
+
+// 2D value noise (JS side, for terrain / maps only)
+function vnoise2(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const xf = x - xi, yf = y - yi;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash11(xi + yi * 57.0);
+    const b = hash11(xi + 1 + yi * 57.0);
+    const c = hash11(xi + (yi + 1) * 57.0);
+    const d = hash11(xi + 1 + (yi + 1) * 57.0);
+    return lerp(lerp(a, b, u), lerp(c, d, u), v);
+}
+
+function fbm2(x, y, oct = 4) {
+    let sum = 0, amp = 0.5, f = 1, norm = 0;
+    for (let i = 0; i < oct; i++) {
+        sum += vnoise2(x * f, y * f) * amp;
+        norm += amp;
+        amp *= 0.5;
+        f *= 2.03;
+    }
+    return sum / norm;
+}
+
+const sfbm2 = (x, y, o) => fbm2(x, y, o) * 2 - 1;
+
+const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const CFG = {
+    brickRings: 7,
+    iglooRadius: 5.7,
+    iglooHeight: 5.1,
+    clusterRadius: 2.9,
+    maxDisplacement: 0.62,
+    popK: 14.0,          // fast pop-out
+    returnK: 3.6,        // slow settle
+    particleCount: isMobile ? 11000 : 22000,
+    scrollSensitivity: 0.00040,
+    exposure: 0.88,
+    bloomStrength: 0.42,
+    bloomThreshold: 1.05,
+    audioVolume: 0.8,
+    dpr: Math.min(window.devicePixelRatio || 1, isMobile ? 1.6 : 2)
+};
+
+const S = {
+    t: 0,                    // raw scroll target 0..1
+    scroll: 0,               // smoothed scroll 0..1
+    time: 0,
+    last: performance.now(),
+    mouse: new THREE.Vector2(0, 0),          // -1..1 NDC
+    mousePx: new THREE.Vector2(0, 0),
+    mouseLerp: new THREE.Vector2(0, 0),
+    mouseVel: 0,
+    mouseActive: false,
+    hoverPoint: new THREE.Vector3(),
+    hoverStrength: 0,
+    stage: 1,
+    intro: 0,                // 0 → 1 intro reveal
+    modal: null,
+    sound: true,
+    audio: false,
+    morph: 0,                // dais figure index
+    morphGlow: 0,
+    avgSpeed: 0,
+    reduced: reduceMotion
+};
+
+/* ------------------------------------------------------------------ */
+/* 01 — Renderer, camera, post pipeline                                */
+/* ------------------------------------------------------------------ */
+
+const canvas = document.getElementById('gl');
+const hudCanvas = document.getElementById('hud');
+const hudCtx = hudCanvas.getContext('2d');
+
+const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    powerPreference: 'high-performance',
+    stencil: false,
+    alpha: false
+});
+renderer.setPixelRatio(CFG.dpr);
+renderer.setSize(window.innerWidth, window.innerHeight, false);
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.autoClear = true;
+renderer.shadowMap.enabled = false;
+
+const scene = new THREE.Scene();
+const FOG_COLOR = new THREE.Color(0x8ea6bd);
+scene.fog = new THREE.FogExp2(FOG_COLOR.getHex(), 0.0092);
+
+const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 620);
+camera.position.set(0, 3.6, 15.6);
+
+const SUN_DIR = new THREE.Vector3(-0.78, 0.24, 0.58).normalize();
+
+/* ---- procedural textures ---- */
+function makeNoiseTexture(size, freq, opts = {}) {
+    const normalData = new Uint8Array(size * size * 4);
+    const roughData = new Uint8Array(size * size * 4);
+    const height = new Float32Array(size * size);
+    const oct = opts.octaves || 5;
+    const ripple = opts.ripple || 0;
+    const seed = opts.seed || 0;
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const nx = (x / size) * freq + seed;
+            const ny = (y / size) * freq + seed;
+            let h = fbm2(nx, ny, oct);
+            if (ripple > 0) {
+                h += Math.sin((nx * 2.7 + fbm2(nx * 0.6, ny * 0.6, 2) * 5.0) * Math.PI) * ripple;
+            }
+            h += fbm2(nx * 3.7, ny * 3.7, 3) * 0.22;
+            height[y * size + x] = h;
+        }
+    }
+
+    const at = (x, y) => height[((y + size) % size) * size + ((x + size) % size)];
+    const strength = opts.strength || 1.6;
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const dx = (at(x + 1, y) - at(x - 1, y)) * strength;
+            const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+            let nz = 1.0;
+            const len = Math.hypot(dx, dy, nz);
+            const i = (y * size + x) * 4;
+            normalData[i] = ((dx / len) * 0.5 + 0.5) * 255;
+            normalData[i + 1] = ((dy / len) * 0.5 + 0.5) * 255;
+            normalData[i + 2] = ((nz / len) * 0.5 + 0.5) * 255;
+            normalData[i + 3] = 255;
+
+            const r = clamp(0.72 + height[y * size + x] * 0.32, 0, 1) * 255;
+            roughData[i] = r; roughData[i + 1] = r; roughData[i + 2] = r; roughData[i + 3] = 255;
+        }
+    }
+
+    const mk = (data) => {
+        const t = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        t.minFilter = THREE.LinearMipMapLinearFilter;
+        t.magFilter = THREE.LinearFilter;
+        t.generateMipmaps = true;
+        t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+        t.needsUpdate = true;
+        return t;
+    };
+
+    return { normal: mk(normalData), rough: mk(roughData) };
+}
+
+const snowTex = makeNoiseTexture(256, 7.0, { octaves: 5, strength: 2.2, ripple: 0.12 });
+const metalTex = makeNoiseTexture(256, 4.0, { octaves: 3, strength: 0.55, seed: 12.3 });
+snowTex.normal.repeat.set(2.2, 2.2);
+snowTex.rough.repeat.set(2.2, 2.2);
+
+/* ---- render targets ---- */
+let W = 1, H = 1;
+const halfFloat = renderer.capabilities.isWebGL2 || !!renderer.extensions.get('OES_texture_half_float');
+const RT_TYPE = halfFloat ? THREE.HalfFloatType : THREE.UnsignedByteType;
+
+const rtMain = new THREE.WebGLRenderTarget(1, 1, {
+    minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat, type: RT_TYPE, depthBuffer: true, stencilBuffer: false
+});
+const rtRefract = new THREE.WebGLRenderTarget(1, 1, {
+    minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat, type: THREE.UnsignedByteType, depthBuffer: true, stencilBuffer: false
+});
+const rtBloomA = new THREE.WebGLRenderTarget(1, 1, {
+    minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat, type: RT_TYPE, depthBuffer: false
+});
+const rtBloomB = rtBloomA.clone();
+
+/* ---- fullscreen quad ---- */
+const quadScene = new THREE.Scene();
+const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const quadMesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), null);
+quadMesh.frustumCulled = false;
+quadScene.add(quadMesh);
+
+const blit = (material, target) => {
+    quadMesh.material = material;
+    renderer.setRenderTarget(target);
+    renderer.render(quadScene, quadCam);
+};
+
+const QUAD_VERT = `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+
+const brightMat = new THREE.ShaderMaterial({
+    uniforms: {
+        tDiffuse: { value: rtMain.texture },
+        uThreshold: { value: CFG.bloomThreshold },
+        uKnee: { value: 0.28 }
+    },
+    vertexShader: QUAD_VERT,
+    fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform float uThreshold;
+        uniform float uKnee;
+        varying vec2 vUv;
+        void main() {
+            vec3 c = texture2D(tDiffuse, vUv).rgb;
+            float b = max(max(c.r, c.g), c.b);
+            float soft = clamp(b - uThreshold + uKnee, 0.0, 2.0 * uKnee);
+            soft = soft * soft / (4.0 * uKnee + 1e-5);
+            float contrib = max(soft, b - uThreshold) / max(b, 1e-5);
+            gl_FragColor = vec4(c * contrib, 1.0);
+        }
+    `,
+    depthTest: false, depthWrite: false
+});
+
+const blurMat = new THREE.ShaderMaterial({
+    uniforms: {
+        tDiffuse: { value: null },
+        uDir: { value: new THREE.Vector2(1, 0) },
+        uRadius: { value: 1.0 },
+        uTexel: { value: new THREE.Vector2(1, 1) }
+    },
+    vertexShader: QUAD_VERT,
+    fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform vec2 uDir;
+        uniform vec2 uTexel;
+        uniform float uRadius;
+        varying vec2 vUv;
+        void main() {
+            vec2 stepUv = uDir * uTexel * uRadius;
+            vec3 sum = texture2D(tDiffuse, vUv).rgb * 0.227027;
+            sum += texture2D(tDiffuse, vUv + stepUv * 1.3846).rgb * 0.316216;
+            sum += texture2D(tDiffuse, vUv - stepUv * 1.3846).rgb * 0.316216;
+            sum += texture2D(tDiffuse, vUv + stepUv * 3.2307).rgb * 0.070270;
+            sum += texture2D(tDiffuse, vUv - stepUv * 3.2307).rgb * 0.070270;
+            gl_FragColor = vec4(sum, 1.0);
+        }
+    `,
+    depthTest: false, depthWrite: false
+});
+
+const compositeUniforms = {
+    tDiffuse: { value: rtMain.texture },
+    tBloom: { value: rtBloomA.texture },
+    uResolution: { value: new THREE.Vector2(1, 1) },
+    uTime: { value: 0 },
+    uBloom: { value: CFG.bloomStrength },
+    uAberration: { value: 0.35 },
+    uGlitch: { value: 0 },
+    uFogVeil: { value: 0 },
+    uDarken: { value: 0 },
+    uThaw: { value: 0 },
+    uGrain: { value: 0.035 },
+    uExposure: { value: CFG.exposure }
+};
+
+const compositeMat = new THREE.ShaderMaterial({
+    uniforms: compositeUniforms,
+    vertexShader: QUAD_VERT,
+    fragmentShader: `
+        uniform sampler2D tDiffuse;
+        uniform sampler2D tBloom;
+        uniform vec2 uResolution;
+        uniform float uTime, uBloom, uAberration, uGlitch, uFogVeil, uDarken, uThaw, uGrain, uExposure;
+        varying vec2 vUv;
+
+        float hash12(vec2 p) {
+            vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+            p3 += dot(p3, p3.yzx + 33.33);
+            return fract((p3.x + p3.y) * p3.z);
+        }
+        float vnoise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            float a = hash12(i), b = hash12(i + vec2(1.0, 0.0));
+            float c = hash12(i + vec2(0.0, 1.0)), d = hash12(i + vec2(1.0, 1.0));
+            return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+        }
+        vec3 aces(vec3 x) {
+            return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
+        }
+
+        void main() {
+            vec2 uv = vUv;
+            vec2 dir = uv - 0.5;
+
+            // RGB glitch band displacement
+            float rowSeed = floor(uv.y * 110.0) + floor(uTime * 14.0);
+            float rowHash = hash12(vec2(rowSeed, 3.7));
+            uv.x += (rowHash - 0.5) * 0.055 * uGlitch * step(0.62, hash12(vec2(rowSeed, 9.1)));
+
+            // radial chromatic aberration
+            float ab = uAberration * (0.22 + dot(dir, dir) * 3.2);
+            vec3 col;
+            col.r = texture2D(tDiffuse, uv + dir * ab * 0.021).r;
+            col.g = texture2D(tDiffuse, uv).g;
+            col.b = texture2D(tDiffuse, uv - dir * ab * 0.021).b;
+
+            if (uGlitch > 0.001) {
+                col.r = mix(col.r, texture2D(tDiffuse, uv + vec2(0.010, 0.0)).r, uGlitch * 0.7);
+                col.b = mix(col.b, texture2D(tDiffuse, uv - vec2(0.010, 0.0)).b, uGlitch * 0.7);
+            }
+
+            col += texture2D(tBloom, uv).rgb * uBloom;
+
+            col *= uExposure;
+            col = aces(col);
+            col = pow(col, vec3(0.4545));
+
+            // transition fog bank
+            float veilN = vnoise(uv * 3.4 + vec2(uTime * 0.06, 0.0));
+            col = mix(col, vec3(0.70, 0.76, 0.83) * (0.82 + veilN * 0.26), uFogVeil);
+
+            // edge-in darkening (freeze)
+            float edge = smoothstep(0.06, 0.92, length(dir) * 1.44);
+            col *= 1.0 - uDarken * (0.22 + 0.78 * edge);
+            col = mix(col, vec3(0.028, 0.042, 0.072), uDarken * 0.55 * edge);
+
+            // noise-masked thaw dissolve with fringing
+            if (uThaw > 0.001) {
+                float n = vnoise(uv * 26.0 + floor(uTime * 26.0));
+                float mask = smoothstep(uThaw - 0.18, uThaw, n);
+                col = mix(col, vec3(0.92, 0.99, 1.0), mask * 0.42);
+                col.r += mask * (n - 0.5) * 0.55;
+                col.b -= mask * (n - 0.5) * 0.35;
+            }
+
+            // split-tone grade: cool shadows, a touch of warmth in the highlights
+            float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
+            col = mix(col, col * vec3(0.90, 0.97, 1.10), (1.0 - lum) * 0.55);
+            col = mix(col, col * vec3(1.06, 1.01, 0.94), smoothstep(0.55, 1.0, lum) * 0.45);
+            col = mix(vec3(lum), col, 1.08);
+
+            // vignette + grain
+            float vig = 1.0 - smoothstep(0.28, 1.02, length(dir) * 1.38);
+            col *= mix(1.0, vig, 0.62);
+            col += (hash12(uv * uResolution + fract(uTime) * 137.0) - 0.5) * uGrain;
+
+            gl_FragColor = vec4(col, 1.0);
+        }
+    `,
+    depthTest: false, depthWrite: false
+});
+
+function resizeTargets() {
+    W = Math.max(2, Math.floor(window.innerWidth * CFG.dpr));
+    H = Math.max(2, Math.floor(window.innerHeight * CFG.dpr));
+    rtMain.setSize(W, H);
+    rtRefract.setSize(Math.max(2, Math.floor(W * 0.55)), Math.max(2, Math.floor(H * 0.55)));
+    const bw = Math.max(2, Math.floor(W * 0.5));
+    const bh = Math.max(2, Math.floor(H * 0.5));
+    rtBloomA.setSize(bw, bh);
+    rtBloomB.setSize(bw, bh);
+    blurMat.uniforms.uTexel.value.set(1 / bw, 1 / bh);
+    compositeUniforms.uResolution.value.set(W, H);
+}
+
+onWindowResize();
+window.addEventListener('resize', onWindowResize);
+
+function onWindowResize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(CFG.dpr);
+    renderer.setSize(w, h, false);
+    renderer.setPixelRatio(CFG.dpr);
+    resizeTargets();
+
+    const hudDpr = Math.min(window.devicePixelRatio || 1, 2);
+    hudCanvas.width = Math.floor(w * hudDpr);
+    hudCanvas.height = Math.floor(h * hudDpr);
+    hudCanvas.style.width = w + 'px';
+    hudCanvas.style.height = h + 'px';
+    hudCtx.setTransform(hudDpr, 0, 0, hudDpr, 0, 0);
+}
+
+/* ------------------------------------------------------------------ */
+/* 02 — Lighting & sky                                                 */
+/* ------------------------------------------------------------------ */
+
+const hemi = new THREE.HemisphereLight(0x9dbbd8, 0x1d2733, 0.34);
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(0xffdcb4, 2.15);
+sun.position.copy(SUN_DIR).multiplyScalar(60);
+scene.add(sun);
+
+const rim = new THREE.DirectionalLight(0x8fc0ff, 0.72);
+rim.position.set(26, 9, -30);
+scene.add(rim);
+
+const coreLight = new THREE.PointLight(0xfff0d8, 2.4, 16, 2);
+coreLight.position.set(0, 1.5, 0);
+scene.add(coreLight);
+
+// follows the hovered brick cluster, spilling warm light into the gaps
+const hoverLight = new THREE.PointLight(0xffe9cf, 0, 11, 2);
+hoverLight.position.set(0, 2, 6);
+scene.add(hoverLight);
+
+const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    fog: false,
+    uniforms: {
+        uZenith: { value: new THREE.Color(0x0b1622) },
+        uHorizon: { value: new THREE.Color(0x67819d) },
+        uSunColor: { value: new THREE.Color(0xffd9a8) },
+        uSunDir: { value: SUN_DIR.clone() }
+    },
+    vertexShader: `
+        varying vec3 vDir;
+        void main() {
+            vDir = position;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform vec3 uZenith, uHorizon, uSunColor, uSunDir;
+        varying vec3 vDir;
+        void main() {
+            vec3 d = normalize(vDir);
+            float h = d.y;
+
+            // deep zenith → pale arctic haze at the horizon
+            float g = pow(clamp(h, 0.0, 1.0), 0.52);
+            vec3 col = mix(uHorizon, uZenith, g);
+
+            // thin luminous haze band sitting on the horizon line
+            float band = exp(-pow((h - 0.012) * 15.0, 2.0));
+            col += vec3(0.10, 0.085, 0.072) * band;
+
+            // low winter sun: tight disc + wide warm path
+            vec3 sunDir = normalize(uSunDir);
+            float sd = max(dot(d, sunDir), 0.0);
+            col += uSunColor * pow(sd, 1200.0) * 7.0;
+            col += uSunColor * pow(sd, 16.0) * 0.20;
+            col += uSunColor * pow(sd, 3.5) * 0.055;
+
+            // ground haze swallow
+            col *= mix(1.0, 0.60, smoothstep(0.0, -0.24, h));
+
+            // dither to kill banding on the long gradient
+            float dth = fract(sin(dot(d.xz, vec2(12.9898, 78.233))) * 43758.5453);
+            col += (dth - 0.5) * 0.006;
+
+            gl_FragColor = vec4(col, 1.0);
+        }
+    `
+});
+const skyDome = new THREE.Mesh(new THREE.SphereGeometry(420, 32, 20), skyMat);
+skyDome.renderOrder = -10;
+scene.add(skyDome);
+
+/* ------------------------------------------------------------------ */
+/* 03 — Arctic terrain, plexus cage, mountains                         */
+/* ------------------------------------------------------------------ */
+
+function terrainHeight(x, z) {
+    const r = Math.hypot(x, z);
+    let y = sfbm2(x * 0.0085 + 11.3, z * 0.0085 - 4.1, 5) * 7.2;
+    y += sfbm2(x * 0.032, z * 0.0135, 3) * 1.15;
+    y += Math.sin(x * 0.055 + sfbm2(x * 0.011, z * 0.011, 2) * 3.6) * 0.34;
+
+    // flatten the plateau where the igloo sits
+    const plateau = smoothstep(3.5, 19.0, r);
+    y *= 0.10 + 0.90 * plateau;
+    y -= 0.55 * (1.0 - plateau);
+
+    // distant ridgeline
+    y += smoothstep(54.0, 150.0, r) * 13.0;
+    return y;
+}
+
+const terrainGeo = new THREE.PlaneGeometry(240, 240, 190, 190);
+terrainGeo.rotateX(-Math.PI / 2);
+{
+    const p = terrainGeo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        p.setY(i, terrainHeight(p.getX(i), p.getZ(i)));
+    }
+    terrainGeo.computeVertexNormals();
+}
+
+const revealUniform = { value: 0.0 };
+const timeUniform = { value: 0.0 };
+
+const terrainUniforms = THREE.UniformsUtils.merge([
+    THREE.UniformsLib.fog,
+    {
+        uReveal: { value: 0 },
+        uTime: { value: 0 },
+        uSunDir: { value: SUN_DIR.clone() },
+        uSnow: { value: new THREE.Color(0xd3e0ee) },
+        uSnowShade: { value: new THREE.Color(0x516a86) },
+        uRock: { value: new THREE.Color(0x222b35) },
+        uWire: { value: new THREE.Color(0x0a1017) },
+        uGlow: { value: new THREE.Color(0xbfeaff) }
+    }
+]);
+terrainUniforms.uReveal = revealUniform;
+terrainUniforms.uTime = timeUniform;
+
+const terrainMat = new THREE.ShaderMaterial({
+    uniforms: terrainUniforms,
+    fog: true,
+    vertexShader: `
+        varying vec3 vWorld;
+        varying vec3 vNormalW;
+        varying float vDist;
+        #include <fog_pars_vertex>
+        void main() {
+            vec4 world = modelMatrix * vec4(position, 1.0);
+            vWorld = world.xyz;
+            vNormalW = normalize(mat3(modelMatrix) * normal);
+            vec4 mvPosition = viewMatrix * world;
+            vDist = -mvPosition.z;
+            gl_Position = projectionMatrix * mvPosition;
+            #include <fog_vertex>
+        }
+    `,
+    fragmentShader: `
+        uniform float uReveal;
+        uniform float uTime;
+        uniform vec3 uSunDir, uSnow, uSnowShade, uRock, uWire, uGlow;
+        varying vec3 vWorld;
+        varying vec3 vNormalW;
+        varying float vDist;
+        #include <fog_pars_fragment>
+
+        float hash12(vec2 p) {
+            vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+            p3 += dot(p3, p3.yzx + 33.33);
+            return fract((p3.x + p3.y) * p3.z);
+        }
+        float noise2(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash12(i), hash12(i + vec2(1, 0)), f.x),
+                       mix(hash12(i + vec2(0, 1)), hash12(i + vec2(1, 1)), f.x), f.y);
+        }
+        float fbm(vec2 p) {
+            float s = 0.0, a = 0.5;
+            for (int i = 0; i < 4; i++) { s += noise2(p) * a; p *= 2.03; a *= 0.5; }
+            return s;
+        }
+
+        void main() {
+            vec3 n = normalize(vNormalW);
+
+            // wind-carved sastrugi + larger dune modulation
+            float dunes = fbm(vWorld.xz * 0.055);
+            float ripples = fbm(vec2(vWorld.x * 0.42, vWorld.z * 0.11));
+            float grain = hash12(floor(vWorld.xz * 24.0));
+
+            // slope-driven rock exposure
+            float slope = 1.0 - clamp(n.y, 0.0, 1.0);
+            float rockMask = smoothstep(0.30, 0.62, slope + (dunes - 0.5) * 0.18);
+
+            vec3 snow = mix(uSnowShade, uSnow, clamp(0.42 + dunes * 0.72 + ripples * 0.12, 0.0, 1.0));
+            vec3 rock = uRock * (0.55 + grain * 0.5);
+            vec3 base = mix(snow, rock, rockMask * 0.92);
+
+            // soft wrapped diffuse under a low winter sun
+            float ndl = max(dot(n, normalize(uSunDir)), 0.0);
+            float wrap = max(dot(n, normalize(uSunDir + n * 0.55)), 0.0);
+            float sky = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);
+            vec3 lit = base * (0.16 + 0.78 * mix(ndl, wrap, 0.45));
+            lit += uSnowShade * (0.20 * sky) * (1.0 - rockMask);
+            lit += vec3(0.025, 0.040, 0.062) * sky;
+
+            // ambient occlusion hugging the dome + a long low sun shadow to its right
+            float domeDist = length(vWorld.xz);
+            float domeAO = mix(0.46, 1.0, smoothstep(4.4, 13.5, domeDist));
+            vec2 shDir = normalize(-uSunDir.xz + vec2(0.001));
+            float along = dot(vWorld.xz, shDir);
+            float across = abs(dot(vWorld.xz, vec2(-shDir.y, shDir.x)));
+            float shadow = smoothstep(6.2, 1.2, across) * smoothstep(-2.0, 5.0, along) * smoothstep(26.0, 8.0, along);
+            lit *= domeAO * (1.0 - shadow * 0.38);
+
+            // sparkle along wind ridges
+            float spark = pow(hash12(floor(vWorld.xz * 130.0) + floor(uTime * 2.0)), 34.0);
+            spark += pow(max(ripples - 0.55, 0.0) * 2.6, 6.0) * 0.5;
+            lit += vec3(1.0, 0.99, 0.96) * spark * (1.0 - rockMask) * smoothstep(70.0, 8.0, vDist) * 1.4;
+
+            // ---- intro: wireframe outside the noise-edged reveal radius ----
+            float d = length(vWorld.xz);
+            float nz = fbm(vWorld.xz * 0.10 + vec2(0.0, uTime * 0.08));
+            float noisy = d + (nz - 0.5) * 5.0;
+            float edgeW = 1.8;
+            float wire = smoothstep(uReveal - edgeW, uReveal, noisy);
+
+            // technical grid lines visible only in the wireframe zone
+            vec2 g = abs(fract(vWorld.xz * 0.42) - 0.5);
+            float line = 1.0 - smoothstep(0.0, 0.045, min(g.x, g.y));
+            vec3 wireCol = uWire * (0.55 + 0.45 * line) + uGlow * line * 0.10;
+
+            float rimGlow = exp(-pow((noisy - uReveal) / 1.5, 2.0));
+            vec3 col = mix(lit, wireCol, wire);
+            col += uGlow * rimGlow * 1.15 * (1.0 - wire);
+
+            gl_FragColor = vec4(col, 1.0);
+            #include <fog_fragment>
+        }
+    `
+});
+
+const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+terrain.frustumCulled = false;
+scene.add(terrain);
+
+// soft contact shadow under the dome
+{
+    const c = document.createElement('canvas');
+    c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const grad = g.createRadialGradient(128, 128, 4, 128, 128, 126);
+    grad.addColorStop(0, 'rgba(24,32,44,0.72)');
+    grad.addColorStop(0.5, 'rgba(30,40,54,0.34)');
+    grad.addColorStop(1, 'rgba(30,40,54,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 256, 256);
+    const tex = new THREE.CanvasTexture(c);
+    const shadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(20, 20),
+        new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.9 })
+    );
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = 0.05;
+    scene.add(shadow);
+}
+
+// distant mountain silhouettes
+{
+    const mountainMat = new THREE.MeshStandardMaterial({
+        color: 0x4a5a6d, roughness: 0.95, metalness: 0.0, flatShading: true
+    });
+    const mountainMatFar = new THREE.MeshStandardMaterial({
+        color: 0x6d7f94, roughness: 1.0, metalness: 0.0, flatShading: true
+    });
+    const group = new THREE.Group();
+    for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * TAU + rand(-0.13, 0.13);
+        const dist = rand(62, 118);
+        const h = rand(12, 34) * (dist > 90 ? 1.35 : 1.0);
+        const r = rand(14, 30);
+        const geo = new THREE.ConeGeometry(r, h, Math.floor(rand(5, 8)), 2);
+        {
+            const p = geo.attributes.position;
+            for (let v = 0; v < p.count; v++) {
+                const vx = p.getX(v), vy = p.getY(v), vz = p.getZ(v);
+                const j = 0.16 * Math.max(0, 1 - Math.abs(vy) / (h * 0.55));
+                p.setXYZ(v,
+                    vx + sfbm2(vx * 0.12 + i, vz * 0.12, 3) * r * j,
+                    vy + sfbm2(vx * 0.1, vz * 0.1 + i, 2) * h * 0.05,
+                    vz + sfbm2(vx * 0.12, vz * 0.12 + 5.0, 3) * r * j
+                );
+            }
+            geo.computeVertexNormals();
+        }
+        const m = new THREE.Mesh(geo, dist > 90 ? mountainMatFar : mountainMat);
+        m.position.set(Math.cos(a) * dist, h * 0.5 - 2.0, Math.sin(a) * dist);
+        m.rotation.y = rand(0, TAU);
+        group.add(m);
+    }
+    scene.add(group);
+}
+
+/* ---- plexus constellation cage (intro only) ---- */
+const plexusGroup = new THREE.Group();
+{
+    const SEG = 26;
+    const size = 150;
+    const geo = new THREE.PlaneGeometry(size, size, SEG, SEG);
+    geo.rotateX(-Math.PI / 2);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i);
+        p.setY(i, terrainHeight(x, z) + 0.12);
+    }
+    const wire = new THREE.WireframeGeometry(geo);
+    const lineMat = new THREE.LineBasicMaterial({
+        color: 0x8fb6d6, transparent: true, opacity: 0.0, depthWrite: false
+    });
+    const lines = new THREE.LineSegments(wire, lineMat);
+    plexusGroup.add(lines);
+
+    const dotGeo = new THREE.BufferGeometry();
+    dotGeo.setAttribute('position', geo.attributes.position.clone());
+    const dotMat = new THREE.PointsMaterial({
+        color: 0xdff2ff, size: 0.55, transparent: true, opacity: 0.0,
+        depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true
+    });
+    const dots = new THREE.Points(dotGeo, dotMat);
+    plexusGroup.add(dots);
+
+    plexusGroup.userData = { lines, dots, lineMat, dotMat };
+    scene.add(plexusGroup);
+}
+
+/* ------------------------------------------------------------------ */
+/* 04 — The fractured igloo dome                                       */
+/* ------------------------------------------------------------------ */
+
+const igloo = new THREE.Group();
+scene.add(igloo);
+
+function beveledBox(w, h, d, bevel) {
+    const x = Math.max(0.02, w / 2 - bevel);
+    const y = Math.max(0.02, h / 2 - bevel);
+    const r = Math.min(bevel * 1.15, Math.min(x, y) * 0.85);
+    const shape = new THREE.Shape();
+    shape.moveTo(-x + r, -y);
+    shape.lineTo(x - r, -y);
+    shape.quadraticCurveTo(x, -y, x, -y + r);
+    shape.lineTo(x, y - r);
+    shape.quadraticCurveTo(x, y, x - r, y);
+    shape.lineTo(-x + r, y);
+    shape.quadraticCurveTo(-x, y, -x, y - r);
+    shape.lineTo(-x, -y + r);
+    shape.quadraticCurveTo(-x, -y, -x + r, -y);
+    const geo = new THREE.ExtrudeGeometry(shape, {
+        depth: Math.max(0.03, d - bevel * 2),
+        bevelEnabled: true,
+        bevelThickness: bevel,
+        bevelSize: bevel,
+        bevelSegments: 2,
+        curveSegments: 2,
+        steps: 1
+    });
+    geo.center();
+    geo.computeVertexNormals();
+    return geo;
+}
+
+const brickMat = new THREE.MeshStandardMaterial({
+    color: 0xdfe9f5,
+    roughness: 0.82,
+    metalness: 0.02,
+    normalMap: snowTex.normal,
+    roughnessMap: snowTex.rough,
+    normalScale: new THREE.Vector2(0.55, 0.55),
+    emissive: new THREE.Color(0xbfe6ff),
+    emissiveIntensity: 0.0
+});
+brickMat.customProgramCacheKey = () => 'igloo-brick';
+
+brickMat.onBeforeCompile = (shader) => {
+    shader.uniforms.uReveal = revealUniform;
+    shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', `#include <common>
+            varying vec3 vWPos;
+            uniform float uReveal;
+            float bHash(vec2 p) {
+                vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return fract((p3.x + p3.y) * p3.z);
+            }
+            float bNoise(vec2 p) {
+                vec2 i = floor(p), f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                return mix(mix(bHash(i), bHash(i + vec2(1, 0)), f.x),
+                           mix(bHash(i + vec2(0, 1)), bHash(i + vec2(1, 1)), f.x), f.y);
+            }`)
+        .replace('#include <dithering_fragment>', `#include <dithering_fragment>
+            float bd = length(vWPos.xz);
+            float bn = bNoise(vWPos.xz * 0.35 + vWPos.y * 0.2);
+            float bm = smoothstep(uReveal - 2.2, uReveal, bd + (bn - 0.5) * 2.4);
+            gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.045, 0.075, 0.10), bm * 0.92);
+            gl_FragColor.rgb += vec3(0.62, 0.88, 1.0) * exp(-pow((bd - uReveal) / 1.25, 2.0)) * 0.9;
+
+            // per-brick tone variation + base occlusion so the dome reads as stacked blocks
+            float bh = clamp(vWPos.y / 5.15, 0.0, 1.0);
+            float tone = 0.86 + 0.14 * bNoise(vWPos.xz * 1.7 + vWPos.y * 2.4);
+            float aoBase = mix(0.50, 1.0, smoothstep(0.0, 0.90, bh));
+            gl_FragColor.rgb *= tone * aoBase;
+
+            // warm interior light spilling out of the entrance arch
+            vec3 archC = vec3(0.0, 0.85, 5.35);
+            float archD = length(vec3(vWPos.x * 1.05, (vWPos.y - archC.y) * 1.6, (vWPos.z - archC.z) * 0.85));
+            float arch = exp(-pow(archD / 2.2, 2.0));
+            gl_FragColor.rgb += vec3(1.0, 0.58, 0.26) * arch * 0.55;
+        `);
+};
+
+const bricks = [];
+const brickMeshes = [];
+const brickEdges = new THREE.Group();
+igloo.add(brickEdges);
+
+const edgeMat = new THREE.LineBasicMaterial({ color: 0x9fd8f5, transparent: true, opacity: 0.0, depthWrite: false });
+
+function addBrick(geo, position, normal, id) {
+    const mesh = new THREE.Mesh(geo, brickMat);
+    mesh.position.copy(position);
+    mesh.lookAt(position.clone().add(normal));
+    mesh.userData.brick = true;
+
+    const rest = {
+        id,
+        mesh,
+        restPos: position.clone(),
+        restQuat: mesh.quaternion.clone(),
+        restNormal: normal.clone(),
+        offset: 0,
+        target: 0,
+        glow: 0
+    };
+    mesh.userData.data = rest;
+    bricks.push(rest);
+    brickMeshes.push(mesh);
+    igloo.add(mesh);
+
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 18), edgeMat);
+    edges.position.copy(mesh.position);
+    edges.quaternion.copy(mesh.quaternion);
+    edges.userData.brick = rest;
+    brickEdges.add(edges);
+
+    return rest;
+}
+
+{
+    const R = CFG.iglooRadius;
+    const HH = CFG.iglooHeight;
+
+    for (let ring = 0; ring < CFG.brickRings; ring++) {
+        const phi = (ring / CFG.brickRings) * (Math.PI * 0.475);
+        const ringR = R * Math.cos(phi);
+        const ringY = HH * Math.sin(phi);
+        // ~80 bricks total across the dome, matching the reference archive
+        const count = Math.max(5, Math.round(15 * Math.cos(phi * 0.92)));
+
+        for (let b = 0; b < count; b++) {
+            const theta = (b / count) * TAU + (ring % 2 ? Math.PI / count : 0);
+            // entrance arch gap (faces +Z, toward camera)
+            const entrance = ring < 2 && Math.cos(theta) > 0.80;
+            if (entrance) continue;
+
+            const x = ringR * Math.sin(theta);
+            const z = ringR * Math.cos(theta);
+
+            const w = ((TAU * ringR) / count) * 0.9;
+            const h = (HH / CFG.brickRings) * 0.86;
+            const d = 0.72 + 0.1 * Math.cos(phi);
+
+            const geo = beveledBox(w, h, d, 0.055);
+            const normal = new THREE.Vector3(x / (R * R), (ringY + 0.55) / (HH * HH), z / (R * R)).normalize();
+            const pos = new THREE.Vector3(x, ringY + h * 0.42, z);
+
+            addBrick(geo, pos, normal, 0);
+        }
+    }
+
+    // entrance tunnel arch
+    const archCount = 7;
+    for (let a = 0; a < archCount; a++) {
+        const ang = (a / (archCount - 1)) * Math.PI;
+        const ax = Math.cos(ang) * 1.5;
+        const ay = Math.sin(ang) * 1.75 + 0.55;
+        const az = R * 0.98 + 0.35;
+        const geo = beveledBox(0.78, 0.42, 0.95, 0.05);
+        const normal = new THREE.Vector3(ax * 0.55, ay * 0.35, 1.0).normalize();
+        addBrick(geo, new THREE.Vector3(ax, ay, az), normal, 0);
+    }
+
+    // crown cap
+    addBrick(beveledBox(1.05, 0.5, 0.85, 0.06), new THREE.Vector3(0, HH + 0.34, 0), new THREE.Vector3(0, 1, 0), 0);
+}
+
+// Brick IDs ascend from the lower ring to the crown (the archive index seen in
+// the reference HUD), independent of the order the meshes were assembled in.
+bricks
+    .slice()
+    .sort((a, b) => a.restPos.y - b.restPos.y || a.restPos.x - b.restPos.x)
+    .forEach((b, i) => { b.id = i + 1; });
+
+// glowing interior core — visible only through the brick gaps
+const coreMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 32, 20),
+    new THREE.MeshBasicMaterial({ color: 0xfff8ee, side: THREE.BackSide, fog: false })
+);
+coreMesh.scale.set(CFG.iglooRadius * 0.90, CFG.iglooHeight * 0.93, CFG.iglooRadius * 0.90);
+coreMesh.position.y = 0.32;
+igloo.add(coreMesh);
+
+// inner warm disc so lifted bricks reveal depth
+const innerFloor = new THREE.Mesh(
+    new THREE.CircleGeometry(CFG.iglooRadius * 0.88, 40),
+    new THREE.MeshBasicMaterial({ color: 0xfff4e4, fog: false })
+);
+innerFloor.rotation.x = -Math.PI / 2;
+innerFloor.position.y = 0.06;
+igloo.add(innerFloor);
+
+/* ---- wind-blown snow (GPU vertex animation) ---- */
+const snowField = (() => {
+    const COUNT = isMobile ? 900 : 1700;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(COUNT * 3);
+    const seed = new Float32Array(COUNT);
+    for (let i = 0; i < COUNT; i++) {
+        pos[i * 3] = rand(-45, 45);
+        pos[i * 3 + 1] = rand(0, 26);
+        pos[i * 3 + 2] = rand(-45, 45);
+        seed[i] = Math.random();
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+
+    const mat = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: {
+            uTime: timeUniform,
+            uPixelRatio: { value: CFG.dpr },
+            uWind: { value: new THREE.Vector3(-1.0, -0.12, 0.4) },
+            uOpacity: { value: 0.55 }
+        },
+        vertexShader: `
+            attribute float aSeed;
+            uniform float uTime, uPixelRatio;
+            uniform vec3 uWind;
+            varying float vAlpha;
+            void main() {
+                vec3 p = position;
+                float t = uTime * (0.45 + aSeed * 0.7);
+                p += uWind * t * 3.2;
+                p.x += sin(t * 1.7 + aSeed * 22.0) * 0.9;
+                p.y += cos(t * 1.1 + aSeed * 13.0) * 0.6;
+                p.z += sin(t * 0.9 + aSeed * 7.0) * 0.7;
+
+                // wrap across a 90-unit cell
+                p.x = mod(p.x + 45.0, 90.0) - 45.0;
+                p.z = mod(p.z + 45.0, 90.0) - 45.0;
+                p.y = mod(p.y, 26.0);
+
+                vec4 mv = modelViewMatrix * vec4(p, 1.0);
+                gl_Position = projectionMatrix * mv;
+                gl_PointSize = (0.7 + aSeed * 2.2) * uPixelRatio * (14.0 / max(-mv.z, 1.0));
+                vAlpha = smoothstep(60.0, 6.0, -mv.z) * (0.35 + aSeed * 0.65);
+            }
+        `,
+        fragmentShader: `
+            varying float vAlpha;
+            uniform float uOpacity;
+            void main() {
+                vec2 c = gl_PointCoord - 0.5;
+                float d = length(c);
+                if (d > 0.5) discard;
+                float a = smoothstep(0.5, 0.05, d) * vAlpha * uOpacity;
+                gl_FragColor = vec4(vec3(1.0, 0.99, 0.96), a);
+            }
+        `
+    });
+
+    const points = new THREE.Points(geo, mat);
+    points.frustumCulled = false;
+    scene.add(points);
+    return points;
+})();

@@ -1,0 +1,586 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    /* ── Apple / Stripe Clean Modern Light Mode Theme Tokens ── */
+    --bg-canvas:              #F8FAFC; /* Pristine Slate-50 Canvas */
+    --bg-surface:             #FFFFFF; /* Pure White Card Surfaces */
+    --bg-surface-elevated:    #FFFFFF; /* Floating Popover Surfaces */
+    --bg-surface-card:        #FFFFFF; /* Deal Card Background */
+    --border-subtle:          #E2E8F0; /* Slate-200 Clean Borders */
+    --border-strong:          #CBD5E1; /* Slate-300 Active Borders */
+    --border-accent:          #2563EB; /* Stripe Royal Blue */
+
+    /* ── Apple & Stripe Accents ── */
+    --accent-primary:         #0F172A; /* Slate-900 Primary Action */
+    --accent-primary-hover:   #1E293B;
+    --accent-blue:            #2563EB; /* Stripe Blue */
+    --accent-blue-hover:      #1D4ED8;
+    --accent-emerald:         #059669; /* Verified Savings Green */
+    --accent-amber:           #D97706; /* Warning / Amazon Warmth */
+    --accent-rose:            #E11D48; /* Flash Loot Rose */
+
+    /* ── High-Contrast Text Hierarchy ── */
+    --text-primary:           #0F172A; /* Slate 900 */
+    --text-secondary:         #475569; /* Slate 600 */
+    --text-muted:             #94A3B8; /* Slate 400 */
+    --text-inverse:           #FFFFFF;
+
+    /* ── Radii ── */
+    --radius-sm:              8px;
+    --radius-md:              12px;
+    --radius-lg:              16px;
+    --radius-xl:              24px;
+    --radius-full:            9999px;
+
+    /* ── Compatibility Aliases ── */
+    --bg:                     #F8FAFC;
+    --surface:                #FFFFFF;
+    --surface-2:              #F1F5F9;
+    --surface-3:              #E2E8F0;
+    --border:                 #E2E8F0;
+    --border-hairline:        #E2E8F0;
+    --border-default:         #E2E8F0;
+    --text:                   #0F172A;
+    --muted:                  #64748B;
+    --accent:                 #2563EB;
+    --accent-hover:           #1D4ED8;
+    --green:                  #059669;
+    --red:                    #E11D48;
+    --bg-base:                #F8FAFC;
+
+    /* ── Typography Hierarchy ── */
+    --font-heading:           'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-brand:             'Outfit', system-ui, sans-serif;
+    --font-body:              'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    --font-mono:              'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  /* ── Obsidian Titanium OLED Dark Mode Theme Tokens ── */
+  html.dark,
+  [data-theme="dark"] {
+    --bg-canvas:              #070A11; /* Deepest Void Obsidian */
+    --bg-surface:             #0D1527; /* Rich Dark Card Surface */
+    --bg-surface-elevated:    #111C33; /* Floating Popover Surfaces */
+    --bg-surface-card:        #0E1729; /* Deal Card Background */
+    --border-subtle:          rgba(255, 255, 255, 0.08);
+    --border-strong:          rgba(255, 255, 255, 0.16);
+    --border-accent:          #3B82F6;
+
+    /* ── Luminous Accents ── */
+    --accent-primary:         #F8FAFC;
+    --accent-primary-hover:   #FFFFFF;
+    --accent-blue:            #3B82F6;
+    --accent-blue-hover:      #60A5FA;
+    --accent-emerald:         #10B981;
+    --accent-amber:           #F59E0B;
+    --accent-rose:            #F43F5E;
+
+    /* ── High-Contrast Dark Text Hierarchy ── */
+    --text-primary:           #F1F5F9; /* Slate 100 */
+    --text-secondary:         #94A3B8; /* Slate 400 */
+    --text-muted:             #64748B; /* Slate 500 */
+    --text-inverse:           #070A11;
+
+    /* ── Compatibility Aliases ── */
+    --bg:                     #070A11;
+    --surface:                #0D1527;
+    --surface-2:              #111C33;
+    --surface-3:              #172440;
+    --border:                 rgba(255, 255, 255, 0.08);
+    --border-hairline:        rgba(255, 255, 255, 0.06);
+    --border-default:         rgba(255, 255, 255, 0.08);
+    --text:                   #F1F5F9;
+    --muted:                  #94A3B8;
+    --accent:                 #3B82F6;
+    --accent-hover:           #60A5FA;
+    --green:                  #10B981;
+    --red:                    #F43F5E;
+    --bg-base:                #070A11;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    background-color: var(--bg-canvas);
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  body {
+    font-family: var(--font-body);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    line-height: 1.5;
+    overflow-x: hidden;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image: 
+      radial-gradient(at 10% 0%, rgba(37, 99, 235, 0.04) 0px, transparent 40%),
+      radial-gradient(at 90% 0%, rgba(217, 119, 6, 0.04) 0px, transparent 40%),
+      radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.03) 0px, transparent 40%);
+    background-attachment: fixed;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  html.dark body {
+    background-color: #070A11;
+    color: #F1F5F9;
+    background-image: 
+      radial-gradient(at 10% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 45%),
+      radial-gradient(at 90% 0%, rgba(245, 158, 11, 0.06) 0px, transparent 40%),
+      radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 45%);
+  }
+
+  ::selection {
+    background-color: #2563EB;
+    color: #FFFFFF;
+  }
+
+  html.dark ::selection {
+    background-color: #3B82F6;
+    color: #070A11;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    color: var(--text-primary);
+  }
+
+  html.dark h1,
+  html.dark h2,
+  html.dark h3,
+  html.dark h4,
+  html.dark h5,
+  html.dark h6 {
+    color: #F8FAFC;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    cursor: pointer;
+    font-family: var(--font-body);
+    border: none;
+    background: none;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+}
+
+/* ── Minimalist Clean Scrollbar ────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #0A0F1D;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #1E293B;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ── Accessible Focus Rings ────────────────────────────── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ── Tabular Pricing Numerals ──────────────────────────── */
+.price-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ── Apple / Stripe Clean Deal Card ────────────────────── */
+.deal-card-premium,
+.pro-card,
+.broadsheet-card {
+  background: var(--bg-surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.22s ease, 
+              box-shadow 0.22s ease,
+              background-color 0.22s ease;
+}
+
+.deal-card-premium:hover,
+.pro-card:hover,
+.broadsheet-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-strong);
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+html.dark .deal-card-premium,
+html.dark .pro-card,
+html.dark .broadsheet-card {
+  background: #0E1729 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .deal-card-premium:hover,
+html.dark .pro-card:hover,
+html.dark .broadsheet-card:hover {
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 24px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* ── High-Converting Tactile Buttons ──────────────────── */
+.btn-primary,
+.glow-pill-amber,
+.btn-loot {
+  background: #0F172A;
+  color: #FFFFFF;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border-radius: var(--radius-md);
+  border: none;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, 
+              background-color 0.15s ease,
+              box-shadow 0.15s ease;
+}
+
+.btn-primary:hover,
+.glow-pill-amber:hover,
+.btn-loot:hover {
+  background: #1E293B;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  color: #FFFFFF;
+}
+
+html.dark .btn-primary,
+html.dark .btn-loot {
+  background: #2563EB;
+  color: #FFFFFF;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+}
+
+html.dark .btn-primary:hover,
+html.dark .btn-loot:hover {
+  background: #1D4ED8;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.5);
+}
+
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+html.dark .btn-secondary {
+  background: #111C33 !important;
+  color: #F1F5F9 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .btn-secondary:hover {
+  background: #172440 !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* ── Clean Light / Dark Discount Pills ─────────────────── */
+.badge-discount-fire {
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.01em;
+}
+
+html.dark .badge-discount-fire {
+  background: rgba(244, 63, 94, 0.15);
+  color: #FB7185;
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.badge-discount-emerald {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.01em;
+}
+
+html.dark .badge-discount-emerald {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34D399;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* ── Clean Glassmorphism Panels ────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+}
+
+html.dark .glass-panel {
+  background: rgba(13, 21, 39, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 16px 36px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ── Light & Dark Gradient Text ───────────────────────── */
+.gradient-text-amber {
+  background: linear-gradient(135deg, #0F172A 30%, #D97706 80%, #B45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html.dark .gradient-text-amber {
+  background: linear-gradient(135deg, #FFFFFF 30%, #F59E0B 80%, #FBBF24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gradient-text-blue {
+  background: linear-gradient(135deg, #0F172A 30%, #2563EB 75%, #1D4ED8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+html.dark .gradient-text-blue {
+  background: linear-gradient(135deg, #FFFFFF 30%, #60A5FA 75%, #3B82F6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Skeleton Pulse ───────────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.35; }
+}
+
+.skeleton {
+  background-color: #E2E8F0;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+html.dark .skeleton {
+  background-color: #17233B !important;
+}
+
+/* ── Marquee Ticker Drift ─────────────────────────────── */
+@keyframes marquee-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.animate-marquee-drift {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee-drift 35s linear infinite;
+}
+
+.animate-marquee-drift:hover,
+.animate-marquee-drift:focus-within {
+  animation-play-state: paused;
+}
+
+/* ── Ambient Mesh Background ──────────────────────────── */
+.ambient-mesh {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(ellipse at 15% 10%, rgba(37, 99, 235, 0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 8%, rgba(217, 119, 6, 0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 95%, rgba(16, 185, 129, 0.04) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 50%, rgba(37, 99, 235, 0.025) 0%, transparent 40%);
+  background-attachment: fixed;
+  transition: opacity 0.3s ease;
+}
+
+html.dark .ambient-mesh {
+  background-image:
+    radial-gradient(ellipse at 15% 10%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 8%, rgba(245, 158, 11, 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 95%, rgba(16, 185, 129, 0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 70% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 40%) !important;
+}
+
+
+/* ── Universal Dark Mode Utility Mappings ─────────────── */
+html.dark .bg-white {
+  background-color: #0E1729 !important;
+}
+
+html.dark .bg-white\/95 {
+  background-color: rgba(14, 23, 41, 0.95) !important;
+}
+
+html.dark .bg-white\/80 {
+  background-color: rgba(14, 23, 41, 0.8) !important;
+}
+
+html.dark .bg-slate-50 {
+  background-color: #0A0F1D !important;
+}
+
+html.dark .bg-slate-50\/95 {
+  background-color: rgba(10, 15, 29, 0.95) !important;
+}
+
+html.dark .bg-slate-100 {
+  background-color: #111C33 !important;
+}
+
+html.dark .bg-slate-200 {
+  background-color: #172440 !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .border-slate-300 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #F8FAFC !important;
+}
+
+html.dark .text-slate-700 {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-slate-600 {
+  color: #CBD5E1 !important;
+}
+
+html.dark .text-slate-500 {
+  color: #94A3B8 !important;
+}
+
+html.dark .text-slate-400 {
+  color: #64748B !important;
+}
+
+html.dark .hover\:bg-slate-50:hover {
+  background-color: #111C33 !important;
+}
+
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #172440 !important;
+}
+
+html.dark .hover\:bg-slate-200:hover {
+  background-color: #1E2E50 !important;
+}
+
+html.dark .hover\:text-slate-900:hover {
+  color: #FFFFFF !important;
+}
+
+html.dark dialog,
+html.dark [role="dialog"] {
+  background-color: #0E1729 !important;
+  color: #F1F5F9 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark input:not([type="checkbox"]):not([type="range"]),
+html.dark select,
+html.dark textarea {
+  background-color: #111C33 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #F1F5F9 !important;
+}
+
+html.dark input::placeholder {
+  color: #64748B !important;
+}

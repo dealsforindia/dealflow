@@ -36,7 +36,7 @@ This document consolidates our deep 360-degree audit of the DealFlow platform ac
    * `approve_deal` and `edit_deal` construct file paths using raw URL path variable `fp_hash` (`upload_{fp_hash[:16]}...`) without verifying that the resolved path remains inside `IMAGES_DIR`.
 
 ### Immediate Security Hardening Plan
-* [ ] **Strict Token Guard**: Set a cryptographically secure `ADMIN_API_TOKEN` in `.env` and `tg-setup/.env` (`VITE_ADMIN_TOKEN`). Remove the fallback `if not expected: return True` in `validate_admin_token`.
+* [ ] **Strict Token Guard**: Set a cryptographically secure `ADMIN_API_TOKEN` in the backend `.env`. Never put it in `tg-setup/.env` as `VITE_ADMIN_TOKEN` — `VITE_*` values are compiled into the public browser bundle. Admins sign in once via the login screen and the token stays in `localStorage`.
 * [ ] **Protect All Mutation Routes**: Add `Depends(validate_admin_token)` to `/settings`, `/channels/*`, `/purge-non-deals`, `/ai-rewrite`, and `/deals/{fp}/edit`.
 * [ ] **Lock Down CORS**: Restrict `allow_origins` strictly to `https://dealflow-topaz-seven.vercel.app`, `https://indiadealhunts.vercel.app`, and `http://localhost:5173`.
 * [ ] **SSRF IP Filter**: Resolve domain IP addresses in `store_scraper.py` and drop any IP in private, loopback, or cloud-metadata ranges.
@@ -120,9 +120,19 @@ Everything in DealFlow that is **not unlimited**, how it behaves when exhausted,
 
 ---
 
-## 🎯 6. Immediate Next Steps (Priority Execution)
+## 🎯 6. Status of Priorities & Next Roadmap
 
-1. **Security Lockdown**: Patch `api.py` with `ADMIN_API_TOKEN`, restrict CORS to production origins, and add SSRF domain validation.
-2. **Process Consolidation**: Merge `analyzer`, `oos_expiry`, and `d2c_radar` into `worker.py` to reclaim 400MB RAM on VM `74.225.250.0`.
-3. **Outbound Click Tracker (`/r/{id}`)**: Add redirect route in `api.py` to log real-time affiliate clicks and revenue per deal and channel.
-4. **Deploy Edge Vector Search**: Integrate browser-side semantic search into `rudranil-deals-web`.
+### ✅ Completed Milestones
+1. **Cloudflare Edge Gateway (`dealflow-edge/`)**: Deployed to `https://dealflow-edge.pottemasshippo.workers.dev` with 60s edge caching for `/deals/public`, dynamic OpenGraph cards for social sharing, and security headers.
+2. **Process Consolidation**: Merged and purged stopped PM2 processes (`analyzer`, `d2c_radar`, `oos_expiry`). 5 active daemons (`api`, `bot`, `desidime`, `listener`, `worker`) running at 0% idle CPU and ~368MB total RAM.
+3. **On-Device Edge Semantic Search**: Deployed natural language multi-token query parser and client-side scoring in `rudranil-deals-web`.
+4. **Backend Quality Hardening**: Added native `min_discount` and `category="loot70"` direct MongoDB query handling for all 776 verified 70%+ loot deals, plus direct `deal_score` descending mapping.
+5. **Mobile-First Storefront Redesign**: Implemented high-density 2-column mobile layout, de-cluttered unified drops feed, and touch-optimized deal cards.
+6. **Zero-Congestion Multi-Item Mega Haul Architecture**: Built sub-millisecond extractor (`multi_deal_extractor.py`, 0.33ms detection, 0.96ms parsing) with Indian pincode-to-city mapping, embedded single-document schema in MongoDB `UniqueDeals`, and location-aware storefront component (`MegaHaulCard.tsx`) with city pills and live pincode search.
+
+### 🚀 Upcoming Strategic Priorities
+1. **Affiliate Tag Unification**: Standardize Amazon Associates tag (`AMAZON_AFFILIATE_TAG`) across `.env`, `api.py`, and `bot.py` to ensure 100% of commissions accrue to the intended tracking ID.
+2. **Direct Store URL EarnKaro Auto-Wrapping**: Wrap full raw store URLs (Flipkart, Myntra, Ajio) returned in `/api/v1/deals/public` so they never bypass affiliate commission tracking.
+3. **Custom Domain Connection via GitHub Student Pack**: Point a custom `.me` / `.tech` domain to Cloudflare Edge + Vercel for high consumer brand trust.
+4. **Automated Dynamic Sitemap & Google Search Indexing**: Expose deal slugs to Google Search for organic non-Telegram buyer discovery.
+

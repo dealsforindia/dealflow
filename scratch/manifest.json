@@ -1,0 +1,342 @@
+﻿[
+    {
+        "file":  "index.html",
+        "size":  87420,
+        "sha":  "4a287214b8649975d7b059e2ae688ad15401c8ae"
+    },
+    {
+        "file":  "logo-test.html",
+        "size":  2216,
+        "sha":  "171d313295bf23a82d136c7625c18143d73817c7"
+    },
+    {
+        "file":  "proof.html",
+        "size":  22752,
+        "sha":  "3493625d8a2fbc65eb4fe9a93af17ed8f0153225"
+    },
+    {
+        "file":  "rooftop.html",
+        "size":  101580,
+        "sha":  "98bc319fb36605d7681cdbd76c465f304fb15495"
+    },
+    {
+        "file":  "studio.html",
+        "size":  87420,
+        "sha":  "4a287214b8649975d7b059e2ae688ad15401c8ae"
+    },
+    {
+        "file":  "vercel.json",
+        "size":  720,
+        "sha":  "3f134ab1429bf562c25a6308d3a2828f08cab23b"
+    },
+    {
+        "file":  "assets/animals.jpg",
+        "size":  78969,
+        "sha":  "dfc5455bafac122209ba237672e9dfb7c3687385"
+    },
+    {
+        "file":  "assets/desperation.jpg",
+        "size":  54568,
+        "sha":  "807e1ecfe5d3ff65ca4b1b40cdf3a8981db1a830"
+    },
+    {
+        "file":  "assets/digisource.jpg",
+        "size":  180858,
+        "sha":  "f22c68bdef9d8f062996bd572b132aa35a985bd2"
+    },
+    {
+        "file":  "assets/durga1.jpg",
+        "size":  140317,
+        "sha":  "cbf43883c1e24535a1d5fbfabb1fce160113fc90"
+    },
+    {
+        "file":  "assets/durga2.jpg",
+        "size":  119271,
+        "sha":  "eccb7006ed58d717f4a30bd9a26460ec18b7d602"
+    },
+    {
+        "file":  "assets/durga3.jpg",
+        "size":  110784,
+        "sha":  "9a3ddd253de6b8ca5059633f9c67007b6cd889bf"
+    },
+    {
+        "file":  "assets/etutor.jpg",
+        "size":  171603,
+        "sha":  "0fe598ca095fafcaeccd65ce8253d6d30160b65d"
+    },
+    {
+        "file":  "assets/eventposter.jpg",
+        "size":  184407,
+        "sha":  "123b930f35a421cdc5f07db1696dd4bd2ebfb87f"
+    },
+    {
+        "file":  "assets/gill181.jpg",
+        "size":  239647,
+        "sha":  "b64b133548612a7d35d2a01528fffa3d519cb408"
+    },
+    {
+        "file":  "assets/gill183.jpg",
+        "size":  228181,
+        "sha":  "8f1e438a0e57a2c8409b6036a7179eb756a928cd"
+    },
+    {
+        "file":  "assets/gill186.jpg",
+        "size":  239512,
+        "sha":  "4ec486065774fce2fbad29251085e21e3d3210dc"
+    },
+    {
+        "file":  "assets/gill196.jpg",
+        "size":  246285,
+        "sha":  "97164aa53ca5ed32e6c6e096a3d78b46c81848d5"
+    },
+    {
+        "file":  "assets/gill201.jpg",
+        "size":  293661,
+        "sha":  "3a1ee80bdb633dfc37ac597c86ef84b96da5236a"
+    },
+    {
+        "file":  "assets/gill203.jpg",
+        "size":  281294,
+        "sha":  "500ce2689ca214832a67e0dde35ff7a44497bfee"
+    },
+    {
+        "file":  "assets/gill204.jpg",
+        "size":  245864,
+        "sha":  "77a990e7c9dcbf425efc95a41ec9e4fa4c0be971"
+    },
+    {
+        "file":  "assets/gill208.jpg",
+        "size":  230315,
+        "sha":  "2104570f1a8267e870a9570a5d8a2c65558a3590"
+    },
+    {
+        "file":  "assets/gill210.jpg",
+        "size":  332290,
+        "sha":  "aeabfa27ea1996fef840e3ad813a0b10102fd2fb"
+    },
+    {
+        "file":  "assets/gill211.jpg",
+        "size":  262444,
+        "sha":  "1c2c96cbe4566a27dfe31683ea2512d58e391d16"
+    },
+    {
+        "file":  "assets/gill76.jpg",
+        "size":  183252,
+        "sha":  "c02ce4a7d13b120d7fb59fdf51a001c7f8d68eec"
+    },
+    {
+        "file":  "assets/gillramnavami.jpg",
+        "size":  143928,
+        "sha":  "ceb502b1fd80f9a749a0046bf0ec59e70995dc49"
+    },
+    {
+        "file":  "assets/holi.jpg",
+        "size":  62383,
+        "sha":  "956f73919657b15d78acd95d444ae91903f43c77"
+    },
+    {
+        "file":  "assets/logo1.jpg",
+        "size":  118164,
+        "sha":  "bd2eab12ce70e6d5b19474b49936bc54b5949285"
+    },
+    {
+        "file":  "assets/logo2.jpg",
+        "size":  149517,
+        "sha":  "2fbef62729561420c091f5502323d5f958ba3b5b"
+    },
+    {
+        "file":  "assets/logo3.jpg",
+        "size":  155551,
+        "sha":  "dc5510190cf0cdde88a2a02e6a6039216b4e8354"
+    },
+    {
+        "file":  "assets/nilotpal_portrait.jpg",
+        "size":  79518,
+        "sha":  "b7289707eccb46100b53729bd216a1866340774d"
+    },
+    {
+        "file":  "assets/nilotpal_resume.pdf",
+        "size":  548943,
+        "sha":  "8078340498f7aa118bd5ebcb2ab18c300bd81b8f"
+    },
+    {
+        "file":  "assets/nis-logo.svg",
+        "size":  5403,
+        "sha":  "aaab5d993208bf5e78e15779d4ab4334496585a9"
+    },
+    {
+        "file":  "assets/nis-mark.svg",
+        "size":  1202,
+        "sha":  "8a92a3f52f689f18458eb105c8ecd0041db56417"
+    },
+    {
+        "file":  "assets/nisindia.jpg",
+        "size":  241462,
+        "sha":  "4855946ddab1965f26a0b58cdde4a957f1a8e831"
+    },
+    {
+        "file":  "assets/nispujo.jpg",
+        "size":  179753,
+        "sha":  "280f46a1a2c62d44a7e1ca74e8e020fb42f5cf25"
+    },
+    {
+        "file":  "assets/nurses.jpg",
+        "size":  92140,
+        "sha":  "ae500b409a37914d050925fd673396c4359ef205"
+    },
+    {
+        "file":  "assets/photomanip.jpg",
+        "size":  119470,
+        "sha":  "9e5006363d9a0247d3fffc4c7a6260be6c42eacc"
+    },
+    {
+        "file":  "assets/opt/animals.jpg",
+        "size":  78969,
+        "sha":  "dfc5455bafac122209ba237672e9dfb7c3687385"
+    },
+    {
+        "file":  "assets/opt/desperation.jpg",
+        "size":  54568,
+        "sha":  "807e1ecfe5d3ff65ca4b1b40cdf3a8981db1a830"
+    },
+    {
+        "file":  "assets/opt/digisource.jpg",
+        "size":  180858,
+        "sha":  "f22c68bdef9d8f062996bd572b132aa35a985bd2"
+    },
+    {
+        "file":  "assets/opt/durga1.jpg",
+        "size":  140317,
+        "sha":  "cbf43883c1e24535a1d5fbfabb1fce160113fc90"
+    },
+    {
+        "file":  "assets/opt/durga2.jpg",
+        "size":  119271,
+        "sha":  "eccb7006ed58d717f4a30bd9a26460ec18b7d602"
+    },
+    {
+        "file":  "assets/opt/durga3.jpg",
+        "size":  110784,
+        "sha":  "9a3ddd253de6b8ca5059633f9c67007b6cd889bf"
+    },
+    {
+        "file":  "assets/opt/etutor.jpg",
+        "size":  171603,
+        "sha":  "0fe598ca095fafcaeccd65ce8253d6d30160b65d"
+    },
+    {
+        "file":  "assets/opt/eventposter.jpg",
+        "size":  184407,
+        "sha":  "123b930f35a421cdc5f07db1696dd4bd2ebfb87f"
+    },
+    {
+        "file":  "assets/opt/gill181.jpg",
+        "size":  239647,
+        "sha":  "b64b133548612a7d35d2a01528fffa3d519cb408"
+    },
+    {
+        "file":  "assets/opt/gill183.jpg",
+        "size":  228181,
+        "sha":  "8f1e438a0e57a2c8409b6036a7179eb756a928cd"
+    },
+    {
+        "file":  "assets/opt/gill186.jpg",
+        "size":  239512,
+        "sha":  "4ec486065774fce2fbad29251085e21e3d3210dc"
+    },
+    {
+        "file":  "assets/opt/gill196.jpg",
+        "size":  246285,
+        "sha":  "97164aa53ca5ed32e6c6e096a3d78b46c81848d5"
+    },
+    {
+        "file":  "assets/opt/gill201.jpg",
+        "size":  293661,
+        "sha":  "3a1ee80bdb633dfc37ac597c86ef84b96da5236a"
+    },
+    {
+        "file":  "assets/opt/gill203.jpg",
+        "size":  281294,
+        "sha":  "500ce2689ca214832a67e0dde35ff7a44497bfee"
+    },
+    {
+        "file":  "assets/opt/gill204.jpg",
+        "size":  245864,
+        "sha":  "77a990e7c9dcbf425efc95a41ec9e4fa4c0be971"
+    },
+    {
+        "file":  "assets/opt/gill208.jpg",
+        "size":  230315,
+        "sha":  "2104570f1a8267e870a9570a5d8a2c65558a3590"
+    },
+    {
+        "file":  "assets/opt/gill210.jpg",
+        "size":  332290,
+        "sha":  "aeabfa27ea1996fef840e3ad813a0b10102fd2fb"
+    },
+    {
+        "file":  "assets/opt/gill211.jpg",
+        "size":  262444,
+        "sha":  "1c2c96cbe4566a27dfe31683ea2512d58e391d16"
+    },
+    {
+        "file":  "assets/opt/gill76.jpg",
+        "size":  183252,
+        "sha":  "c02ce4a7d13b120d7fb59fdf51a001c7f8d68eec"
+    },
+    {
+        "file":  "assets/opt/gillramnavami.jpg",
+        "size":  143928,
+        "sha":  "ceb502b1fd80f9a749a0046bf0ec59e70995dc49"
+    },
+    {
+        "file":  "assets/opt/holi.jpg",
+        "size":  62383,
+        "sha":  "956f73919657b15d78acd95d444ae91903f43c77"
+    },
+    {
+        "file":  "assets/opt/logo1.jpg",
+        "size":  118164,
+        "sha":  "bd2eab12ce70e6d5b19474b49936bc54b5949285"
+    },
+    {
+        "file":  "assets/opt/logo2.jpg",
+        "size":  149517,
+        "sha":  "2fbef62729561420c091f5502323d5f958ba3b5b"
+    },
+    {
+        "file":  "assets/opt/logo3.jpg",
+        "size":  155551,
+        "sha":  "dc5510190cf0cdde88a2a02e6a6039216b4e8354"
+    },
+    {
+        "file":  "assets/opt/nilotpal_portrait.jpg",
+        "size":  79518,
+        "sha":  "b7289707eccb46100b53729bd216a1866340774d"
+    },
+    {
+        "file":  "assets/opt/nisindia.jpg",
+        "size":  241462,
+        "sha":  "4855946ddab1965f26a0b58cdde4a957f1a8e831"
+    },
+    {
+        "file":  "assets/opt/nispujo.jpg",
+        "size":  179753,
+        "sha":  "280f46a1a2c62d44a7e1ca74e8e020fb42f5cf25"
+    },
+    {
+        "file":  "assets/opt/nurses.jpg",
+        "size":  92140,
+        "sha":  "ae500b409a37914d050925fd673396c4359ef205"
+    },
+    {
+        "file":  "assets/opt/photomanip.jpg",
+        "size":  119470,
+        "sha":  "9e5006363d9a0247d3fffc4c7a6260be6c42eacc"
+    },
+    {
+        "file":  "assets/vendor/motion.js",
+        "size":  183604,
+        "sha":  "096fd37bfd1e6142653fa298128e47ff6eb6c3f3"
+    }
+]

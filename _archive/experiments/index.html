@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Welcome to Notion</title>
+  <style>
+    :root {
+      --bg-color: #000000;
+      --card-bg: #1c1c1e; /* iOS dark mode card background */
+      --card-active: #2c2c2e;
+      --text-main: #ffffff;
+      --text-muted: #98989d;
+      --accent: #0a84ff; /* iOS dark mode blue */
+      --accent-glow: rgba(10, 132, 255, 0.15);
+      --border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    body {
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      padding: 24px 16px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .header-section {
+      text-align: center;
+      padding: 20px 0 10px;
+    }
+
+    .emoji-hand {
+      width: 64px;
+      margin: 0 auto 16px;
+      animation: wave 2.5s infinite;
+      transform-origin: bottom center;
+    }
+
+    @keyframes wave {
+      0% { transform: rotate(0deg); }
+      10% { transform: rotate(14deg); }
+      20% { transform: rotate(-8deg); }
+      30% { transform: rotate(14deg); }
+      40% { transform: rotate(-4deg); }
+      50% { transform: rotate(10deg); }
+      60% { transform: rotate(0deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-top: 8px;
+    }
+
+    /* APP-LIKE LIST FOR MOBILE */
+    .checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card-bg);
+      padding: 16px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .checkbox-item:active {
+      background: var(--card-active);
+      transform: scale(0.98);
+    }
+
+    .checkbox-content {
+      flex: 1;
+      padding-right: 16px;
+    }
+
+    .checkbox-content strong {
+      display: block;
+      color: var(--text-main);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      letter-spacing: -0.3px;
+    }
+
+    .checkbox-content span {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    /* Sleek Round Checkbox (Apple Reminders Style) */
+    .checkbox-item input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--text-muted);
+      border-radius: 50%;
+      margin: 0;
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      flex-shrink: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: transparent;
+    }
+
+    .checkbox-item input[type="checkbox"]::before {
+      content: "";
+      width: 14px;
+      height: 14px;
+      transform: scale(0);
+      transition: 0.3s transform cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: inset 1em 1em #ffffff;
+      background-color: #ffffff;
+      transform-origin: center;
+      clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    }
+
+    /* Checked State */
+    .checkbox-item:has(input[type="checkbox"]:checked) {
+      border-color: var(--accent);
+      background: rgba(10, 132, 255, 0.08);
+      box-shadow: 0 0 0 1px var(--accent), 0 8px 16px var(--accent-glow);
+    }
+
+    .checkbox-item input[type="checkbox"]:checked {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .checkbox-item input[type="checkbox"]:checked::before {
+      transform: scale(1);
+    }
+
+    /* Legacy Checkbox support if :has() is unsupported */
+    .checkbox-item input[type="checkbox"]:checked + .checkbox-content {
+       /* Just fallback behavior */
+    }
+
+    .emoji-nosey {
+      width: 20px;
+      vertical-align: text-bottom;
+      margin: 0 2px;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-section {
+      text-align: center;
+      padding: 30px 20px 40px;
+      background: linear-gradient(180deg, transparent, rgba(255,255,255,0.03));
+      border-radius: 24px;
+      margin-top: 10px;
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .footer-section p {
+      margin: 0;
+      line-height: 1.6;
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <div class="header-section">
+      <div class="emoji-hand">
+        <img src="https://notion-emojis.s3-us-west-2.amazonaws.com/prod/svg-twitter/1f44b.svg" alt="Yellow waving hand emoji" style="width: 100%; height: auto;">
+      </div>
+      <h1>Welcome to Notion</h1>
+      <div class="subtitle">Get started with the basics</div>
+    </div>
+
+    <div class="checkbox-list">
+      
+      <label class="checkbox-item">
+        <div class="checkbox-content">
+          <strong>Create an account</strong>
+          <span>Join Notion to start organizing your life.</span>
+        </div>
+        <input type="checkbox"> 
+      </label>
+
+      <label class="checkbox-item">
+        <div class="checkbox-content">
+          <strong>Just start typing</strong>
+          <span>Tap anywhere and start typing. It’s that simple.</span>
+        </div>
+        <input type="checkbox"> 
+      </label>
+
+      <label class="checkbox-item">
+        <div class="checkbox-content">
+          <strong>Change the style</strong>
+          <span>Highlight text and use the menu above your keyboard.</span>
+        </div>
+        <input type="checkbox"> 
+      </label>
+
+      <label class="checkbox-item">
+        <div class="checkbox-content">
+          <strong>Add content</strong>
+          <span>Tap the + icon above your keyboard for headings, to-dos, and more.</span>
+        </div>
+        <input type="checkbox"> 
+      </label>
+
+      <label class="checkbox-item">
+        <div class="checkbox-content">
+          <strong>Move content</strong>
+          <span>Collapse your keyboard, then tap and hold this line.</span>
+        </div>
+        <input type="checkbox"> 
+      </label>
+
+      <label class="checkbox-item">
+        <div class="checkbox-content">
+          <strong>See your pages</strong>
+          <span>Tap the home icon at the bottom left. We’ve installed a To Do List for you!</span>
+        </div>
+        <input type="checkbox"> 
+      </label>
+
+      <label class="checkbox-item">
+        <div class="checkbox-content">
+          <strong>Meet your Agent</strong>
+          <span>Click on the <img class="emoji-nosey" src="https://notion-emojis.s3-us-west-2.amazonaws.com/prod/svg-twitter/1f44b.svg" alt="Nosey"> Notion AI face in the bottom right or <a href="http://notion.so/?target=agent.personal">click here</a>.</span>
+        </div>
+        <input type="checkbox"> 
+      </label>
+
+    </div>
+
+    <div class="footer-section">
+      <h2>
+        <img class="emoji-nosey" src="https://notion-emojis.s3-us-west-2.amazonaws.com/prod/svg-twitter/1f44b.svg" alt="Exploding">
+        Keep Exploding!
+      </h2>
+      <p>You’ve just learned the basics. But there’s so much more to explore — try embedding links and images or creating a new page using the compose icon in the bottom right corner.</p>
+    </div>
+
+  </div>
+</body>
+</html>

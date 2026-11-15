@@ -1,0 +1,18 @@
+{
+  "run_id": "verification-2026-10-07",
+  "run_name": "verification-2026-10-07",
+  "status": "completed",
+  "start_time": "2026-10-07T20:45:00Z",
+  "end_time": "2026-10-07T21:05:00Z",
+  "target": "http://localhost:5173, https://api.rudranil.me",
+  "targets": [
+    "http://localhost:5173",
+    "https://api.rudranil.me",
+    "rudranil-deals-web",
+    "dealbot_backend",
+    "tg-setup"
+  ],
+  "scan_mode": "quick",
+  "total_vulnerabilities": 0,
+  "total_fixed": 5
+}

@@ -1,0 +1,7 @@
+name = "dealflow-edge"
+main = "src/index.ts"
+compatibility_date = "2024-05-12"
+
+[vars]
+ORIGIN_API = "https://api.rudranil.me"
+STOREFRONT_URL = "https://indiadealhunts.vercel.app"

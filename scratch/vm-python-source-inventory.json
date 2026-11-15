@@ -1,0 +1,7263 @@
+[
+  {
+    "path": "ai_curator.py",
+    "bytes": 4794,
+    "lines": 127,
+    "sha256": "673dd989139269d40aeb20c7cef3c970390140e8ec04c16ed5c66130b470c5f5",
+    "definitions": [
+      {
+        "name": "is_invalid_product_name",
+        "line": 25,
+        "end": 33
+      },
+      {
+        "name": "extract_real_coupon",
+        "line": 35,
+        "end": 55
+      },
+      {
+        "name": "curate_deal_live",
+        "line": 57,
+        "end": 127
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "logging",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "ai_formatter.py",
+    "bytes": 20551,
+    "lines": 495,
+    "sha256": "d2dd4480def671a7adce8f6932cc75168b7c86072157260e589181ad6f25788d",
+    "definitions": [
+      {
+        "name": "_next_groq",
+        "line": 29,
+        "end": 34
+      },
+      {
+        "name": "_next_gemini",
+        "line": 36,
+        "end": 41
+      },
+      {
+        "name": "_extract_urls",
+        "line": 138,
+        "end": 142
+      },
+      {
+        "name": "_clean_ai_output",
+        "line": 144,
+        "end": 160
+      },
+      {
+        "name": "_validate_output",
+        "line": 162,
+        "end": 166
+      },
+      {
+        "name": "_call_llm_cascade",
+        "line": 168,
+        "end": 214
+      },
+      {
+        "name": "_manual_fallback_format",
+        "line": 216,
+        "end": 307
+      },
+      {
+        "name": "generate_clean_post",
+        "line": 309,
+        "end": 372
+      },
+      {
+        "name": "format_with_template",
+        "line": 403,
+        "end": 427
+      },
+      {
+        "name": "rewrite_with_ai",
+        "line": 429,
+        "end": 449
+      },
+      {
+        "name": "analyze_deal_json",
+        "line": 451,
+        "end": 495
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "dotenv",
+      "json",
+      "logging",
+      "os",
+      "re",
+      "requests",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "ajio_scraper.py",
+    "bytes": 21813,
+    "lines": 531,
+    "sha256": "c694b1f8c5fe4e77d7825386131867ee28605e60153dce9a415b4306014fc580",
+    "definitions": [
+      {
+        "name": "_browser_headers",
+        "line": 54,
+        "end": 68
+      },
+      {
+        "name": "make_fp",
+        "line": 89,
+        "end": 90
+      },
+      {
+        "name": "classify_category",
+        "line": 93,
+        "end": 114
+      },
+      {
+        "name": "_build_deal_doc",
+        "line": 117,
+        "end": 170
+      },
+      {
+        "name": "_parse_product",
+        "line": 173,
+        "end": 240
+      },
+      {
+        "name": "_warmup_cookies",
+        "line": 243,
+        "end": 260
+      },
+      {
+        "name": "_fetch_json",
+        "line": 263,
+        "end": 279
+      },
+      {
+        "name": "_scrape_via_html",
+        "line": 282,
+        "end": 333
+      },
+      {
+        "name": "scrape_ajio_category_api",
+        "line": 336,
+        "end": 373
+      },
+      {
+        "name": "scrape_ajio_search_api",
+        "line": 376,
+        "end": 408
+      },
+      {
+        "name": "scrape_ajio_html_fallback",
+        "line": 411,
+        "end": 425
+      },
+      {
+        "name": "run_ajio_scraper",
+        "line": 428,
+        "end": 495
+      },
+      {
+        "name": "ajio_daemon",
+        "line": 498,
+        "end": 522
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "dotenv",
+      "hashlib",
+      "json",
+      "logging",
+      "os",
+      "pymongo",
+      "random",
+      "re",
+      "redis",
+      "sys",
+      "time",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "algorithmic_repricer_inversion.py",
+    "bytes": 10055,
+    "lines": 254,
+    "sha256": "fd4aab67ffaca18f48984b35886d9911a1fc4f3f7864642385f35819b1601689",
+    "definitions": [
+      {
+        "name": "PriceObservation",
+        "line": 10,
+        "end": 13
+      },
+      {
+        "name": "RepricerState",
+        "line": 16,
+        "end": 25
+      },
+      {
+        "name": "RecursiveLeastSquares",
+        "line": 27,
+        "end": 62
+      },
+      {
+        "name": "AlgorithmicRepricerInversion",
+        "line": 64,
+        "end": 200
+      }
+    ],
+    "imports": [
+      "dataclasses",
+      "datetime",
+      "json",
+      "logging",
+      "math",
+      "numpy",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "amazon_lightning.py",
+    "bytes": 20372,
+    "lines": 524,
+    "sha256": "853e11c99f340817ab7dc99f5ca9bc9ea0c38e91a849dddee170b8307c678980",
+    "definitions": [
+      {
+        "name": "_mobile_headers",
+        "line": 65,
+        "end": 74
+      },
+      {
+        "name": "make_fp",
+        "line": 90,
+        "end": 91
+      },
+      {
+        "name": "extract_asin",
+        "line": 94,
+        "end": 97
+      },
+      {
+        "name": "build_affiliate_url",
+        "line": 100,
+        "end": 101
+      },
+      {
+        "name": "classify_category",
+        "line": 104,
+        "end": 121
+      },
+      {
+        "name": "_build_amazon_deal",
+        "line": 124,
+        "end": 177
+      },
+      {
+        "name": "_warmup_cookies",
+        "line": 180,
+        "end": 193
+      },
+      {
+        "name": "_parse_price_text",
+        "line": 196,
+        "end": 204
+      },
+      {
+        "name": "scrape_amazon_page",
+        "line": 207,
+        "end": 353
+      },
+      {
+        "name": "scrape_amazon_individual_product",
+        "line": 356,
+        "end": 419
+      },
+      {
+        "name": "run_amazon_scraper",
+        "line": 422,
+        "end": 485
+      },
+      {
+        "name": "amazon_daemon",
+        "line": 490,
+        "end": 515
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "dotenv",
+      "hashlib",
+      "json",
+      "logging",
+      "os",
+      "pymongo",
+      "random",
+      "re",
+      "redis",
+      "sys",
+      "time",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "analyze_bad_titles.py",
+    "bytes": 1022,
+    "lines": 33,
+    "sha256": "5b2f6948e7f0d3c8e7893a1ffc324bfa080747ed373b6f3a78c887f48f14a923",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "test_slugs",
+      "worker"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "analyze_gshop.py",
+    "bytes": 1301,
+    "lines": 35,
+    "sha256": "8d32460e2592a45741a7aa7245e0b5ed0fd0a7e2bbdbce661a1877f7c3529920",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "api.py",
+    "bytes": 363053,
+    "lines": 7967,
+    "sha256": "7a7e268f4013ed4bca173d40b81cce622e20a1a5670566d4a832c5a5a1386b64",
+    "definitions": [
+      {
+        "name": "convert_to_affiliate_link",
+        "line": 34,
+        "end": 78
+      },
+      {
+        "name": "validate_admin_token",
+        "line": 153,
+        "end": 182
+      },
+      {
+        "name": "validate_admin_token_optional",
+        "line": 184,
+        "end": 201
+      },
+      {
+        "name": "is_safe_public_url",
+        "line": 203,
+        "end": 297
+      },
+      {
+        "name": "_review_product_source",
+        "line": 315,
+        "end": 329
+      },
+      {
+        "name": "add_security_headers",
+        "line": 352,
+        "end": 358
+      },
+      {
+        "name": "verify_auth",
+        "line": 361,
+        "end": 363
+      },
+      {
+        "name": "get_db",
+        "line": 421,
+        "end": 426
+      },
+      {
+        "name": "ConnectionManager",
+        "line": 431,
+        "end": 456
+      },
+      {
+        "name": "pubsub_listener",
+        "line": 463,
+        "end": 486
+      },
+      {
+        "name": "broadcast_queue_worker",
+        "line": 488,
+        "end": 501
+      },
+      {
+        "name": "startup",
+        "line": 504,
+        "end": 506
+      },
+      {
+        "name": "websocket_endpoint",
+        "line": 512,
+        "end": 541
+      },
+      {
+        "name": "_clean",
+        "line": 546,
+        "end": 549
+      },
+      {
+        "name": "parse_universal_multi_deal_items",
+        "line": 551,
+        "end": 628
+      },
+      {
+        "name": "get_pending",
+        "line": 631,
+        "end": 792
+      },
+      {
+        "name": "purge_non_deals",
+        "line": 795,
+        "end": 896
+      },
+      {
+        "name": "get_recent",
+        "line": 899,
+        "end": 959
+      },
+      {
+        "name": "_parse_price_unit",
+        "line": 961,
+        "end": 973
+      },
+      {
+        "name": "parse_natural_search_query",
+        "line": 975,
+        "end": 1012
+      },
+      {
+        "name": "get_public_deals",
+        "line": 1016,
+        "end": 1879
+      },
+      {
+        "name": "get_external_live_deals",
+        "line": 1888,
+        "end": 2503
+      },
+      {
+        "name": "get_deals_ticker",
+        "line": 2512,
+        "end": 2717
+      },
+      {
+        "name": "get_wall_of_happiness",
+        "line": 2726,
+        "end": 2868
+      },
+      {
+        "name": "BragSubmitRequest",
+        "line": 2870,
+        "end": 2877
+      },
+      {
+        "name": "submit_deal_brag",
+        "line": 2880,
+        "end": 2901
+      },
+      {
+        "name": "get_category_stories",
+        "line": 2910,
+        "end": 3061
+      },
+      {
+        "name": "ingest_external_scraper_deal",
+        "line": 3070,
+        "end": 3144
+      },
+      {
+        "name": "submit_user_feedback",
+        "line": 3147,
+        "end": 3197
+      },
+      {
+        "name": "stream_deals",
+        "line": 3200,
+        "end": 3236
+      },
+      {
+        "name": "analyze_deal_endpoint",
+        "line": 3239,
+        "end": 3267
+      },
+      {
+        "name": "create_price_alert",
+        "line": 3270,
+        "end": 3340
+      },
+      {
+        "name": "get_user_alerts",
+        "line": 3343,
+        "end": 3353
+      },
+      {
+        "name": "delete_price_alert",
+        "line": 3356,
+        "end": 3391
+      },
+      {
+        "name": "check_price_alert_endpoint",
+        "line": 3394,
+        "end": 3459
+      },
+      {
+        "name": "create_bounty",
+        "line": 3462,
+        "end": 3487
+      },
+      {
+        "name": "list_active_bounties",
+        "line": 3490,
+        "end": 3497
+      },
+      {
+        "name": "request_auth_code",
+        "line": 3505,
+        "end": 3580
+      },
+      {
+        "name": "verify_auth_code",
+        "line": 3584,
+        "end": 3661
+      },
+      {
+        "name": "get_user_profile",
+        "line": 3665,
+        "end": 3704
+      },
+      {
+        "name": "update_user_profile",
+        "line": 3708,
+        "end": 3759
+      },
+      {
+        "name": "expire_deal",
+        "line": 3764,
+        "end": 3794
+      },
+      {
+        "name": "get_deal_opengraph_preview",
+        "line": 3801,
+        "end": 3879
+      },
+      {
+        "name": "get_duplicates",
+        "line": 3885,
+        "end": 3891
+      },
+      {
+        "name": "get_promos",
+        "line": 3894,
+        "end": 3902
+      },
+      {
+        "name": "quick_drop_deal",
+        "line": 3905,
+        "end": 4100
+      },
+      {
+        "name": "convert_to_affiliate_link",
+        "line": 4107,
+        "end": 4150
+      },
+      {
+        "name": "get_authentic_product_history",
+        "line": 4152,
+        "end": 4208
+      },
+      {
+        "name": "_lookup_public_price",
+        "line": 4210,
+        "end": 4314
+      },
+      {
+        "name": "lookup_deal_price_history_endpoint",
+        "line": 4318,
+        "end": 4326
+      },
+      {
+        "name": "analyze_url_endpoint",
+        "line": 4330,
+        "end": 4334
+      },
+      {
+        "name": "sync_genie_verified_deals",
+        "line": 4337,
+        "end": 4407
+      },
+      {
+        "name": "submit_community_deal",
+        "line": 4410,
+        "end": 4632
+      },
+      {
+        "name": "get_deal_stats",
+        "line": 4635,
+        "end": 4655
+      },
+      {
+        "name": "build_deal_id_query",
+        "line": 4659,
+        "end": 4667
+      },
+      {
+        "name": "approve_deal",
+        "line": 4670,
+        "end": 4842
+      },
+      {
+        "name": "reject_deal",
+        "line": 4845,
+        "end": 4861
+      },
+      {
+        "name": "unpublish_deal",
+        "line": 4864,
+        "end": 4880
+      },
+      {
+        "name": "delete_deal",
+        "line": 4883,
+        "end": 4899
+      },
+      {
+        "name": "analyze_storefront_endpoint",
+        "line": 4902,
+        "end": 4913
+      },
+      {
+        "name": "trigger_d2c_radar",
+        "line": 4916,
+        "end": 4927
+      },
+      {
+        "name": "edit_deal",
+        "line": 4933,
+        "end": 5020
+      },
+      {
+        "name": "update_deal_alias",
+        "line": 5023,
+        "end": 5024
+      },
+      {
+        "name": "upload_deal_image",
+        "line": 5031,
+        "end": 5081
+      },
+      {
+        "name": "delete_deal_image",
+        "line": 5084,
+        "end": 5094
+      },
+      {
+        "name": "delete_deal",
+        "line": 5097,
+        "end": 5135
+      },
+      {
+        "name": "unpublish_deal",
+        "line": 5138,
+        "end": 5174
+      },
+      {
+        "name": "get_stats",
+        "line": 5180,
+        "end": 5211
+      },
+      {
+        "name": "get_settings",
+        "line": 5217,
+        "end": 5222
+      },
+      {
+        "name": "update_settings",
+        "line": 5225,
+        "end": 5243
+      },
+      {
+        "name": "get_auto_rules",
+        "line": 5296,
+        "end": 5304
+      },
+      {
+        "name": "update_auto_rules",
+        "line": 5307,
+        "end": 5318
+      },
+      {
+        "name": "get_spam_rules",
+        "line": 5321,
+        "end": 5329
+      },
+      {
+        "name": "update_spam_rules",
+        "line": 5332,
+        "end": 5344
+      },
+      {
+        "name": "get_channels",
+        "line": 5351,
+        "end": 5484
+      },
+      {
+        "name": "update_channel_link",
+        "line": 5488,
+        "end": 5539
+      },
+      {
+        "name": "set_channel_alias",
+        "line": 5543,
+        "end": 5562
+      },
+      {
+        "name": "add_channel",
+        "line": 5565,
+        "end": 5583
+      },
+      {
+        "name": "toggle_channel",
+        "line": 5586,
+        "end": 5609
+      },
+      {
+        "name": "toggle_auto_approve_tg",
+        "line": 5612,
+        "end": 5641
+      },
+      {
+        "name": "toggle_auto_approve_web",
+        "line": 5644,
+        "end": 5667
+      },
+      {
+        "name": "toggle_auto_approve",
+        "line": 5670,
+        "end": 5672
+      },
+      {
+        "name": "delete_channel",
+        "line": 5675,
+        "end": 5707
+      },
+      {
+        "name": "get_auto_rules_endpoint",
+        "line": 5713,
+        "end": 5725
+      },
+      {
+        "name": "update_auto_rules_endpoint",
+        "line": 5728,
+        "end": 5756
+      },
+      {
+        "name": "test_auto_rules_endpoint",
+        "line": 5759,
+        "end": 5780
+      },
+      {
+        "name": "search_iconscout_assets",
+        "line": 5786,
+        "end": 5807
+      },
+      {
+        "name": "ai_rewrite",
+        "line": 5813,
+        "end": 5854
+      },
+      {
+        "name": "internal_scrape_deal_details",
+        "line": 5859,
+        "end": 6251
+      },
+      {
+        "name": "scrape_image",
+        "line": 6254,
+        "end": 6265
+      },
+      {
+        "name": "generate_banner_endpoint",
+        "line": 6271,
+        "end": 6326
+      },
+      {
+        "name": "get_price_history_endpoint",
+        "line": 6333,
+        "end": 6494
+      },
+      {
+        "name": "retry_affiliate",
+        "line": 6500,
+        "end": 6623
+      },
+      {
+        "name": "mark_spam",
+        "line": 6629,
+        "end": 6642
+      },
+      {
+        "name": "compose_deal",
+        "line": 6648,
+        "end": 6678
+      },
+      {
+        "name": "get_desidime_deals",
+        "line": 6690,
+        "end": 6706
+      },
+      {
+        "name": "health",
+        "line": 6712,
+        "end": 6733
+      },
+      {
+        "name": "verify_stock_endpoint",
+        "line": 6741,
+        "end": 6796
+      },
+      {
+        "name": "queue_deal_endpoint",
+        "line": 6802,
+        "end": 6831
+      },
+      {
+        "name": "get_broadcast_queue_endpoint",
+        "line": 6834,
+        "end": 6840
+      },
+      {
+        "name": "remove_queue_deal_endpoint",
+        "line": 6843,
+        "end": 6850
+      },
+      {
+        "name": "flush_queue_endpoint",
+        "line": 6853,
+        "end": 6862
+      },
+      {
+        "name": "get_channels_analytics_endpoint",
+        "line": 6868,
+        "end": 6993
+      },
+      {
+        "name": "get_clones",
+        "line": 6999,
+        "end": 7004
+      },
+      {
+        "name": "add_clone",
+        "line": 7007,
+        "end": 7016
+      },
+      {
+        "name": "trigger_ajio_scraper",
+        "line": 7023,
+        "end": 7030
+      },
+      {
+        "name": "trigger_amazon_lightning",
+        "line": 7033,
+        "end": 7040
+      },
+      {
+        "name": "trigger_d2c_radar",
+        "line": 7043,
+        "end": 7050
+      },
+      {
+        "name": "get_scrapers_status",
+        "line": 7053,
+        "end": 7090
+      },
+      {
+        "name": "dispatch_deal_video",
+        "line": 7097,
+        "end": 7189
+      },
+      {
+        "name": "batch_dispatch_deal_videos",
+        "line": 7193,
+        "end": 7262
+      },
+      {
+        "name": "mark_deal_video_ready",
+        "line": 7266,
+        "end": 7344
+      },
+      {
+        "name": "delete_deal_video",
+        "line": 7348,
+        "end": 7421
+      },
+      {
+        "name": "get_video_deals",
+        "line": 7424,
+        "end": 7461
+      },
+      {
+        "name": "get_arbitrage_deals",
+        "line": 7468,
+        "end": 7491
+      },
+      {
+        "name": "get_arbitrage_quotes_catalog",
+        "line": 7495,
+        "end": 7507
+      },
+      {
+        "name": "redirect_outbound_deal",
+        "line": 7518,
+        "end": 7726
+      },
+      {
+        "name": "get_click_analytics",
+        "line": 7731,
+        "end": 7796
+      },
+      {
+        "name": "submit_user_feedback",
+        "line": 7805,
+        "end": 7847
+      },
+      {
+        "name": "get_video_deals",
+        "line": 7851,
+        "end": 7877
+      },
+      {
+        "name": "dispatch_deal_video",
+        "line": 7881,
+        "end": 7894
+      },
+      {
+        "name": "delete_deal_video",
+        "line": 7898,
+        "end": 7909
+      },
+      {
+        "name": "search_external_google_shopping",
+        "line": 7924,
+        "end": 7948
+      },
+      {
+        "name": "serve_spa",
+        "line": 7952,
+        "end": 7966
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "aiohttp",
+      "ajio_scraper",
+      "amazon_lightning",
+      "arbitrage_engine",
+      "asyncio",
+      "base64",
+      "broadcast_queue",
+      "bs4",
+      "bson",
+      "channel_aliases",
+      "coupon_extractor",
+      "d2c_radar",
+      "datetime",
+      "deal_analyzer",
+      "deal_banner_generator",
+      "deal_clusterer",
+      "deal_intelligence",
+      "deal_velocity_engine",
+      "dealflow_for_ai.backend.broadcast_queue",
+      "dealflow_for_ai.backend.channel_aliases",
+      "dealflow_for_ai.backend.deal_clusterer",
+      "dealflow_for_ai.backend.stock_verifier",
+      "dotenv",
+      "email_service",
+      "fastapi",
+      "fastapi.middleware.cors",
+      "fastapi.responses",
+      "fastapi.staticfiles",
+      "genie_history",
+      "google_shopping",
+      "hashlib",
+      "heat_score",
+      "html",
+      "ipaddress",
+      "json",
+      "logging",
+      "mimetypes",
+      "models",
+      "motor.motor_asyncio",
+      "os",
+      "pathlib",
+      "price_history_tracker",
+      "public_price_evidence",
+      "public_reviews",
+      "public_search_identity",
+      "pydantic",
+      "random",
+      "re",
+      "redis",
+      "redis.asyncio",
+      "requests",
+      "secrets",
+      "shutil",
+      "socket",
+      "stealth_fetcher",
+      "stock_verifier",
+      "store_scraper",
+      "time",
+      "typing",
+      "universal_store_engine",
+      "url_scraper",
+      "urllib.parse",
+      "urllib.request",
+      "worker"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "arbitrage_engine.py",
+    "bytes": 12243,
+    "lines": 219,
+    "sha256": "e3cfacb3ee74e183feaec181d08fda807b46359bccffc03ecc8f7261ebc6f2e0",
+    "definitions": [
+      {
+        "name": "normalize_title",
+        "line": 120,
+        "end": 125
+      },
+      {
+        "name": "match_canonical_device",
+        "line": 128,
+        "end": 152
+      },
+      {
+        "name": "evaluate_arbitrage",
+        "line": 155,
+        "end": 219
+      }
+    ],
+    "imports": [
+      "logging",
+      "re",
+      "time",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "audit_dealflow_vm.py",
+    "bytes": 7753,
+    "lines": 164,
+    "sha256": "bb79f20cbd5d186dae7e29fbc13cbd90e901c9df412c592f16c8d4f15e9536af",
+    "definitions": [],
+    "imports": [
+      "bson",
+      "bson.objectid",
+      "datetime",
+      "dotenv",
+      "json",
+      "os",
+      "pathlib",
+      "pymongo",
+      "redis",
+      "subprocess",
+      "sys",
+      "time",
+      "urllib.request"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "audit_deals_db.py",
+    "bytes": 1342,
+    "lines": 45,
+    "sha256": "0d1642f3d6960b7de5ea2ddf36cbff6440e8d283bd9fa3002c0818f66a7bfb8e",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "worker"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "backfill_arbitrage.py",
+    "bytes": 1880,
+    "lines": 44,
+    "sha256": "f2ca8408685789ca3952dcf619401627ac2dcc118efe40d07157b9d97e447f8b",
+    "definitions": [
+      {
+        "name": "run",
+        "line": 9,
+        "end": 41
+      }
+    ],
+    "imports": [
+      "arbitrage_engine",
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "backfill_price_history.py",
+    "bytes": 1823,
+    "lines": 60,
+    "sha256": "98514566ff70a0f72f97e31698fd40441e50534ee1ca99ab7c7c44645ed7c5a8",
+    "definitions": [
+      {
+        "name": "backfill",
+        "line": 12,
+        "end": 57
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor.motor_asyncio",
+      "os",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "bot.py",
+    "bytes": 210771,
+    "lines": 3913,
+    "sha256": "f4cd6617361981f2be9902441f60c0edaea607e4347752c62b320b04469d5d6d",
+    "definitions": [
+      {
+        "name": "_save_deal_to_db",
+        "line": 158,
+        "end": 182
+      },
+      {
+        "name": "_update_db_status",
+        "line": 184,
+        "end": 198
+      },
+      {
+        "name": "_load_pending",
+        "line": 203,
+        "end": 215
+      },
+      {
+        "name": "_save_pending",
+        "line": 217,
+        "end": 221
+      },
+      {
+        "name": "_next",
+        "line": 231,
+        "end": 233
+      },
+      {
+        "name": "get_connector",
+        "line": 243,
+        "end": 247
+      },
+      {
+        "name": "make_session",
+        "line": 249,
+        "end": 250
+      },
+      {
+        "name": "detect_platform",
+        "line": 314,
+        "end": 338
+      },
+      {
+        "name": "sim",
+        "line": 340,
+        "end": 342
+      },
+      {
+        "name": "is_scam_url",
+        "line": 344,
+        "end": 353
+      },
+      {
+        "name": "detect_category",
+        "line": 388,
+        "end": 392
+      },
+      {
+        "name": "extract_prices",
+        "line": 397,
+        "end": 492
+      },
+      {
+        "name": "extract_bank_offers",
+        "line": 509,
+        "end": 532
+      },
+      {
+        "name": "extract_combo_info",
+        "line": 534,
+        "end": 546
+      },
+      {
+        "name": "detect_flash_sale",
+        "line": 595,
+        "end": 599
+      },
+      {
+        "name": "extract_product_name",
+        "line": 604,
+        "end": 657
+      },
+      {
+        "name": "extract_canonical_slug",
+        "line": 666,
+        "end": 736
+      },
+      {
+        "name": "is_invalid_product_name",
+        "line": 738,
+        "end": 763
+      },
+      {
+        "name": "sha256_fp",
+        "line": 765,
+        "end": 768
+      },
+      {
+        "name": "classify_intent",
+        "line": 793,
+        "end": 813
+      },
+      {
+        "name": "extract_urls",
+        "line": 818,
+        "end": 819
+      },
+      {
+        "name": "extract_asin",
+        "line": 821,
+        "end": 835
+      },
+      {
+        "name": "extract_flipkart_pid",
+        "line": 837,
+        "end": 839
+      },
+      {
+        "name": "is_search_url",
+        "line": 841,
+        "end": 847
+      },
+      {
+        "name": "get_canonical_deal_key",
+        "line": 849,
+        "end": 865
+      },
+      {
+        "name": "normalize",
+        "line": 867,
+        "end": 870
+      },
+      {
+        "name": "url_fp",
+        "line": 872,
+        "end": 876
+      },
+      {
+        "name": "is_short",
+        "line": 878,
+        "end": 880
+      },
+      {
+        "name": "strip_tracking",
+        "line": 882,
+        "end": 887
+      },
+      {
+        "name": "_is_amazon_url",
+        "line": 889,
+        "end": 893
+      },
+      {
+        "name": "expand_url",
+        "line": 898,
+        "end": 997
+      },
+      {
+        "name": "expand_all_urls",
+        "line": 999,
+        "end": 1009
+      },
+      {
+        "name": "apply_amazon_tag",
+        "line": 1016,
+        "end": 1031
+      },
+      {
+        "name": "earnkaro_convert_text",
+        "line": 1033,
+        "end": 1059
+      },
+      {
+        "name": "apply_affiliate_to_text",
+        "line": 1061,
+        "end": 1083
+      },
+      {
+        "name": "scrape_price_from_url",
+        "line": 1102,
+        "end": 1213
+      },
+      {
+        "name": "scrape_prices_from_urls",
+        "line": 1215,
+        "end": 1239
+      },
+      {
+        "name": "update_channel_quality",
+        "line": 1246,
+        "end": 1248
+      },
+      {
+        "name": "channel_avg_score",
+        "line": 1250,
+        "end": 1252
+      },
+      {
+        "name": "load_json",
+        "line": 1257,
+        "end": 1261
+      },
+      {
+        "name": "save_json",
+        "line": 1263,
+        "end": 1264
+      },
+      {
+        "name": "load_seen",
+        "line": 1266,
+        "end": 1266
+      },
+      {
+        "name": "save_seen",
+        "line": 1267,
+        "end": 1267
+      },
+      {
+        "name": "load_deal_cache",
+        "line": 1268,
+        "end": 1268
+      },
+      {
+        "name": "save_deal_cache",
+        "line": 1269,
+        "end": 1269
+      },
+      {
+        "name": "prune_deal_cache",
+        "line": 1271,
+        "end": 1273
+      },
+      {
+        "name": "load_stats",
+        "line": 1275,
+        "end": 1280
+      },
+      {
+        "name": "save_stats",
+        "line": 1282,
+        "end": 1282
+      },
+      {
+        "name": "load_last_cycle",
+        "line": 1283,
+        "end": 1283
+      },
+      {
+        "name": "save_last_cycle",
+        "line": 1284,
+        "end": 1284
+      },
+      {
+        "name": "update_trending",
+        "line": 1286,
+        "end": 1292
+      },
+      {
+        "name": "DuplicateTracker",
+        "line": 1297,
+        "end": 1326
+      },
+      {
+        "name": "check_canonical_duplicate",
+        "line": 1330,
+        "end": 1361
+      },
+      {
+        "name": "record_canonical_posted",
+        "line": 1363,
+        "end": 1370
+      },
+      {
+        "name": "check_buyhatke",
+        "line": 1375,
+        "end": 1399
+      },
+      {
+        "name": "check_camelcamelcamel",
+        "line": 1401,
+        "end": 1409
+      },
+      {
+        "name": "get_price_history",
+        "line": 1411,
+        "end": 1442
+      },
+      {
+        "name": "price_verdict",
+        "line": 1444,
+        "end": 1456
+      },
+      {
+        "name": "_build_rating_prompt",
+        "line": 1485,
+        "end": 1495
+      },
+      {
+        "name": "_parse_json",
+        "line": 1497,
+        "end": 1501
+      },
+      {
+        "name": "_call_ai_text",
+        "line": 1503,
+        "end": 1514
+      },
+      {
+        "name": "_cerebras",
+        "line": 1516,
+        "end": 1530
+      },
+      {
+        "name": "_groq",
+        "line": 1532,
+        "end": 1549
+      },
+      {
+        "name": "_gemini",
+        "line": 1551,
+        "end": 1572
+      },
+      {
+        "name": "_sambanova",
+        "line": 1574,
+        "end": 1586
+      },
+      {
+        "name": "_together",
+        "line": 1588,
+        "end": 1600
+      },
+      {
+        "name": "_cohere",
+        "line": 1602,
+        "end": 1614
+      },
+      {
+        "name": "_openrouter",
+        "line": 1616,
+        "end": 1629
+      },
+      {
+        "name": "_mistral",
+        "line": 1631,
+        "end": 1643
+      },
+      {
+        "name": "rate_deal",
+        "line": 1645,
+        "end": 1662
+      },
+      {
+        "name": "_build_clean_prompt",
+        "line": 1859,
+        "end": 1882
+      },
+      {
+        "name": "_clean_ai_output",
+        "line": 1885,
+        "end": 1898
+      },
+      {
+        "name": "_validate_clean_output",
+        "line": 1901,
+        "end": 1910
+      },
+      {
+        "name": "_ai_clean_format",
+        "line": 1913,
+        "end": 1955
+      },
+      {
+        "name": "_manual_clean_format",
+        "line": 1958,
+        "end": 2013
+      },
+      {
+        "name": "generate_clean_post",
+        "line": 2016,
+        "end": 2065
+      },
+      {
+        "name": "fetch_amazon_image",
+        "line": 2071,
+        "end": 2125
+      },
+      {
+        "name": "fetch_og_image",
+        "line": 2127,
+        "end": 2164
+      },
+      {
+        "name": "download_image",
+        "line": 2166,
+        "end": 2175
+      },
+      {
+        "name": "fetch_product_image",
+        "line": 2177,
+        "end": 2204
+      },
+      {
+        "name": "cleanup_image",
+        "line": 2206,
+        "end": 2209
+      },
+      {
+        "name": "_se",
+        "line": 2214,
+        "end": 2214
+      },
+      {
+        "name": "_ve",
+        "line": 2215,
+        "end": 2215
+      },
+      {
+        "name": "chtag",
+        "line": 2216,
+        "end": 2216
+      },
+      {
+        "name": "_platform_line",
+        "line": 2217,
+        "end": 2217
+      },
+      {
+        "name": "_price_line",
+        "line": 2219,
+        "end": 2226
+      },
+      {
+        "name": "format_rated",
+        "line": 2228,
+        "end": 2246
+      },
+      {
+        "name": "format_unrated",
+        "line": 2248,
+        "end": 2264
+      },
+      {
+        "name": "format_no_link",
+        "line": 2266,
+        "end": 2280
+      },
+      {
+        "name": "_send_with_fallback",
+        "line": 2285,
+        "end": 2426
+      },
+      {
+        "name": "notify_alert_users",
+        "line": 2431,
+        "end": 2442
+      },
+      {
+        "name": "register_handlers",
+        "line": 2447,
+        "end": 2781
+      },
+      {
+        "name": "send_for_approval",
+        "line": 2786,
+        "end": 3033
+      },
+      {
+        "name": "pending_cleanup_loop",
+        "line": 3038,
+        "end": 3053
+      },
+      {
+        "name": "post_daily_summary",
+        "line": 3058,
+        "end": 3079
+      },
+      {
+        "name": "post_weekly_trending",
+        "line": 3081,
+        "end": 3093
+      },
+      {
+        "name": "process_message",
+        "line": 3098,
+        "end": 3365
+      },
+      {
+        "name": "get_active_source_channels",
+        "line": 3370,
+        "end": 3381
+      },
+      {
+        "name": "refresh_system_settings",
+        "line": 3383,
+        "end": 3395
+      },
+      {
+        "name": "scrape_and_post",
+        "line": 3397,
+        "end": 3537
+      },
+      {
+        "name": "cleanup_old_images",
+        "line": 3542,
+        "end": 3548
+      },
+      {
+        "name": "pubsub_listener",
+        "line": 3552,
+        "end": 3825
+      },
+      {
+        "name": "bot_main",
+        "line": 3830,
+        "end": 3896
+      },
+      {
+        "name": "run_forever",
+        "line": 3898,
+        "end": 3908
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "aiofiles",
+      "aiohttp",
+      "asyncio",
+      "base64",
+      "channel_aliases",
+      "coupon_extractor",
+      "datetime",
+      "deal_intelligence",
+      "dealflow_for_ai.backend.channel_aliases",
+      "difflib",
+      "dotenv",
+      "fcntl",
+      "hashlib",
+      "json",
+      "logging",
+      "logging.handlers",
+      "os",
+      "pathlib",
+      "publisher",
+      "pymongo",
+      "random",
+      "re",
+      "redis",
+      "redis.asyncio",
+      "stealth_fetcher",
+      "store_scraper",
+      "sys",
+      "telethon",
+      "telethon.tl.types",
+      "time",
+      "universal_store_engine",
+      "urllib.parse",
+      "urllib.request",
+      "uuid"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "broadcast_queue.py",
+    "bytes": 7516,
+    "lines": 219,
+    "sha256": "94c7512a43f105366c70f17a312f83d896a09e61dad4b0ee6becf0cc4185ddda",
+    "definitions": [
+      {
+        "name": "add_to_broadcast_queue",
+        "line": 19,
+        "end": 97
+      },
+      {
+        "name": "get_broadcast_queue",
+        "line": 100,
+        "end": 135
+      },
+      {
+        "name": "remove_from_broadcast_queue",
+        "line": 138,
+        "end": 152
+      },
+      {
+        "name": "pop_and_publish_next",
+        "line": 155,
+        "end": 219
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "datetime",
+      "json",
+      "logging",
+      "time",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "channel_aliases.py",
+    "bytes": 5758,
+    "lines": 98,
+    "sha256": "a0bb5d1e8579e45bedb7b5dc9460355689907d9a6ee7f9771b279d7cd9455072",
+    "definitions": [
+      {
+        "name": "get_channel_aliases",
+        "line": 50,
+        "end": 61
+      },
+      {
+        "name": "is_channel_paused",
+        "line": 63,
+        "end": 71
+      },
+      {
+        "name": "is_channel_auto_approved",
+        "line": 73,
+        "end": 81
+      },
+      {
+        "name": "is_channel_auto_tg",
+        "line": 83,
+        "end": 90
+      },
+      {
+        "name": "is_channel_auto_web",
+        "line": 92,
+        "end": 97
+      }
+    ],
+    "imports": [],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_alerts_schema.py",
+    "bytes": 371,
+    "lines": 12,
+    "sha256": "36bf9ada3b9cafd9d6e92aa2617e6ad168d994bc330fbe34a0ea4a7083bf0c87",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_amz_img.py",
+    "bytes": 710,
+    "lines": 20,
+    "sha256": "99bc9ce1be7b8244d9be1bbe0fc7eac2f455e953ab92ead5b2051853b85adc46",
+    "definitions": [
+      {
+        "name": "check_img",
+        "line": 5,
+        "end": 17
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "re",
+      "test_new_scraper_logic"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_amz_safari.py",
+    "bytes": 862,
+    "lines": 22,
+    "sha256": "52dc159b619b61e158b7ab076c447dca8b8c71380bd20514cef68ef42925d092",
+    "definitions": [
+      {
+        "name": "check_amz",
+        "line": 6,
+        "end": 19
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "re",
+      "stealth_fetcher",
+      "store_scraper"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_arb_deal.py",
+    "bytes": 491,
+    "lines": 14,
+    "sha256": "d153249ed9610c746553fb99ff18098231b0c11078f14ab5a0e36b3551a7127f",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_asian.py",
+    "bytes": 643,
+    "lines": 20,
+    "sha256": "6c803eb417b1dd80ce33ffe7012bca4f3515a4d3816d294094d8da28c4f62d43",
+    "definitions": [],
+    "imports": [
+      "bson",
+      "dotenv",
+      "json",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_asin.py",
+    "bytes": 724,
+    "lines": 18,
+    "sha256": "8097695c2d7a873eebb4f717510d100c24f83e1cf91da60292a394f881cddd8f",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_bogus_mrp.py",
+    "bytes": 657,
+    "lines": 14,
+    "sha256": "58b37fac255d6be428128df2b26feb6498ef0eb5e7d090d49b9b2ecc7700c16a",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_counts.py",
+    "bytes": 684,
+    "lines": 20,
+    "sha256": "d36220619e33556c66ba067da2ce8f4b94c3471f8cc22b837ffcf53766a918c8",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_db.py",
+    "bytes": 407,
+    "lines": 14,
+    "sha256": "25a277a633a11749f983e6817ebe0b5eeb6509cee577a39e6545baeebb7ed950",
+    "definitions": [],
+    "imports": [
+      "bson",
+      "dotenv",
+      "json",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_db_name.py",
+    "bytes": 327,
+    "lines": 11,
+    "sha256": "ebc85b9e0dc032be29c04df6fa34000c1f56d0ac94a3918d451e4f526d8edf3c",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_db_stats.py",
+    "bytes": 474,
+    "lines": 14,
+    "sha256": "a43203e33bfc0145a218a9d11e3bb2943fa6650b2056d9f24ac062205d9cf9ef",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_deal.py",
+    "bytes": 966,
+    "lines": 30,
+    "sha256": "ca424f8ff030cb978710a65bb04d2a4e4408f39a213acca1e34fe5bb3297c438",
+    "definitions": [],
+    "imports": [
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_fake.py",
+    "bytes": 1488,
+    "lines": 41,
+    "sha256": "ab0aba89f0b2e4b1ff6b46c0748a919556b8faf7155b10304aa508dd4c30cfe1",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_fk_json.py",
+    "bytes": 1201,
+    "lines": 30,
+    "sha256": "72b86690e970a178b54f880088c60140efd764e96ea7ae18a13ca5793ecfd276",
+    "definitions": [
+      {
+        "name": "check_fk_json",
+        "line": 6,
+        "end": 27
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "json",
+      "re",
+      "stealth_fetcher"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_img.py",
+    "bytes": 564,
+    "lines": 17,
+    "sha256": "86c3ebba709810c81bd9f227ffe638f7f42a19a1453746f59e40eb2cb1004539",
+    "definitions": [],
+    "imports": [
+      "json",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_live_prices.py",
+    "bytes": 712,
+    "lines": 19,
+    "sha256": "04f611e95651002d97ec2e753d3229b29f3b359c77f4aaa98a570aa5e365760f",
+    "definitions": [
+      {
+        "name": "check",
+        "line": 12,
+        "end": 17
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "json",
+      "store_scraper"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_mobiles_db.py",
+    "bytes": 953,
+    "lines": 24,
+    "sha256": "ff0bd8a2be14278e2be40461c6fb2988ae2704fd603b52c778defb41c385a168",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_myntra_deals.py",
+    "bytes": 596,
+    "lines": 15,
+    "sha256": "2c55e1f393d3fbca7e1e7418c1488c463c80c1daca822733fd0d1cdd1f07e891",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_oos.py",
+    "bytes": 1087,
+    "lines": 29,
+    "sha256": "e5db0d5968863c182bdba9c95bc18057ead1c7d329a3761e19b5536e21ede2eb",
+    "definitions": [
+      {
+        "name": "check_oos",
+        "line": 5,
+        "end": 26
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "re",
+      "test_new_scraper_logic"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_pending.py",
+    "bytes": 732,
+    "lines": 22,
+    "sha256": "245ef22c8b644e9b5bfafa4973950c8bb71ad4286a08359dd07e0cda65b0f26b",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_port.py",
+    "bytes": 308,
+    "lines": 9,
+    "sha256": "bd7b1f83de363c6720fa1b1218a7959b9bc7256446f1ad90f3617f6d2de62efb",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_prune.py",
+    "bytes": 1070,
+    "lines": 23,
+    "sha256": "b10ddab9340a9d76f99fb478cb619bd4839615d654e1600e6a5cbc463339f070",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_puma_tommy_apis.py",
+    "bytes": 2935,
+    "lines": 70,
+    "sha256": "892fc0bf5136fc2d726dd00c6db26ef9cc374272dd81602324b2369216abad47",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_recent_deals.py",
+    "bytes": 971,
+    "lines": 23,
+    "sha256": "ff435f6ac530e1384662ad79e65721fccbe5b70b22dbadc0a50d41f9b918a8ad",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_rules.py",
+    "bytes": 331,
+    "lines": 11,
+    "sha256": "f48715c5ef13958f8d434ae86a57d29b8eb1bf783e4869d93d2d40dcc4612bb8",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_run_steps.py",
+    "bytes": 1067,
+    "lines": 32,
+    "sha256": "8d27976894c2971e1dcd73b2588953938785f66156d3b7f1e591128c6a494fb5",
+    "definitions": [],
+    "imports": [
+      "json",
+      "os",
+      "sys",
+      "urllib.request"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_runs.py",
+    "bytes": 993,
+    "lines": 31,
+    "sha256": "a046a7fb1c133cfef263116cf319817384816aa08198e7dc67c0558cafacd542",
+    "definitions": [],
+    "imports": [
+      "json",
+      "os",
+      "urllib.request"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_status.py",
+    "bytes": 416,
+    "lines": 15,
+    "sha256": "a8ad081b07b4c0179046bba7bcf7d11d10fe589a620d17fa593c9b98b820ab68",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_status_dist.py",
+    "bytes": 469,
+    "lines": 15,
+    "sha256": "64f4578deb5351efdceb2aa72963c153f315b1be9096476aa3b3e3a3c15a1a22",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "check_vm_price_history.py",
+    "bytes": 386,
+    "lines": 11,
+    "sha256": "785b1dda83a11b4952c47228255766d7610849cef05df36d1d583f5fee9993e9",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "clean_db.py",
+    "bytes": 2507,
+    "lines": 61,
+    "sha256": "b87cb033dd5169c914ecb513a50b908b6fabe2ea30e60dd408ae74ef460a2a6e",
+    "definitions": [],
+    "imports": [
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "clean_fake_deals.py",
+    "bytes": 1608,
+    "lines": 53,
+    "sha256": "5efbdb3ebe03c676fbb0f392b6f77a2d6e544676ff4b77c159138423b5bd8638",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "clean_junk_non_deals.py",
+    "bytes": 3143,
+    "lines": 90,
+    "sha256": "95287d32ed00cd5547b10880f1f05ea37a4cfffea029d8ed745265346afbb5a3",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 21,
+        "end": 87
+      }
+    ],
+    "imports": [
+      "deal_intelligence",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "coupon_extractor.py",
+    "bytes": 7688,
+    "lines": 169,
+    "sha256": "b39c0c22e4e84723a15bcd38630d473e18c469aed06cfc429c9b5c1878d7e8a9",
+    "definitions": [
+      {
+        "name": "is_valid_coupon_candidate",
+        "line": 30,
+        "end": 87
+      },
+      {
+        "name": "extract_coupon",
+        "line": 89,
+        "end": 91
+      },
+      {
+        "name": "extract_coupon_from_text",
+        "line": 93,
+        "end": 161
+      },
+      {
+        "name": "extract_amazon_details",
+        "line": 163,
+        "end": 169
+      }
+    ],
+    "imports": [
+      "re",
+      "store_scraper"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "d2c_radar.py",
+    "bytes": 21797,
+    "lines": 557,
+    "sha256": "cd4bbb96612d02f905a1b97d140876f57b814107be041a115b6ba032c195bad6",
+    "definitions": [
+      {
+        "name": "make_fp",
+        "line": 234,
+        "end": 236
+      },
+      {
+        "name": "fetch_brand_clearance",
+        "line": 238,
+        "end": 363
+      },
+      {
+        "name": "fetch_puma_outlet",
+        "line": 365,
+        "end": 477
+      },
+      {
+        "name": "run_d2c_radar",
+        "line": 479,
+        "end": 539
+      },
+      {
+        "name": "d2c_daemon",
+        "line": 541,
+        "end": 549
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "dotenv",
+      "hashlib",
+      "json",
+      "logging",
+      "os",
+      "pymongo",
+      "re",
+      "redis",
+      "sys",
+      "time",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "deal_analyzer.py",
+    "bytes": 13859,
+    "lines": 315,
+    "sha256": "57980122cf4616e1da2be0e46ac6e71656e3ef3d821dedd9d0ea4cfe1e4a6a3a",
+    "definitions": [
+      {
+        "name": "is_invalid_product_name",
+        "line": 51,
+        "end": 67
+      },
+      {
+        "name": "clean_text_for_title",
+        "line": 83,
+        "end": 103
+      },
+      {
+        "name": "extract_primary_url",
+        "line": 105,
+        "end": 135
+      },
+      {
+        "name": "analyze_and_enrich_deal",
+        "line": 137,
+        "end": 245
+      },
+      {
+        "name": "run_analyzer_pass",
+        "line": 247,
+        "end": 297
+      },
+      {
+        "name": "analyzer_daemon",
+        "line": 299,
+        "end": 307
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "deal_intelligence",
+      "dotenv",
+      "json",
+      "logging",
+      "os",
+      "pymongo",
+      "re",
+      "redis",
+      "store_scraper",
+      "sys",
+      "time",
+      "typing",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "deal_banner_generator.py",
+    "bytes": 8759,
+    "lines": 221,
+    "sha256": "afaed47282d5b94e2cf5fa4129fb778b6b75e1e6052bad0b5c3a146fb56dd2e2",
+    "definitions": [
+      {
+        "name": "_load_font",
+        "line": 34,
+        "end": 45
+      },
+      {
+        "name": "generate_deal_banner",
+        "line": 48,
+        "end": 221
+      }
+    ],
+    "imports": [
+      "PIL",
+      "io",
+      "logging",
+      "os",
+      "pathlib",
+      "re",
+      "stealth_fetcher"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "deal_clusterer.py",
+    "bytes": 10059,
+    "lines": 247,
+    "sha256": "930687f2204860bb655ea3690d9163143257b0f6aabd317547d0261ca5d7c7b1",
+    "definitions": [
+      {
+        "name": "resolve_channel_name",
+        "line": 45,
+        "end": 81
+      },
+      {
+        "name": "extract_cluster_key",
+        "line": 84,
+        "end": 131
+      },
+      {
+        "name": "cluster_deals",
+        "line": 134,
+        "end": 247
+      }
+    ],
+    "imports": [
+      "logging",
+      "re",
+      "typing",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "deal_harvesters.py",
+    "bytes": 14841,
+    "lines": 315,
+    "sha256": "9b0181d99aea0152e7987565ab67b1256e3fc1b3c16c2a7332b45e0526f514dd",
+    "definitions": [
+      {
+        "name": "harvest_shopify_store",
+        "line": 43,
+        "end": 148
+      },
+      {
+        "name": "shopify_radar_loop",
+        "line": 151,
+        "end": 169
+      },
+      {
+        "name": "harvest_reddit_deals",
+        "line": 180,
+        "end": 299
+      },
+      {
+        "name": "reddit_harvester_loop",
+        "line": 302,
+        "end": 315
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "dotenv",
+      "hashlib",
+      "json",
+      "logging",
+      "os",
+      "re",
+      "store_scraper",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "deal_intelligence.py",
+    "bytes": 34063,
+    "lines": 717,
+    "sha256": "8766fee9d92433815f1ef0aeb9a79e0017680e4b2c87ba5b349b06510b93da31",
+    "definitions": [
+      {
+        "name": "_next_groq",
+        "line": 51,
+        "end": 56
+      },
+      {
+        "name": "_next_gemini",
+        "line": 58,
+        "end": 63
+      },
+      {
+        "name": "get_custom_spam_rules",
+        "line": 101,
+        "end": 120
+      },
+      {
+        "name": "is_lead_or_financial_domain",
+        "line": 180,
+        "end": 194
+      },
+      {
+        "name": "classify_deal_intent",
+        "line": 196,
+        "end": 260
+      },
+      {
+        "name": "ai_classify_deal",
+        "line": 262,
+        "end": 446
+      },
+      {
+        "name": "is_non_deal_promo",
+        "line": 448,
+        "end": 450
+      },
+      {
+        "name": "calculate_deal_intelligence_score",
+        "line": 452,
+        "end": 568
+      },
+      {
+        "name": "analyze_deal_multimodal",
+        "line": 570,
+        "end": 717
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "base64",
+      "dotenv",
+      "json",
+      "logging",
+      "os",
+      "pymongo",
+      "re",
+      "time",
+      "typing",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "deal_velocity_engine.py",
+    "bytes": 18083,
+    "lines": 481,
+    "sha256": "a0539df2db34f61969c497c97c4ec6399c31b10dfebdf216d85fd5e97b959212",
+    "definitions": [
+      {
+        "name": "_match_hazard_rate",
+        "line": 77,
+        "end": 91
+      },
+      {
+        "name": "_discount_band",
+        "line": 96,
+        "end": 107
+      },
+      {
+        "name": "_discount_hazard_multiplier",
+        "line": 110,
+        "end": 118
+      },
+      {
+        "name": "predict_sellout_time",
+        "line": 123,
+        "end": 222
+      },
+      {
+        "name": "compute_consensus_velocity",
+        "line": 225,
+        "end": 266
+      },
+      {
+        "name": "compute_price_position",
+        "line": 269,
+        "end": 360
+      },
+      {
+        "name": "compute_category_heatmap",
+        "line": 363,
+        "end": 445
+      },
+      {
+        "name": "enrich_deal_with_intelligence",
+        "line": 448,
+        "end": 481
+      }
+    ],
+    "imports": [
+      "collections",
+      "logging",
+      "math",
+      "re",
+      "time",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "deep_heal_everything.py",
+    "bytes": 9192,
+    "lines": 218,
+    "sha256": "f70f35d12317d151f4273cdc24ba1cd23858f3cc9e4597e11797bae9e586c9aa",
+    "definitions": [
+      {
+        "name": "is_bad_title",
+        "line": 26,
+        "end": 47
+      },
+      {
+        "name": "extract_asin",
+        "line": 49,
+        "end": 56
+      },
+      {
+        "name": "extract_urls",
+        "line": 58,
+        "end": 60
+      },
+      {
+        "name": "clean_title_str",
+        "line": 62,
+        "end": 70
+      },
+      {
+        "name": "scrape_amazon_asin",
+        "line": 72,
+        "end": 111
+      },
+      {
+        "name": "scrape_generic_og",
+        "line": 113,
+        "end": 136
+      },
+      {
+        "name": "heal_single_deal",
+        "line": 138,
+        "end": 203
+      },
+      {
+        "name": "main",
+        "line": 205,
+        "end": 215
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "dotenv",
+      "html",
+      "os",
+      "pathlib",
+      "pymongo",
+      "re",
+      "sys",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "desidime_bot.py",
+    "bytes": 90239,
+    "lines": 1883,
+    "sha256": "95ef737bb7f0b52af5854e11e55422a730f68f6e71f624c4719b5b866d1a2bf6",
+    "definitions": [
+      {
+        "name": "_next_groq",
+        "line": 122,
+        "end": 124
+      },
+      {
+        "name": "_next_gem",
+        "line": 125,
+        "end": 127
+      },
+      {
+        "name": "_save_deal_to_db",
+        "line": 155,
+        "end": 194
+      },
+      {
+        "name": "_update_db_status",
+        "line": 196,
+        "end": 206
+      },
+      {
+        "name": "load_seen",
+        "line": 227,
+        "end": 238
+      },
+      {
+        "name": "save_seen",
+        "line": 240,
+        "end": 245
+      },
+      {
+        "name": "is_seen",
+        "line": 247,
+        "end": 250
+      },
+      {
+        "name": "mark_seen",
+        "line": 252,
+        "end": 253
+      },
+      {
+        "name": "load_pending",
+        "line": 255,
+        "end": 276
+      },
+      {
+        "name": "save_pending",
+        "line": 278,
+        "end": 279
+      },
+      {
+        "name": "tg",
+        "line": 288,
+        "end": 294
+      },
+      {
+        "name": "send_to_admin",
+        "line": 296,
+        "end": 331
+      },
+      {
+        "name": "post_to_channel",
+        "line": 333,
+        "end": 345
+      },
+      {
+        "name": "post_image_link_to_dump",
+        "line": 348,
+        "end": 372
+      },
+      {
+        "name": "dump_multi_links",
+        "line": 374,
+        "end": 437
+      },
+      {
+        "name": "answer_callback",
+        "line": 439,
+        "end": 440
+      },
+      {
+        "name": "edit_message",
+        "line": 442,
+        "end": 445
+      },
+      {
+        "name": "earnkaro",
+        "line": 447,
+        "end": 464
+      },
+      {
+        "name": "_is_spam_domain",
+        "line": 466,
+        "end": 472
+      },
+      {
+        "name": "unshorten_desidime_link",
+        "line": 474,
+        "end": 498
+      },
+      {
+        "name": "get_buy_url",
+        "line": 500,
+        "end": 534
+      },
+      {
+        "name": "_parse_num_val",
+        "line": 539,
+        "end": 546
+      },
+      {
+        "name": "get_price",
+        "line": 548,
+        "end": 565
+      },
+      {
+        "name": "get_mrp",
+        "line": 567,
+        "end": 583
+      },
+      {
+        "name": "get_discount",
+        "line": 585,
+        "end": 588
+      },
+      {
+        "name": "is_spam",
+        "line": 601,
+        "end": 602
+      },
+      {
+        "name": "fetch_product_image",
+        "line": 607,
+        "end": 658
+      },
+      {
+        "name": "cleanup_image",
+        "line": 660,
+        "end": 663
+      },
+      {
+        "name": "_build_dd_prompt",
+        "line": 844,
+        "end": 858
+      },
+      {
+        "name": "_validate_ai_output",
+        "line": 860,
+        "end": 872
+      },
+      {
+        "name": "_ai_format_post",
+        "line": 874,
+        "end": 923
+      },
+      {
+        "name": "_manual_format",
+        "line": 925,
+        "end": 953
+      },
+      {
+        "name": "_clean_ai_output",
+        "line": 955,
+        "end": 969
+      },
+      {
+        "name": "generate_post",
+        "line": 971,
+        "end": 992
+      },
+      {
+        "name": "is_product_url",
+        "line": 998,
+        "end": 1017
+      },
+      {
+        "name": "scrape_deal_comments",
+        "line": 1019,
+        "end": 1044
+      },
+      {
+        "name": "scrape_deal_page",
+        "line": 1046,
+        "end": 1151
+      },
+      {
+        "name": "harvest_comment_deals",
+        "line": 1153,
+        "end": 1247
+      },
+      {
+        "name": "scrape_deals",
+        "line": 1249,
+        "end": 1331
+      },
+      {
+        "name": "track_and_evaluate_velocity",
+        "line": 1338,
+        "end": 1405
+      },
+      {
+        "name": "run_cycle",
+        "line": 1410,
+        "end": 1782
+      },
+      {
+        "name": "poll_callbacks",
+        "line": 1787,
+        "end": 1845
+      },
+      {
+        "name": "main",
+        "line": 1850,
+        "end": 1880
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "base64",
+      "bs4",
+      "coupon_extractor",
+      "deal_intelligence",
+      "deal_memory",
+      "dealbot.pincode_resolver",
+      "dotenv",
+      "fcntl",
+      "hashlib",
+      "json",
+      "logging",
+      "logging.handlers",
+      "multi_deal_extractor",
+      "os",
+      "pathlib",
+      "pincode_resolver",
+      "pymongo",
+      "random",
+      "re",
+      "redis",
+      "requests",
+      "store_scraper",
+      "sys",
+      "tempfile",
+      "threading",
+      "time",
+      "urllib.parse",
+      "urllib.request",
+      "worker"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "diag_system_issues.py",
+    "bytes": 2644,
+    "lines": 61,
+    "sha256": "5e882b49d1d02c9a382e7857cb629720289c8c4876bc5e4463d749afbd2b1953",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "dump_gshop.py",
+    "bytes": 429,
+    "lines": 11,
+    "sha256": "c139462fb3e891bddfe5f5a4f8ca40216c3facc470a854e4ee8b46bd0090eb44",
+    "definitions": [],
+    "imports": [
+      "stealth_fetcher",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "email_service.py",
+    "bytes": 20998,
+    "lines": 480,
+    "sha256": "2534eb7c706c54fd1031e5e35a67533371053b917a1938e57ab1a4f0abbd972b",
+    "definitions": [
+      {
+        "name": "build_price_drop_html",
+        "line": 33,
+        "end": 141
+      },
+      {
+        "name": "send_price_drop_email_sync",
+        "line": 144,
+        "end": 270
+      },
+      {
+        "name": "send_price_drop_email",
+        "line": 273,
+        "end": 296
+      },
+      {
+        "name": "build_auth_code_html",
+        "line": 299,
+        "end": 368
+      },
+      {
+        "name": "send_auth_code_email_sync",
+        "line": 371,
+        "end": 465
+      },
+      {
+        "name": "send_auth_code_email",
+        "line": 468,
+        "end": 479
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "email.mime.multipart",
+      "email.mime.text",
+      "logging",
+      "os",
+      "smtplib",
+      "sys",
+      "time",
+      "typing",
+      "urllib.parse",
+      "urllib.request"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "enrich_posted_deals.py",
+    "bytes": 3230,
+    "lines": 79,
+    "sha256": "370d5d4194081aa6e675a38548f91aeab435bd5873e6f47d6598d37252f9139a",
+    "definitions": [
+      {
+        "name": "enrich",
+        "line": 14,
+        "end": 76
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "store_scraper"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "enrich_recent_top.py",
+    "bytes": 2703,
+    "lines": 59,
+    "sha256": "d46c45dbfc601c4aa2d14f0c0f058b71382fe0cab420c5042ebf063969072bc6",
+    "definitions": [
+      {
+        "name": "enrich_recent",
+        "line": 12,
+        "end": 56
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "store_scraper"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "fetch_10_desidime_deals.py",
+    "bytes": 6934,
+    "lines": 181,
+    "sha256": "627341257e76bc32f87d780c0932630db72c8055a2f1d567ac36595513f2616c",
+    "definitions": [
+      {
+        "name": "unshorten",
+        "line": 17,
+        "end": 32
+      },
+      {
+        "name": "main",
+        "line": 34,
+        "end": 178
+      }
+    ],
+    "imports": [
+      "bs4",
+      "json",
+      "os",
+      "re",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "fetch_10_hot_desidime_deals.py",
+    "bytes": 8304,
+    "lines": 216,
+    "sha256": "aba03c497575608c14f9a4ec0c5361cf4988ea209bace203532bb9a9c18bc2cf",
+    "definitions": [
+      {
+        "name": "unshorten",
+        "line": 17,
+        "end": 32
+      },
+      {
+        "name": "main",
+        "line": 34,
+        "end": 213
+      }
+    ],
+    "imports": [
+      "bs4",
+      "json",
+      "os",
+      "re",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "find_bad_titles.py",
+    "bytes": 643,
+    "lines": 19,
+    "sha256": "bfa26f64bdf14ff6237c9a310b7a5f2a65a1406b24e5672a3a66be98c75147ba",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "worker"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "find_deals.py",
+    "bytes": 1154,
+    "lines": 29,
+    "sha256": "f4dcb0b7104213eaf80c5e4cfbdc4aca0797c93d656ad36af8a2a8768afe9133",
+    "definitions": [
+      {
+        "name": "run",
+        "line": 9,
+        "end": 26
+      }
+    ],
+    "imports": [
+      "arbitrage_engine",
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "find_drools.py",
+    "bytes": 379,
+    "lines": 9,
+    "sha256": "bfb35c59c873015ee199e32cafcbe423ee924cf36409d26c03955fb6df72d08a",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "find_fractional.py",
+    "bytes": 607,
+    "lines": 14,
+    "sha256": "1310ffccd65c1482dae27c1ea613f43e9fd8cd6faf249d5971d14033c10139fb",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "fix_drools.py",
+    "bytes": 934,
+    "lines": 23,
+    "sha256": "cc3e643fc07ccf859ee6b3c88e2b77bc8d66304c25d3eddce9ea3ca91a5d8fc5",
+    "definitions": [
+      {
+        "name": "fix_drools",
+        "line": 6,
+        "end": 21
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "os",
+      "pymongo",
+      "store_scraper"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "genie_history.py",
+    "bytes": 8938,
+    "lines": 193,
+    "sha256": "f1f333a38e4cb3d663d9ae7df2c709160e441167970cca52f2ea32b3e7f7a405",
+    "definitions": [
+      {
+        "name": "_decrypt_envelope",
+        "line": 20,
+        "end": 29
+      },
+      {
+        "name": "lookup_price_history",
+        "line": 31,
+        "end": 142
+      },
+      {
+        "name": "fetch_genie_recent_deals",
+        "line": 144,
+        "end": 193
+      }
+    ],
+    "imports": [
+      "base64",
+      "json",
+      "logging",
+      "typing",
+      "urllib.request"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "google_shopping.py",
+    "bytes": 22938,
+    "lines": 509,
+    "sha256": "38bcc050ea144c22c15c2f455bbe27f10fe814bd0e60b9c28a2e3072db277f44",
+    "definitions": [
+      {
+        "name": "_detect_merchant",
+        "line": 77,
+        "end": 88
+      },
+      {
+        "name": "_supports_price_history",
+        "line": 91,
+        "end": 93
+      },
+      {
+        "name": "_supports_affiliate",
+        "line": 96,
+        "end": 98
+      },
+      {
+        "name": "_parse_price",
+        "line": 103,
+        "end": 112
+      },
+      {
+        "name": "_extract_google_redirect_url",
+        "line": 115,
+        "end": 134
+      },
+      {
+        "name": "scrape_google_shopping",
+        "line": 137,
+        "end": 406
+      },
+      {
+        "name": "search_google_shopping",
+        "line": 411,
+        "end": 509
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "bs4",
+      "dealflow_for_ai.backend.stealth_fetcher",
+      "dealflow_for_ai.backend.store_scraper",
+      "genie_history",
+      "hashlib",
+      "html",
+      "json",
+      "logging",
+      "os",
+      "public_search_identity",
+      "re",
+      "redis",
+      "stealth_fetcher",
+      "store_scraper",
+      "time",
+      "typing",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heal_all_coupons.py",
+    "bytes": 4866,
+    "lines": 116,
+    "sha256": "80863d511a9b07c3217664b1597b5df9059dd71703ee555fd29a843afda49c43",
+    "definitions": [],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "coupon_extractor",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "store_scraper",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heal_all_pending_deals.py",
+    "bytes": 8626,
+    "lines": 195,
+    "sha256": "2ed9db16dd612ecad93b64e428906dded2606c175fec86533e13360246236ee0",
+    "definitions": [
+      {
+        "name": "unshorten_link",
+        "line": 28,
+        "end": 55
+      },
+      {
+        "name": "extract_canonical_slug",
+        "line": 57,
+        "end": 91
+      },
+      {
+        "name": "main",
+        "line": 93,
+        "end": 192
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "time",
+      "urllib.parse",
+      "worker"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heal_ambhe_deals.py",
+    "bytes": 3382,
+    "lines": 86,
+    "sha256": "04370dc05cd0389257b8f4946cdc1491eb543b321a084864155414793951fd87",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heal_bogus_mrps.py",
+    "bytes": 2875,
+    "lines": 83,
+    "sha256": "e80326735b769e0347dfb570fcd500fb6583f0c8ff99a89fa38372505ea06969",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "time",
+      "worker"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heal_corrupted_prices.py",
+    "bytes": 6239,
+    "lines": 140,
+    "sha256": "d4808d6dcd75ae30067e049ab105c3209b68831c84427037e9f63a317c9ba3fe",
+    "definitions": [
+      {
+        "name": "heal_all",
+        "line": 29,
+        "end": 137
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "stealth_fetcher",
+      "store_scraper",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heal_coupon_deal.py",
+    "bytes": 3377,
+    "lines": 86,
+    "sha256": "dad534246675ced4a6b847c77529076ef27222c744e249a863c07d2c4faaf4e7",
+    "definitions": [],
+    "imports": [
+      "coupon_extractor",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heal_final_8.py",
+    "bytes": 1174,
+    "lines": 29,
+    "sha256": "213b41d96bcab499f923c434678bb3fdad58ae8bb22612f9b25fc83e339508c2",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heal_remaining_url_titles.py",
+    "bytes": 3579,
+    "lines": 86,
+    "sha256": "6b5be1dbd33e0cdcbca0b9c661d64e99974b3730ee8f7febce254ac40bc39324",
+    "definitions": [
+      {
+        "name": "unshorten_deep",
+        "line": 25,
+        "end": 51
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "urllib.parse",
+      "worker"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "heat_score.py",
+    "bytes": 4550,
+    "lines": 127,
+    "sha256": "52d0de8f9123a59e3892d65d89e1636a230b4b44fcf6b2d17c3416aa010bb502",
+    "definitions": [
+      {
+        "name": "calculate_heat_score",
+        "line": 16,
+        "end": 74
+      },
+      {
+        "name": "get_heat_badge",
+        "line": 76,
+        "end": 111
+      },
+      {
+        "name": "rank_deals_by_heat",
+        "line": 113,
+        "end": 127
+      }
+    ],
+    "imports": [
+      "math",
+      "time",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "init_auto_rules.py",
+    "bytes": 2443,
+    "lines": 81,
+    "sha256": "e64eeea767fab97b7c791d4357a55c9075f76eb7c9754d4a1114945e6d72db2f",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "insert_test_arb.py",
+    "bytes": 1877,
+    "lines": 53,
+    "sha256": "a6de70e6021223d102ef62dfef9fc9c036c1425b60022dd03b1860bea5cee607",
+    "definitions": [
+      {
+        "name": "run",
+        "line": 9,
+        "end": 50
+      }
+    ],
+    "imports": [
+      "arbitrage_engine",
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "inspect_10_hot_deals.py",
+    "bytes": 10476,
+    "lines": 249,
+    "sha256": "509479e12626c078cc484855797891091dc6a91b1ffc72ebb120543167ab7525",
+    "definitions": [
+      {
+        "name": "unshorten",
+        "line": 16,
+        "end": 31
+      },
+      {
+        "name": "main",
+        "line": 33,
+        "end": 246
+      }
+    ],
+    "imports": [
+      "bs4",
+      "json",
+      "os",
+      "re",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "list_video_deals.py",
+    "bytes": 760,
+    "lines": 20,
+    "sha256": "4c48e33dabcf4df54ad14ee519a406a2389820518b178242567e6ebe1c663a0f",
+    "definitions": [],
+    "imports": [
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "listener.py",
+    "bytes": 16703,
+    "lines": 363,
+    "sha256": "34fe21cd3d095fe19bb3e1b479c580cd787e58a2856a589091ceaa93bdc38a7d",
+    "definitions": [
+      {
+        "name": "push",
+        "line": 70,
+        "end": 74
+      },
+      {
+        "name": "main",
+        "line": 79,
+        "end": 359
+      }
+    ],
+    "imports": [
+      "aioredis",
+      "asyncio",
+      "channel_aliases",
+      "dealflow_for_ai.backend.channel_aliases",
+      "dotenv",
+      "json",
+      "logging",
+      "logging.handlers",
+      "motor.motor_asyncio",
+      "os",
+      "pathlib",
+      "redis",
+      "redis.asyncio",
+      "sys",
+      "telethon",
+      "telethon.sessions",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "migrate.py",
+    "bytes": 2006,
+    "lines": 45,
+    "sha256": "cd2037cf1058cde5d5ea125a79d7ff2d9b828d1f1d8aad2b33a8acd14e653cac",
+    "definitions": [],
+    "imports": [
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "models.py",
+    "bytes": 3507,
+    "lines": 59,
+    "sha256": "dfb4b1bfafec7f9b68675d93a5bb0eaeefb5af1f5e4ceafe6e15cc0185f57a67",
+    "definitions": [
+      {
+        "name": "ScraperIngestDeal",
+        "line": 9,
+        "end": 18
+      },
+      {
+        "name": "PriceAlertCreate",
+        "line": 20,
+        "end": 27
+      },
+      {
+        "name": "FeedbackSubmit",
+        "line": 29,
+        "end": 34
+      },
+      {
+        "name": "BountyCreate",
+        "line": 36,
+        "end": 41
+      },
+      {
+        "name": "AuthRequestCode",
+        "line": 43,
+        "end": 44
+      },
+      {
+        "name": "AuthVerifyCode",
+        "line": 46,
+        "end": 48
+      },
+      {
+        "name": "UserBookmarkToggle",
+        "line": 50,
+        "end": 51
+      },
+      {
+        "name": "UserUpdateProfile",
+        "line": 53,
+        "end": 57
+      }
+    ],
+    "imports": [
+      "pydantic",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "mrp_stripper.py",
+    "bytes": 2683,
+    "lines": 64,
+    "sha256": "45fc3fc5136090761874cbb8e6747523791132954017117bbb4e7235f8a1ed98",
+    "definitions": [
+      {
+        "name": "FakeMRPStripper",
+        "line": 5,
+        "end": 50
+      }
+    ],
+    "imports": [
+      "json",
+      "statistics",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "multi_deal_extractor.py",
+    "bytes": 5168,
+    "lines": 128,
+    "sha256": "f1ae997062c8d90cdf916f8c49a75826cac26deeff9a7df14085336d8300236d",
+    "definitions": [
+      {
+        "name": "is_multi_item_post",
+        "line": 6,
+        "end": 22
+      },
+      {
+        "name": "parse_multi_item_post",
+        "line": 25,
+        "end": 128
+      }
+    ],
+    "imports": [
+      "pincode_resolver",
+      "re",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "oos_expiry_worker.py",
+    "bytes": 23817,
+    "lines": 568,
+    "sha256": "2edeacecf6b3fe44e1ce788a18c9cd13c502bdf7971c41225a2845838e80c66e",
+    "definitions": [
+      {
+        "name": "get_tg_client",
+        "line": 66,
+        "end": 85
+      },
+      {
+        "name": "verify_deal_stock_and_price",
+        "line": 95,
+        "end": 145
+      },
+      {
+        "name": "delete_and_expire_deal",
+        "line": 147,
+        "end": 206
+      },
+      {
+        "name": "update_deal_price",
+        "line": 208,
+        "end": 284
+      },
+      {
+        "name": "check_and_trigger_price_alerts",
+        "line": 286,
+        "end": 353
+      },
+      {
+        "name": "run_price_and_stock_sweep",
+        "line": 355,
+        "end": 448
+      },
+      {
+        "name": "sweep_active_price_alerts",
+        "line": 451,
+        "end": 551
+      },
+      {
+        "name": "main_loop",
+        "line": 554,
+        "end": 562
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "email_service",
+      "json",
+      "logging",
+      "os",
+      "price_history_tracker",
+      "pymongo",
+      "re",
+      "redis",
+      "store_scraper",
+      "sys",
+      "telethon",
+      "time",
+      "typing",
+      "urllib.parse",
+      "urllib.request"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "parse_puma_cards.py",
+    "bytes": 1299,
+    "lines": 35,
+    "sha256": "77e41f27bc618c668c3c974d7023749cd54f3ae1eea5a3aa74209911a8cafcd9",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "patch_api_gsearch.py",
+    "bytes": 1895,
+    "lines": 51,
+    "sha256": "475ff304dae9830b04dab957e383635abc74a19dc48f46e64c3c283eab151657",
+    "definitions": [],
+    "imports": [
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "pincode_resolver.py",
+    "bytes": 2941,
+    "lines": 87,
+    "sha256": "1b9ab851c19518152792a6eece47a76480b52f0dc9ca37d1c7e6a0fba0a4ca87",
+    "definitions": [
+      {
+        "name": "save_cache",
+        "line": 20,
+        "end": 25
+      },
+      {
+        "name": "resolve_pincode",
+        "line": 27,
+        "end": 62
+      },
+      {
+        "name": "extract_locations_from_text",
+        "line": 64,
+        "end": 87
+      }
+    ],
+    "imports": [
+      "json",
+      "logging",
+      "os",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "price_history_tracker.py",
+    "bytes": 5144,
+    "lines": 149,
+    "sha256": "31dfbef70c430e999fa6604aa5a600200d70ad4c18ec41ac2947f3be610c8f39",
+    "definitions": [
+      {
+        "name": "extract_canonical_id",
+        "line": 15,
+        "end": 58
+      },
+      {
+        "name": "record_price_point",
+        "line": 61,
+        "end": 92
+      },
+      {
+        "name": "get_price_intelligence",
+        "line": 95,
+        "end": 149
+      }
+    ],
+    "imports": [
+      "logging",
+      "re",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "print_deal_a452.py",
+    "bytes": 400,
+    "lines": 14,
+    "sha256": "302e8c608dbca0f8300ff411e31616a05011fae99314320b4f80ddfc319df485",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "probe_premium_brands.py",
+    "bytes": 3065,
+    "lines": 55,
+    "sha256": "a12c8397f0d70bf29ad165bffae1f1b2eceb022d2858ac0e2ff3942cc0c78d1a",
+    "definitions": [],
+    "imports": [
+      "json",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "probe_public_reviews.py",
+    "bytes": 2041,
+    "lines": 42,
+    "sha256": "fe0f5fb2ccc995f628de826025f553e78dc374e42a4ab0ac68d10da6e7173a9d",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 12,
+        "end": 38
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "json",
+      "pathlib",
+      "public_reviews"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "probe_puma_tommy.py",
+    "bytes": 2373,
+    "lines": 61,
+    "sha256": "61769813ef109d717903dbe8944906a67274b917928195cec5a0284f531242d1",
+    "definitions": [],
+    "imports": [
+      "json",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "promo_smt_solver.py",
+    "bytes": 5702,
+    "lines": 146,
+    "sha256": "1a79f34c28d00836ac13f05e465160b7ec8d81be48c5c68407be0d3fb4e54653",
+    "definitions": [
+      {
+        "name": "PromoSMTSolver",
+        "line": 5,
+        "end": 115
+      }
+    ],
+    "imports": [
+      "json",
+      "math",
+      "typing",
+      "z3"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "public_price_evidence.py",
+    "bytes": 6207,
+    "lines": 126,
+    "sha256": "c9094fde419a7efa555a6625c86d72bfa3e02496263a32b5763edff90cc0e9aa",
+    "definitions": [
+      {
+        "name": "product_key",
+        "line": 10,
+        "end": 30
+      },
+      {
+        "name": "amount",
+        "line": 33,
+        "end": 40
+      },
+      {
+        "name": "_nodes",
+        "line": 43,
+        "end": 49
+      },
+      {
+        "name": "extract_public_price",
+        "line": 52,
+        "end": 116
+      },
+      {
+        "name": "fetch_public_price",
+        "line": 119,
+        "end": 126
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "bs4",
+      "json",
+      "math",
+      "re",
+      "store_scraper",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "public_reviews.py",
+    "bytes": 13798,
+    "lines": 268,
+    "sha256": "f0b578d8538e6e53390cf7e32344ece0ffda9958a7176534aa0202724c49cd7d",
+    "definitions": [
+      {
+        "name": "canonical_product",
+        "line": 23,
+        "end": 46
+      },
+      {
+        "name": "_number",
+        "line": 49,
+        "end": 58
+      },
+      {
+        "name": "_text",
+        "line": 61,
+        "end": 62
+      },
+      {
+        "name": "empty_result",
+        "line": 65,
+        "end": 70
+      },
+      {
+        "name": "extract_reviews",
+        "line": 73,
+        "end": 182
+      },
+      {
+        "name": "ReviewCollector",
+        "line": 185,
+        "end": 246
+      },
+      {
+        "name": "create_reviews_router",
+        "line": 252,
+        "end": 268
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "copy",
+      "fastapi",
+      "json",
+      "math",
+      "re",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "public_search_identity.py",
+    "bytes": 1388,
+    "lines": 32,
+    "sha256": "43ae8f1d9af3b15d9fc0c2e0f17f31b7b0fcf2dedeea68d3a9f0e0ff75af0050",
+    "definitions": [
+      {
+        "name": "merchant_offer_key",
+        "line": 6,
+        "end": 22
+      },
+      {
+        "name": "combine_public_offers",
+        "line": 25,
+        "end": 32
+      }
+    ],
+    "imports": [
+      "re",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "publisher.py",
+    "bytes": 4163,
+    "lines": 119,
+    "sha256": "75d5745ad3399bbf59a455f01e4ae9890687fdb4d9d688d9122dfa12268207f1",
+    "definitions": [
+      {
+        "name": "_get_twitter_client",
+        "line": 25,
+        "end": 50
+      },
+      {
+        "name": "format_tweet",
+        "line": 53,
+        "end": 99
+      },
+      {
+        "name": "publish_twitter",
+        "line": 102,
+        "end": 116
+      }
+    ],
+    "imports": [
+      "logging",
+      "os",
+      "re",
+      "tweepy",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "reviews_preview.py",
+    "bytes": 322,
+    "lines": 9,
+    "sha256": "2ba874aa19c7ff4ca5474e2344200f446f1558dcf00b754f7f77c6f83068e50f",
+    "definitions": [],
+    "imports": [
+      "fastapi",
+      "public_reviews"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "sanitize_deals_db.py",
+    "bytes": 4164,
+    "lines": 91,
+    "sha256": "a56862be3fe45067fc2a0ac045e8dd03381249fe3502650708038abd2710f5c8",
+    "definitions": [
+      {
+        "name": "scrub_legacy_format",
+        "line": 19,
+        "end": 30
+      },
+      {
+        "name": "sanitize_deals",
+        "line": 32,
+        "end": 88
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "scratch_inspect.py",
+    "bytes": 1035,
+    "lines": 25,
+    "sha256": "cdea84448a9be2dc816aeeaade33078de6484a1bc57dac4eb2387b58bc734418",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "search_bedsheet.py",
+    "bytes": 962,
+    "lines": 21,
+    "sha256": "7ccd147c133d14122b01c3a7dd4c772d316deebb5f0a4015801e6cc836bcd97d",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "setup_indexes.py",
+    "bytes": 3692,
+    "lines": 108,
+    "sha256": "01e114160c01e3606fddbad92b1e2d16c79d4586825222a7e35d9199c08c3c61",
+    "definitions": [
+      {
+        "name": "setup_all_indexes",
+        "line": 22,
+        "end": 105
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "os",
+      "pathlib",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "sim_store.py",
+    "bytes": 2851,
+    "lines": 64,
+    "sha256": "e2ffc9f9ccf2baa78f9225ef9e99277e34855297d3560d3dbed5a9261eb49253",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "stealth_fetcher.py",
+    "bytes": 16620,
+    "lines": 398,
+    "sha256": "7a5c877adfc3ce5e94d42274137e6c8b625914269358d71b29b1c34a6cbf704c",
+    "definitions": [
+      {
+        "name": "StealthResponse",
+        "line": 58,
+        "end": 69
+      },
+      {
+        "name": "stealth_get",
+        "line": 72,
+        "end": 158
+      },
+      {
+        "name": "stealth_get_async",
+        "line": 161,
+        "end": 207
+      },
+      {
+        "name": "decode_candidate_url",
+        "line": 210,
+        "end": 226
+      },
+      {
+        "name": "is_asset_or_cdn_url",
+        "line": 231,
+        "end": 245
+      },
+      {
+        "name": "is_terminal_store_url",
+        "line": 247,
+        "end": 262
+      },
+      {
+        "name": "stealth_unshorten_deep",
+        "line": 264,
+        "end": 397
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "base64",
+      "curl_cffi",
+      "curl_cffi.requests",
+      "json",
+      "logging",
+      "re",
+      "requests",
+      "urllib.parse",
+      "urllib.request",
+      "urllib3"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "stock_verifier.py",
+    "bytes": 11119,
+    "lines": 330,
+    "sha256": "0bf78b62ad336a49786f47bba597beee34748eecc1bb61c0730192dd94ce6dfc",
+    "definitions": [
+      {
+        "name": "_clean_price_val",
+        "line": 55,
+        "end": 64
+      },
+      {
+        "name": "verify_amazon_stock",
+        "line": 67,
+        "end": 129
+      },
+      {
+        "name": "verify_flipkart_stock",
+        "line": 132,
+        "end": 185
+      },
+      {
+        "name": "verify_myntra_stock",
+        "line": 188,
+        "end": 209
+      },
+      {
+        "name": "verify_generic_stock",
+        "line": 212,
+        "end": 229
+      },
+      {
+        "name": "verify_deal_stock",
+        "line": 232,
+        "end": 330
+      }
+    ],
+    "imports": [
+      "bs4",
+      "logging",
+      "re",
+      "stealth_fetcher",
+      "typing",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "store_scraper.py",
+    "bytes": 110800,
+    "lines": 2297,
+    "sha256": "5b7bc64b63ec79612e887e2088fb7f00576836b7ed44c83359eaae88592882dc",
+    "definitions": [
+      {
+        "name": "is_safe_public_url",
+        "line": 49,
+        "end": 101
+      },
+      {
+        "name": "is_short_url",
+        "line": 128,
+        "end": 140
+      },
+      {
+        "name": "extract_asin",
+        "line": 142,
+        "end": 151
+      },
+      {
+        "name": "clean_extracted_title",
+        "line": 153,
+        "end": 197
+      },
+      {
+        "name": "extract_slug_fallback",
+        "line": 199,
+        "end": 274
+      },
+      {
+        "name": "detect_category",
+        "line": 276,
+        "end": 305
+      },
+      {
+        "name": "decode_candidate_url",
+        "line": 307,
+        "end": 323
+      },
+      {
+        "name": "resolve_canonical_url",
+        "line": 325,
+        "end": 425
+      },
+      {
+        "name": "fetch_html_stealth",
+        "line": 427,
+        "end": 455
+      },
+      {
+        "name": "_parse_amazon",
+        "line": 460,
+        "end": 686
+      },
+      {
+        "name": "_parse_flipkart",
+        "line": 691,
+        "end": 888
+      },
+      {
+        "name": "_parse_myntra",
+        "line": 893,
+        "end": 992
+      },
+      {
+        "name": "_parse_ajio",
+        "line": 997,
+        "end": 1108
+      },
+      {
+        "name": "_parse_swiggy",
+        "line": 1113,
+        "end": 1184
+      },
+      {
+        "name": "_parse_blinkit",
+        "line": 1189,
+        "end": 1273
+      },
+      {
+        "name": "_parse_zepto",
+        "line": 1278,
+        "end": 1424
+      },
+      {
+        "name": "_parse_croma",
+        "line": 1429,
+        "end": 1557
+      },
+      {
+        "name": "_parse_nykaa",
+        "line": 1562,
+        "end": 1705
+      },
+      {
+        "name": "_parse_tatacliq",
+        "line": 1710,
+        "end": 1837
+      },
+      {
+        "name": "_parse_jiomart",
+        "line": 1842,
+        "end": 1969
+      },
+      {
+        "name": "_parse_generic",
+        "line": 1974,
+        "end": 2182
+      },
+      {
+        "name": "scrape_product_live",
+        "line": 2187,
+        "end": 2297
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "base64",
+      "html",
+      "ipaddress",
+      "json",
+      "logging",
+      "re",
+      "socket",
+      "stealth_fetcher",
+      "sys",
+      "typing",
+      "universal_store_engine",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "system_audit.py",
+    "bytes": 4112,
+    "lines": 121,
+    "sha256": "35accfc9b7c7dc718a063848aa65f43f7239e05f59bdc476787174327bf3661c",
+    "definitions": [],
+    "imports": [
+      "datetime",
+      "dotenv",
+      "json",
+      "os",
+      "pymongo",
+      "redis",
+      "subprocess",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "test_deals_query.py",
+    "bytes": 1288,
+    "lines": 36,
+    "sha256": "4125af31fb0cf6cf03b2fa5f8f8ae098b0c76b6b9ec7e83f239530e8dcac29a6",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "test_ingest_zepto.py",
+    "bytes": 4564,
+    "lines": 127,
+    "sha256": "267a01962e32940afd735ddab0fe2ac92011b26b5b9a9d109dc6394f5d8ff6bb",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "dotenv",
+      "multi_deal_extractor",
+      "os",
+      "pymongo",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "test_public_lookup_history.py",
+    "bytes": 2038,
+    "lines": 54,
+    "sha256": "458117a3fa44cb8c43dd48c6a74ff4fccaaf1d2d82b09b7160bbf00ef32f1c1f",
+    "definitions": [
+      {
+        "name": "Cursor",
+        "line": 8,
+        "end": 16
+      },
+      {
+        "name": "Collection",
+        "line": 19,
+        "end": 24
+      },
+      {
+        "name": "PublicHistoryTests",
+        "line": 27,
+        "end": 50
+      }
+    ],
+    "imports": [
+      "ast",
+      "logging",
+      "pathlib",
+      "unittest"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "test_public_lookup_routes.py",
+    "bytes": 2505,
+    "lines": 39,
+    "sha256": "2b4e0bc528acb0d856dc5a18bd4ef24d67d63edf4b45b4721d14096192ab48c6",
+    "definitions": [
+      {
+        "name": "RouteTests",
+        "line": 12,
+        "end": 38
+      }
+    ],
+    "imports": [
+      "ast",
+      "asyncio",
+      "pathlib",
+      "public_price_evidence",
+      "sys",
+      "time",
+      "types",
+      "unittest",
+      "unittest.mock"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "test_public_price_evidence.py",
+    "bytes": 3810,
+    "lines": 52,
+    "sha256": "7e40b0e2ad1d1890811f2fca94e560bf426bb80ae53290a0af96623cc74b6a8f",
+    "definitions": [
+      {
+        "name": "PublicPriceTests",
+        "line": 7,
+        "end": 50
+      }
+    ],
+    "imports": [
+      "json",
+      "public_price_evidence",
+      "unittest"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "test_public_reviews.py",
+    "bytes": 7118,
+    "lines": 128,
+    "sha256": "e27e16454a30a03e34278cac956667c8b95fcc71caecbac051c5ff9d126444e2",
+    "definitions": [
+      {
+        "name": "schema_page",
+        "line": 12,
+        "end": 16
+      },
+      {
+        "name": "ReviewParsingTests",
+        "line": 19,
+        "end": 97
+      },
+      {
+        "name": "ReviewCacheTests",
+        "line": 100,
+        "end": 124
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "json",
+      "public_reviews",
+      "unittest",
+      "unittest.mock"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "test_public_search_identity.py",
+    "bytes": 1300,
+    "lines": 25,
+    "sha256": "6a03fed4bdc103d7dacf66e8fc16df0d4b9f088deb099a6717ebc2d94a38c137",
+    "definitions": [
+      {
+        "name": "PublicSearchIdentityTests",
+        "line": 5,
+        "end": 21
+      }
+    ],
+    "imports": [
+      "public_search_identity",
+      "unittest"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "test_vm_scraper.py",
+    "bytes": 266,
+    "lines": 8,
+    "sha256": "f8af504eba005afa15778cb493b691eb545a2e3f8874a88cc40558bde6cf6308",
+    "definitions": [
+      {
+        "name": "test",
+        "line": 4,
+        "end": 6
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "store_scraper"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "universal_store_engine.py",
+    "bytes": 17896,
+    "lines": 518,
+    "sha256": "f4256ae6ef9d2958a224101b3ff90db1d16983ed52f72686a703737b06905011",
+    "definitions": [
+      {
+        "name": "_format_brand_name",
+        "line": 261,
+        "end": 277
+      },
+      {
+        "name": "extract_base_domain",
+        "line": 280,
+        "end": 306
+      },
+      {
+        "name": "resolve_store_from_url",
+        "line": 309,
+        "end": 389
+      },
+      {
+        "name": "resolve_store_from_text",
+        "line": 392,
+        "end": 432
+      },
+      {
+        "name": "get_store_identity",
+        "line": 435,
+        "end": 518
+      }
+    ],
+    "imports": [
+      "re",
+      "typing",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "update_public_search_accuracy.py",
+    "bytes": 9622,
+    "lines": 105,
+    "sha256": "d28954f7fee4a3f61dd9a3017a0e82ff1ddfeb30d587c44ca7b5bc918caa29d6",
+    "definitions": [
+      {
+        "name": "wrap_provider",
+        "line": 40,
+        "end": 44
+      }
+    ],
+    "imports": [
+      "pathlib",
+      "textwrap"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "update_shopping_discovery.py",
+    "bytes": 5953,
+    "lines": 121,
+    "sha256": "e286a4a66377b476b93f0393e111384302b024bd69c2511df4e6324bec737809",
+    "definitions": [],
+    "imports": [
+      "pathlib"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "url_scraper.py",
+    "bytes": 9388,
+    "lines": 195,
+    "sha256": "da4ed11465ffbf3d0402c2607fb40550e424ba347ca6bb3ae815431fcb798f85",
+    "definitions": [
+      {
+        "name": "unshorten_url",
+        "line": 29,
+        "end": 62
+      },
+      {
+        "name": "_clean_price",
+        "line": 67,
+        "end": 74
+      },
+      {
+        "name": "parse_amazon",
+        "line": 76,
+        "end": 92
+      },
+      {
+        "name": "parse_flipkart",
+        "line": 94,
+        "end": 115
+      },
+      {
+        "name": "parse_universal",
+        "line": 117,
+        "end": 139
+      },
+      {
+        "name": "scrape_url_direct",
+        "line": 144,
+        "end": 185
+      }
+    ],
+    "imports": [
+      "bs4",
+      "logging",
+      "re",
+      "requests",
+      "time",
+      "typing",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "verify_engines.py",
+    "bytes": 1718,
+    "lines": 39,
+    "sha256": "d17af08c44151286fdff22d94ef88c976e049f47f5010d9fc17f33f167d00b2d",
+    "definitions": [],
+    "imports": [
+      "pymongo",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "vm_restore.py",
+    "bytes": 791,
+    "lines": 17,
+    "sha256": "59b14b7834375bd3f604881f6636875dbb173fb34d0eaa4dfb1f5383c6a07e7c",
+    "definitions": [],
+    "imports": [
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "worker.py",
+    "bytes": 142894,
+    "lines": 2753,
+    "sha256": "fbcd2813f49a4e032f9f29f043f2b5649333de870092b70da2a30cabd0030dcf",
+    "definitions": [
+      {
+        "name": "get_db",
+        "line": 85,
+        "end": 94
+      },
+      {
+        "name": "normalize_text",
+        "line": 100,
+        "end": 104
+      },
+      {
+        "name": "sha256_fp",
+        "line": 106,
+        "end": 108
+      },
+      {
+        "name": "extract_urls",
+        "line": 110,
+        "end": 112
+      },
+      {
+        "name": "extract_asin",
+        "line": 114,
+        "end": 128
+      },
+      {
+        "name": "detect_platform",
+        "line": 130,
+        "end": 155
+      },
+      {
+        "name": "extract_prices",
+        "line": 157,
+        "end": 252
+      },
+      {
+        "name": "extract_product_name",
+        "line": 254,
+        "end": 304
+      },
+      {
+        "name": "extract_canonical_slug",
+        "line": 313,
+        "end": 398
+      },
+      {
+        "name": "is_search_url",
+        "line": 400,
+        "end": 406
+      },
+      {
+        "name": "get_canonical_deal_key",
+        "line": 408,
+        "end": 430
+      },
+      {
+        "name": "is_invalid_product_name",
+        "line": 432,
+        "end": 457
+      },
+      {
+        "name": "detect_category",
+        "line": 459,
+        "end": 475
+      },
+      {
+        "name": "classify_intent",
+        "line": 541,
+        "end": 569
+      },
+      {
+        "name": "is_short_url",
+        "line": 585,
+        "end": 594
+      },
+      {
+        "name": "decode_candidate_url",
+        "line": 600,
+        "end": 616
+      },
+      {
+        "name": "expand_url",
+        "line": 618,
+        "end": 736
+      },
+      {
+        "name": "apply_amazon_tag",
+        "line": 738,
+        "end": 749
+      },
+      {
+        "name": "earnkaro_convert",
+        "line": 751,
+        "end": 768
+      },
+      {
+        "name": "process_urls",
+        "line": 770,
+        "end": 800
+      },
+      {
+        "name": "classify_deal_type",
+        "line": 806,
+        "end": 818
+      },
+      {
+        "name": "fetch_product_image",
+        "line": 824,
+        "end": 962
+      },
+      {
+        "name": "is_duplicate",
+        "line": 968,
+        "end": 976
+      },
+      {
+        "name": "check_asin_price",
+        "line": 978,
+        "end": 994
+      },
+      {
+        "name": "init_db_indexes",
+        "line": 1000,
+        "end": 1018
+      },
+      {
+        "name": "db_maintenance_loop",
+        "line": 1020,
+        "end": 1079
+      },
+      {
+        "name": "save_to_mongo",
+        "line": 1081,
+        "end": 1092
+      },
+      {
+        "name": "publish_to_pubsub",
+        "line": 1094,
+        "end": 1098
+      },
+      {
+        "name": "load_auto_rules",
+        "line": 1107,
+        "end": 1125
+      },
+      {
+        "name": "evaluate_auto_rules",
+        "line": 1127,
+        "end": 1212
+      },
+      {
+        "name": "is_night_buffer_hour",
+        "line": 1234,
+        "end": 1237
+      },
+      {
+        "name": "morning_blast_loop",
+        "line": 1239,
+        "end": 1302
+      },
+      {
+        "name": "oos_expiry_loop",
+        "line": 1310,
+        "end": 1412
+      },
+      {
+        "name": "maybe_trigger_autonomous_video",
+        "line": 1417,
+        "end": 1510
+      },
+      {
+        "name": "process_deal",
+        "line": 1517,
+        "end": 2388
+      },
+      {
+        "name": "maybe_trigger_autonomous_video",
+        "line": 2391,
+        "end": 2515
+      },
+      {
+        "name": "pending_redirection_resolver",
+        "line": 2518,
+        "end": 2663
+      },
+      {
+        "name": "worker_loop",
+        "line": 2669,
+        "end": 2749
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "aiohttp",
+      "arbitrage_engine",
+      "asyncio",
+      "base64",
+      "channel_aliases",
+      "coupon_extractor",
+      "d2c_radar",
+      "datetime",
+      "deal_harvesters",
+      "deal_intelligence",
+      "dealflow_for_ai.backend.channel_aliases",
+      "dealflow_for_ai.backend.stealth_fetcher",
+      "dotenv",
+      "hashlib",
+      "json",
+      "logging",
+      "logging.handlers",
+      "motor.motor_asyncio",
+      "os",
+      "pathlib",
+      "pytz",
+      "re",
+      "redis",
+      "stealth_fetcher",
+      "store_scraper",
+      "sys",
+      "time",
+      "universal_store_engine",
+      "urllib.parse",
+      "urllib3",
+      "zoneinfo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/add2.py",
+    "bytes": 1256,
+    "lines": 31,
+    "sha256": "ac0078f20e1f9473f8796439c11253090f976a15f29083eb3b9d45d955e9f069",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/add_folder_channels.py",
+    "bytes": 2326,
+    "lines": 62,
+    "sha256": "aaf3fe28fa54aafca295b81a7a4c4ba0b9ce4ce8f798b1c99b909aa22b9a31d2",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 13,
+        "end": 60
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis",
+      "telethon",
+      "telethon.sessions"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/apply_20_rules_all.py",
+    "bytes": 1673,
+    "lines": 51,
+    "sha256": "41ffa9fcbbacf81d62d6d1ad422e273cb057a5fc8943ba5c03eca82978a4a050",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 14,
+        "end": 49
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/audit_system.py",
+    "bytes": 4737,
+    "lines": 120,
+    "sha256": "bb70dc5643d32defb112ba7d582724fd09cc5d4b38f2a2ab48054419fc4fec7e",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo",
+      "re",
+      "redis",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/audit_system_flaws.py",
+    "bytes": 2100,
+    "lines": 52,
+    "sha256": "b9d83013ab068fe825a8a77339bfa0b2cbf0e58ce3778524f5b1fa26e48b0a42",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/auto_heal_all_deals.py",
+    "bytes": 6584,
+    "lines": 154,
+    "sha256": "1c905f944dd990461b3d9e95ee2080470b6c911c615d126c85e7f0a7ca60423d",
+    "definitions": [
+      {
+        "name": "clean_title_str",
+        "line": 19,
+        "end": 33
+      },
+      {
+        "name": "scrape_store_details",
+        "line": 35,
+        "end": 78
+      },
+      {
+        "name": "main",
+        "line": 80,
+        "end": 152
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "bs4",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/auto_heal_all_deals_v2.py",
+    "bytes": 7542,
+    "lines": 183,
+    "sha256": "9b5ba846b82733921df747279db228cb8a3c06df89c22c9b9daafcfd70691f4b",
+    "definitions": [
+      {
+        "name": "extract_asin",
+        "line": 17,
+        "end": 24
+      },
+      {
+        "name": "extract_robust_price",
+        "line": 26,
+        "end": 60
+      },
+      {
+        "name": "scrape_amz",
+        "line": 62,
+        "end": 110
+      },
+      {
+        "name": "main",
+        "line": 112,
+        "end": 180
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "dotenv",
+      "os",
+      "pathlib",
+      "pymongo",
+      "re",
+      "sys",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/auto_heal_all_deals_v3.py",
+    "bytes": 5788,
+    "lines": 133,
+    "sha256": "f0f608555d79f86f872e5943b9425f375be6ab841a0be69675d3b029f09f0315",
+    "definitions": [
+      {
+        "name": "is_invalid_product_name",
+        "line": 24,
+        "end": 40
+      },
+      {
+        "name": "extract_asin",
+        "line": 42,
+        "end": 47
+      },
+      {
+        "name": "scrape_amazon_asin",
+        "line": 49,
+        "end": 83
+      },
+      {
+        "name": "auto_heal",
+        "line": 85,
+        "end": 130
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "dotenv",
+      "os",
+      "pathlib",
+      "pymongo",
+      "re",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/call_ai_rewrite.py",
+    "bytes": 254,
+    "lines": 8,
+    "sha256": "ed5c6b06e1b97b3cfb97b52c284bf5a850f749f6b7df583d0730e5e76518b2e4",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_amz_html.py",
+    "bytes": 425,
+    "lines": 11,
+    "sha256": "f5a17ad612f7f8755d2d745971fcecd61df521e26a70c4f03dd5152dcc84acb6",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_channels.py",
+    "bytes": 429,
+    "lines": 11,
+    "sha256": "bb2955d6d6f05a9cc81008c4935a9fd95f9d63cb44cd6e301670f1a345126200",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_collections.py",
+    "bytes": 320,
+    "lines": 8,
+    "sha256": "7c192fcef1c24b544f1ff77dbcc3ce65b35eed47adf3c95208b7482105b3063b",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_config.py",
+    "bytes": 523,
+    "lines": 8,
+    "sha256": "b96c712272ff46df07acc37398bac809e6519adb2e64ddc1aa3d3a9cda6afbdb",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_db.py",
+    "bytes": 541,
+    "lines": 14,
+    "sha256": "6f3c6036cf01b70b6abb2ae848f2074833821abcec360cbcf1ea282b982ea306",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_dd.py",
+    "bytes": 1014,
+    "lines": 22,
+    "sha256": "229fa92ccabe027b790ad33b0f6f6d6370ab5e42ed19c155ecaea0ffed0fd5d7",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_deal_counts.py",
+    "bytes": 613,
+    "lines": 14,
+    "sha256": "3a0033974976e73b71abae23774d1c49df1233b68606ef0220e25b632edfead2",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_key_inventory.py",
+    "bytes": 833,
+    "lines": 27,
+    "sha256": "a314a6d4daa3de7a8fc0db463248a98a0261047d5417efb88bb2ab69dc3c237e",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_old_channels.py",
+    "bytes": 330,
+    "lines": 7,
+    "sha256": "3ec9a990865e66c6a97cc33a1f009856d8ccd010e410eba2891baf816161b622",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_stream_health.py",
+    "bytes": 1050,
+    "lines": 32,
+    "sha256": "9c949ca7cae1ca601c7c0237d2a5426d665c4dd4fe0de5c9c2281dbb44f73eaf",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/check_ts.py",
+    "bytes": 1009,
+    "lines": 21,
+    "sha256": "35014b334e0ea4a19e90861aed9d4278cdb42c421db4bf65fddf1683c5cda86f",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/clear_pending.py",
+    "bytes": 386,
+    "lines": 15,
+    "sha256": "c9fa1d19c20369970313a6705548a7dc50e48d3776d319334a843184056cffc0",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 10,
+        "end": 13
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor.motor_asyncio",
+      "os"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/clear_pending_real.py",
+    "bytes": 450,
+    "lines": 14,
+    "sha256": "a2e8354777e960b019acb095ecac5d4a9c6537e4dd0476ce909f0de9fdcdb500",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 5,
+        "end": 11
+      }
+    ],
+    "imports": [
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/consolidate_channels.py",
+    "bytes": 4036,
+    "lines": 96,
+    "sha256": "6ac51624cbf1fe99e49deaac6cab8fb1e3f906f4dfb54f9b8983f66085ae1a58",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "redis"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/deep_audit_deals.py",
+    "bytes": 3895,
+    "lines": 89,
+    "sha256": "c20f698b9ff47202fb178c18482566ff036c3c4c2b0795634cd3049afaf6a818",
+    "definitions": [
+      {
+        "name": "is_bad_title",
+        "line": 18,
+        "end": 39
+      },
+      {
+        "name": "audit_all_pending",
+        "line": 41,
+        "end": 86
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "html",
+      "os",
+      "pymongo",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/delete_all_channels.py",
+    "bytes": 582,
+    "lines": 21,
+    "sha256": "368f818ce0aae01eaacf54e07b3cdeb510fedc13224882db542e7b9ab03ee0e6",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 10,
+        "end": 18
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor.motor_asyncio",
+      "os"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/dump_amz.py",
+    "bytes": 305,
+    "lines": 9,
+    "sha256": "b7ce9645749560efe70ca1dbdeab26d9b763253d56db605931562a20d816f16d",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/dump_vm_amz.py",
+    "bytes": 482,
+    "lines": 12,
+    "sha256": "81bcf666ea3c440a5e107dc801a31cde6b8dd204a7faef083bc754d37d6d21dc",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/final_clean.py",
+    "bytes": 846,
+    "lines": 18,
+    "sha256": "027433a45b07f11382e6ab6aa71e4b4ccca5fe2566ef2bbb9e6fd7d66ace37b1",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/find_deal_653.py",
+    "bytes": 775,
+    "lines": 20,
+    "sha256": "5a0051190593c5f47240be193f6359e463cf47f8208eaf34e4bc6a2866b76e7c",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/find_deal_9231.py",
+    "bytes": 773,
+    "lines": 22,
+    "sha256": "2272d59c4a5df4ca42e369a7bdf2c3059aa50c64039a82653213bb58b468fb44",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/find_hp330_deal.py",
+    "bytes": 814,
+    "lines": 21,
+    "sha256": "503aedf89cf7d9fbc4bff0bcb0c8f566be903a7cc6e97318edebe5905debcf9e",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/find_site_maintenance.py",
+    "bytes": 738,
+    "lines": 21,
+    "sha256": "a31edd6f02477afe2d157a1e582dd44f38bc1ff4a609936cb3a593559292ae6c",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/find_working_models.py",
+    "bytes": 3617,
+    "lines": 85,
+    "sha256": "ea2d8f4382431287a9e5e1c88653041bc9c286ac1dddd2b2c1c6343935475339",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_130_deal.py",
+    "bytes": 1979,
+    "lines": 45,
+    "sha256": "8145e411907340bccc5499bb48947efe4ea44919a887a145d695233ecf623c38",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_all_channels_and_stores.py",
+    "bytes": 14082,
+    "lines": 269,
+    "sha256": "abd5be4290f2cfce57601edc08af12ecf8302cf0e5482c440d320ca881bfe41f",
+    "definitions": [
+      {
+        "name": "unshorten_deep",
+        "line": 51,
+        "end": 75
+      },
+      {
+        "name": "scrape_details",
+        "line": 77,
+        "end": 216
+      }
+    ],
+    "imports": [
+      "bs4",
+      "dotenv",
+      "json",
+      "os",
+      "pathlib",
+      "pymongo",
+      "random",
+      "re",
+      "requests",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_all_edge_cases.py",
+    "bytes": 4486,
+    "lines": 114,
+    "sha256": "f070bcddd51b3f0887ee11821b7a2db73e15eb7f852f469fb0ad5eb685985676",
+    "definitions": [
+      {
+        "name": "scrape_amz",
+        "line": 16,
+        "end": 36
+      },
+      {
+        "name": "clean_post_text",
+        "line": 38,
+        "end": 47
+      }
+    ],
+    "imports": [
+      "bs4",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_all_missing_media.py",
+    "bytes": 3300,
+    "lines": 84,
+    "sha256": "694c0e7e5ab768ad8658e6a971bf7986769be4ff79b16ba9945c65ec01533686",
+    "definitions": [
+      {
+        "name": "scrape_amz",
+        "line": 18,
+        "end": 37
+      },
+      {
+        "name": "main",
+        "line": 39,
+        "end": 82
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "bs4",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_deal_5691.py",
+    "bytes": 2089,
+    "lines": 59,
+    "sha256": "13880226ee42c088fe2f1c2a6ac6c9482ca8dd4b49ccb782ce1cf1b79869f113",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 16,
+        "end": 57
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "bs4",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_historical_30_deals.py",
+    "bytes": 7162,
+    "lines": 154,
+    "sha256": "327a1e718cf5252a61a4f6da525724133f3e6c81048f0e8222514aafc6ae49a9",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "dotenv",
+      "os",
+      "pathlib",
+      "pymongo",
+      "re",
+      "requests",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_nail_sponge_deal.py",
+    "bytes": 2435,
+    "lines": 55,
+    "sha256": "988c7f092ea2bf36fb614a20eeed3662b1d1ce4deb81e90c8d34cab2ffbf4936",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_numeric_deals.py",
+    "bytes": 3127,
+    "lines": 80,
+    "sha256": "c39db3f4fce1c79c0c5196f6f69db9c31bdf11fc2e9c586d826597080d0d6081",
+    "definitions": [
+      {
+        "name": "unshorten_deep",
+        "line": 19,
+        "end": 43
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "os",
+      "pathlib",
+      "pymongo",
+      "random",
+      "re",
+      "requests",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_pending_deals.py",
+    "bytes": 3824,
+    "lines": 91,
+    "sha256": "0510e04b3e98595b0802f5ab3fe5a93f6d774d04dc83d1aae7a21261c92541ee",
+    "definitions": [
+      {
+        "name": "scrape_amz",
+        "line": 16,
+        "end": 42
+      }
+    ],
+    "imports": [
+      "bs4",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_remaining_lowest_titles.py",
+    "bytes": 2879,
+    "lines": 74,
+    "sha256": "c1cb62e1bc0ddaed0cfbff899103fae57914316dd1785cb3fea1ebfad5c86b5e",
+    "definitions": [
+      {
+        "name": "scrape_amz",
+        "line": 25,
+        "end": 44
+      }
+    ],
+    "imports": [
+      "bs4",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_swiggy_deal.py",
+    "bytes": 1110,
+    "lines": 27,
+    "sha256": "a153bc3e8e115782dc55e52ba04ce5663a2cf9ba44a98736d160ff7b3d202221",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_title.py",
+    "bytes": 1118,
+    "lines": 28,
+    "sha256": "0cc92b5d786f85aff9e5792e2eb3e0180a23707449183baf130af6fa4910e875",
+    "definitions": [],
+    "imports": [
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_titles_and_dupes.py",
+    "bytes": 3062,
+    "lines": 76,
+    "sha256": "d3c1c88b3acdd38edf2b6a01d7dcb90fe99c3f9a450f69089659c08be7bccfcd",
+    "definitions": [
+      {
+        "name": "clean_title",
+        "line": 10,
+        "end": 17
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "redis"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/fix_unique_deals.py",
+    "bytes": 2699,
+    "lines": 64,
+    "sha256": "13adc941c80592cb74586def3a8a4ba1eed2c2c772f455997e3d19b906fbe29d",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "redis"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_30_deals.py",
+    "bytes": 1038,
+    "lines": 27,
+    "sha256": "830e4a2f653b62c72b12819d82dde81469d07753012b6a5240af542a587b8a4f",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_3_deals.py",
+    "bytes": 752,
+    "lines": 21,
+    "sha256": "a9784480149710b81590023fc149baa8a35c57efde86ad5a7f903315ba154702",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_all_latest.py",
+    "bytes": 906,
+    "lines": 21,
+    "sha256": "b36280788778b83ccee313a475c2c8fc57c7a909ef17b3ff8777f6df12c07162",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_bad_deals.py",
+    "bytes": 679,
+    "lines": 21,
+    "sha256": "2e87fd6f2b6fc17bc2a21c2f7c4418d67f5bb07bc0bfabc4b9f32ec42cc85a61",
+    "definitions": [],
+    "imports": [
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_dialogs.py",
+    "bytes": 991,
+    "lines": 29,
+    "sha256": "535e8ae8b59e8f9c2fcb4a3918941edba7a07a4110a1880d8785265403513baa",
+    "definitions": [
+      {
+        "name": "inspect_dialogs",
+        "line": 13,
+        "end": 26
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "os",
+      "telethon",
+      "telethon.sessions"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_fet.py",
+    "bytes": 327,
+    "lines": 8,
+    "sha256": "dcee0e811203a3496dbe046992acf6f2ea455cae691ce689511041bb8e31050e",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_first21.py",
+    "bytes": 732,
+    "lines": 19,
+    "sha256": "20f55508ab4f7c41a29cbbe81bf47a50b63344ec64fbb409cfcde278a30ef444",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_fk_price.py",
+    "bytes": 1136,
+    "lines": 23,
+    "sha256": "b721790d55d190b61901503bf132489a4461c379847eb40f18c7358a30a44a8a",
+    "definitions": [
+      {
+        "name": "inspect_fk_html",
+        "line": 10,
+        "end": 20
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_recent_dd.py",
+    "bytes": 590,
+    "lines": 15,
+    "sha256": "80b9dcc3f276437df5e54db5694623890abe6c5e3fd3c1887f540e4a63b8dc42",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_top4.py",
+    "bytes": 662,
+    "lines": 16,
+    "sha256": "5198e75b332d9d15f5d44b2e60feed7c0518f0ae734faf56d0a34dcdd7f5f96b",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/inspect_vm_env.py",
+    "bytes": 283,
+    "lines": 8,
+    "sha256": "6905fdc6c7a7a5b446451d3e7c8d004b99079bd3d388cbc661766b3d41a4d352",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/list_ch.py",
+    "bytes": 605,
+    "lines": 16,
+    "sha256": "c8325affd61fb8afd433ece1cab15025bf7afb126d8081442ff4f1736de11b10",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/list_channels.py",
+    "bytes": 451,
+    "lines": 15,
+    "sha256": "646267fd964799eb298b0e545e78b3dcb63b5146434795785abeb86fdadff3d5",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 5,
+        "end": 12
+      }
+    ],
+    "imports": [
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/list_pending.py",
+    "bytes": 583,
+    "lines": 18,
+    "sha256": "25381a410586441279ac453d499a54edf79763ad5989dee62ac95708251152bb",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 5,
+        "end": 15
+      }
+    ],
+    "imports": [
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/migrate_channels.py",
+    "bytes": 1135,
+    "lines": 39,
+    "sha256": "683dd9e1ab8caa18069297247a068d177c49382a1fa404f66cb5af0f457c0c1a",
+    "definitions": [
+      {
+        "name": "migrate",
+        "line": 12,
+        "end": 36
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor.motor_asyncio",
+      "os",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/parse_fk_state.py",
+    "bytes": 1691,
+    "lines": 34,
+    "sha256": "e057434e3a8943a87bbfa025917a181c8a7d37785dba8102c797718a9d19d58b",
+    "definitions": [
+      {
+        "name": "parse_fk",
+        "line": 10,
+        "end": 31
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "json",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/populate_channel_names.py",
+    "bytes": 2300,
+    "lines": 58,
+    "sha256": "6fc67b9e0cbcd59cd8b4877c1a9c79f0b4fdf2b15dfb845faa4a1551e5c7e811",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/publisher.py",
+    "bytes": 7786,
+    "lines": 175,
+    "sha256": "00fe4b82d9b425da38462e23b6c2ab87b8c64a4e374d12f3432b8da01dfef299",
+    "definitions": [
+      {
+        "name": "format_telegram",
+        "line": 46,
+        "end": 70
+      },
+      {
+        "name": "publish_telegram",
+        "line": 77,
+        "end": 110
+      },
+      {
+        "name": "broadcast_deal",
+        "line": 117,
+        "end": 150
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "json",
+      "logging",
+      "os",
+      "re",
+      "sys",
+      "time",
+      "typing"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/purge_duplicates.py",
+    "bytes": 1435,
+    "lines": 42,
+    "sha256": "42f1f67ca123d692f4ebcefc496b3f99131fbed462229bfc551387210253dc41",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/purge_residual_errors.py",
+    "bytes": 1117,
+    "lines": 30,
+    "sha256": "ddc687d50ab6f03faf0581cb8259cc1ca26a1ea0464ff6cce2db9276a50e7c1e",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/purge_site_maintenance.py",
+    "bytes": 788,
+    "lines": 21,
+    "sha256": "5d79e059c81e53cd0918af218e03bcfbaf5dd61d741c43075e275e0cb5bc7bc5",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/remove_bblbblp.py",
+    "bytes": 641,
+    "lines": 15,
+    "sha256": "88b4260e8a5ba0c49db6b0493df2b734d8b66715fb2d5174f92a6dfea862b46b",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/remove_dupes2.py",
+    "bytes": 1543,
+    "lines": 37,
+    "sha256": "b953fd90486e3abd2193d4b382459499b6a59404c26b391050304c3903ef4bd4",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/restore_bblbblp.py",
+    "bytes": 1128,
+    "lines": 35,
+    "sha256": "7ec3cf4cf85dc8badc864959de0c6b013dcf29c032797f03298f694a6367d852",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/revert_channels.py",
+    "bytes": 799,
+    "lines": 27,
+    "sha256": "3d65cea82e08ec13e58171511e1e22d1d9936ecc1b50ff859c96385dd1ae5aed",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 11,
+        "end": 24
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor.motor_asyncio",
+      "os",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/run_audit.py",
+    "bytes": 2063,
+    "lines": 55,
+    "sha256": "9e60d34eab3c635a978af20eb3c013ad1f5266e1ee258b0a7fd081ce896b8455",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/sanitize_aff_text.py",
+    "bytes": 908,
+    "lines": 21,
+    "sha256": "ad3167b095149756917dd98ca6eb12cc1ada6d6404ecd7a513d2dce464745b07",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/sanitize_db_audit.py",
+    "bytes": 2139,
+    "lines": 44,
+    "sha256": "99f5321a6dfb145597842e76da4e1ed42ab613acb28cf4a76d7bde814a28d93c",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/sanitize_titles.py",
+    "bytes": 2058,
+    "lines": 40,
+    "sha256": "b1ee62a0f595c7c571516ab1a73a146cd0a1ff8e6acc1f420180155e7da162ae",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/scrape_and_format_all.py",
+    "bytes": 4382,
+    "lines": 116,
+    "sha256": "b4fa1009a711e2288a120092246fe70e2258a69e716c9ff89ce3a417c509822e",
+    "definitions": [
+      {
+        "name": "scrape_amz",
+        "line": 18,
+        "end": 38
+      },
+      {
+        "name": "clean_post_text",
+        "line": 40,
+        "end": 47
+      },
+      {
+        "name": "main",
+        "line": 49,
+        "end": 114
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "bs4",
+      "dotenv",
+      "os",
+      "pymongo",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/set_channel_names.py",
+    "bytes": 2604,
+    "lines": 66,
+    "sha256": "fd8ecee31c4ae312293efc97a39e14c10e38049d530e247088ddd40ba5382cc7",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/set_channels.py",
+    "bytes": 2610,
+    "lines": 65,
+    "sha256": "9ee1ac6a801237614634b45aa651c4041e898d26409438d8b31ca32815da9b61",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 45,
+        "end": 62
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor.motor_asyncio",
+      "os",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/set_deal_channels.py",
+    "bytes": 3364,
+    "lines": 85,
+    "sha256": "6fa4426165004c15cd1971f1d66bc4dc36caeba09672b38b5162b5cbfe67bee1",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 27,
+        "end": 82
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor.motor_asyncio",
+      "os",
+      "telethon",
+      "telethon.sessions",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/setnames.py",
+    "bytes": 1629,
+    "lines": 35,
+    "sha256": "870bd55e898125faedca651d2beeb6ce3cd570dc20a04f79a7cc37355b677ba1",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/sync_all_channels.py",
+    "bytes": 3825,
+    "lines": 66,
+    "sha256": "05b89c36addb2118e102881621c40c3c3ad923dbc69a337403203b87798f7619",
+    "definitions": [],
+    "imports": [
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/sync_channels.py",
+    "bytes": 1765,
+    "lines": 55,
+    "sha256": "2230e04080a23cfed8beaf552a8ac0130ecd2b1356157f410f7523ad7b96299e",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 15,
+        "end": 52
+      }
+    ],
+    "imports": [
+      "asyncio",
+      "dotenv",
+      "motor.motor_asyncio",
+      "os",
+      "telethon",
+      "telethon.sessions",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_20_rules.py",
+    "bytes": 546,
+    "lines": 20,
+    "sha256": "0b0e2ff542bbe8c6467b7a70238474d17629eadf7ae87e9f4f3c5c20f04c64ba",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 7,
+        "end": 18
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_3_issues.py",
+    "bytes": 2255,
+    "lines": 49,
+    "sha256": "05097d78437529fb25523c9186576325a9d8b18aa8b264ad400ca9674ac6881c",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests",
+      "sys",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_active_models.py",
+    "bytes": 2028,
+    "lines": 42,
+    "sha256": "09e7e9185bf4e20a676070205d3fa72068234237636f78a564fbe440f0e1e11c",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_actual_keys.py",
+    "bytes": 6176,
+    "lines": 163,
+    "sha256": "3f55f59b688628dbd6952089e04eb0711b52744c2bdc5d261ba30ac0664b721b",
+    "definitions": [
+      {
+        "name": "log_res",
+        "line": 10,
+        "end": 13
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "os",
+      "requests",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_ai_formatter.py",
+    "bytes": 952,
+    "lines": 26,
+    "sha256": "509926e2e6106e4732fd5892111177fdc7ea100c9ed45b0bff164790867d3564",
+    "definitions": [
+      {
+        "name": "test",
+        "line": 4,
+        "end": 23
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_ai_live.py",
+    "bytes": 463,
+    "lines": 20,
+    "sha256": "55d2736850a15bfab136c8151e40f416352c33905ba0b41c44b0ad8dc9163743",
+    "definitions": [
+      {
+        "name": "main",
+        "line": 7,
+        "end": 18
+      }
+    ],
+    "imports": [
+      "ai_formatter",
+      "asyncio",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_all_keys_and_services.py",
+    "bytes": 7334,
+    "lines": 200,
+    "sha256": "adc60b31bb2a88e513bcfdb10c71c6e5f4f78ccc376c2d402c63c28bc3cf3205",
+    "definitions": [
+      {
+        "name": "record",
+        "line": 16,
+        "end": 24
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "json",
+      "os",
+      "pymongo",
+      "redis",
+      "requests",
+      "subprocess",
+      "sys",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amazn_full.py",
+    "bytes": 344,
+    "lines": 9,
+    "sha256": "8f9d42be2a9a10e18edaaf421fdb1de720d21e6b4f672beb21201ea694252476",
+    "definitions": [],
+    "imports": [
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amazn_html.py",
+    "bytes": 555,
+    "lines": 13,
+    "sha256": "c259763d3165338f5927f506530c440f1f96d2ea739c6dd012c245dae0a79ea3",
+    "definitions": [],
+    "imports": [
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amz_android.py",
+    "bytes": 1504,
+    "lines": 30,
+    "sha256": "0c93e55058a91d242755702361fb0dd36638d95e3a59e6af929960e3aeefd6e1",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amz_aw_parse.py",
+    "bytes": 1482,
+    "lines": 34,
+    "sha256": "15450b8d2f7e11bbb724428cfc235dc1b70d65696abd1eb7aac775bd8793955f",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amz_b0dhs.py",
+    "bytes": 1053,
+    "lines": 27,
+    "sha256": "977b3ccd43c4b10b690486b3bfc8c8e0b9e368b51312bf9293e4555d4186f0bb",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amz_b0dhs_android.py",
+    "bytes": 1384,
+    "lines": 28,
+    "sha256": "09993d597110cde707b3a2b3f3b8d930bc47b03885014f37604120fc2f8d8912",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amz_bypass.py",
+    "bytes": 1618,
+    "lines": 31,
+    "sha256": "d3a73c455745ffdfe677431f909b7e61613dae0269884a6b9f6ba09c50ba0726",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amz_fetch.py",
+    "bytes": 1897,
+    "lines": 48,
+    "sha256": "d2fdf4b97f94520c6d7803423c16e9af957d92ee0954cbf630ee53ce9a249a0d",
+    "definitions": [
+      {
+        "name": "fetch_amazon_page_data",
+        "line": 10,
+        "end": 38
+      },
+      {
+        "name": "main",
+        "line": 40,
+        "end": 46
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "base64",
+      "bs4",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amz_img.py",
+    "bytes": 887,
+    "lines": 20,
+    "sha256": "dc6f814bee4bd027faef2fdf1a01ad98b928726efc051e273ba6bdd4d15fa2b9",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_amz_page.py",
+    "bytes": 1052,
+    "lines": 30,
+    "sha256": "828c7d6becaaacaa0d569a77ef65ce2a5267f66ceb335aac03f9ab253fe3f138",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_asin_b09sl.py",
+    "bytes": 1449,
+    "lines": 32,
+    "sha256": "732e0727b9c6285bf374147b2a26974bda3a3cad57aab7e0567c4aa949cdaeb3",
+    "definitions": [
+      {
+        "name": "test_asin",
+        "line": 5,
+        "end": 29
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_asin_b0d5.py",
+    "bytes": 853,
+    "lines": 16,
+    "sha256": "f1418bd90396c33e582157502d2b079b39b23ca0898175ebf925964ecae7fdd6",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_asin_b0d9.py",
+    "bytes": 999,
+    "lines": 25,
+    "sha256": "a0d618c6167bf9ad5b7dfc41a1bd692b03ebcb4132a3368d96a8ca54f8f5f998",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "os",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_bad_title_reject.py",
+    "bytes": 892,
+    "lines": 21,
+    "sha256": "92c368731ebd0f7f5768a21a9c1e32861c984bc7ecde51b1a8fc333db10a6206",
+    "definitions": [
+      {
+        "name": "test_extract",
+        "line": 4,
+        "end": 13
+      }
+    ],
+    "imports": [
+      "re",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_dd_visit.py",
+    "bytes": 924,
+    "lines": 27,
+    "sha256": "86463a27f66f4b9c5a020ac9ac427ea26b2ace05cf868f73b384068533ee9848",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_deep_unshort.py",
+    "bytes": 2359,
+    "lines": 59,
+    "sha256": "04da8c834352ac079e10d357d42f429b374f08e0cc3f7faac854f36b27a86ffd",
+    "definitions": [
+      {
+        "name": "unshorten_deep",
+        "line": 11,
+        "end": 36
+      }
+    ],
+    "imports": [
+      "bs4",
+      "json",
+      "re",
+      "requests",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_fix_bad_deals.py",
+    "bytes": 4132,
+    "lines": 84,
+    "sha256": "58c7d17ea93200bb787569ef8565d05a3d7160bca0c3867a434fb7954669f02f",
+    "definitions": [
+      {
+        "name": "clean_extracted_name",
+        "line": 5,
+        "end": 39
+      },
+      {
+        "name": "scrape_amazon_android",
+        "line": 41,
+        "end": 69
+      }
+    ],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_fk_canonical.py",
+    "bytes": 1367,
+    "lines": 25,
+    "sha256": "c44403734107562acadd1203f4d64d555b46cd8cf8c72227ff333de007e11c18",
+    "definitions": [
+      {
+        "name": "test_fk",
+        "line": 10,
+        "end": 22
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_fpkrt_standalone.py",
+    "bytes": 3667,
+    "lines": 80,
+    "sha256": "e95b8e303c38837d358745970879497168e593838dd2f0970302712c87aa99c2",
+    "definitions": [
+      {
+        "name": "unshorten",
+        "line": 11,
+        "end": 61
+      },
+      {
+        "name": "scrape",
+        "line": 63,
+        "end": 73
+      },
+      {
+        "name": "main",
+        "line": 75,
+        "end": 77
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "json",
+      "re",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_full_scrape.py",
+    "bytes": 6487,
+    "lines": 134,
+    "sha256": "3f9f4faa274f58cf3249087376f2e3424079eab46eea57fbe831c2edd7ad040e",
+    "definitions": [
+      {
+        "name": "detect_category_advanced",
+        "line": 14,
+        "end": 32
+      },
+      {
+        "name": "scrape_full_product_details",
+        "line": 34,
+        "end": 121
+      },
+      {
+        "name": "main",
+        "line": 123,
+        "end": 132
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "json",
+      "pathlib",
+      "re",
+      "time"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_gemini_models.py",
+    "bytes": 915,
+    "lines": 22,
+    "sha256": "4e612250c1373bc7b92c94a4ee30d679d9333cf943d0ca0b4fc4e46c3a741727",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_gemma.py",
+    "bytes": 1002,
+    "lines": 22,
+    "sha256": "1984a8de0b7715090e3ac699e6b13a5f8f0cb6f40aacb6f3efa77223f7c41a9e",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_groq_cerebras.py",
+    "bytes": 1623,
+    "lines": 42,
+    "sha256": "65836b8a338a54a6c6b833653d67060f7696fa8b419e3cc1d345185ed4cc222f",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_headers.py",
+    "bytes": 1008,
+    "lines": 23,
+    "sha256": "d39ddd589506fc9dd3b7c76dfd8d1eedb342645d1f075bea38738b7d3d3fbb7c",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_keys.py",
+    "bytes": 4783,
+    "lines": 106,
+    "sha256": "7e1d81728b7a6bdb8935e0bf66f1500e4a8dc11dd924676f6395d400272472ba",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "redis",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_lehlah.py",
+    "bytes": 693,
+    "lines": 14,
+    "sha256": "438469fcd5e742dfd37c7538ff0ba19437ad7b82e0496a6d68b2e950fd2aacbe",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_lehlah_html.py",
+    "bytes": 358,
+    "lines": 9,
+    "sha256": "7ead39752d2456fa8f7a75ec70859376a0579a6a41bb4b19d3aabf5e91a1024f",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_lehlah_html2.py",
+    "bytes": 362,
+    "lines": 9,
+    "sha256": "6b728eb1b7d126fa85370465f4bb62a7e05deea6218b5979af4d72957aba1d40",
+    "definitions": [],
+    "imports": [
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_link_amz.py",
+    "bytes": 394,
+    "lines": 9,
+    "sha256": "137678cbd519033959653fa8f0b781341273bdd0e80ec2e79423aab9d6dd5dc6",
+    "definitions": [],
+    "imports": [
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_myntra_pdp.py",
+    "bytes": 1183,
+    "lines": 37,
+    "sha256": "4de4832a302e1a1179be1b3fe8a73a09c1bd9f7ba7d68fb55329dbadf479ae6a",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "os",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_myntra_unshorten.py",
+    "bytes": 986,
+    "lines": 31,
+    "sha256": "385db656c57eadda93a4cb0f7d1d13a28f16d65bd2aca9fd199edb5d7063b3a5",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "os",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_req_session.py",
+    "bytes": 1233,
+    "lines": 26,
+    "sha256": "ecc2aa4fba345eaee2b02e5f4a4cf7e987cdbf14f81dd88d4eeceafd76519d35",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_ua.py",
+    "bytes": 1220,
+    "lines": 25,
+    "sha256": "3029d5cc984269d61cf69a332d100713227879ade0e3d598497f3a9fa51faff0",
+    "definitions": [],
+    "imports": [
+      "bs4",
+      "json",
+      "re",
+      "requests"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_universal_scraper.py",
+    "bytes": 8112,
+    "lines": 153,
+    "sha256": "a82a7bb5acd43b4ddc65593f23a3aec8e8cc4169c2a749bb0a2f1fd5fbc86cc3",
+    "definitions": [
+      {
+        "name": "detect_category",
+        "line": 11,
+        "end": 29
+      },
+      {
+        "name": "scrape_store_details",
+        "line": 31,
+        "end": 139
+      }
+    ],
+    "imports": [
+      "bs4",
+      "json",
+      "re",
+      "requests",
+      "time",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_unshorten_swiggy.py",
+    "bytes": 2423,
+    "lines": 49,
+    "sha256": "fdeedb990c3880edc65f287e42e0ad249cc577fef94c662d451bc967e8021f3f",
+    "definitions": [
+      {
+        "name": "unshorten_deep",
+        "line": 10,
+        "end": 45
+      }
+    ],
+    "imports": [
+      "re",
+      "requests",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_unshortener.py",
+    "bytes": 2917,
+    "lines": 67,
+    "sha256": "f5efd2886a84da9b824e0935f68a79513010333d1bc21d8152c5f7d0f9ae3a9a",
+    "definitions": [
+      {
+        "name": "unshorten",
+        "line": 17,
+        "end": 52
+      }
+    ],
+    "imports": [
+      "json",
+      "re",
+      "requests",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_user_links.py",
+    "bytes": 582,
+    "lines": 21,
+    "sha256": "3d3df501d3a234f8a4eb770a1c15f1bb831311e00ab90c40cb6c937a52d4f940",
+    "definitions": [],
+    "imports": [
+      "re",
+      "requests",
+      "urllib.parse"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/test_worker_logic.py",
+    "bytes": 1479,
+    "lines": 28,
+    "sha256": "73f9514665ae16b2cb622825d6bd150d1bdbd6b141f9013f2d14bd3430adefb0",
+    "definitions": [
+      {
+        "name": "test_worker_logic",
+        "line": 10,
+        "end": 25
+      }
+    ],
+    "imports": [
+      "aiohttp",
+      "asyncio",
+      "bs4",
+      "re"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/update_channels.py",
+    "bytes": 1873,
+    "lines": 45,
+    "sha256": "512dce62583e89aa771225c3bfa9946125bdac1bd73243d77f2e97efcfc6a826",
+    "definitions": [],
+    "imports": [
+      "pymongo"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/update_keys_and_test.py",
+    "bytes": 3357,
+    "lines": 92,
+    "sha256": "b88eab195162436b50a1cd162625bc02f5867b5d2de546a73aa826c504aaded5",
+    "definitions": [
+      {
+        "name": "set_env_var",
+        "line": 33,
+        "end": 38
+      }
+    ],
+    "imports": [
+      "dotenv",
+      "os",
+      "re",
+      "requests",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  },
+  {
+    "path": "archive/verify_deal_6077.py",
+    "bytes": 672,
+    "lines": 20,
+    "sha256": "2008fc8b6808a70b50ea87ba6f7552c8ebc792d1e4b6231420638a93b55fd2f4",
+    "definitions": [],
+    "imports": [
+      "dotenv",
+      "os",
+      "pymongo",
+      "sys"
+    ],
+    "status": "read_and_parsed"
+  }
+]

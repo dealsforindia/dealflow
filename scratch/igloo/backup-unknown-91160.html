@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Igloo Inc. &mdash; Master WebGL Experience</title>
+    <!-- Three.js r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-arctic-day: #e5eaf1;
+            --text-dark: #0f172a;
+            --text-muted: #536275;
+            --text-cyan: #0284c7;
+            --text-cyan-glow: #38bdf8;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --modal-dark: #080d16;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-arctic-day);
+            font-family: var(--font-mono);
+            color: var(--text-dark);
+            cursor: default; /* Native OS cursor preserved [OBSERVED] */
+            transition: background-color 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body.dark-mode {
+            background-color: var(--modal-dark);
+            color: #ffffff;
+        }
+
+        #webgl-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: block;
+        }
+
+        /* 2D Overlay Canvas for dynamic Brick HUD, Leader Lines & Markers */
+        #hud-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* Persistent HUD Layer */
+        .hud-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 38px 46px;
+        }
+
+        .hud-row-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: auto;
+        }
+
+        .hud-row-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            pointer-events: auto;
+        }
+
+        /* Top-Left: IGLOO Wordmark + Copyright */
+        .brand-block {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .igloo-wordmark {
+            font-family: var(--font-sans);
+            font-weight: 900;
+            font-size: 28px;
+            letter-spacing: 3px;
+            color: #0f172a;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .dark-mode .igloo-wordmark,
+        .igloo-wordmark.glow-bright {
+            color: #ffffff;
+            text-shadow: 0 0 24px rgba(56, 189, 248, 0.95), 0 0 48px rgba(255, 255, 255, 0.85);
+        }
+
+        .copyright-block {
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-muted);
+            letter-spacing: 0.6px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .copyright-block:hover {
+            color: #0f172a;
+        }
+
+        .dark-mode .copyright-block {
+            color: #8b9bb0;
+        }
+
+        .dark-mode .copyright-block:hover {
+            color: #ffffff;
+        }
+
+        /* Top-Right: Manifesto */
+        .manifesto-block {
+            max-width: 420px;
+            text-align: right;
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .manifesto-title {
+            color: #0f172a;
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+            transition: color 0.3s ease;
+        }
+
+        .dark-mode .manifesto-title {
+            color: #ffffff;
+        }
+
+        .manifesto-body {
+            color: #4b5868;
+            transition: color 0.3s ease;
+        }
+
+        .dark-mode .manifesto-body {
+            color: #94a3b8;
+        }
+
+        .manifesto-body:hover {
+            color: #0f172a;
+        }
+
+        .dark-mode .manifesto-body:hover {
+            color: #ffffff;
+        }
+
+        /* Bottom-Left: Scroll Prompt & Sound Toggle */
+        .bottom-left-block {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .scroll-prompt {
+            font-size: 11px;
+            letter-spacing: 0.8px;
+            color: #556578;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.5s ease;
+        }
+
+        .dark-mode .scroll-prompt {
+            color: #8b9bb0;
+        }
+
+        .sound-toggle-btn {
+            background: none;
+            border: none;
+            outline: none;
+            color: #0f172a;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px 0;
+            transition: color 0.2s ease;
+        }
+
+        .dark-mode .sound-toggle-btn {
+            color: #ffffff;
+        }
+
+        .sound-toggle-btn:hover {
+            color: var(--text-cyan);
+        }
+
+        .sound-speaker-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Scene Navigation Bar / Timeline Scrubber */
+        .scene-nav-bar {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            border-radius: 28px;
+            padding: 6px 14px;
+            z-index: 20;
+            pointer-events: auto;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .dark-mode .scene-nav-bar {
+            background: rgba(14, 20, 32, 0.85);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-pill {
+            background: transparent;
+            border: none;
+            color: #556578;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 0.6px;
+            padding: 5px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .dark-mode .nav-pill {
+            color: #8b94a0;
+        }
+
+        .nav-pill:hover {
+            color: #0f172a;
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        .dark-mode .nav-pill:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-pill.active {
+            color: #0f172a;
+            background: rgba(0, 0, 0, 0.12);
+            font-weight: 600;
+        }
+
+        .dark-mode .nav-pill.active {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        /* Scroll Progress Bar */
+        .scroll-progress-line {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
+            width: 0%;
+            z-index: 30;
+            transition: width 0.1s linear;
+        }
+
+        /* Scene A: ASCII Preloader Overlay */
+        #preloader-overlay {
+            position: absolute;
+            inset: 0;
+            background: #e2e7ef;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            transition: opacity 0.8s ease;
+        }
+
+        .ascii-preloader-text {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            letter-spacing: 6px;
+            color: #1e293b;
+        }
+
+        /* Drifting Background Technical Text Layer for Scene C & E [OBSERVED] */
+        .bg-drifting-text-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .drifting-text-item {
+            position: absolute;
+            font-family: var(--font-sans);
+            font-weight: 900;
+            color: rgba(15, 23, 42, 0.06);
+            white-space: nowrap;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            filter: blur(4px);
+            will-change: transform;
+        }
+
+        .dark-mode .drifting-text-item {
+            color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Mid-Screen Dais Morph Arrows (Left/Right) */
+        .dais-nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 25;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(15, 23, 42, 0.15);
+            color: #0f172a;
+            font-size: 22px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(12px);
+            transition: all 0.25s ease;
+            opacity: 0;
+            pointer-events: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .dark-mode .dais-nav-arrow {
+            background: rgba(16, 22, 34, 0.7);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .dais-nav-arrow.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .dais-nav-arrow:hover {
+            border-color: var(--text-cyan);
+            color: var(--text-cyan);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .dais-arrow-left { left: 36px; }
+        .dais-arrow-right { right: 36px; }
+
+        /* Scene D: Freeze Summary Modal Overlay */
+        #modal-container {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            background: rgba(8, 13, 22, 0.9);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        #modal-container.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            width: 90%;
+            max-width: 680px;
+            padding: 48px;
+            position: relative;
+            color: #ffffff;
+        }
+
+        .modal-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding-bottom: 16px;
+        }
+
+        .modal-category-title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            color: var(--text-cyan-glow);
+        }
+
+        .corner-bracket-wrap {
+            position: relative;
+            display: inline-block;
+        }
+
+        .corner-tl, .corner-tr, .corner-bl, .corner-br {
+            position: absolute;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1;
+            pointer-events: none;
+        }
+        .corner-tl { top: -4px; left: -4px; }
+        .corner-tr { top: -4px; right: -4px; }
+        .corner-bl { bottom: -4px; left: -4px; }
+        .corner-br { bottom: -4px; right: -4px; }
+
+        .modal-close-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: #ffffff;
+            cursor: pointer;
+            padding: 6px 16px;
+            letter-spacing: 1.2px;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+        }
+
+        .modal-close-btn:hover {
+            color: var(--text-cyan-glow);
+            border-color: var(--text-cyan-glow);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .modal-body-scramble-text {
+            font-size: 13px;
+            line-height: 1.95;
+            color: #e2e8f0;
+            letter-spacing: 0.5px;
+            margin-bottom: 32px;
+            min-height: 160px;
+        }
+
+        .modal-discover-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .modal-discover-label {
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            color: #8b9bb0;
+        }
+
+        .modal-external-link {
+            font-size: 12px;
+            color: #ffffff;
+            text-decoration: none;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.25s ease;
+        }
+
+        .modal-external-link:hover {
+            border-color: var(--text-cyan-glow);
+            color: var(--text-cyan-glow);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        /* Top stage info pill */
+        .info-pill {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            letter-spacing: 1.2px;
+            color: #64748b;
+            z-index: 15;
+            pointer-events: none;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+
+        .dark-mode .info-pill {
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        /* Glitch screen canvas overlay */
+        #glitch-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 35;
+            pointer-events: none;
+            opacity: 0;
+            mix-blend-mode: multiply;
+        }
+
+        /* Rainbow Flare overlay on loop reset */
+        #rainbow-flare {
+            position: absolute;
+            inset: 0;
+            z-index: 60;
+            pointer-events: none;
+            opacity: 0;
+            background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.95) 0%, rgba(125, 211, 252, 0.8) 25%, rgba(244, 114, 182, 0.5) 50%, rgba(250, 204, 21, 0.3) 70%, transparent 100%);
+            mix-blend-mode: screen;
+            transition: opacity 0.4s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="scroll-progress-line" id="scroll-progress-bar"></div>
+
+    <!-- WebGL Canvas -->
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- 2D HUD Canvas -->
+    <canvas id="hud-canvas"></canvas>
+
+    <!-- Glitch Overlay Canvas -->
+    <canvas id="glitch-overlay"></canvas>
+
+    <!-- Rainbow Flare Overlay -->
+    <div id="rainbow-flare"></div>
+
+    <!-- Drifting Background Technical Text Layer for Scene C & E [OBSERVED] -->
+    <div class="bg-drifting-text-layer" id="bg-drifting-text">
+        <div class="drifting-text-item" style="top: 18%; left: 8%; font-size: 80px;" id="drift-1">DATA</div>
+        <div class="drifting-text-item" style="top: 36%; right: 5%; font-size: 54px;" id="drift-2">PRE LOAD OFF / 2</div>
+        <div class="drifting-text-item" style="top: 55%; left: 12%; font-size: 50px;" id="drift-3">002 NON FUNGIBLE TOKEN</div>
+        <div class="drifting-text-item" style="top: 72%; right: 14%; font-size: 66px;" id="drift-4">01 DEFI</div>
+        <div class="drifting-text-item" style="top: 86%; left: 22%; font-size: 44px;" id="drift-5">00.001.22</div>
+    </div>
+
+    <!-- Top info pill -->
+    <div class="info-pill" id="stage-info-pill">Scene B: Interactive Arctic Igloo Dome</div>
+
+    <!-- Persistent HUD Layer -->
+    <div class="hud-layer">
+        <!-- Top Row -->
+        <div class="hud-row-top">
+            <div class="brand-block">
+                <div class="igloo-wordmark" id="igloo-logo">IGLOO</div>
+                <div class="copyright-block" id="copyright-text" title="Click to scramble">
+                    // Copyright &copy; 2026<br>
+                    Igloo, Inc. All Rights Reserved.
+                </div>
+            </div>
+
+            <div class="manifesto-block" id="manifesto-box" title="Hover to scramble">
+                <div class="manifesto-title" id="manifesto-title">///// Manifesto</div>
+                <div class="manifesto-body" id="manifesto-body">
+                    Our mission is to build the next generation of consumer brands at the intersection of Community, AI, and crypto.
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="hud-row-bottom">
+            <div class="bottom-left-block">
+                <div class="scroll-prompt" id="scroll-prompt">
+                    <span id="scroll-prompt-text">Scroll down to discover.</span>
+                    <span>&darr;</span>
+                </div>
+                <button class="sound-toggle-btn" id="sound-btn" title="Toggle Audio (Web Audio API)">
+                    <span class="sound-speaker-icon">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path id="sound-wave-arc" d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                    </span>
+                    <span id="sound-status-text">Sound: On</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mid-Screen Dais Morph Arrows (Left/Right) [OBSERVED] -->
+    <button class="dais-nav-arrow dais-arrow-left" id="dais-prev-btn" title="Previous Volumetric Figure">&lsaquo;</button>
+    <button class="dais-nav-arrow dais-arrow-right" id="dais-next-btn" title="Next Volumetric Figure">&rsaquo;</button>
+
+    <!-- Scene Navigation Controls -->
+    <div class="scene-nav-bar">
+        <button class="nav-pill" data-scene="intro">Intro (0:04)</button>
+        <button class="nav-pill active" data-scene="igloo">Igloo Dome (0:10)</button>
+        <button class="nav-pill" data-scene="pudgy">Pudgy Penguins (0:22)</button>
+        <button class="nav-pill" data-scene="overpass">Overpass (0:37)</button>
+        <button class="nav-pill" data-scene="portal">Portal Ring (0:48)</button>
+        <button class="nav-pill" data-scene="dais">Particle Dais (0:54)</button>
+        <button class="nav-pill" data-scene="loop">Loop Reset (0:58)</button>
+    </div>
+
+    <!-- Scene A: Centered ASCII Preloader (=+==--==++) -->
+    <div id="preloader-overlay">
+        <div class="ascii-preloader-text" id="ascii-preloader-text">=+==--==++</div>
+    </div>
+
+    <!-- Scene D: Freeze Summary Modal Overlay -->
+    <div id="modal-container">
+        <div class="modal-card">
+            <div class="modal-header-row">
+                <div class="modal-category-title" id="modal-title">///// Summary &mdash; Pudgy Penguins</div>
+                <div class="corner-bracket-wrap">
+                    <span class="corner-tl">&lceil;</span>
+                    <span class="corner-tr">&rceil;</span>
+                    <span class="corner-bl">&lfloor;</span>
+                    <span class="corner-br">&rfloor;</span>
+                    <button class="modal-close-btn" id="modal-close-btn">Close</button>
+                </div>
+            </div>
+            <div class="modal-body-scramble-text" id="modal-body-text">
+                Pudgy Penguins is an intellectual property powerhouse built directly from onchain roots. Through massive viral reach, physical toy distribution in major global retail channels, and decentralized brand stewardship, Pudgy Penguins transforms Web3 characters into beloved mainstream cultural icons.
+            </div>
+            <div class="modal-discover-row" id="modal-discover-row">
+                <div class="modal-discover-label">/// Discover</div>
+                <div class="corner-bracket-wrap">
+                    <span class="corner-tl">&lceil;</span>
+                    <span class="corner-tr">&rceil;</span>
+                    <span class="corner-bl">&lfloor;</span>
+                    <span class="corner-br">&rfloor;</span>
+                    <a href="https://pudgypenguins.com" target="_blank" class="modal-external-link" id="modal-external-link">
+                        Visit Portfolio &nearr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    /* =========================================================================
+       IGLOO INC. — MASTER ENGINE (LUMINOUS ARCTIC STUDIO CALIBER)
+       Verified Architecture against Abeto Official Case Study & Recording
+       ========================================================================= */
+
+    const CONFIG = {
+        totalBricks: 78,
+        iglooRadius: 5.6,
+        iglooHeight: 4.8,
+        clusterRadius: 3.4,
+        maxDisplacement: 0.85,
+        popOutK: 12.0,       // Fast pop-out damping [OBSERVED]
+        returnK: 3.5,        // Slow return damping [OBSERVED]
+        particleCount: 28000,
+        scrollMax: 10000,
+        audioVolume: 0.8
+    };
+
+    const STATE = {
+        scrollPos: 0,
+        targetScrollPos: 0,
+        isDragging: false,
+        dragStartY: 0,
+        hasScrolledPastInitial: false,
+        isModalOpen: false,
+        activeModalProject: null,
+        soundEnabled: true,
+        audioInitialized: false,
+        revealProgress: 0.0,
+        introComplete: false,
+        mouse: new THREE.Vector2(0, 0),
+        mouseScreen: new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2),
+        mouseVelocity: new THREE.Vector2(0, 0),
+        lastMouse: new THREE.Vector2(window.innerWidth / 2, window.innerHeight / 2),
+        pudgyTemp1: 35.14,
+        pudgyTemp2: 1.75,
+        overpassTemp1: 29.66,
+        overpassTemp2: -1.30,
+        daisMorphTarget: 0, // 0 = LinkedIn/Penguin, 1 = Medium, 2 = X
+        averageParticleSpeed: 0.0
+    };
+
+    // --- Renderer Setup (Retina Resolution, Physical Tone Mapping) ---
+    const canvas = document.getElementById('webgl-canvas');
+    const hudCanvas = document.getElementById('hud-canvas');
+    const hudCtx = hudCanvas.getContext('2d');
+    const glitchCanvas = document.getElementById('glitch-overlay');
+    const glitchCtx = glitchCanvas.getContext('2d');
+
+    const scene = new THREE.Scene();
+
+    // Luminous Arctic Fog & Sky [OBSERVED: high-key, pristine white-grey morning]
+    const arcticSkyColor = new THREE.Color(0xdce5f0);
+    scene.background = arcticSkyColor;
+    scene.fog = new THREE.FogExp2(0xdce5f0, 0.016);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 700);
+    camera.position.set(0, 3.4, 15.2);
+
+    const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true,
+        powerPreference: 'high-performance'
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        hudCanvas.width = window.innerWidth;
+        hudCanvas.height = window.innerHeight;
+        glitchCanvas.width = window.innerWidth;
+        glitchCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', onWindowResize);
+    onWindowResize();
+
+    // --- High-Key Arctic Studio Lighting ---
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xc8d8e8, 1.1);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfffdfa, 1.6);
+    sunLight.position.set(24, 45, 24);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = 100;
+    sunLight.shadow.camera.left = -20;
+    sunLight.shadow.camera.right = 20;
+    sunLight.shadow.camera.top = 20;
+    sunLight.shadow.camera.bottom = -20;
+    sunLight.shadow.bias = -0.0005;
+    scene.add(sunLight);
+
+    const rimLight = new THREE.DirectionalLight(0x7ce2fe, 0.95);
+    rimLight.position.set(-25, 15, -25);
+    scene.add(rimLight);
+
+    // Glowing White Core Light (inside Igloo, shines through cracks)
+    const iglooCoreLight = new THREE.PointLight(0xffffff, 5.0, 11.0);
+    iglooCoreLight.position.set(0, 1.4, 0);
+    scene.add(iglooCoreLight);
+
+    // --- Simplex Noise Helper ---
+    const simplexShaderChunk = `
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+        vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+        float snoise(vec3 v) {
+            const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+            const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+            vec3 i  = floor(v + dot(v, C.yyy) );
+            vec3 x0 = v - i + dot(i, C.xxx) ;
+            vec3 g = step(x0.yzx, x0.xyz);
+            vec3 l = 1.0 - g;
+            vec3 i1 = min( g.xyz, l.zxy );
+            vec3 i2 = max( g.xyz, l.zxy );
+            vec3 x1 = x0 - i1 + C.xxx;
+            vec3 x2 = x0 - i2 + C.yyy;
+            vec3 x3 = x0 - D.yyy;
+            i = mod289(i);
+            vec4 p = permute( permute( permute(
+                        i.z + vec4(0.0, i1.z, i2.z, 1.0 ))
+                    + i.y + vec4(0.0, i1.y, i2.y, 1.0 ))
+                    + i.x + vec4(0.0, i1.x, i2.x, 1.0 ));
+            float n_ = 0.142857142857;
+            vec3  ns = n_ * D.wyz - D.xzx;
+            vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+            vec4 x_ = floor(j * ns.z);
+            vec4 y_ = floor(j - 7.0 * x_ );
+            vec4 x = x_ *ns.x + ns.yyyy;
+            vec4 y = y_ *ns.x + ns.yyyy;
+            vec4 h = 1.0 - abs(x) - abs(y);
+            vec4 b0 = vec4( x.xy, y.xy );
+            vec4 b1 = vec4( x.zw, y.zw );
+            vec4 s0 = floor(b0)*2.0 + 1.0;
+            vec4 s1 = floor(b1)*2.0 + 1.0;
+            vec4 sh = -step(h, vec4(0.0));
+            vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;
+            vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;
+            vec3 p0 = vec3(a0.xy,h.x);
+            vec3 p1 = vec3(a0.zw,h.y);
+            vec3 p2 = vec3(a1.xy,h.z);
+            vec3 p3 = vec3(a1.zw,h.w);
+            vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));
+            p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+            vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+            m = m * m;
+            return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
+        }
+    `;
+
+    /* =========================================================================
+       SCENE B: PROCEDURAL ARCTIC TERRAIN & DISTANT MOUNTAIN SILHOUETTES
+       ========================================================================= */
+
+    // 1. Distant Misty Mountain Ridges
+    const mountainGroup = new THREE.Group();
+    scene.add(mountainGroup);
+
+    for (let m = 0; m < 4; m++) {
+        const mGeo = new THREE.PlaneGeometry(200, 35, 80, 16);
+        const mPos = mGeo.attributes.position;
+        for (let i = 0; i < mPos.count; i++) {
+            const x = mPos.getX(i);
+            const y = mPos.getY(i);
+            if (y > -12) {
+                const ridge = Math.sin(x * 0.06 + m * 2.3) * 5.5 + Math.cos(x * 0.12) * 2.8;
+                mPos.setY(i, y + ridge);
+            }
+        }
+        mGeo.computeVertexNormals();
+
+        const mColor = new THREE.Color().setHSL(0.58, 0.2, 0.72 - m * 0.08);
+        const mMat = new THREE.MeshBasicMaterial({
+            color: mColor,
+            transparent: true,
+            opacity: 0.85 - m * 0.15
+        });
+        const mMesh = new THREE.Mesh(mGeo, mMat);
+        mMesh.position.set(0, 2.0 - m * 2.5, -55 - m * 30);
+        mountainGroup.add(mMesh);
+    }
+
+    // 2. Sculpted Arctic Terrain Mesh with Radial Noise-Edged Reveal Shader [CONFIRMED & OBSERVED]
+    const terrainGeo = new THREE.PlaneGeometry(160, 160, 140, 140);
+    terrainGeo.rotateX(-Math.PI / 2);
+    const tPos = terrainGeo.attributes.position;
+    for (let i = 0; i < tPos.count; i++) {
+        const x = tPos.getX(i);
+        const z = tPos.getZ(i);
+        const distFromCenter = Math.hypot(x, z);
+        let y = Math.sin(x * 0.05) * 2.2 + Math.cos(z * 0.06) * 2.5 + Math.sin(x * 0.02 + z * 0.025) * 4.5;
+        if (distFromCenter < 9.0) {
+            y *= Math.pow(distFromCenter / 9.0, 2.5);
+            y -= 0.18;
+        }
+        tPos.setY(i, y);
+    }
+    terrainGeo.computeVertexNormals();
+
+    const terrainUniforms = {
+        uRevealRadius: { value: 0.0 },
+        uIglooCenter: { value: new THREE.Vector3(0, 0, 0) },
+        uTime: { value: 0.0 },
+        uNoiseScale: { value: 0.16 },
+        uNoiseAmplitude: { value: 2.6 },
+        uGlowIntensity: { value: 2.2 }
+    };
+
+    const terrainMat = new THREE.ShaderMaterial({
+        uniforms: terrainUniforms,
+        vertexShader: `
+            varying vec3 vWorldPos;
+            varying vec3 vNormal;
+            void main() {
+                vNormal = normalize(normalMatrix * normal);
+                vec4 worldPos = modelMatrix * vec4(position, 1.0);
+                vWorldPos = worldPos.xyz;
+                gl_Position = projectionMatrix * viewMatrix * worldPos;
+            }
+        `,
+        fragmentShader: `
+            ${simplexShaderChunk}
+            uniform float uRevealRadius;
+            uniform vec3 uIglooCenter;
+            uniform float uTime;
+            uniform float uNoiseScale;
+            uniform float uNoiseAmplitude;
+            uniform float uGlowIntensity;
+            varying vec3 vWorldPos;
+            varying vec3 vNormal;
+
+            void main() {
+                float dist = length(vWorldPos - uIglooCenter);
+                float n = snoise(vWorldPos * uNoiseScale + vec3(0.0, uTime * 0.2, 0.0));
+                float noisyDist = dist + n * uNoiseAmplitude;
+
+                float edgeWidth = 1.8;
+                // 0.0 = textured snow/rock, 1.0 = wireframe
+                float revealMask = smoothstep(uRevealRadius - edgeWidth, uRevealRadius, noisyDist);
+                float emissiveRim = smoothstep(uRevealRadius - edgeWidth, uRevealRadius - edgeWidth * 0.5, noisyDist)
+                                  * (1.0 - smoothstep(uRevealRadius - edgeWidth * 0.5, uRevealRadius, noisyDist));
+
+                // Pristine PBR Arctic Snow & Rocky Outcrops [OBSERVED]
+                vec3 lightDir = normalize(vec3(0.4, 0.85, 0.4));
+                float diff = max(dot(vNormal, lightDir), 0.25);
+                float slope = 1.0 - vNormal.y;
+
+                vec3 snowColor = vec3(0.96, 0.98, 1.0) * diff + vec3(0.12, 0.16, 0.24);
+                vec3 rockColor = vec3(0.32, 0.36, 0.42) * diff * 0.75;
+                vec3 terrainColor = mix(snowColor, rockColor, smoothstep(0.4, 0.78, slope));
+
+                // Wireframe tech look (slate/cyan on pale grey)
+                vec3 wireColor = vec3(0.75, 0.82, 0.9);
+
+                vec3 finalColor = mix(terrainColor, wireColor, revealMask);
+                finalColor += vec3(0.4, 0.85, 1.0) * emissiveRim * uGlowIntensity;
+
+                gl_FragColor = vec4(finalColor, 1.0);
+            }
+        `
+    });
+
+    const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    terrainMesh.position.y = -0.5;
+    terrainMesh.receiveShadow = true;
+    scene.add(terrainMesh);
+
+    // Plexus Constellation Cage for Intro
+    const plexusGeo = new THREE.WireframeGeometry(terrainGeo);
+    const plexusMat = new THREE.LineBasicMaterial({
+        color: 0x94a9c4,
+        transparent: true,
+        opacity: 0.45
+    });
+    const plexusMesh = new THREE.LineSegments(plexusGeo, plexusMat);
+    plexusMesh.position.y = -0.48;
+    scene.add(plexusMesh);
+
+    // Glowing Interior Core Mesh
+    const coreGeo = new THREE.SphereGeometry(CONFIG.iglooRadius * 0.76, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.5);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.BackSide });
+    const iglooCoreMesh = new THREE.Mesh(coreGeo, coreMat);
+    scene.add(iglooCoreMesh);
+
+    // --- Procedural Fractured 78-Brick Igloo Dome ---
+    // Sculpted Chamfered Snow Bricks with Organic Surface Displacements
+    const iglooBricks = [];
+    const iglooGroup = new THREE.Group();
+    scene.add(iglooGroup);
+
+    function createSculptedSnowBrickGeo(w, h, d) {
+        const geo = new THREE.BoxGeometry(w, h, d, 4, 3, 4);
+        const pos = geo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+            let x = pos.getX(i);
+            let y = pos.getY(i);
+            let z = pos.getZ(i);
+
+            // Natural organic snow chamfering
+            const noise = (Math.sin(x * 7.0) + Math.cos(y * 9.0) + Math.sin(z * 7.0)) * 0.038;
+            pos.setXYZ(i, x + noise, y + noise * 0.5, z + noise);
+        }
+        geo.computeVertexNormals();
+        return geo;
+    }
+
+    const brickSnowMat = new THREE.MeshStandardMaterial({
+        color: 0xfafcff,
+        roughness: 0.78,
+        metalness: 0.02
+    });
+
+    let brickCounter = 1;
+    const domeRings = 7;
+
+    for (let r = 0; r < domeRings; r++) {
+        const phi = (r / domeRings) * (Math.PI * 0.44);
+        const ringRadius = CONFIG.iglooRadius * Math.cos(phi);
+        const yPos = CONFIG.iglooHeight * Math.sin(phi);
+        const bricksInRing = Math.max(4, Math.round(18 * Math.cos(phi)));
+
+        for (let b = 0; b < bricksInRing; b++) {
+            const theta = (b / bricksInRing) * Math.PI * 2;
+            const isEntranceGap = (r < 2 && (theta > Math.PI * 0.42 && theta < Math.PI * 0.58));
+            if (isEntranceGap) continue;
+
+            const x = ringRadius * Math.sin(theta);
+            const z = ringRadius * Math.cos(theta);
+
+            const brickWidth = (ringRadius * 2 * Math.PI / bricksInRing) * 0.94;
+            const brickHeight = 0.68;
+            const brickDepth = 0.98;
+
+            const geo = createSculptedSnowBrickGeo(brickWidth, brickHeight, brickDepth);
+            const mesh = new THREE.Mesh(geo, brickSnowMat.clone());
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            const restPos = new THREE.Vector3(x, yPos + 0.35, z);
+            const restNorm = new THREE.Vector3(x, yPos * 0.55, z).normalize();
+
+            mesh.position.copy(restPos);
+            mesh.lookAt(x + restNorm.x, yPos + restNorm.y, z + restNorm.z);
+
+            const brickData = {
+                id: brickCounter++,
+                mesh: mesh,
+                restPosition: restPos.clone(),
+                restRotation: mesh.rotation.clone(),
+                restNormal: restNorm.clone(),
+                restCenter: restPos.clone(),
+                currentOffset: 0.0,
+                targetOffset: 0.0,
+                isLifted: false
+            };
+            mesh.userData = brickData;
+            iglooBricks.push(brickData);
+            iglooGroup.add(mesh);
+        }
+    }
+
+    // Entrance Arch Tunnel Bricks
+    for (let arch = 0; arch < 6; arch++) {
+        const archAngle = (arch / 5) * Math.PI;
+        const archX = Math.cos(archAngle) * 1.42;
+        const archY = Math.sin(archAngle) * 1.55 + 0.32;
+        const archZ = CONFIG.iglooRadius + 0.85;
+
+        const geo = createSculptedSnowBrickGeo(0.68, 0.48, 0.88);
+        const mesh = new THREE.Mesh(geo, brickSnowMat.clone());
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+
+        const restPos = new THREE.Vector3(archX, archY, archZ);
+        const restNorm = new THREE.Vector3(archX * 0.85, archY * 0.85, 1.0).normalize();
+
+        mesh.position.copy(restPos);
+        mesh.lookAt(restPos.x + restNorm.x, restPos.y + restNorm.y, restPos.z + restNorm.z);
+
+        const brickData = {
+            id: brickCounter++,
+            mesh: mesh,
+            restPosition: restPos.clone(),
+            restRotation: mesh.rotation.clone(),
+            restNormal: restNorm.clone(),
+            restCenter: restPos.clone(),
+            currentOffset: 0.0,
+            targetOffset: 0.0,
+            isLifted: false
+        };
+        mesh.userData = brickData;
+        iglooBricks.push(brickData);
+        iglooGroup.add(mesh);
+    }
+
+    // Atmospheric Snow Flakes
+    const snowCount = 2000;
+    const snowGeo = new THREE.BufferGeometry();
+    const snowPositions = new Float32Array(snowCount * 3);
+    const snowVelocities = new Float32Array(snowCount * 3);
+
+    for (let i = 0; i < snowCount; i++) {
+        snowPositions[i * 3 + 0] = (Math.random() - 0.5) * 60;
+        snowPositions[i * 3 + 1] = Math.random() * 25;
+        snowPositions[i * 3 + 2] = (Math.random() - 0.5) * 60;
+
+        snowVelocities[i * 3 + 0] = -0.5 - Math.random() * 1.5;
+        snowVelocities[i * 3 + 1] = -0.2 - Math.random() * 0.4;
+        snowVelocities[i * 3 + 2] = 0.2 + (Math.random() - 0.5) * 0.5;
+    }
+    snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+    const snowMat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.14,
+        transparent: true,
+        opacity: 0.85
+    });
+    const snowParticleSystem = new THREE.Points(snowGeo, snowMat);
+    scene.add(snowParticleSystem);
+
+    /* =========================================================================
+       SCENE C: PROCEDURAL REFRACTIVE ICE BLOCKS & PORTFOLIO ARTIFACTS
+       ========================================================================= */
+
+    const iceBlockGroup1 = new THREE.Group(); // Pudgy Penguins at Y = -35
+    const iceBlockGroup2 = new THREE.Group(); // Overpass at Y = -65
+    scene.add(iceBlockGroup1);
+    scene.add(iceBlockGroup2);
+
+    iceBlockGroup1.position.set(0, -35, 0);
+    iceBlockGroup2.position.set(0, -65, 0);
+
+    // Three.js Physical Transmissive Ice Material (Real Physical Refraction!)
+    const icePhysicalMat = new THREE.MeshPhysicalMaterial({
+        color: 0xdff2ff,
+        transmission: 0.88,
+        opacity: 1.0,
+        transparent: true,
+        roughness: 0.12,
+        ior: 1.31,           // True index of refraction for ice!
+        thickness: 2.8,
+        specularIntensity: 1.2,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.08
+    });
+
+    // Faceted Crystal 01 (Pudgy Penguins)
+    const crystalGeo1 = new THREE.DodecahedronGeometry(3.4, 1);
+    const c1Pos = crystalGeo1.attributes.position;
+    for (let i = 0; i < c1Pos.count; i++) {
+        const v = new THREE.Vector3(c1Pos.getX(i), c1Pos.getY(i), c1Pos.getZ(i));
+        v.x += Math.sin(v.y * 3.2) * 0.4;
+        v.z += Math.cos(v.x * 3.2) * 0.4;
+        c1Pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    crystalGeo1.computeVertexNormals();
+
+    const crystalMesh1 = new THREE.Mesh(crystalGeo1, icePhysicalMat);
+    crystalMesh1.userData = { isIceBlock: true, project: 'pudgy' };
+    iceBlockGroup1.add(crystalMesh1);
+
+    // Inner Artifact 01: Sculpted Pudgy Penguin 3D Model
+    const penguinGroup = new THREE.Group();
+
+    // Chubby Penguin Body
+    const pBodyGeo = new THREE.SphereGeometry(1.4, 28, 28);
+    pBodyGeo.scale(0.9, 1.25, 0.9);
+    const pBodyMat = new THREE.MeshStandardMaterial({ color: 0x1f242d, roughness: 0.35 });
+    const pBody = new THREE.Mesh(pBodyGeo, pBodyMat);
+    penguinGroup.add(pBody);
+
+    // White Chest/Belly
+    const pBellyGeo = new THREE.SphereGeometry(1.22, 24, 24);
+    pBellyGeo.scale(0.72, 1.12, 0.5);
+    const pBellyMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25 });
+    const pBelly = new THREE.Mesh(pBellyGeo, pBellyMat);
+    pBelly.position.set(0, -0.08, 0.58);
+    penguinGroup.add(pBelly);
+
+    // Yellow Beak
+    const pBeakGeo = new THREE.ConeGeometry(0.28, 0.48, 5);
+    pBeakGeo.rotateX(Math.PI / 2);
+    const pBeakMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.4 });
+    const pBeak = new THREE.Mesh(pBeakGeo, pBeakMat);
+    pBeak.position.set(0, 0.42, 1.15);
+    penguinGroup.add(pBeak);
+
+    // Cute Glossy Eyes
+    const pEyeGeo = new THREE.SphereGeometry(0.13, 14, 14);
+    const pEyeMat = new THREE.MeshBasicMaterial({ color: 0x0a0c10 });
+    const pLeftEye = new THREE.Mesh(pEyeGeo, pEyeMat);
+    pLeftEye.position.set(-0.36, 0.58, 0.98);
+    const pRightEye = new THREE.Mesh(pEyeGeo, pEyeMat);
+    pRightEye.position.set(0.36, 0.58, 0.98);
+    penguinGroup.add(pLeftEye, pRightEye);
+
+    // Flippers
+    const pFlipperGeo = new THREE.ConeGeometry(0.35, 1.1, 4);
+    pFlipperGeo.rotateZ(Math.PI / 2);
+    const pLeftFlipper = new THREE.Mesh(pFlipperGeo, pBodyMat);
+    pLeftFlipper.position.set(-1.18, 0.0, 0.1);
+    pLeftFlipper.rotation.z = -0.3;
+    const pRightFlipper = new THREE.Mesh(pFlipperGeo, pBodyMat);
+    pRightFlipper.position.set(1.18, 0.0, 0.1);
+    pRightFlipper.rotation.z = 0.3;
+    penguinGroup.add(pLeftFlipper, pRightFlipper);
+
+    iceBlockGroup1.add(penguinGroup);
+
+    const crystalWireframe1 = new THREE.LineSegments(
+        new THREE.WireframeGeometry(crystalGeo1),
+        new THREE.LineBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.45 })
+    );
+    crystalWireframe1.scale.set(1.05, 1.05, 1.05);
+    iceBlockGroup1.add(crystalWireframe1);
+
+    // Faceted Crystal 02 (Overpass)
+    const crystalGeo2 = new THREE.OctahedronGeometry(3.7, 2);
+    const c2Pos = crystalGeo2.attributes.position;
+    for (let i = 0; i < c2Pos.count; i++) {
+        const v = new THREE.Vector3(c2Pos.getX(i), c2Pos.getY(i), c2Pos.getZ(i));
+        v.y += Math.sin(v.x * 2.8 + v.z * 2.2) * 0.45;
+        c2Pos.setXYZ(i, v.x, v.y, v.z);
+    }
+    crystalGeo2.computeVertexNormals();
+
+    const crystalMesh2 = new THREE.Mesh(crystalGeo2, icePhysicalMat);
+    crystalMesh2.userData = { isIceBlock: true, project: 'overpass' };
+    iceBlockGroup2.add(crystalMesh2);
+
+    // Inner Artifact 02: Overpass Metallic Shield Badge
+    const badgeGroup = new THREE.Group();
+    const badgeGeo = new THREE.CylinderGeometry(1.6, 1.6, 0.42, 6);
+    badgeGeo.rotateX(Math.PI / 2);
+    const badgeMat = new THREE.MeshStandardMaterial({
+        color: 0x25384e,
+        metalness: 0.75,
+        roughness: 0.25
+    });
+    const badgeMesh = new THREE.Mesh(badgeGeo, badgeMat);
+    badgeGroup.add(badgeMesh);
+
+    // Chrome Beveled Border
+    const ringBorderGeo = new THREE.TorusGeometry(1.58, 0.08, 16, 32);
+    const ringBorderMat = new THREE.MeshStandardMaterial({ color: 0xa5c9ed, metalness: 0.9, roughness: 0.15 });
+    const ringBorder = new THREE.Mesh(ringBorderGeo, ringBorderMat);
+    badgeGroup.add(ringBorder);
+
+    // Recessed Glowing "IP" Emblem
+    const ipGeo = new THREE.TorusGeometry(0.6, 0.14, 16, 24);
+    const ipMesh = new THREE.Mesh(ipGeo, ringBorderMat);
+    ipMesh.position.z = 0.24;
+    badgeGroup.add(ipMesh);
+
+    iceBlockGroup2.add(badgeGroup);
+
+    const crystalWireframe2 = new THREE.LineSegments(
+        new THREE.WireframeGeometry(crystalGeo2),
+        new THREE.LineBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.45 })
+    );
+    crystalWireframe2.scale.set(1.05, 1.05, 1.05);
+    iceBlockGroup2.add(crystalWireframe2);
+
+    /* =========================================================================
+       SCENE E: COUNTER-ROTATING PORTAL RINGS & VOLUMETRIC PARTICLE DAIS
+       ========================================================================= */
+
+    // 1. Counter-Rotating Segmented Portal Rings (Y = -90)
+    const portalGroup = new THREE.Group();
+    portalGroup.position.set(0, -90, 0);
+    scene.add(portalGroup);
+
+    const outerRingGeo = new THREE.RingGeometry(3.6, 5.0, 32);
+    const outerRingMat = new THREE.MeshStandardMaterial({
+        color: 0x8697b0,
+        metalness: 0.8,
+        roughness: 0.2,
+        side: THREE.DoubleSide
+    });
+    const outerRingMesh = new THREE.Mesh(outerRingGeo, outerRingMat);
+    outerRingMesh.rotation.x = Math.PI / 2;
+    portalGroup.add(outerRingMesh);
+
+    const innerGlowingRingGeo = new THREE.RingGeometry(2.9, 3.3, 32);
+    const innerGlowingRingMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const innerGlowingRing = new THREE.Mesh(innerGlowingRingGeo, innerGlowingRingMat);
+    innerGlowingRing.rotation.x = Math.PI / 2;
+    innerGlowingRing.position.y = 0.06;
+    portalGroup.add(innerGlowingRing);
+
+    // 2. Stepped Circular Platform Dais (Y = -115)
+    const daisGroup = new THREE.Group();
+    daisGroup.position.set(0, -115, 0);
+    scene.add(daisGroup);
+
+    for (let step = 0; step < 3; step++) {
+        const radius = 9.2 - step * 2.3;
+        const height = 0.48;
+        const stepGeo = new THREE.CylinderGeometry(radius, radius + 0.32, height, 48);
+        const stepMat = new THREE.MeshStandardMaterial({
+            color: 0x1b222d,
+            roughness: 0.35,
+            metalness: 0.6
+        });
+        const stepMesh = new THREE.Mesh(stepGeo, stepMat);
+        stepMesh.position.y = -step * height;
+        daisGroup.add(stepMesh);
+
+        // Concentric glowing circular grooves
+        const grooveGeo = new THREE.RingGeometry(radius - 0.16, radius, 48);
+        const grooveMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+        const grooveMesh = new THREE.Mesh(grooveGeo, grooveMat);
+        grooveMesh.rotation.x = -Math.PI / 2;
+        grooveMesh.position.y = (-step * height) + 0.245;
+        daisGroup.add(grooveMesh);
+    }
+
+    // Hovering Overhead Glowing Halo Ring
+    const haloRingGeo = new THREE.TorusGeometry(5.4, 0.09, 16, 64);
+    haloRingGeo.rotateX(Math.PI / 2);
+    const haloRingMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const haloRing = new THREE.Mesh(haloRingGeo, haloRingMat);
+    haloRing.position.y = 7.8;
+    daisGroup.add(haloRing);
+
+    // 3. Volumetric 28,000 Particle Cloud with Dynamic Swirling Vortex
+    const pCount = CONFIG.particleCount;
+    const particleGeo = new THREE.BufferGeometry();
+
+    const particlePositions = new Float32Array(pCount * 3);
+    const particleVelocities = new Float32Array(pCount * 3);
+    const particleColors = new Float32Array(pCount * 3);
+
+    const morphTargets = [
+        new Float32Array(pCount * 3),
+        new Float32Array(pCount * 3),
+        new Float32Array(pCount * 3)
+    ];
+
+    for (let i = 0; i < pCount; i++) {
+        // Target 0: Volumetric 3D Penguin Figure
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0);
+        const r = Math.cbrt(Math.random()) * 2.3;
+        morphTargets[0][i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta) * 0.92;
+        morphTargets[0][i * 3 + 1] = r * Math.cos(phi) * 1.45 + 2.9;
+        morphTargets[0][i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta) * 0.92;
+
+        // Target 1: Volumetric Torus Galaxy (Medium)
+        const tTheta = Math.random() * Math.PI * 2;
+        const tPhi = Math.random() * Math.PI * 2;
+        const R = 2.5, rSmall = 0.85 * Math.random();
+        morphTargets[1][i * 3 + 0] = (R + rSmall * Math.cos(tPhi)) * Math.cos(tTheta);
+        morphTargets[1][i * 3 + 1] = rSmall * Math.sin(tPhi) + 3.2;
+        morphTargets[1][i * 3 + 2] = (R + rSmall * Math.cos(tPhi)) * Math.sin(tTheta);
+
+        // Target 2: Double-Cone Hourglass / "X" (Twitter/X)
+        const h = (Math.random() - 0.5) * 5.2;
+        const radiusAtH = Math.abs(h) * 0.8 + 0.28;
+        const angle = Math.random() * Math.PI * 2;
+        morphTargets[2][i * 3 + 0] = Math.cos(angle) * radiusAtH * Math.random();
+        morphTargets[2][i * 3 + 1] = h + 3.2;
+        morphTargets[2][i * 3 + 2] = Math.sin(angle) * radiusAtH * Math.random();
+
+        // Initial setup
+        particlePositions[i * 3 + 0] = morphTargets[0][i * 3 + 0];
+        particlePositions[i * 3 + 1] = morphTargets[0][i * 3 + 1];
+        particlePositions[i * 3 + 2] = morphTargets[0][i * 3 + 2];
+
+        particleColors[i * 3 + 0] = 0.22;
+        particleColors[i * 3 + 1] = 0.26;
+        particleColors[i * 3 + 2] = 0.32;
+    }
+
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+    const particleMat = new THREE.PointsMaterial({
+        size: 0.08,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending
+    });
+
+    const volumetricParticles = new THREE.Points(particleGeo, particleMat);
+    daisGroup.add(volumetricParticles);
+
+    /* =========================================================================
+       SCENE D: SUMMARY MODALS & WEBGL TEXT SCRAMBLE ENGINE
+       ========================================================================= */
+
+    const modalContainer = document.getElementById('modal-container');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBodyText = document.getElementById('modal-body-text');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const modalExternalLink = document.getElementById('modal-external-link');
+    const modalDiscoverRow = document.getElementById('modal-discover-row');
+
+    const projectData = {
+        pudgy: {
+            title: "///// Summary \u2014 Pudgy Penguins",
+            slug: "pudgy-penguins",
+            url: "/portfolio/pudgy-penguins",
+            text: "Pudgy Penguins is an intellectual property powerhouse built directly from onchain roots. Through massive viral reach, physical toy distribution in major global retail channels, and decentralized brand stewardship, Pudgy Penguins transforms Web3 characters into beloved mainstream cultural icons.",
+            linkText: "Visit Portfolio &nearr;",
+            linkHref: "https://pudgypenguins.com",
+            hasDiscover: false
+        },
+        overpass: {
+            title: "///// Summary \u2014 Overpass",
+            slug: "overpass",
+            url: "/portfolio/overpass",
+            text: "Overpass is the decentralized licensing marketplace revolutionizing brand monetization. By allowing rights holders and creators to seamlessly negotiate, track royalties, and verify onchain intellectual property ownership, Overpass creates the frictionless legal rails for modern digital culture.",
+            linkText: "Visit Overpass &nearr;",
+            linkHref: "https://overpass.ip",
+            hasDiscover: true
+        }
+    };
+
+    function openProjectModal(projectKey) {
+        const p = projectData[projectKey];
+        if (!p) return;
+
+        STATE.isModalOpen = true;
+        STATE.activeModalProject = projectKey;
+
+        modalTitle.innerText = p.title;
+        modalBodyText.innerText = p.text;
+        modalExternalLink.innerHTML = p.linkText;
+        modalExternalLink.href = p.linkHref;
+        modalDiscoverRow.style.display = p.hasDiscover ? 'flex' : 'none';
+
+        // Update URL via HTML5 History API [OBSERVED & CONFIRMED]
+        window.history.pushState({ project: projectKey }, p.title, p.url);
+
+        // Darken UI & glow wordmark [OBSERVED]
+        document.body.classList.add('dark-mode');
+        document.getElementById('igloo-logo').classList.add('glow-bright');
+
+        // Edge-in radial darkening freeze transition
+        modalContainer.classList.add('active');
+
+        // Wave decode text reveal on open
+        startSdfWaveDecode(modalBodyText, p.text);
+
+        // Transition impact hit (+5 dB level bump)
+        playTransitionImpactSound(65, 0.45);
+    }
+
+    function closeModal() {
+        if (!STATE.isModalOpen) return;
+        STATE.isModalOpen = false;
+        STATE.activeModalProject = null;
+
+        modalContainer.classList.remove('active');
+        document.body.classList.remove('dark-mode');
+        document.getElementById('igloo-logo').classList.remove('glow-bright');
+
+        // Reset URL to root
+        window.history.pushState({}, 'Igloo Inc.', '/');
+
+        // Trigger red/cyan thaw chromatic glitch
+        triggerThawGlitch();
+
+        playTransitionImpactSound(125, 0.35);
+    }
+
+    modalCloseBtn.addEventListener('click', closeModal);
+
+    // Wave Decode Text Animation
+    const cipherChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-_/[]{}<>~!=";
+    function startSdfWaveDecode(element, fullText) {
+        let progress = 0;
+        const totalLen = fullText.length;
+        const interval = setInterval(() => {
+            progress += 4;
+            let display = "";
+            for (let i = 0; i < totalLen; i++) {
+                if (fullText[i] === ' ' || fullText[i] === '\n') {
+                    display += fullText[i];
+                } else if (i < progress) {
+                    display += fullText[i];
+                } else {
+                    display += cipherChars[Math.floor(Math.random() * cipherChars.length)];
+                }
+            }
+            element.innerText = display;
+
+            if (Math.random() < 0.35) playTextTickSound();
+
+            if (progress >= totalLen + 16) {
+                clearInterval(interval);
+                element.innerText = fullText;
+            }
+        }, 28);
+    }
+
+    // Interactive Cursor Brush Scramble (SDF Font Atlas UV Offset Scramble) [CONFIRMED & OBSERVED]
+    modalBodyText.addEventListener('mousemove', (e) => {
+        if (!STATE.isModalOpen || !STATE.activeModalProject) return;
+        const originalText = projectData[STATE.activeModalProject].text;
+        const rect = modalBodyText.getBoundingClientRect();
+        const relY = (e.clientY - rect.top) / rect.height;
+        const charIndex = Math.floor(relY * originalText.length);
+
+        const brushRadius = 18;
+        let scrambled = "";
+        for (let i = 0; i < originalText.length; i++) {
+            if (Math.abs(i - charIndex) < brushRadius && originalText[i] !== ' ') {
+                scrambled += cipherChars[Math.floor(Math.random() * cipherChars.length)];
+            } else {
+                scrambled += originalText[i];
+            }
+        }
+        modalBodyText.innerText = scrambled;
+        playTextTickSound();
+
+        clearTimeout(modalBodyText._restoreTimer);
+        modalBodyText._restoreTimer = setTimeout(() => {
+            modalBodyText.innerText = originalText;
+        }, 200);
+    });
+
+    // Thaw Out Glitch Effect
+    function triggerThawGlitch() {
+        glitchCanvas.style.opacity = '1';
+        let frame = 0;
+        const maxFrames = 14;
+
+        function renderGlitch() {
+            frame++;
+            glitchCtx.clearRect(0, 0, glitchCanvas.width, glitchCanvas.height);
+
+            const bands = Math.floor(Math.random() * 6) + 4;
+            for (let b = 0; b < bands; b++) {
+                const y = Math.random() * glitchCanvas.height;
+                const h = Math.random() * 28 + 6;
+
+                glitchCtx.fillStyle = `rgba(239, 68, 68, ${Math.random() * 0.35})`;
+                glitchCtx.fillRect(0, y - 4, glitchCanvas.width, h);
+
+                glitchCtx.fillStyle = `rgba(14, 165, 233, ${Math.random() * 0.35})`;
+                glitchCtx.fillRect(0, y + 4, glitchCanvas.width, h);
+            }
+
+            if (frame < maxFrames) {
+                requestAnimationFrame(renderGlitch);
+            } else {
+                glitchCtx.clearRect(0, 0, glitchCanvas.width, glitchCanvas.height);
+                glitchCanvas.style.opacity = '0';
+            }
+        }
+        renderGlitch();
+    }
+
+    // Dynamic Scroll Transition Glitch & Fog Overlay (~0:20-0:22 & ~0:47-0:51) [CONFIRMED & OBSERVED]
+    function renderScrollGlitch(intensity) {
+        if (intensity < 0.05) {
+            glitchCtx.clearRect(0, 0, glitchCanvas.width, glitchCanvas.height);
+            glitchCanvas.style.opacity = '0';
+            return;
+        }
+        glitchCanvas.style.opacity = '1';
+        glitchCtx.clearRect(0, 0, glitchCanvas.width, glitchCanvas.height);
+        const count = Math.floor(intensity * 10);
+        for (let i = 0; i < count; i++) {
+            const y = Math.random() * glitchCanvas.height;
+            const h = Math.random() * 22 + 4;
+            glitchCtx.fillStyle = `rgba(239, 68, 68, ${intensity * 0.28})`;
+            glitchCtx.fillRect(0, y - 3, glitchCanvas.width, h);
+            glitchCtx.fillStyle = `rgba(14, 165, 233, ${intensity * 0.28})`;
+            glitchCtx.fillRect(0, y + 3, glitchCanvas.width, h);
+        }
+    }
+
+    /* =========================================================================
+       PROCEDURAL WEB AUDIO API ENGINE (100% SYNTHESIZED)
+       ========================================================================= */
+
+    let audioCtx = null;
+    let masterGain = null;
+    let windNoiseNode = null;
+    let windFilterNode = null;
+    let particleVortexFilter = null;
+    let particleVortexGain = null;
+
+    function initAudioEngine() {
+        if (STATE.audioInitialized) return;
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContextClass();
+
+            masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(CONFIG.audioVolume, audioCtx.currentTime);
+            masterGain.connect(audioCtx.destination);
+
+            // Ambient Arctic Wind Loop (Pink noise with 390 Hz lowpass filter) [OBSERVED]
+            const bufferSize = audioCtx.sampleRate * 2.0;
+            const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            let lastOut = 0.0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                output[i] = (lastOut + (0.02 * white)) / 1.02;
+                lastOut = output[i];
+                output[i] *= 3.5;
+            }
+
+            windNoiseNode = audioCtx.createBufferSource();
+            windNoiseNode.buffer = noiseBuffer;
+            windNoiseNode.loop = true;
+
+            windFilterNode = audioCtx.createBiquadFilter();
+            windFilterNode.type = 'lowpass';
+            windFilterNode.frequency.setValueAtTime(390, audioCtx.currentTime);
+
+            const windGain = audioCtx.createGain();
+            windGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
+            windNoiseNode.connect(windFilterNode);
+            windFilterNode.connect(windGain);
+            windGain.connect(masterGain);
+            windNoiseNode.start();
+
+            // Particle Vortex Reactive Synth
+            const vortexBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const vData = vortexBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) vData[i] = Math.random() * 2 - 1;
+
+            const vortexSource = audioCtx.createBufferSource();
+            vortexSource.buffer = vortexBuffer;
+            vortexSource.loop = true;
+
+            particleVortexFilter = audioCtx.createBiquadFilter();
+            particleVortexFilter.type = 'bandpass';
+            particleVortexFilter.frequency.setValueAtTime(600, audioCtx.currentTime);
+            particleVortexFilter.Q.setValueAtTime(3.2, audioCtx.currentTime);
+
+            particleVortexGain = audioCtx.createGain();
+            particleVortexGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+
+            vortexSource.connect(particleVortexFilter);
+            particleVortexFilter.connect(particleVortexGain);
+            particleVortexGain.connect(masterGain);
+            vortexSource.start();
+
+            STATE.audioInitialized = true;
+        } catch (e) {
+            console.warn("Web Audio waiting for gesture", e);
+        }
+    }
+
+    // Brick Hover SFX: Low-end stone/snow thud + crisp HUD tick with cursor stereo panning [INFERRED]
+    function playBrickHoverSound(panX = 0) {
+        if (!STATE.audioInitialized || !STATE.soundEnabled) return;
+        const now = audioCtx.currentTime;
+
+        const osc = audioCtx.createOscillator();
+        const oscGain = audioCtx.createGain();
+        const panner = audioCtx.createStereoPanner ? audioCtx.createStereoPanner() : null;
+
+        osc.type = 'sine';
+        const baseFreq = 92 + (Math.random() - 0.5) * 18;
+        osc.frequency.setValueAtTime(baseFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(36, now + 0.12);
+
+        oscGain.gain.setValueAtTime(0.24, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+        if (panner) {
+            panner.pan.setValueAtTime(Math.max(-0.6, Math.min(0.6, panX)), now);
+            osc.connect(oscGain);
+            oscGain.connect(panner);
+            panner.connect(masterGain);
+        } else {
+            osc.connect(oscGain);
+            oscGain.connect(masterGain);
+        }
+        osc.start(now);
+        osc.stop(now + 0.15);
+
+        // Crisp HUD tick
+        const tickOsc = audioCtx.createOscillator();
+        const tickGain = audioCtx.createGain();
+        tickOsc.type = 'triangle';
+        tickOsc.frequency.setValueAtTime(1450 + Math.random() * 350, now);
+        tickGain.gain.setValueAtTime(0.055, now);
+        tickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+        tickOsc.connect(tickGain);
+        tickGain.connect(masterGain);
+        tickOsc.start(now);
+        tickOsc.stop(now + 0.035);
+    }
+
+    function playTextTickSound() {
+        if (!STATE.audioInitialized || !STATE.soundEnabled) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(2200 + Math.random() * 700, now);
+        gain.gain.setValueAtTime(0.02, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.015);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + 0.02);
+    }
+
+    function playTransitionImpactSound(freq = 60, duration = 0.5) {
+        if (!STATE.audioInitialized || !STATE.soundEnabled) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(28, now + duration);
+
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(320, now);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(masterGain);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.05);
+    }
+
+    function playDaisEntranceShimmer() {
+        if (!STATE.audioInitialized || !STATE.soundEnabled) return;
+        const now = audioCtx.currentTime;
+        const chord = [2400, 3200, 4200, 4700];
+        chord.forEach((f, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, now + idx * 0.04);
+            gain.gain.setValueAtTime(0.08, now + idx * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start(now + idx * 0.04);
+            osc.stop(now + 0.85);
+        });
+    }
+
+    const soundBtn = document.getElementById('sound-btn');
+    const soundStatusText = document.getElementById('sound-status-text');
+    const soundWaveArc = document.getElementById('sound-wave-arc');
+
+    soundBtn.addEventListener('click', () => {
+        initAudioEngine();
+        STATE.soundEnabled = !STATE.soundEnabled;
+
+        if (masterGain && audioCtx) {
+            const now = audioCtx.currentTime;
+            masterGain.gain.cancelScheduledValues(now);
+            const target = STATE.soundEnabled ? CONFIG.audioVolume : 0.0;
+            masterGain.gain.linearRampToValueAtTime(target, now + 0.3);
+        }
+
+        soundStatusText.innerText = STATE.soundEnabled ? 'Sound: On' : 'Sound: Off';
+        soundWaveArc.style.display = STATE.soundEnabled ? 'inline' : 'none';
+    });
+
+    window.addEventListener('pointerdown', () => initAudioEngine(), { once: true });
+    window.addEventListener('wheel', () => initAudioEngine(), { once: true });
+
+    /* =========================================================================
+       SCROLL RIG & INPUT INTERACTION
+       ========================================================================= */
+
+    const raycaster = new THREE.Raycaster();
+    const mouseNDC = new THREE.Vector2(-999, -999);
+
+    window.addEventListener('mousemove', (e) => {
+        STATE.mouseScreen.set(e.clientX, e.clientY);
+        mouseNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+        STATE.mouseVelocity.set(
+            e.clientX - STATE.lastMouse.x,
+            e.clientY - STATE.lastMouse.y
+        );
+        STATE.lastMouse.set(e.clientX, e.clientY);
+    });
+
+    // Touch & Drag Support
+    window.addEventListener('mousedown', (e) => {
+        if (e.target.closest('button, a, .modal-card')) return;
+        STATE.isDragging = true;
+        STATE.dragStartY = e.clientY;
+    });
+
+    window.addEventListener('mouseup', () => {
+        STATE.isDragging = false;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (STATE.isDragging && !STATE.isModalOpen) {
+            const delta = (STATE.dragStartY - e.clientY) * 3.5;
+            STATE.dragStartY = e.clientY;
+            STATE.targetScrollPos += delta;
+            clampScroll();
+        }
+    });
+
+    function clampScroll() {
+        if (STATE.targetScrollPos < 0) STATE.targetScrollPos = 0;
+        if (STATE.targetScrollPos > CONFIG.scrollMax) {
+            triggerInfiniteLoopReset();
+        }
+        if (!STATE.hasScrolledPastInitial && STATE.targetScrollPos > 120) {
+            STATE.hasScrolledPastInitial = true;
+            document.getElementById('scroll-prompt').style.opacity = '0';
+        }
+    }
+
+    window.addEventListener('wheel', (e) => {
+        if (STATE.isModalOpen) return;
+        STATE.targetScrollPos += e.deltaY * 0.95;
+        clampScroll();
+    }, { passive: true });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+            STATE.targetScrollPos += 450;
+            clampScroll();
+        } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+            STATE.targetScrollPos -= 450;
+            clampScroll();
+        } else if (e.key === 'Escape' && STATE.isModalOpen) {
+            closeModal();
+        }
+    });
+
+    // Click Raycasting for Modals
+    window.addEventListener('click', (e) => {
+        initAudioEngine();
+        if (STATE.isModalOpen) return;
+
+        raycaster.setFromCamera(mouseNDC, camera);
+        const intersects = raycaster.intersectObjects([crystalMesh1, crystalMesh2], true);
+        if (intersects.length > 0) {
+            const hitObj = intersects[0].object;
+            const project = hitObj.userData.project || (hitObj.parent && hitObj.parent.userData.project);
+            if (project) {
+                openProjectModal(project);
+            }
+        }
+    });
+
+    // Dais Morph Shape Switching
+    function cycleDaisMorph(direction) {
+        initAudioEngine();
+        STATE.daisMorphTarget = (STATE.daisMorphTarget + direction + 3) % 3;
+        playTextTickSound();
+
+        // Ethereal morph glow pulse
+        const colors = particleGeo.attributes.color.array;
+        for (let i = 0; i < pCount; i++) {
+            colors[i * 3 + 0] = 0.88;
+            colors[i * 3 + 1] = 0.96;
+            colors[i * 3 + 2] = 1.0;
+        }
+        particleGeo.attributes.color.needsUpdate = true;
+    }
+
+    document.getElementById('dais-prev-btn').addEventListener('click', () => cycleDaisMorph(-1));
+    document.getElementById('dais-next-btn').addEventListener('click', () => cycleDaisMorph(1));
+
+    // Scene Navigation Pills Click Handler
+    const scenePills = document.querySelectorAll('.nav-pill');
+    scenePills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            initAudioEngine();
+            const sceneName = pill.getAttribute('data-scene');
+            scenePills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+
+            if (sceneName === 'intro') {
+                triggerIntroReplay();
+            } else if (sceneName === 'igloo') {
+                STATE.targetScrollPos = 0;
+            } else if (sceneName === 'pudgy') {
+                STATE.targetScrollPos = 2400;
+            } else if (sceneName === 'overpass') {
+                STATE.targetScrollPos = 4800;
+            } else if (sceneName === 'portal') {
+                STATE.targetScrollPos = 6800;
+            } else if (sceneName === 'dais') {
+                STATE.targetScrollPos = 8400;
+            } else if (sceneName === 'loop') {
+                triggerInfiniteLoopReset();
+            }
+        });
+    });
+
+    // Infinite Loop Reset (~0:57 - 1:00) [OBSERVED]
+    function triggerInfiniteLoopReset() {
+        const flare = document.getElementById('rainbow-flare');
+        flare.style.opacity = '1';
+        playTransitionImpactSound(50, 0.65);
+
+        setTimeout(() => {
+            STATE.scrollPos = 0;
+            STATE.targetScrollPos = 0;
+            flare.style.opacity = '0';
+
+            iglooBricks.forEach(b => {
+                b.currentOffset = 2.6;
+                b.targetOffset = 0.0;
+            });
+
+            startSdfWaveDecode(document.getElementById('manifesto-body'), document.getElementById('manifesto-body').innerText);
+            startSdfWaveDecode(document.getElementById('copyright-text'), "// Copyright \u00a9 2026\nIgloo, Inc. All Rights Reserved.");
+        }, 450);
+    }
+
+    // Intro ASCII Preloader & Real-Time Wireframe Reveal (~0:04 - 0:10) [CONFIRMED & OBSERVED]
+    function triggerIntroReplay() {
+        const preloader = document.getElementById('preloader-overlay');
+        const asciiText = document.getElementById('ascii-preloader-text');
+        preloader.style.opacity = '1';
+        preloader.style.pointerEvents = 'auto';
+
+        STATE.revealProgress = 0.0;
+        terrainUniforms.uRevealRadius.value = 0.0;
+
+        const asciiPatterns = ["=+=--==++=", "-==++==+=-", "+==--==++=", "==--==++==", "--==++==--"];
+        let pIdx = 0;
+        const cycleInterval = setInterval(() => {
+            pIdx = (pIdx + 1) % asciiPatterns.length;
+            asciiText.innerText = asciiPatterns[pIdx];
+        }, 120);
+
+        setTimeout(() => {
+            clearInterval(cycleInterval);
+            preloader.style.opacity = '0';
+            preloader.style.pointerEvents = 'none';
+
+            const revealStart = performance.now();
+            function animateReveal(now) {
+                const elapsed = (now - revealStart) / 1000.0;
+                if (elapsed < 2.5) {
+                    STATE.revealProgress = elapsed / 2.5;
+                    terrainUniforms.uRevealRadius.value = STATE.revealProgress * 52.0;
+                    requestAnimationFrame(animateReveal);
+                } else {
+                    STATE.revealProgress = 1.0;
+                    terrainUniforms.uRevealRadius.value = 999.0;
+                    STATE.introComplete = true;
+                }
+            }
+            requestAnimationFrame(animateReveal);
+        }, 1800);
+    }
+
+    triggerIntroReplay();
+
+    // Text Scramble on Hover
+    const manifestoBox = document.getElementById('manifesto-box');
+    const manifestoBody = document.getElementById('manifesto-body');
+    const copyrightText = document.getElementById('copyright-text');
+
+    manifestoBox.addEventListener('mouseenter', () => {
+        startSdfWaveDecode(manifestoBody, manifestoBody.innerText);
+        playTextTickSound();
+    });
+
+    copyrightText.addEventListener('click', () => {
+        startSdfWaveDecode(copyrightText, "// Copyright \u00a9 2026\nIgloo, Inc. All Rights Reserved.");
+        playTextTickSound();
+    });
+
+    /* =========================================================================
+       MAIN RENDER & ANIMATION LOOP (60 FPS ENGINE)
+       ========================================================================= */
+
+    let lastTime = performance.now();
+    let hasTriggeredDaisShimmer = false;
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        const currentTime = performance.now();
+        const deltaTime = Math.min((currentTime - lastTime) / 1000.0, 0.1);
+        lastTime = currentTime;
+
+        terrainUniforms.uTime.value = currentTime * 0.001;
+
+        // Smooth Scroll Path Interpolation
+        STATE.scrollPos += (STATE.targetScrollPos - STATE.scrollPos) * 0.085;
+        const scrollFraction = STATE.scrollPos / CONFIG.scrollMax;
+        document.getElementById('scroll-progress-bar').style.width = (scrollFraction * 100) + '%';
+
+        // Camera Path along Y-Axis:
+        // Y = 3.4 (Igloo) -> -35 (Pudgy) -> -65 (Overpass) -> -90 (Portal) -> -115 (Dais)
+        const cameraTargetY = 3.4 - scrollFraction * 122.0;
+        camera.position.y += (cameraTargetY - camera.position.y) * 0.08;
+
+        // Mouse Parallax Rig
+        const targetCamX = mouseNDC.x * 1.6;
+        const targetCamZ = 15.2 + Math.sin(scrollFraction * Math.PI) * 2.2;
+        camera.position.x += (targetCamX - camera.position.x) * 0.055;
+        camera.position.z += (targetCamZ - camera.position.z) * 0.055;
+
+        const lookTargetY = camera.position.y - 1.25;
+        camera.lookAt(0, lookTargetY, 0);
+
+        // Update Stage Info Pill
+        const stagePill = document.getElementById('stage-info-pill');
+        if (scrollFraction < 0.18) {
+            stagePill.innerText = "Scene B: Interactive Arctic Igloo Dome";
+            document.querySelectorAll('.nav-pill').forEach((p, i) => p.classList.toggle('active', i === 1));
+        } else if (scrollFraction < 0.42) {
+            stagePill.innerText = "Scene C1: Procedural Ice Block \u2014 Pudgy Penguins";
+            document.querySelectorAll('.nav-pill').forEach((p, i) => p.classList.toggle('active', i === 2));
+        } else if (scrollFraction < 0.62) {
+            stagePill.innerText = "Scene C2: Procedural Ice Block \u2014 Overpass";
+            document.querySelectorAll('.nav-pill').forEach((p, i) => p.classList.toggle('active', i === 3));
+        } else if (scrollFraction < 0.78) {
+            stagePill.innerText = "Scene E1: Counter-Rotating Ring Portal";
+            document.querySelectorAll('.nav-pill').forEach((p, i) => p.classList.toggle('active', i === 4));
+        } else {
+            stagePill.innerText = "Scene E2: Volumetric Particle Dais & Floor Links";
+            document.querySelectorAll('.nav-pill').forEach((p, i) => p.classList.toggle('active', i === 5));
+        }
+
+        // Dense fog bank & horizontal RGB-glitch bands during transitions [CONFIRMED & OBSERVED]
+        if (scrollFraction > 0.16 && scrollFraction < 0.25) {
+            const t = (scrollFraction - 0.16) / 0.09;
+            const peak = Math.sin(t * Math.PI);
+            scene.fog.density = 0.016 + peak * 0.045;
+            renderScrollGlitch(peak);
+        } else if (scrollFraction > 0.68 && scrollFraction < 0.77) {
+            const t = (scrollFraction - 0.68) / 0.09;
+            const peak = Math.sin(t * Math.PI);
+            scene.fog.density = 0.016 + peak * 0.05;
+            renderScrollGlitch(peak * 0.8);
+        } else if (!STATE.isModalOpen) {
+            scene.fog.density = 0.016;
+            renderScrollGlitch(0.0);
+        }
+
+        // --- 1. Igloo Brick Hover Physics (Scene B) ---
+        raycaster.setFromCamera(mouseNDC, camera);
+        const brickMeshes = iglooBricks.map(b => b.mesh);
+        const brickIntersects = raycaster.intersectObjects(brickMeshes);
+
+        let hitPoint = null;
+        if (brickIntersects.length > 0 && scrollFraction < 0.22) {
+            hitPoint = brickIntersects[0].point;
+        }
+
+        const liftedBrick2DCoords = [];
+
+        for (const brick of iglooBricks) {
+            if (hitPoint) {
+                const d = brick.restCenter.distanceTo(hitPoint);
+                if (d < CONFIG.clusterRadius) {
+                    const weight = Math.pow(1.0 - d / CONFIG.clusterRadius, 2.0);
+                    brick.targetOffset = weight * CONFIG.maxDisplacement;
+                } else {
+                    brick.targetOffset = 0.0;
+                }
+            } else {
+                brick.targetOffset = 0.0;
+            }
+
+            // Frame-rate independent exponential damping: 1 - exp(-k * dt) [CONFIRMED & OBSERVED]
+            const k = brick.targetOffset > brick.currentOffset ? CONFIG.popOutK : CONFIG.returnK;
+            const alpha = 1.0 - Math.exp(-k * deltaTime);
+            brick.currentOffset += (brick.targetOffset - brick.currentOffset) * alpha;
+
+            brick.mesh.position.copy(brick.restPosition).addScaledVector(brick.restNormal, brick.currentOffset);
+            brick.mesh.rotation.x = brick.restRotation.x + brick.currentOffset * 0.18;
+            brick.mesh.rotation.z = brick.restRotation.z + brick.currentOffset * 0.12;
+
+            if (brick.currentOffset > 0.12) {
+                brick.isLifted = true;
+                const screenVec = brick.mesh.position.clone().project(camera);
+                const screenX = (screenVec.x * 0.5 + 0.5) * window.innerWidth;
+                const screenY = (-(screenVec.y * 0.5) + 0.5) * window.innerHeight;
+                liftedBrick2DCoords.push({ id: brick.id, x: screenX, y: screenY });
+
+                if (brick.currentOffset > 0.22 && Math.random() < 0.08) {
+                    playBrickHoverSound(mouseNDC.x);
+                }
+            } else {
+                brick.isLifted = false;
+            }
+        }
+
+        // --- 2. 2D Dynamic HUD Overlay Canvas ---
+        hudCtx.clearRect(0, 0, hudCanvas.width, hudCanvas.height);
+
+        // Brick HUD (Nodes, Connecting Polylines, Integer IDs) [OBSERVED]
+        if (liftedBrick2DCoords.length > 0 && scrollFraction < 0.22) {
+            hudCtx.strokeStyle = "rgba(15, 23, 42, 0.4)";
+            hudCtx.lineWidth = 1;
+            hudCtx.fillStyle = "#0f172a";
+            hudCtx.font = "10px 'JetBrains Mono', monospace";
+
+            for (let i = 0; i < liftedBrick2DCoords.length; i++) {
+                for (let j = i + 1; j < liftedBrick2DCoords.length; j++) {
+                    const p1 = liftedBrick2DCoords[i];
+                    const p2 = liftedBrick2DCoords[j];
+                    const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                    if (dist < 92) {
+                        hudCtx.beginPath();
+                        hudCtx.moveTo(p1.x, p1.y);
+                        hudCtx.lineTo(p2.x, p2.y);
+                        hudCtx.stroke();
+                    }
+                }
+            }
+
+            liftedBrick2DCoords.forEach(p => {
+                hudCtx.fillRect(p.x - 2, p.y - 2, 4, 4);
+                hudCtx.fillText(p.id, p.x + 6, p.y - 4);
+            });
+        }
+
+        // --- 3. Telemetry HUD Callouts for Ice Blocks (Scene C) ---
+        // Pudgy Penguins HUD
+        if (scrollFraction > 0.18 && scrollFraction < 0.48) {
+            STATE.pudgyTemp1 += 0.012 * deltaTime;
+            STATE.pudgyTemp2 += 0.008 * deltaTime;
+
+            const c1Screen = iceBlockGroup1.position.clone().project(camera);
+            const cx = (c1Screen.x * 0.5 + 0.5) * window.innerWidth;
+            const cy = (-(c1Screen.y * 0.5) + 0.5) * window.innerHeight;
+
+            hudCtx.strokeStyle = "rgba(2, 132, 199, 0.65)";
+            hudCtx.lineWidth = 1;
+            hudCtx.fillStyle = "#0f172a";
+            hudCtx.font = "11px 'JetBrains Mono', monospace";
+
+            hudCtx.beginPath();
+            hudCtx.moveTo(cx - 145, cy - 85);
+            hudCtx.lineTo(cx - 62, cy - 32);
+            hudCtx.stroke();
+            hudCtx.fillRect(cx - 64, cy - 34, 4, 4);
+            hudCtx.fillText("PORTFOLIO_CO_01", cx - 235, cy - 95);
+            hudCtx.fillText("PUDGY PENGUINS", cx - 235, cy - 80);
+
+            hudCtx.fillText("TEMP", cx + 115, cy - 95);
+            hudCtx.fillText(`${STATE.pudgyTemp1.toFixed(2)} / +${STATE.pudgyTemp2.toFixed(2)}`, cx + 115, cy - 80);
+
+            hudCtx.fillText("D 01.02.2020", cx + 115, cy + 92);
+            hudCtx.fillText("CLICK TO EXPLORE \u2197", cx + 115, cy + 108);
+        }
+
+        // Overpass HUD
+        if (scrollFraction > 0.42 && scrollFraction < 0.68) {
+            STATE.overpassTemp1 -= 0.015 * deltaTime;
+            STATE.overpassTemp2 -= 0.009 * deltaTime;
+
+            const c2Screen = iceBlockGroup2.position.clone().project(camera);
+            const cx = (c2Screen.x * 0.5 + 0.5) * window.innerWidth;
+            const cy = (-(c2Screen.y * 0.5) + 0.5) * window.innerHeight;
+
+            hudCtx.strokeStyle = "rgba(2, 132, 199, 0.65)";
+            hudCtx.lineWidth = 1;
+            hudCtx.fillStyle = "#0f172a";
+            hudCtx.font = "11px 'JetBrains Mono', monospace";
+
+            hudCtx.beginPath();
+            hudCtx.moveTo(cx - 145, cy - 85);
+            hudCtx.lineTo(cx - 62, cy - 32);
+            hudCtx.stroke();
+            hudCtx.fillRect(cx - 64, cy - 34, 4, 4);
+            hudCtx.fillText("PORTFOLIO_CO_02", cx - 225, cy - 95);
+            hudCtx.fillText("OVERPASS", cx - 225, cy - 80);
+
+            hudCtx.fillText("TEMP", cx + 115, cy - 95);
+            hudCtx.fillText(`${STATE.overpassTemp1.toFixed(2)} / ${STATE.overpassTemp2.toFixed(2)}`, cx + 115, cy - 80);
+
+            hudCtx.fillText("D 06.01.2023", cx + 115, cy + 92);
+            hudCtx.fillText("CLICK TO EXPLORE \u2197", cx + 115, cy + 108);
+        }
+
+        // Dais Floor Navigation Labels
+        if (scrollFraction > 0.76) {
+            const floorLabels = [
+                { name: "Medium", target: 1, offset: -185 },
+                { name: "LinkedIn", target: 0, offset: -45 },
+                { name: "X / Twitter", target: 2, offset: 105 }
+            ];
+            const daisScreen = daisGroup.position.clone().project(camera);
+            const dx = (daisScreen.x * 0.5 + 0.5) * window.innerWidth;
+            const dy = (-(daisScreen.y * 0.5) + 0.5) * window.innerHeight;
+
+            hudCtx.font = "12px 'JetBrains Mono', monospace";
+
+            floorLabels.forEach(lbl => {
+                const isActive = (STATE.daisMorphTarget === lbl.target);
+                if (isActive) {
+                    hudCtx.fillStyle = "#ffffff";
+                    hudCtx.fillText(`\u250c ${lbl.name} \u2518`, dx + lbl.offset, dy + 185);
+                } else {
+                    hudCtx.fillStyle = "#64748b";
+                    hudCtx.fillText(lbl.name, dx + lbl.offset, dy + 185);
+                }
+            });
+
+            document.getElementById('dais-prev-btn').classList.add('active');
+            document.getElementById('dais-next-btn').classList.add('active');
+
+            if (!hasTriggeredDaisShimmer) {
+                hasTriggeredDaisShimmer = true;
+                playDaisEntranceShimmer();
+            }
+        } else {
+            hasTriggeredDaisShimmer = false;
+            document.getElementById('dais-prev-btn').classList.remove('active');
+            document.getElementById('dais-next-btn').classList.remove('active');
+        }
+
+        // Drifting Background Technical Text Layer Animation
+        const driftingContainer = document.getElementById('bg-drifting-text');
+        if (scrollFraction > 0.18 && scrollFraction < 0.96) {
+            driftingContainer.style.opacity = '1';
+            const driftTime = currentTime * 0.015;
+            document.getElementById('drift-1').style.transform = `translateX(${(driftTime * 12) % 400}px)`;
+            document.getElementById('drift-2').style.transform = `translateX(${-(driftTime * 18) % 400}px)`;
+            document.getElementById('drift-3').style.transform = `translateX(${(driftTime * 10) % 400}px)`;
+            document.getElementById('drift-4').style.transform = `translateX(${-(driftTime * 15) % 400}px)`;
+            document.getElementById('drift-5').style.transform = `translateX(${(driftTime * 8) % 400}px)`;
+        } else {
+            driftingContainer.style.opacity = '0';
+        }
+
+        // --- 4. Rotating Ice Crystals & Interactive Mouse Tilt ---
+        iceBlockGroup1.rotation.y += 0.006;
+        iceBlockGroup1.rotation.x = mouseNDC.y * 0.25;
+        iceBlockGroup1.rotation.z = mouseNDC.x * 0.15;
+
+        iceBlockGroup2.rotation.y += 0.007;
+        iceBlockGroup2.rotation.x = mouseNDC.y * 0.22;
+        iceBlockGroup2.rotation.z = -mouseNDC.x * 0.18;
+
+        outerRingMesh.rotation.z += 0.012;
+        innerGlowingRing.rotation.z -= 0.018;
+
+        // --- 5. Volumetric Particle Vortex GPU Simulation (Scene E) ---
+        const pPositions = particleGeo.attributes.position.array;
+        const pColors = particleGeo.attributes.color.array;
+        const currentMorphTarget = morphTargets[STATE.daisMorphTarget];
+
+        let totalSpeed = 0.0;
+        const mouseSpeed = STATE.mouseVelocity.length();
+        const mouseWorld = new THREE.Vector3(mouseNDC.x * 6.0, -112.0 + mouseNDC.y * 3.5, 0.0);
+
+        for (let i = 0; i < pCount; i++) {
+            const idx = i * 3;
+            let px = pPositions[idx + 0];
+            let py = pPositions[idx + 1];
+            let pz = pPositions[idx + 2];
+
+            let vx = particleVelocities[idx + 0];
+            let vy = particleVelocities[idx + 1];
+            let vz = particleVelocities[idx + 2];
+
+            // 1. Spring target attraction
+            const tx = currentMorphTarget[idx + 0];
+            const ty = currentMorphTarget[idx + 1];
+            const tz = currentMorphTarget[idx + 2];
+
+            const dx = tx - px;
+            const dy = ty - py;
+            const dz = tz - pz;
+            vx += dx * 3.4 * deltaTime;
+            vy += dy * 3.4 * deltaTime;
+            vz += dz * 3.4 * deltaTime;
+
+            // 2. Mouse vortex interaction (tangential swirl + upward tornado lift) [OBSERVED]
+            if (scrollFraction > 0.72) {
+                const distToMouse = Math.hypot(px - mouseWorld.x, pz - mouseWorld.z);
+                if (distToMouse < 4.4) {
+                    const vortexWeight = Math.pow(1.0 - distToMouse / 4.4, 1.5);
+                    const tanX = -(pz - mouseWorld.z) / (distToMouse + 0.1);
+                    const tanZ = (px - mouseWorld.x) / (distToMouse + 0.1);
+
+                    vx += (tanX * mouseSpeed * 0.085 + Math.sin(currentTime * 0.01 + i) * 0.45) * vortexWeight;
+                    vy += (2.0 * mouseSpeed * 0.045) * vortexWeight;
+                    vz += (tanZ * mouseSpeed * 0.085 + Math.cos(currentTime * 0.01 + i) * 0.45) * vortexWeight;
+                }
+            }
+
+            // 3. Velocity Damping
+            vx *= Math.exp(-2.2 * deltaTime);
+            vy *= Math.exp(-2.2 * deltaTime);
+            vz *= Math.exp(-2.2 * deltaTime);
+
+            particleVelocities[idx + 0] = vx;
+            particleVelocities[idx + 1] = vy;
+            particleVelocities[idx + 2] = vz;
+
+            pPositions[idx + 0] += vx * deltaTime * 12.0;
+            pPositions[idx + 1] += vy * deltaTime * 12.0;
+            pPositions[idx + 2] += vz * deltaTime * 12.0;
+
+            // Speed-Reactive Particle Color [CONFIRMED & OBSERVED]
+            const instSpeed = Math.hypot(vx, vy, vz);
+            totalSpeed += instSpeed;
+            const speedFactor = Math.min(1.0, instSpeed * 0.85);
+
+            pColors[idx + 0] = 0.22 + speedFactor * 0.78;
+            pColors[idx + 1] = 0.26 + speedFactor * 0.74;
+            pColors[idx + 2] = 0.32 + speedFactor * 0.68;
+        }
+
+        particleGeo.attributes.position.needsUpdate = true;
+        particleGeo.attributes.color.needsUpdate = true;
+
+        // Modulate Web Audio Particle Vortex Synth by average speed
+        STATE.averageParticleSpeed = totalSpeed / pCount;
+        if (particleVortexFilter && particleVortexGain && audioCtx && STATE.soundEnabled) {
+            const cutoff = 400 + STATE.averageParticleSpeed * 1200;
+            const gain = Math.min(0.22, STATE.averageParticleSpeed * 0.16);
+            particleVortexFilter.frequency.setValueAtTime(cutoff, audioCtx.currentTime);
+            particleVortexGain.gain.setValueAtTime(gain, audioCtx.currentTime);
+        }
+
+        // --- 6. Snow Particle Movement ---
+        const snowPos = snowGeo.attributes.position.array;
+        for (let i = 0; i < snowCount; i++) {
+            snowPos[i * 3 + 0] += snowVelocities[i * 3 + 0] * deltaTime * 5.0;
+            snowPos[i * 3 + 1] += snowVelocities[i * 3 + 1] * deltaTime * 5.0;
+            snowPos[i * 3 + 2] += snowVelocities[i * 3 + 2] * deltaTime * 5.0;
+
+            if (snowPos[i * 3 + 1] < -0.5) snowPos[i * 3 + 1] = 25;
+            if (snowPos[i * 3 + 0] < -30) snowPos[i * 3 + 0] = 30;
+            if (snowPos[i * 3 + 2] < -30) snowPos[i * 3 + 2] = 30;
+        }
+        snowGeo.attributes.position.needsUpdate = true;
+
+        // Render directly to screen (pure 60fps native resolution, no render target clipping!)
+        renderer.render(scene, camera);
+    }
+
+    animate();
+    </script>
+</body>
+</html>

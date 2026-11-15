@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="referrer" content="no-referrer" />
+
+    <!-- Zero-Flicker Theme Bootstrap -->
+    <script>
+      (function() {
+        try {
+          var pref = localStorage.getItem('idh_theme_preference') || 'system';
+          var isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.style.colorScheme = 'dark';
+            document.write('<meta name="theme-color" content="#0b1220" />');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.style.colorScheme = 'light';
+            document.write('<meta name="theme-color" content="#f7f8fa" />');
+          }
+        } catch(e) {}
+      })();
+    </script>
+
+    <!-- Primary SEO -->
+    <title>IndiaDealHunts: Discover Deals &amp; Compare Prices</title>
+    <meta name="title" content="IndiaDealHunts: Discover Deals &amp; Compare Prices" />
+    <meta name="description" content="Discover directory offers and shopping results across stores. Inspect available price evidence, compare products and save your shortlist." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://indiadealhunts.com" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://indiadealhunts.com" />
+    <meta property="og:title" content="IndiaDealHunts: Discover Deals &amp; Compare Prices" />
+    <meta property="og:description" content="Discover store offers, inspect available price evidence and save your shopping shortlist." />
+    <meta property="og:image" content="https://indiadealhunts.com/banner.png" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="IndiaDealHunts: Discover Deals &amp; Compare Prices" />
+    <meta name="twitter:description" content="Discover store offers, inspect available price evidence and save your shopping shortlist." />
+    <meta name="twitter:image" content="https://indiadealhunts.com/banner.png" />
+
+    <!-- Fonts: Outfit, Plus Jakarta Sans, Inter, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

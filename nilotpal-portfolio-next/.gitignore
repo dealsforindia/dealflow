@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# typescript
+*.tsbuildinfo
+
+# env
+.env
+.env.*
+
+# os
+.DS_Store
+Thumbs.db
+
+# archived explorations, not part of the build
+_archive/

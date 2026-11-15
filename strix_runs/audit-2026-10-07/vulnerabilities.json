@@ -1,0 +1,59 @@
+[
+  {
+    "id": "VULN-001",
+    "title": "Insecure Direct Object Reference (IDOR) in User Profile Update",
+    "severity": "high",
+    "status": "remediated",
+    "cwe": "CWE-639: Authorization Bypass Through User-Controlled Key",
+    "component": "dealbot_backend/dealbot/api.py",
+    "endpoint": "PUT /api/v1/user/profile",
+    "description": "The profile preference update endpoint trusted an unauthenticated query parameter (?email=victim@gmail.com), allowing unauthenticated callers to modify other users' preference states without presenting a matching session token.",
+    "remediation": "Removed unverified query parameter resolution. Enforced server-side UserSessions Bearer token resolution and verified identity ownership. Applied and deployed to production.",
+    "poc": "curl -X PUT https://api.rudranil.me/api/v1/user/profile?email=victim@example.com -d '{\"is_student\": true}' -> Fixed: 401 Unauthorized"
+  },
+  {
+    "id": "VULN-002",
+    "title": "Broken Object-Level Authorization on Price Alert Deletion",
+    "severity": "medium",
+    "status": "remediated",
+    "cwe": "CWE-285: Improper Authorization",
+    "component": "dealbot_backend/dealbot/api.py",
+    "endpoint": "DELETE /api/v1/alerts/{alert_id}",
+    "description": "The price alert removal endpoint accepted an ObjectId and deleted records without verifying caller ownership or credentials.",
+    "remediation": "Added ownership validation requiring either the matching session token of the alert creator or administrative authorization. Non-matching requests return 403 Forbidden.",
+    "poc": "curl -X DELETE https://api.rudranil.me/api/v1/alerts/650000000000000000000001 -> Fixed: 403 Forbidden"
+  },
+  {
+    "id": "VULN-003",
+    "title": "Exposed Fallback Administrative Tokens in Client Bundles",
+    "severity": "high",
+    "status": "remediated",
+    "cwe": "CWE-798: Use of Hard-coded Credentials",
+    "component": "tg-setup/src/app/App.tsx, adminAuth.ts, VideosView.tsx",
+    "description": "Vite client-side components contained string literal fallback tokens which would compile directly into public JavaScript bundles.",
+    "remediation": "Removed all hardcoded fallback string literals from client code, routing authorization strictly through environment variables and runtime authentication headers. Bundles re-scanned and verified 100% clean with Gitleaks.",
+    "poc": "gitleaks dir tg-setup/dist -> Fixed: 0 leaks found"
+  },
+  {
+    "id": "VULN-004",
+    "title": "Denial of Service via source-map-js Package Vulnerability",
+    "severity": "high",
+    "status": "remediated",
+    "cwe": "CWE-1284: Improper Input Validation",
+    "component": "rudranil-deals-web/package-lock.json",
+    "description": "source-map-js dependency (<1.2.2) allowed event-loop denial of service through indexed source-map section offsets (GHSA-68fv-2mgg-jv7q).",
+    "remediation": "Executed npm audit fix, resolving the dependency tree. The storefront now reports 0 npm vulnerabilities and zero CVEs.",
+    "poc": "npm audit -> Fixed: 0 vulnerabilities"
+  },
+  {
+    "id": "VULN-005",
+    "title": "Stored Cross-Site Scripting (XSS) via Telegram Preview Renderer",
+    "severity": "high",
+    "status": "remediated",
+    "cwe": "CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+    "component": "tg-setup/src/components/EditModal.tsx, tg-setup/src/app/App.tsx",
+    "description": "Scraped Telegram deals and channel posts containing HTML tags or script injection payloads were rendered directly via dangerouslySetInnerHTML in the admin curation preview and edit modals without HTML entity escaping or sanitization.",
+    "remediation": "Created renderSafeTelegramText parser in tg-setup/src/utils/telegramText.tsx which parses bold (**) and strikethrough (~~) into React <strong> and <del> virtual DOM nodes. React treats raw string contents as text primitives and automatically escapes all HTML entities, completely removing dangerouslySetInnerHTML.",
+    "poc": "Raw payload `<img src=x onerror=...>` -> Fixed: Rendered as sanitized text node"
+  }
+]

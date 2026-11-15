@@ -1,0 +1,50 @@
+[
+  {
+    "tool": "GST input credit estimate",
+    "visible": true
+  },
+  {
+    "tool": "Compare bank offers",
+    "visible": true
+  },
+  {
+    "tool": "What will this EMI cost?",
+    "visible": true
+  },
+  {
+    "tool": "Delivery and cart costs",
+    "visible": true
+  },
+  {
+    "tool": "Compare the price per unit",
+    "visible": true
+  },
+  {
+    "tool": "Is the subscription worth it?",
+    "visible": true
+  },
+  {
+    "tool": "Estimate import costs",
+    "visible": true
+  },
+  {
+    "tool": "Returns and delivery checklist",
+    "visible": true
+  },
+  {
+    "tool": "Compare phone exchange offers",
+    "visible": true
+  },
+  {
+    "tool": "Compare appliance energy costs",
+    "visible": true
+  },
+  {
+    "tool": "Your warranty records",
+    "visible": true
+  },
+  {
+    "tool": "Plan your sale budget",
+    "visible": true
+  }
+]

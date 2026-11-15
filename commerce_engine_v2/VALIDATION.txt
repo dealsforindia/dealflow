@@ -1,0 +1,15 @@
+Validation completed
+
+Python regression suite: 99 tests passed.
+Command: python -m unittest discover -s tests -q
+
+Package wheel: built successfully from pyproject.toml.
+Isolated target installation: completed without dependency downloads.
+Installed CLI offline fixture smoke test: passed.
+Source modules: byte compilation passed.
+
+Runtime tested: aiohttp 3.13.5, lxml 6.1.1.
+
+Tests use authored synthetic fixtures and simulated network responses.
+No live merchant, Google/Bing, production load, or location-selection test was run.
+No live extraction success rate is asserted.

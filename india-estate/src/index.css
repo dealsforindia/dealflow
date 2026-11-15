@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    /* CSS Custom Properties for Dynamic Theming */
+    --accent-color: #10b981;
+    --accent-rgb: 16, 185, 129;
+    --gold-color: #D4AF37;
+    --bg-color: #030303;
+    --card-color: #0A0A0A;
+
+    color: #f8fafc;
+    background-color: #030712;
+    /* Prevent white flash */
+}
+
+@keyframes gradientShift {
+
+    0%,
+    100% {
+        background-position: 0% 0%;
+    }
+
+    50% {
+        background-position: 100% 100%;
+    }
+}
+
+html.lenis,
+html.lenis body {
+    height: auto;
+}
+
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+    overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+    pointer-events: none;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    overflow-x: hidden;
+    background: linear-gradient(135deg,
+            #030712 0%,
+            #0a1628 25%,
+            #030712 50%,
+            #0d1b2a 75%,
+            #030712 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 45s ease infinite;
+    /* Slowed down significantly for elegance */
+    will-change: background-position;
+}
+
+/* Hide Scrollbar Completely */
+::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+/* Firefox - Hide Scrollbar */
+* {
+    scrollbar-width: none;
+}
+
+/* Selection Colors - Premium Feel */
+::selection {
+    background-color: var(--accent-color);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+::-moz-selection {
+    background-color: var(--accent-color);
+    color: #fff;
+}
+
+/* Typography Refinement */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Playfair Display', serif;
+    letter-spacing: -0.02em;
+    /* Tighter headings */
+}
+
+h1 {
+    letter-spacing: -0.03em;
+}
+
+/* Utility Classes */
+@layer utilities {
+    .text-gradient {
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-accent via-gold to-accent;
+        background-size: 200% auto;
+        animation: gradient-shift 5s linear infinite;
+        /* Slower animation */
+    }
+
+    .glass-effect {
+        @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-lg;
+    }
+
+    .glass-effect-strong {
+        @apply bg-black/40 backdrop-blur-2xl border border-white/10;
+    }
+
+    .premium-shadow {
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(16, 185, 129, 0.05);
+        transition: box-shadow 0.5s ease;
+    }
+
+    .premium-shadow:hover {
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), 0 0 60px rgba(16, 185, 129, 0.15);
+    }
+}
+
+@keyframes border-beam {
+    100% {
+        offset-distance: 100%;
+    }
+}
+
+.animate-border-beam {
+    animation: border-beam calc(var(--duration)*1s) infinite linear;
+}

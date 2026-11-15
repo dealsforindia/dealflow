@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="proximity.css">
+  <title>Proximity balls</title>
+</head>
+<body>
+<div class="baseLight"></div>
+<div class="shadows">
+  <div class="shadow" style="--i: 0"></div>
+  <div class="shadow" style="--i: 1"></div>
+  <div class="shadow" style="--i: 2"></div>
+  <div class="shadow" style="--i: 3"></div>
+  <div class="shadow" style="--i: 4"></div>
+  <div class="shadow" style="--i: 5"></div>
+  <div class="shadow" style="--i: 6"></div>
+  <div class="shadow" style="--i: 7"></div>
+  <div class="shadow" style="--i: 8"></div>
+  <div class="shadow" style="--i: 9"></div>
+  <div class="shadow" style="--i: 10"></div>
+  <div class="shadow" style="--i: 11"></div>
+</div>
+<div class="balls">
+  <div class="ball" style="--i: 0"></div>
+  <div class="ball" style="--i: 1"></div>
+  <div class="ball" style="--i: 2"></div>
+  <div class="ball" style="--i: 3"></div>
+  <div class="ball" style="--i: 4"></div>
+  <div class="ball" style="--i: 5"></div>
+  <div class="ball" style="--i: 6"></div>
+  <div class="ball" style="--i: 7"></div>
+  <div class="ball" style="--i: 8"></div>
+  <div class="ball" style="--i: 9"></div>
+  <div class="ball" style="--i: 10"></div>
+  <div class="ball" style="--i: 11"></div>
+</div>
+<script>window.addEventListener('mousemove', (e) => {
+    document.body.style.setProperty('--mx', e.clientX - (window.innerWidth / 2));
+    document.body.style.setProperty('--my', e.clientY - (window.innerHeight / 2));
+});</script>
+</body>
+</html>!

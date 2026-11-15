@@ -1,0 +1,34 @@
+{
+  "name": "dealflow-remotion",
+  "version": "1.0.0",
+  "description": "Programmatic Deal Shorts Generator powered by Remotion & React",
+  "scripts": {
+    "start": "remotion preview",
+    "preview": "remotion preview",
+    "build": "remotion render src/index.ts DealShort out/deal_short.mp4",
+    "render:deal": "node render_deal.js",
+    "still:phonk": "remotion still src/index.ts PhonkEggEdit out/phonk_preview.png --frame 115",
+    "render:phonk": "remotion render src/index.ts PhonkEggEdit out/phonk_egg_edit.mp4",
+    "still": "remotion still src/index.ts DealShort out/deal_short_preview.png --frame 100",
+    "still:severe": "remotion still src/index.ts SevereTitanDrop out/severe_preview.png --frame 115",
+    "still:egg": "remotion still src/index.ts SatisfyingEgg out/egg_preview.png --frame 160",
+    "render:egg": "remotion render src/index.ts SatisfyingEgg out/satisfying_egg.mp4",
+    "render:severe": "remotion render src/index.ts SevereTitanDrop out/severe_titan_drop.mp4",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@types/three": "^0.186.0",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.240",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.240",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}

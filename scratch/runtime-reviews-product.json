@@ -1,0 +1,14 @@
+{
+  "status": "unavailable",
+  "store": "Amazon",
+  "product_id": "amazon:B0FC6R7Y9V",
+  "source_url": "https://www.amazon.in/dp/B0FC6R7Y9V",
+  "checked_at": 1791705945,
+  "rating": null,
+  "rating_count": null,
+  "review_count": null,
+  "reviews": [],
+  "method": null,
+  "cached": false,
+  "message": "The merchant returned a different product. Reviews were not used."
+}
