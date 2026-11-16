@@ -989,7 +989,7 @@ async function apiScrapeImage(id: string): Promise<ScrapedProductData | null> {
       coupon: data.coupon || null,
       coupon_discount: data.coupon_discount || null,
       effective_price: data.effective_price || null,
-      affText: data.aff_text || data.ai_formatted_text || null,
+      affText: data.ai_formatted_text || (data.aff_text && !data.aff_text.trim().startsWith("**₹") ? data.aff_text : null),
     };
   } catch { return null; }
 }
@@ -2128,7 +2128,15 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
         if (res.title) setTitle(res.title);
         if (res.price) setPrice(String(res.price));
         if (res.mrp) setMrp(String(res.mrp));
-        if (res.affText) setText(res.affText);
+        if (res.affText && !res.affText.trim().startsWith("**₹")) {
+          setText(res.affText);
+        } else if (res.title) {
+          const urls = text.match(/https?:\/\/\S+/g) || [];
+          const link = urls.length > 0 ? urls[0] : "";
+          const p = res.price || price || "";
+          const pStr = p ? ` @ ₹${p}` : "";
+          setText(`${res.title}${pStr}\n\n${link}`.trim());
+        }
         onUpdateDeal(deal.id, {
           title: res.title || title,
           price: res.price ? Number(res.price) : deal.price,
@@ -2668,7 +2676,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
         }
         if (result.mrp) setMrp(String(result.mrp));
         if (result.coupon) setCoupon(result.coupon);
-        if (result.affText) {
+        if (result.affText && !result.affText.trim().startsWith("**₹")) {
           setText(result.affText);
         } else if (result.title) {
           const urls = text.match(/https?:\/\/\S+/g) || [];
