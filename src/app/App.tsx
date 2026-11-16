@@ -3437,12 +3437,67 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 
   const isSearchUrl = search.trim().startsWith("http://") || search.trim().startsWith("https://");
 
-  const uniqueChannels = Array.from(new Set(deals.map(d => d.channel)))
-    .filter(ch => Boolean(ch) && ch.toLowerCase() !== "unknown" && ch.toLowerCase() !== "dh")
-    .sort();
+  const [registeredChannels, setRegisteredChannels] = useState<string[]>([]);
+  useEffect(() => {
+    let mounted = true;
+    fetch(`${API_BASE}/api/v1/channels`, { headers: getAdminHeaders(false) })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!mounted || !data?.channels || !Array.isArray(data.channels)) return;
+        const names = data.channels
+          .filter((c: any) => {
+            const id = (c.id || "").toLowerCase();
+            return id !== "dh" && id !== "unknown" && id !== "" && id !== "offerzone" && id !== "shopquest";
+          })
+          .map((c: any) => {
+            const fallback = c.id.split('/').pop() || c.id;
+            const pretty = toChName(c.id);
+            const isCustom = c.name && c.name !== c.id && c.name !== fallback;
+            return isCustom ? c.name : (pretty !== fallback && pretty !== "Unknown") ? pretty : (c.name || c.id);
+          });
+        setRegisteredChannels(Array.from(new Set(names)));
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
+  const dealChannelCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const d of deals) {
+      if (d.channel) counts[d.channel] = (counts[d.channel] || 0) + 1;
+      if (d.channelRaw && d.channelRaw !== d.channel) counts[d.channelRaw] = (counts[d.channelRaw] || 0) + 1;
+    }
+    return counts;
+  }, [deals]);
+
+  const uniqueChannels = useMemo(() => {
+    const set = new Set<string>();
+    for (const ch of registeredChannels) {
+      if (ch && ch.toLowerCase() !== "unknown" && ch.toLowerCase() !== "dh") set.add(ch);
+    }
+    for (const d of deals) {
+      if (d.channel && d.channel.toLowerCase() !== "unknown" && d.channel.toLowerCase() !== "dh") set.add(d.channel);
+    }
+    return Array.from(set).sort((a, b) => {
+      const countA = dealChannelCounts[a] || 0;
+      const countB = dealChannelCounts[b] || 0;
+      if (countA > 0 && countB === 0) return -1;
+      if (countB > 0 && countA === 0) return 1;
+      return a.localeCompare(b);
+    });
+  }, [registeredChannels, deals, dealChannelCounts]);
 
   let visible = deals.filter(d => {
-    if (selectedChannels.length > 0 && !selectedChannels.includes(d.channel)) return false;
+    if (selectedChannels.length > 0) {
+      const matched = selectedChannels.some(sc => {
+        if (!sc) return false;
+        const scL = sc.toLowerCase();
+        const chL = (d.channel || "").toLowerCase();
+        const rawL = (d.channelRaw || "").toLowerCase();
+        return chL === scL || rawL === scL || chL.includes(scL) || scL.includes(chL);
+      });
+      if (!matched) return false;
+    }
     if (selectedStore !== "All") {
       const store = getStoreBadge(d.platforms, d.affText);
       if (store.tag !== selectedStore) return false;
@@ -3568,12 +3623,15 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   ];
 
   const channelOptions: DropdownOption[] = [
-    { value: "All", label: "All Channels", icon: "⚡" },
-    ...uniqueChannels.map(ch => ({
-      value: ch,
-      label: ch,
-      icon: "📡",
-    })),
+    { value: "All", label: `All Channels (${uniqueChannels.length})`, icon: "⚡" },
+    ...uniqueChannels.map(ch => {
+      const count = dealChannelCounts[ch] || 0;
+      return {
+        value: ch,
+        label: count > 0 ? `${ch} (${count})` : ch,
+        icon: count > 0 ? "🔥" : "📡",
+      };
+    }),
   ];
 
   const sortOptions: DropdownOption[] = [
@@ -3743,10 +3801,13 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
 
 
           <GlassDropdown value={selectedStore} onChange={val => { setSelectedStore(val); setPage(1); }} options={storeOptions} placeholder="Store" className="flow-store-filter" />
-          <fieldset className="flow-channel-picker"><legend>Channels <span>{selectedChannels.length ? `${selectedChannels.length} selected` : "All channels"}</span></legend>
+          <fieldset className="flow-channel-picker"><legend>Channels <span>{selectedChannels.length ? `${selectedChannels.length} selected` : `All channels (${uniqueChannels.length})`}</span></legend>
             <input aria-label="Search review channels" placeholder="Search channels…" value={channelSearch} onChange={e => setChannelSearch(e.target.value)} />
-            <button type="button" onClick={() => { setSelectedChannels([]); setPage(1); }}>Show all channels</button>
-            <div className="flow-channel-options">{channelOptions.filter(o => o.value !== "All" && o.label.toLowerCase().includes(channelSearch.toLowerCase())).map(o => <label key={o.value}><input type="checkbox" checked={selectedChannels.includes(o.value)} onChange={() => { setSelectedChannels(prev => prev.includes(o.value) ? prev.filter(ch => ch !== o.value) : [...prev, o.value]); setPage(1); }} /><span>{o.label}</span></label>)}</div>
+            <div className="flex items-center justify-between gap-1 px-1 py-0.5">
+              <button type="button" onClick={() => { setSelectedChannels([]); setPage(1); }}>Show all channels</button>
+              <span className="text-[10px] text-zinc-400 font-mono">{uniqueChannels.length} total</span>
+            </div>
+            <div className="flow-channel-options">{channelOptions.filter(o => o.value !== "All" && (o.value.toLowerCase().includes(channelSearch.toLowerCase()) || o.label.toLowerCase().includes(channelSearch.toLowerCase()))).map(o => <label key={o.value}><input type="checkbox" checked={selectedChannels.includes(o.value)} onChange={() => { setSelectedChannels(prev => prev.includes(o.value) ? prev.filter(ch => ch !== o.value) : [...prev, o.value]); setPage(1); }} /><span>{o.label}</span></label>)}</div>
             <small>Shows posts from any selected channel.</small>
           </fieldset>
           <GlassDropdown value={sort} onChange={val => { setSort(val as any); setPage(1); }} options={sortOptions} placeholder="Sort" align="right" className="flow-sort-filter" />
