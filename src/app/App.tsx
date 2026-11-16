@@ -519,12 +519,12 @@ export function cleanAffText(raw?: string | null, title?: string, price?: number
 function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): Deal {
   const id = d.fp_hash ?? fallbackId ?? String(d.ts);
   const { name: catName, emoji: catEmoji } = parseCategory(d.category);
-  const salePrice = d.prices?.sale ?? 0;
-  let mrpPrice = d.prices?.mrp ?? 0;
+  const salePrice = d.prices?.sale ?? (d as any).price ?? (d as any).sale ?? 0;
+  let mrpPrice = d.prices?.mrp ?? (d as any).mrp ?? 0;
   if (mrpPrice <= 10 && salePrice > 10) {
     mrpPrice = 0;
   }
-  let disc = d.prices?.discount_pct ?? 0;
+  let disc = d.prices?.discount_pct ?? (d as any).discount_pct ?? (d as any).discount ?? 0;
   if (!disc && mrpPrice > salePrice && salePrice > 0) {
     disc = Math.round((1 - salePrice / mrpPrice) * 100);
   }
@@ -2685,7 +2685,12 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
           const pStr = p ? ` @ ₹${p}` : "";
           setText(`${result.title}${pStr}\n\n${link}`.trim());
         }
-        onToast("✨ Scraped store photo & details! Switch between Telegram & Store photo anytime above.", "success");
+        const hasNewData = Boolean(newStoreImg || result.mrp || (result.price && result.price !== Number(price)));
+        if (hasNewData) {
+          onToast("✨ Scraped store photo & details! Switch between Telegram & Store photo anytime above.", "success");
+        } else {
+          onToast("Store page returned no new photo or MRP (anti-bot protected)", "warning");
+        }
       } else {
         onToast("Failed to fetch product details", "error");
       }
