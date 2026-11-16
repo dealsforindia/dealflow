@@ -481,6 +481,15 @@ export function cleanAffText(raw?: string | null, title?: string, price?: number
     text = cleanLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
   }
 
+  // Strip DesiDime forum links and Read More leaks
+  text = text.replace(/(?:👉\s*)?(?:Read\s+More|More\s+Info|Source|View\s+Deal|Discussion)[\s:]*https?:\/\/(?:www\.)?desidime\.com\S*/gi, "");
+  text = text.replace(/https?:\/\/(?:www\.)?desidime\.com\S*/gi, "");
+
+  // Collapse stacked hand emojis and bullets
+  text = text.replace(/(?:👉\s*){2,}/gu, "👉 ");
+  text = text.replace(/(?:🔥\s*){2,}/gu, "🔥 ");
+  text = text.replace(/(?:⚡\s*){2,}/gu, "⚡ ");
+
   // Strip aggregator/forum leaks in post text
   if (/Available on:\s*(?:DesiDime|Telegram|ddime)/i.test(text)) {
     const low = text.toLowerCase();
@@ -2131,11 +2140,13 @@ function SplitPaneInspector({ deal, onApprove, onReject, onUpdateDeal, onToast }
         if (res.affText && !res.affText.trim().startsWith("**₹")) {
           setText(res.affText);
         } else if (res.title) {
-          const urls = text.match(/https?:\/\/\S+/g) || [];
-          const link = urls.length > 0 ? urls[0] : "";
-          const p = res.price || price || "";
-          const pStr = p ? ` @ ₹${p}` : "";
-          setText(`${res.title}${pStr}\n\n${link}`.trim());
+          if (!(text.length > 40 && (text.includes("👉") || text.includes("Available on:")))) {
+            const urls = text.match(/https?:\/\/\S+/g) || [];
+            const link = urls.length > 0 ? urls[0] : "";
+            const p = res.price || price || "";
+            const pStr = p ? ` @ ₹${p}` : "";
+            setText(`${res.title}${pStr}\n\n${link}`.trim());
+          }
         }
         onUpdateDeal(deal.id, {
           title: res.title || title,
@@ -2548,12 +2559,14 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     if (deal.destinations && deal.destinations.length === 1 && deal.destinations[0] === "storefront_only") {
       return false;
     }
-    if (deal.liveOnTelegram === false) return false;
-    return true; // Default ON
+    // Only disable if explicitly false on an already approved/posted deal
+    if (deal.status !== "pending" && deal.liveOnTelegram === false) return false;
+    return true; // Default ON for pending deals and broadcast
   });
   const [postToWeb, setPostToWeb] = useState<boolean>(() => {
-    if (deal.liveOnWeb === false) return false;
-    return true; // Default ON
+    // Only disable if explicitly false on an already approved/posted deal
+    if (deal.status !== "pending" && deal.liveOnWeb === false) return false;
+    return true; // Default ON for pending deals and broadcast
   });
   const [destinations, setDestinations] = useState<string[]>(
     deal.destinations && deal.destinations.length > 0 ? deal.destinations : ["@dealsforindiachannel"]
@@ -2679,11 +2692,14 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
         if (result.affText && !result.affText.trim().startsWith("**₹")) {
           setText(result.affText);
         } else if (result.title) {
-          const urls = text.match(/https?:\/\/\S+/g) || [];
-          const link = urls.length > 0 ? urls[0] : "";
-          const p = result.price || price || "";
-          const pStr = p ? ` @ ₹${p}` : "";
-          setText(`${result.title}${pStr}\n\n${link}`.trim());
+          // If we already have rich formatted Telegram text, preserve it!
+          if (!(text.length > 40 && (text.includes("👉") || text.includes("Available on:")))) {
+            const urls = text.match(/https?:\/\/\S+/g) || [];
+            const link = urls.length > 0 ? urls[0] : "";
+            const p = result.price || price || "";
+            const pStr = p ? ` @ ₹${p}` : "";
+            setText(`${result.title}${pStr}\n\n${link}`.trim());
+          }
         }
         const hasNewData = Boolean(newStoreImg || result.mrp || (result.price && result.price !== Number(price)));
         if (hasNewData) {
@@ -3038,7 +3054,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 ))}
               </div>
 
-              <textarea value={text} onChange={e => setText(e.target.value)} rows={6}
+              <textarea value={text} onChange={e => setText(e.target.value.replace(/(?:👉\s*){2,}/gu, "👉 "))} rows={6}
                 className="w-full px-3.5 py-3 rounded-xl text-xs font-mono bg-slate-950/80 border border-white/10 text-slate-200 focus:outline-none focus:border-emerald-500/50 resize-none leading-relaxed" />
             </div>
 
@@ -3306,6 +3322,11 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   const [selectedStore, setSelectedStore] = useState<string>("All");
   const [pageSize, setPageSize] = useState<number>(40);
   const [page, setPage] = useState(1);
+
+  // Auto-scroll smoothly to top of feed whenever page changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [page]);
   const [sendX, setSendX] = useState(false);
   const [promos, setPromos] = useState<any[]>([]);
   const [isDropping, setIsDropping] = useState(false);
@@ -5651,10 +5672,32 @@ export default function App() {
 
     if (undoTimers.current[id]) {
       clearTimeout(undoTimers.current[id]);
+      delete undoTimers.current[id];
+    }
+
+    const isModalSave = Boolean(changes && Object.keys(changes).length > 0);
+    if (isModalSave) {
+      toast.loading("🚀 Broadcasting to Telegram & Web...", { id: `approve-${id}` });
+      try {
+        const ok = await apiApprove(id, resolvedChanges);
+        if (ok) {
+          toast.success("✨ Deal broadcast successfully!", { id: `approve-${id}` });
+          for (const dupId of duplicateIds) {
+            apiApprove(dupId, resolvedChanges).catch(() => {});
+          }
+        } else {
+          toast.error("⚠️ Broadcast failed. Restoring deal to pending.", { id: `approve-${id}` });
+          setDeals(prev => prev.map(d => affectedIds.has(d.id) ? { ...d, status: previousDeal?.status || "pending" } : d));
+        }
+      } catch {
+        toast.error("⚠️ Network error during broadcast. Restoring deal.", { id: `approve-${id}` });
+        setDeals(prev => prev.map(d => affectedIds.has(d.id) ? { ...d, status: previousDeal?.status || "pending" } : d));
+      }
+      return;
     }
 
     let isCancelled = false;
-    toast.success("🚀 Deal approved — Broadcasting to Telegram & Web in 5s...", {
+    toast.success("🚀 Deal approved — Broadcasting in 5s...", {
       duration: 5000,
       action: {
         label: "↩️ Undo",
@@ -5674,9 +5717,14 @@ export default function App() {
     undoTimers.current[id] = setTimeout(async () => {
       delete undoTimers.current[id];
       if (!isCancelled) {
-        await apiApprove(id, resolvedChanges);
-        for (const dupId of duplicateIds) {
-          apiApprove(dupId, resolvedChanges).catch(() => {});
+        const ok = await apiApprove(id, resolvedChanges);
+        if (!ok) {
+          toast.error("⚠️ Approval failed on server. Restoring deal.");
+          setDeals(prev => prev.map(d => affectedIds.has(d.id) ? { ...d, status: previousDeal?.status || "pending" } : d));
+        } else {
+          for (const dupId of duplicateIds) {
+            apiApprove(dupId, resolvedChanges).catch(() => {});
+          }
         }
       }
     }, 5000);
