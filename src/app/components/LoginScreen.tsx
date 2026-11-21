@@ -33,9 +33,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       <div className="ambient-mesh opacity-60 absolute inset-0 pointer-events-none" />
       
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 1, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         className="w-full max-w-md p-8 relative z-10"
       >
         <div className="flex flex-col items-center mb-8">
