@@ -340,7 +340,7 @@ const INVALID_TITLE_TERMS = [
   "fet (deals", "fetdeals", "offerzone", "crazy deals", "dealztrendz",
   "genie loot", "genie tricks", "genie all", "free earning tech", "technical sheikh",
   "loot deals app", "glam haul diaries", "trending loot deals", "earnkaro",
-  "extrape", "desidime", "bblbblp", "shoppers quest", "fitness finds", "oz loot"
+  "extrape", "desidime", "shoppers quest", "fitness finds", "oz loot"
 ];
 
 function isInvalidTitle(name: string): boolean {
@@ -514,8 +514,8 @@ export function cleanAffText(raw?: string | null, title?: string, price?: number
     text = text.replace(/\{TITLE\}|\{name\}|\{product\}/gi, cleanT);
   }
 
-  // If text became empty or lost title/link, synthesize clean post
-  if (!text || (title && title.length > 5 && !text.toLowerCase().includes(title.toLowerCase().slice(0, 10)) && !/https?:\/\//i.test(text))) {
+  // If text became empty, synthesize fallback post
+  if (!text || text.trim().length === 0) {
     const urls = (String(raw).match(/https?:\/\/[^\s"'<>]+/g) || []);
     const link = urls.length > 0 ? urls[0] : "";
     const pStr = price ? ` @ ₹${price}` : "";
@@ -789,8 +789,8 @@ function clusterClientDeals(dealList: Deal[]): Deal[] {
 
 async function fetchPendingDeals(): Promise<Deal[]> {
   const [pendingRes, recentRes] = await Promise.all([
-    fetch(`${API_BASE}/api/v1/deals/pending?limit=120&cluster=true`, { headers: getAdminHeaders(false) }).catch(() => null),
-    fetch(`${API_BASE}/api/v1/deals/recent?limit=60`, { headers: getAdminHeaders(false) }).catch(() => null),
+    fetch(`${API_BASE}/api/v1/deals/pending?limit=500&cluster=false`, { headers: getAdminHeaders(false) }).catch(() => null),
+    fetch(`${API_BASE}/api/v1/deals/recent?limit=100`, { headers: getAdminHeaders(false) }).catch(() => null),
   ]);
 
   if (pendingRes?.status === 401 || pendingRes?.status === 403 || recentRes?.status === 401 || recentRes?.status === 403) {
@@ -5491,7 +5491,18 @@ function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAle
 // ─── Main App Entry ───────────────────────────────────────────────────────────
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => !!getAdminToken());
-  const [tab, setTab] = useState<Tab>("Review");
+  const [tab, setTab] = useState<Tab>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const v = (params.get("view") || params.get("tab") || "").toLowerCase();
+      if (v === "review") return "Review";
+      if (v === "posted") return "Posted";
+      if (v === "channels") return "Channels";
+      if (v === "videos") return "Videos";
+      if (v === "settings") return "Settings";
+    } catch {}
+    return "Review";
+  });
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loadingDeals, setLoadingDeals] = useState(true);
   const [editing, setEditing] = useState<Deal | null>(null);
