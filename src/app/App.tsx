@@ -1,5 +1,5 @@
 import { VisitorSummary } from './components/VisitorSummary';
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { toast, Toaster } from "sonner";
