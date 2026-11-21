@@ -4,6 +4,18 @@ export interface Env {
   ALLOWED_ORIGINS?: string;
 }
 
+export interface PublicDealSummary {
+  id: string;
+  display_ts?: number;
+  posted_at?: number;
+}
+
+export interface PublicDealsPayload {
+  deals?: PublicDealSummary[];
+  total?: number;
+  has_more?: boolean;
+}
+
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://indiadealhunts.me',
   'https://www.indiadealhunts.me',
@@ -37,13 +49,16 @@ function corsHeaders(request: Request, env: Env): Record<string, string> {
 
 function cacheKeyFor(request: Request, url: URL): Request {
   // Keep per-origin responses separate so a cached CORS header for one
-  // storefront is never served to a different origin.
+  // storefront is never served to a different origin. Cache keys always use GET.
   const keyUrl = new URL(url.toString());
   keyUrl.searchParams.set('__edge_origin', request.headers.get('Origin') || '');
-  return new Request(keyUrl.toString(), request);
+  return new Request(keyUrl.toString(), {
+    method: 'GET',
+    headers: request.headers,
+  });
 }
 
-export default {
+const worker: ExportedHandler<Env> = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     // 1. Handle CORS Preflight
     if (request.method === 'OPTIONS') {
@@ -54,14 +69,17 @@ export default {
     }
 
     const url = new URL(request.url);
-    const originUrl = `${env.ORIGIN_API}${url.pathname}${url.search}`;
+    const originBase = (env.ORIGIN_API || 'https://api.rudranil.me').replace(/\/+$/, '');
+    // Direct edge hit for /feed-fallback/deals maps to origin /deals
+    const normalizedPath = url.pathname === '/feed-fallback/deals' ? '/deals' : url.pathname;
+    const originUrl = `${originBase}${normalizedPath}${url.search}`;
 
     // 2. Pass-through SSE / WebSocket endpoints without caching
     if (
       url.pathname.includes('/stream') ||
       url.pathname.includes('/ws') ||
       request.headers.get('Accept') === 'text/event-stream' ||
-      request.headers.get('Upgrade') === 'websocket'
+      request.headers.get('Upgrade')?.toLowerCase() === 'websocket'
     ) {
       const sseRequest = new Request(originUrl, request);
       return fetch(sseRequest);
@@ -69,7 +87,7 @@ export default {
 
     // 2b. Dynamic Robots.txt for Search Engines
     if (url.pathname === '/robots.txt') {
-      const storefrontUrl = env.STOREFRONT_URL || 'https://indiadealhunts.vercel.app';
+      const storefrontUrl = (env.STOREFRONT_URL || 'https://indiadealhunts.vercel.app').replace(/\/+$/, '');
       const robots = [
         'User-agent: *',
         'Allow: /',
@@ -96,18 +114,18 @@ export default {
         return cachedSitemap;
       }
 
-      const storefrontUrl = env.STOREFRONT_URL || 'https://indiadealhunts.vercel.app';
+      const storefrontUrl = (env.STOREFRONT_URL || 'https://indiadealhunts.vercel.app').replace(/\/+$/, '');
       const nowIso = new Date().toISOString();
 
-      let deals: any[] = [];
+      let deals: PublicDealSummary[] = [];
       try {
-        const dealsRes = await fetch(`${env.ORIGIN_API}/api/v1/deals/public?limit=500`, {
+        const dealsRes = await fetch(`${originBase}/api/v1/deals/public?limit=500`, {
           method: 'GET',
           cf: { cacheTtl: 3600, cacheEverything: true },
         });
         if (dealsRes.ok) {
-          const data = (await dealsRes.json()) as any;
-          deals = data.deals || [];
+          const data = (await dealsRes.json()) as PublicDealsPayload | PublicDealSummary[];
+          deals = Array.isArray(data) ? data : (data.deals || []);
         }
       } catch (err) {
         console.error('Sitemap deal fetch error:', err);
@@ -136,7 +154,9 @@ export default {
           ...corsHeaders(request, env),
         },
       });
-      ctx.waitUntil(cache.put(cacheKey, sitemapResponse.clone()));
+      if (request.method === 'GET') {
+        ctx.waitUntil(cache.put(cacheKey, sitemapResponse.clone()));
+      }
       return sitemapResponse;
     }
 
@@ -163,10 +183,19 @@ export default {
         const responseClone = new Response(ogResponse.body, ogResponse);
         responseClone.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
         responseClone.headers.set('Content-Type', 'text/html; charset=utf-8');
-        ctx.waitUntil(cache.put(cacheKey, responseClone.clone()));
+        for (const [k, v] of Object.entries(corsHeaders(request, env))) {
+          responseClone.headers.set(k, v);
+        }
+        if (request.method === 'GET') {
+          ctx.waitUntil(cache.put(cacheKey, responseClone.clone()));
+        }
         return responseClone;
       }
-      return ogResponse;
+      const errClone = new Response(ogResponse.body, ogResponse);
+      for (const [k, v] of Object.entries(corsHeaders(request, env))) {
+        errClone.headers.set(k, v);
+      }
+      return errClone;
     }
 
     // 4. Non-GET requests pass directly to origin
@@ -187,7 +216,9 @@ export default {
       url.pathname.includes('/deals/wall-of-happiness') ||
       url.pathname.includes('/deals/stories') ||
       url.pathname.includes('/search/external') ||
-      url.pathname === '/deals';
+      url.pathname === '/deals' ||
+      url.pathname === '/deals/' ||
+      url.pathname === '/feed-fallback/deals';
     const cache = caches.default;
     const cacheKey = cacheKeyFor(request, url);
     let cachedResponse = await cache.match(cacheKey);
@@ -230,12 +261,15 @@ export default {
 
     if (response.ok && response.status === 200 && isPublicFeed) {
       const responseToCache = new Response(response.body, response);
-      responseToCache.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=30');
+      const maxAge = url.pathname.includes('/deals/ticker') ? 20 : 60;
+      responseToCache.headers.set('Cache-Control', `public, s-maxage=${maxAge}, stale-while-revalidate=${Math.floor(maxAge / 2)}`);
       responseToCache.headers.set('X-Edge-Cache', 'MISS');
       for (const [k, v] of Object.entries(corsHeaders(request, env))) {
         responseToCache.headers.set(k, v);
       }
-      ctx.waitUntil(cache.put(cacheKey, responseToCache.clone()));
+      if (request.method === 'GET') {
+        ctx.waitUntil(cache.put(cacheKey, responseToCache.clone()));
+      }
       return responseToCache;
     }
 
@@ -247,3 +281,5 @@ export default {
     return finalResponse;
   },
 };
+
+export default worker;
