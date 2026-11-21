@@ -14,7 +14,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token.trim()) return;
-    
+
     setLoading(true);
     try {
       const success = await onLogin(token.trim());
@@ -31,8 +31,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[#07080E] text-white relative overflow-hidden">
       <div className="ambient-mesh opacity-60 absolute inset-0 pointer-events-none" />
-      
-      <motion.div 
+
+      <motion.div
         initial={{ opacity: 1, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}

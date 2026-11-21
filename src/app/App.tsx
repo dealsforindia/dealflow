@@ -214,7 +214,7 @@ const toChName = (ch?: string): string => {
   for (const [key, val] of Object.entries(customChannelAliases)) {
     if (ch.includes(key) || clean.includes(key.toLowerCase())) return val;
   }
-  
+
   // User Channel Mappings (Numeric IDs + Invite links + Usernames)
   if (ch.includes("1837130426") || ch.includes("emveIa6ZQxoxYjAx")) return "Crazy Deals";
   if (ch.includes("2260825044")) return "DealDrops";
@@ -246,7 +246,7 @@ const toChName = (ch?: string): string => {
   if (clean.includes("freekart") || ch.includes("1394855402")) return "Loots Tricks by Freekart";
   if (clean.includes("desidime")) return "DesiDime";
   if (clean.includes("shopquest")) return "Shoppers Quest";
-  
+
   if (ch.startsWith("@")) return ch.substring(1);
   return ch.split("/").pop() || ch;
 };
@@ -383,7 +383,7 @@ function extractSlugTitle(url?: string): string | null {
         return slug.replace(/\b\w/g, c => c.toUpperCase()).slice(0, 100);
       }
     }
-  } catch {}
+  } catch { }
   return null;
 }
 
@@ -500,7 +500,7 @@ export function cleanAffText(raw?: string | null, title?: string, price?: number
     else if (low.includes("ajio") || low.includes("ajiio")) realStore = "AJIO";
     else if (low.includes("swiggy") || low.includes("instamart")) realStore = "Swiggy";
     else if (low.includes("blinkit")) realStore = "Blinkit";
-    
+
     if (realStore) {
       text = text.replace(/Available on:\s*(?:DesiDime|Telegram|ddime)[^\n]*/gi, `Available on: ${realStore}`);
     } else {
@@ -537,7 +537,7 @@ function mapRawToDeal(d: RawDeal & { fp_hash?: string }, fallbackId?: string): D
   if (!disc && mrpPrice > salePrice && salePrice > 0) {
     disc = Math.round((1 - salePrice / mrpPrice) * 100);
   }
-const rawCh = d.channel || d.source_channel || (d as any).channelRaw || (d as any).tg_channel || (d as any).channel_title || "";
+  const rawCh = d.channel || d.source_channel || (d as any).channelRaw || (d as any).tg_channel || (d as any).channel_title || "";
   const chName = toChName(rawCh) !== "Unknown" ? toChName(rawCh) : (rawCh || "Direct Channel");
   return {
     id, title: cleanDealTitle(d.prod_name, d.original_text, d.aff_text),
@@ -626,7 +626,7 @@ const rawCh = d.channel || d.source_channel || (d as any).channelRaw || (d as an
           const n = c.name.toLowerCase();
           return n && !n.includes("unknown") && n !== "null" && n !== "none";
         });
-      
+
       // Deduplicate by name
       const seen = new Set<string>();
       const deduped: any[] = [];
@@ -947,7 +947,7 @@ async function apiAiRewrite(id: string, instruction: string): Promise<string | n
 
 async function apiRetryAffiliate(id: string): Promise<string | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/retry-affiliate`, { 
+    const res = await fetch(`${API_BASE}/api/v1/deals/${id}/retry-affiliate`, {
       method: "POST",
       headers: getAdminHeaders(false),
     });
@@ -1087,7 +1087,7 @@ async function apiGetPriceHistory(id: string): Promise<PriceIntelligenceData | n
 
 async function apiPurgeNonDeals(): Promise<{ success: boolean; purged_count: number; total_scanned: number } | null> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/deals/purge-non-deals`, { 
+    const res = await fetch(`${API_BASE}/api/v1/deals/purge-non-deals`, {
       method: "POST",
       headers: getAdminHeaders(false),
     });
@@ -1129,7 +1129,7 @@ function playAlertChime() {
       ctx.resume();
     }
     const now = ctx.currentTime;
-    
+
     // Pleasant dual-tone chime (587.33Hz D5 -> 880Hz A5)
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
@@ -1154,7 +1154,7 @@ function playAlertChime() {
     osc2.start(now + 0.08);
     osc1.stop(now + 0.5);
     osc2.stop(now + 0.5);
-  } catch {}
+  } catch { }
 }
 
 
@@ -1315,20 +1315,18 @@ function DealCard({
         setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
       }}
       onMouseLeave={() => setMousePos(null)}
-      className={`pro-card rounded-2xl overflow-hidden flex flex-col group relative transition-all ${
-        isConsensus
+      className={`pro-card rounded-2xl overflow-hidden flex flex-col group relative transition-all ${isConsensus
           ? "ring-2 ring-amber-400/90 shadow-[0_0_30px_rgba(245,158,11,0.3)] border-amber-400/60 bg-amber-500/[0.03]"
           : selected
-          ? "ring-2 ring-indigo-400 bg-indigo-500/10 border-indigo-400/50 shadow-lg shadow-indigo-500/20"
-          : ""
-      } ${isActive ? "ring-2 ring-emerald-400/90 shadow-[0_0_30px_rgba(16,185,129,0.35)] scale-[1.01] bg-emerald-500/[0.04]" : ""}`}>
+            ? "ring-2 ring-indigo-400 bg-indigo-500/10 border-indigo-400/50 shadow-lg shadow-indigo-500/20"
+            : ""
+        } ${isActive ? "ring-2 ring-emerald-400/90 shadow-[0_0_30px_rgba(16,185,129,0.35)] scale-[1.01] bg-emerald-500/[0.04]" : ""}`}>
 
       {/* Brand-Reactive or Gold Consensus Top Border Accent Line */}
-      <div className={`absolute top-0 left-0 right-0 h-[2.5px] ${
-        isConsensus
+      <div className={`absolute top-0 left-0 right-0 h-[2.5px] ${isConsensus
           ? "bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 animate-pulse"
           : `bg-gradient-to-r ${getStoreAura(store.tag)}`
-      } z-30 opacity-90`} />
+        } z-30 opacity-90`} />
 
       {/* Hardware-Accelerated Specular Cursor Light Cone */}
       {mousePos && (
@@ -1418,9 +1416,8 @@ function DealCard({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onToggleSelect?.(deal.id); }}
-                className={`absolute top-1 right-1 w-6 h-6 rounded-md flex items-center justify-center touch-manipulation ${
-                  selected ? "bg-indigo-500 text-white" : "bg-black/80 border border-white/20 text-white/40"
-                }`}
+                className={`absolute top-1 right-1 w-6 h-6 rounded-md flex items-center justify-center touch-manipulation ${selected ? "bg-indigo-500 text-white" : "bg-black/80 border border-white/20 text-white/40"
+                  }`}
                 title={selected ? "Deselect deal" : "Select deal"}
                 aria-label={selected ? `Deselect ${deal.title}` : `Select ${deal.title}`}
                 aria-checked={selected}
@@ -1440,11 +1437,10 @@ function DealCard({
                   <span className="text-[11px] font-semibold text-slate-300 truncate max-w-[110px]" title={`Source Channel: ${deal.channel || "Verified Drop"}`}>{deal.channel || "Verified Drop"}</span>
                   <AffiliateMark applied={deal.affiliate} />
                   {deal.desidimeTemperature !== undefined && deal.desidimeTemperature > 0 && (
-                    <span className={`px-1.5 py-0.2 rounded-md font-mono text-[8.5px] font-black flex items-center gap-0.5 ${
-                      deal.isCommunityVerified || deal.desidimeTemperature >= 200
+                    <span className={`px-1.5 py-0.2 rounded-md font-mono text-[8.5px] font-black flex items-center gap-0.5 ${deal.isCommunityVerified || deal.desidimeTemperature >= 200
                         ? "bg-gradient-to-r from-orange-600 to-amber-500 text-white shadow-sm animate-pulse border border-amber-300/40"
                         : "bg-orange-500/20 text-orange-300 border border-orange-500/30"
-                    }`} title={`DesiDime Community Heat: ${deal.desidimeTemperature}°`}>
+                      }`} title={`DesiDime Community Heat: ${deal.desidimeTemperature}°`}>
                       🔥 {deal.desidimeTemperature}°
                     </span>
                   )}
@@ -1576,11 +1572,10 @@ function DealCard({
             </>
           ) : (
             <div className="flex items-center justify-between w-full gap-2">
-              <div className={`text-[11px] font-bold py-1 px-2.5 rounded-xl border flex-1 flex items-center justify-center gap-1.5 ${
-                deal.status === "approved" || deal.status === "auto_posted"
+              <div className={`text-[11px] font-bold py-1 px-2.5 rounded-xl border flex-1 flex items-center justify-center gap-1.5 ${deal.status === "approved" || deal.status === "auto_posted"
                   ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
                   : "bg-slate-800/80 text-slate-400 border-white/10"
-              }`}>
+                }`}>
                 {deal.status === "auto_posted" ? (
                   <span>⚡ Auto-Posted to Web</span>
                 ) : deal.liveOnWeb && deal.liveOnTelegram ? (
@@ -1699,11 +1694,10 @@ function DealCard({
               </span>
             )}
             {deal.desidimeTemperature !== undefined && deal.desidimeTemperature > 0 && (
-              <span className={`px-2.5 py-0.5 rounded-full font-mono text-[9.5px] font-black shadow-md flex items-center gap-1 border backdrop-blur-md ${
-                deal.isCommunityVerified || deal.desidimeTemperature >= 200
+              <span className={`px-2.5 py-0.5 rounded-full font-mono text-[9.5px] font-black shadow-md flex items-center gap-1 border backdrop-blur-md ${deal.isCommunityVerified || deal.desidimeTemperature >= 200
                   ? "bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-500 text-white border-amber-300/50 shadow-orange-500/30 animate-pulse"
                   : "bg-orange-500/20 text-orange-300 border-orange-500/30"
-              }`} title={`DesiDime Community Heat: ${deal.desidimeTemperature}° (${deal.isCommunityVerified || deal.desidimeTemperature >= 200 ? 'Community Verified Fire' : 'Community Voted'})`}>
+                }`} title={`DesiDime Community Heat: ${deal.desidimeTemperature}° (${deal.isCommunityVerified || deal.desidimeTemperature >= 200 ? 'Community Verified Fire' : 'Community Voted'})`}>
                 <span>🔥</span> {deal.desidimeTemperature}° {deal.isCommunityVerified || deal.desidimeTemperature >= 200 ? "VERIFIED" : "HEAT"}
               </span>
             )}
@@ -1798,9 +1792,8 @@ function DealCard({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onToggleSelect?.(deal.id); }}
-              className={`absolute top-2.5 left-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${
-                selected ? "bg-indigo-500 text-white ring-2 ring-indigo-300 font-bold" : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/40"
-              }`}
+              className={`absolute top-2.5 left-2.5 z-30 w-6 h-6 rounded-lg flex items-center justify-center transition-all shadow-md ${selected ? "bg-indigo-500 text-white ring-2 ring-indigo-300 font-bold" : "bg-slate-900/90 text-white/40 border border-white/20 hover:border-white/40"
+                }`}
             >
               {selected ? <Check size={12} className="stroke-[3]" /> : null}
             </button>
@@ -2033,17 +2026,16 @@ function DealCard({
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
-                <div className={`flex-1 text-center text-xs font-bold py-1.5 px-2 rounded-xl border flex items-center justify-center gap-1.5 ${
-                  deal.status === "approved" || deal.status === "auto_posted"
+                <div className={`flex-1 text-center text-xs font-bold py-1.5 px-2 rounded-xl border flex items-center justify-center gap-1.5 ${deal.status === "approved" || deal.status === "auto_posted"
                     ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
                     : "bg-slate-800/80 text-slate-300 border-white/10"
-                }`}>
+                  }`}>
                   {deal.status === "auto_posted" ? (
                     <span>⚡ Auto-Posted to Web</span>
                   ) : deal.channel ? (
                     <div className="flex items-center gap-1.5">
-                        <span className="text-slate-400">Channel:</span>
-                        <span className="text-emerald-300 font-medium">{deal.channel}</span>
+                      <span className="text-slate-400">Channel:</span>
+                      <span className="text-emerald-300 font-medium">{deal.channel}</span>
                     </div>
                   ) : (
                     <div className="text-slate-600 italic">Direct Channel (no normalized channel)</div>
@@ -2051,8 +2043,8 @@ function DealCard({
 
                   {deal.store && (
                     <div className="flex items-center gap-1.5">
-                        <span className="text-slate-400">Store:</span>
-                        <span className="text-blue-300">{deal.store}</span>
+                      <span className="text-slate-400">Store:</span>
+                      <span className="text-blue-300">{deal.store}</span>
                     </div>
                   )}
 
@@ -2533,16 +2525,16 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
   const [price, setPrice] = useState(String(deal.effectivePrice && deal.effectivePrice < deal.price ? Math.round(deal.effectivePrice) : (deal.price || "")));
   const [mrp, setMrp] = useState(String(deal.mrp || ""));
   const [coupon, setCoupon] = useState(deal.coupon || "");
-  
+
   const getInitialText = () => {
     const raw = cleanAffText(deal.affText || "", deal.title, deal.price).trim();
     const t = (deal.title || "").trim();
     if (!raw) return t ? `${t} @ ₹${deal.price || ""}` : "";
-    
+
     // Check if raw text is missing the product title
     const isMissingTitle = t && t.length > 4 && !raw.toLowerCase().includes(t.toLowerCase().slice(0, 10));
     const isOnlyPriceLink = /^\s*[*_]*₹?\d+[*_]*\s*(?:\|\s*[*_]*Regular[^\n]*\n*)?https?:\/\/\S+/i.test(raw) || /^\s*\d{2,6}\s+https?:\/\/\S+/i.test(raw);
-    
+
     if (isMissingTitle || isOnlyPriceLink) {
       const urls = raw.match(/https?:\/\/\S+/g) || [];
       const link = urls.length > 0 ? urls[0] : "";
@@ -2788,7 +2780,7 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 backdrop-blur-xl"
       style={{ background: "rgba(3, 7, 18, 0.85)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      
+
       <div onPaste={handleImagePaste} className="flow-deal-editor relative w-full max-w-4xl h-[94vh] sm:h-auto sm:max-h-[90vh] rounded-t-3xl sm:rounded-2xl border border-white/10 bg-[#0A0C16]/95 backdrop-blur-2xl shadow-2xl shadow-black/80 flex flex-col overflow-hidden">
         {/* Sticky Header */}
         <div className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/10 bg-slate-900/90 backdrop-blur-md">
@@ -2983,11 +2975,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                     <button
                       type="button"
                       onClick={() => { removeStagedImage(); setImgUrl(telegramImg); }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
-                        imgUrl === telegramImg && !imgFile
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${imgUrl === telegramImg && !imgFile
                           ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md"
                           : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
-                      }`}
+                        }`}
                     >
                       <img src={telegramImg} alt="" className="w-5 h-5 rounded object-cover" />
                       <span>📸 Telegram Photo</span>
@@ -2997,11 +2988,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                     <button
                       type="button"
                       onClick={() => { removeStagedImage(); setImgUrl(storeImg); }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
-                        imgUrl === storeImg && !imgFile
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${imgUrl === storeImg && !imgFile
                           ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md"
                           : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
-                      }`}
+                        }`}
                     >
                       <img src={storeImg} alt="" className="w-5 h-5 rounded object-cover" />
                       <span>🛍️ Store Product Photo</span>
@@ -3011,11 +3001,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                     <button
                       type="button"
                       onClick={() => { if (uploadedImg) setImgUrl(uploadedImg); }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
-                        (imgUrl === uploadedImg || imgFile)
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${(imgUrl === uploadedImg || imgFile)
                           ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md"
                           : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-slate-200"
-                      }`}
+                        }`}
                     >
                       <img src={imgFile || uploadedImg} alt="" className="w-5 h-5 rounded object-cover" />
                       <span>⬆️ Custom Upload</span>
@@ -3103,22 +3092,20 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
                 <button
                   type="button"
                   onClick={() => setPreviewTab("telegram")}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    previewTab === "telegram"
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${previewTab === "telegram"
                       ? "bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm"
                       : "text-slate-400 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <span>📱 TG Preview</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPreviewTab("diff")}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    previewTab === "diff"
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer ${previewTab === "diff"
                       ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
                       : "text-slate-400 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <FileText size={11} />
                   <span>🔍 Raw vs AI Diff</span>
@@ -3246,11 +3233,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             <button
               type="button"
               onClick={() => setPostToTelegram(v => !v)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border active:scale-95 ${
-                postToTelegram
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border active:scale-95 ${postToTelegram
                   ? "text-emerald-300 bg-emerald-500/15 border-emerald-500/35 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
                   : "text-slate-500 bg-white/[0.03] border-white/10 hover:border-white/20 hover:text-slate-400 opacity-60"
-              }`}
+                }`}
               title={postToTelegram ? "Telegram broadcast is ON (Click to disable)" : "Telegram broadcast is OFF (Click to enable)"}
             >
               <span>✈️</span>
@@ -3264,11 +3250,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             <button
               type="button"
               onClick={() => setPostToWeb(v => !v)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border active:scale-95 ${
-                postToWeb
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer border active:scale-95 ${postToWeb
                   ? "text-cyan-300 bg-cyan-500/15 border-cyan-500/35 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
                   : "text-slate-500 bg-white/[0.03] border-white/10 hover:border-white/20 hover:text-slate-400 opacity-60"
-              }`}
+                }`}
               title={postToWeb ? "Web Storefront post is ON (Click to disable)" : "Web Storefront post is OFF (Click to enable)"}
             >
               <span>🌐</span>
@@ -3283,10 +3268,10 @@ function EditModal({ deal, onClose, onSaveDraft, onSaveApprove, onToast }: EditM
             {postToTelegram && postToWeb
               ? "Both enabled · Click pills to customize where to publish"
               : postToTelegram
-              ? "Publishing to Telegram only"
-              : postToWeb
-              ? "Publishing to Web Storefront only"
-              : "⚠️ Both disabled: enable at least one to broadcast"}
+                ? "Publishing to Telegram only"
+                : postToWeb
+                  ? "Publishing to Web Storefront only"
+                  : "⚠️ Both disabled: enable at least one to broadcast"}
           </span>
         </div>
 
@@ -3311,7 +3296,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
   useEffect(() => {
     if (!toolsOpen) return;
     const previous = document.activeElement as HTMLElement | null;
-    const focusable = () => Array.from(document.querySelectorAll<HTMLElement>('#deal-review-tools button:not(:disabled), #deal-review-tools input')) .filter(el => el.getClientRects().length > 0);
+    const focusable = () => Array.from(document.querySelectorAll<HTMLElement>('#deal-review-tools button:not(:disabled), #deal-review-tools input')).filter(el => el.getClientRects().length > 0);
     const frame = requestAnimationFrame(() => focusable()[0]?.focus());
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") { event.preventDefault(); setToolsOpen(false); }
@@ -3467,7 +3452,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           });
         setRegisteredChannels(Array.from(new Set(names)));
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => { mounted = false; };
   }, []);
 
@@ -3687,11 +3672,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                 }
               }}
               placeholder={isSearchUrl ? "⚡ Press Enter to Quick-Drop deal..." : "Search deals or paste product URL…"}
-              className={`w-full pl-9 pr-8 sm:pr-28 py-2 rounded-xl text-xs sm:text-sm text-slate-100 bg-[#0A0C16]/90 border transition-all ${
-                isSearchUrl 
+              className={`w-full pl-9 pr-8 sm:pr-28 py-2 rounded-xl text-xs sm:text-sm text-slate-100 bg-[#0A0C16]/90 border transition-all ${isSearchUrl
                   ? "border-emerald-500/60 ring-2 ring-emerald-500/30"
                   : "border-white/10 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/50"
-              }`}
+                }`}
             />
             {isSearchUrl ? (
               <button
@@ -3714,11 +3698,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             <button
               onClick={handleTriggerRadar}
               disabled={isRadarScanning}
-              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 shadow-sm ${
-                isRadarScanning
+              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 shadow-sm ${isRadarScanning
                   ? "bg-amber-500/25 text-amber-300 border-amber-500/50 animate-pulse"
                   : "bg-amber-500/15 text-amber-300 border-amber-500/30 hover:border-amber-400 hover:bg-amber-500/25"
-              }`}
+                }`}
               title="Shopify D2C Brand Clearance Radar (Boat, Snitch, The Man Company, etc.)"
             >
               <Zap size={13} className={isRadarScanning ? "animate-spin text-amber-400" : "fill-amber-400 text-amber-400"} />
@@ -3734,11 +3717,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             </button>
             <button
               onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); }}
-              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border ${
-                bulkMode
+              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-3 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border ${bulkMode
                   ? "bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-500/25"
                   : "bg-white/[0.04] border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.08]"
-              }`}
+                }`}
               title="Select Mode"
             >
               <CheckSquare size={13} />
@@ -3746,11 +3728,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
             </button>
             <button
               onClick={handleToggleSound}
-              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 ${
-                soundMuted
+              className={`h-8 w-8 sm:h-auto sm:w-auto p-0 sm:px-2.5 sm:py-2 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer active:scale-95 ${soundMuted
                   ? "bg-white/[0.04] border-white/10 text-slate-400 opacity-60 hover:opacity-100"
                   : "bg-emerald-500/15 text-emerald-300 border-emerald-500/30 shadow-sm"
-              }`}
+                }`}
               title={soundMuted ? "Audio Haptics Muted (Click to enable)" : "Audio Haptics Enabled (Click to mute)"}
             >
               {soundMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
@@ -3780,34 +3761,32 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
         <div className="flow-panel-heading"><span>Filters & tools</span><button aria-label="Close filters and tools" onClick={() => setToolsOpen(false)}><X size={15} /></button></div>
         <div className="flow-drawer-utilities"><button onClick={handleTriggerRadar} disabled={isRadarScanning}><Zap size={15} />{isRadarScanning ? "Scanning…" : "D2C Radar"}</button><button onClick={() => { setBulkMode(!bulkMode); if (bulkMode) setSelectedIds(new Set()); setToolsOpen(false); }}><CheckSquare size={15} />{bulkMode ? "Cancel selection" : "Select deals"}</button><button onClick={handleToggleSound}>{soundMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}{soundMuted ? "Audio off" : "Audio on"}</button></div>
         <div className="flow-filter-row">
-            <div className="flow-view-switch flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode("grid")}
-                className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewMode === "grid"
-                    ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
-                    : "text-zinc-400 hover:text-zinc-200"
+          <div className="flow-view-switch flex items-center p-0.5 rounded-full bg-[#080913]/90 border border-white/15 shadow-inner flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 cursor-pointer ${viewMode === "grid"
+                  ? "bg-white/20 text-white shadow-md border border-white/25 scale-[1.02]"
+                  : "text-zinc-400 hover:text-zinc-200"
                 }`}
-                title="Cards Showcase View"
-              >
-                <LayoutGrid size={13} />
-                <span className="text-[11px] font-bold">Cards</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("split")}
-                className={`hidden lg:flex px-3 py-1.5 rounded-full transition-all items-center gap-1.5 cursor-pointer ${
-                  viewMode === "split"
-                    ? "bg-emerald-500/30 text-emerald-300 shadow-md border border-emerald-400/40 scale-[1.02]"
-                    : "text-zinc-400 hover:text-zinc-200"
+              title="Cards Showcase View"
+            >
+              <LayoutGrid size={13} />
+              <span className="text-[11px] font-bold">Cards</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("split")}
+              className={`hidden lg:flex px-3 py-1.5 rounded-full transition-all items-center gap-1.5 cursor-pointer ${viewMode === "split"
+                  ? "bg-emerald-500/30 text-emerald-300 shadow-md border border-emerald-400/40 scale-[1.02]"
+                  : "text-zinc-400 hover:text-zinc-200"
                 }`}
-                title="3-Pane Split Inspector Desk"
-              >
-                <Columns size={13} />
-                <span className="text-[11px] font-bold">Inspector</span>
-              </button>
-            </div>
+              title="3-Pane Split Inspector Desk"
+            >
+              <Columns size={13} />
+              <span className="text-[11px] font-bold">Inspector</span>
+            </button>
+          </div>
 
 
           <GlassDropdown value={selectedStore} onChange={val => { setSelectedStore(val); setPage(1); }} options={storeOptions} placeholder="Store" className="flow-store-filter" />
@@ -3823,101 +3802,100 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
           <GlassDropdown value={sort} onChange={val => { setSort(val as any); setPage(1); }} options={sortOptions} placeholder="Sort" align="right" className="flow-sort-filter" />
           <GlassDropdown value={String(pageSize)} onChange={val => { setPageSize(Number(val)); setPage(1); }} options={pageSizeOptions} placeholder="Page size" align="right" className="flow-page-filter" />
         </div>
-      {/* ─── CURATOR VELOCITY & SMART PRESET PULSE BAR ─── */}
-      <div className="flow-presets flex-shrink-0 px-3 sm:px-6 py-1.5 sm:py-2 bg-[#090B14]/90 border-b border-white/6 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar flex-nowrap relative z-30">
-        {/* Left: Velocity Metrics */}
-        <div className="flow-metrics flex items-center gap-2 font-mono text-[11px] flex-shrink-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-bold">
-            <TrendingUp size={12} className="text-emerald-400" />
-            <span>{approvedToday} <span className="hidden min-[360px]:inline">Approved</span> Today</span>
-          </div>
-          {totalSavings > 0 && (
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium">
-              <span>💰</span>
-              <span>₹{totalSavings.toLocaleString("en-IN")} Savings In View</span>
+        {/* ─── CURATOR VELOCITY & SMART PRESET PULSE BAR ─── */}
+        <div className="flow-presets flex-shrink-0 px-3 sm:px-6 py-1.5 sm:py-2 bg-[#090B14]/90 border-b border-white/6 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar flex-nowrap relative z-30">
+          {/* Left: Velocity Metrics */}
+          <div className="flow-metrics flex items-center gap-2 font-mono text-[11px] flex-shrink-0">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-bold">
+              <TrendingUp size={12} className="text-emerald-400" />
+              <span>{approvedToday} <span className="hidden min-[360px]:inline">Approved</span> Today</span>
             </div>
-          )}
-          {avgDiscount > 0 && (
-            <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 font-medium">
-              <span>🔥</span>
-              <span>Avg {avgDiscount}% Off</span>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Smart Filter Presets & Telemetry Toggle */}
-        <div className="flow-preset-actions flex items-center gap-1.5 flex-nowrap flex-shrink-0">
-          <div className="flow-preset-strip flex items-center gap-1.5 py-0.5">
-            <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
-            {[
-              { id: "all", label: "All" },
-              { id: "arbitrage", label: "💰 Cash Arbitrage", count: deals.filter(d => d.isArbitrage).length },
-              { id: "consensus", label: "🔥 Consensus Drops", count: consensusDealsCount },
-              { id: "desidime_hot", label: "🔥 Community Heat", count: deals.filter(d => (d.desidimeTemperature || 0) >= 100 || d.isCommunityVerified).length },
-              { id: "loot_drops", label: "⚡ Loot Drops (80+)", count: lootCount },
-              { id: "steal_deals", label: "💎 Steal Deals (60+)", count: stealCount },
-              { id: "under_499", label: "🏷️ <₹499", count: under499Count },
-              { id: "electronics", label: "📱 Tech" },
-              { id: "fashion", label: "👗 Fashion" },
-              { id: "grocery", label: "🛒 Grocery" },
-            ].map(p => (
-              <button
-                key={p.id}
-                onClick={() => { setSmartPreset(p.id); setPage(1); }}
-                className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 active:scale-95 ${
-                  smartPreset === p.id
-                    ? "bg-white/20 text-white border border-white/30 shadow-sm"
-                    : "bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] border border-white/5"
-                }`}
-              >
-                <span>{p.label}</span>
-                {p.count !== undefined && (
-                  <span className="text-[9px] font-mono opacity-80 font-normal">({p.count})</span>
-                )}
-              </button>
-            ))}
+            {totalSavings > 0 && (
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 font-medium">
+                <span>💰</span>
+                <span>₹{totalSavings.toLocaleString("en-IN")} Savings In View</span>
+              </div>
+            )}
+            {avgDiscount > 0 && (
+              <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 font-medium">
+                <span>🔥</span>
+                <span>Avg {avgDiscount}% Off</span>
+              </div>
+            )}
           </div>
 
-          {/* Channel Velocity Heatmap Modal Button */}
-          <button
-            onClick={() => setHeatmapModalOpen(true)}
-            className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-white/[0.04] text-slate-300 border-white/10 hover:bg-white/[0.08] hover:text-amber-300 flex-shrink-0"
-            title="Open 24-Hour Channel Velocity Heatmap"
-          >
-            <Flame size={12} className="text-amber-400 fill-amber-400/20" />
-            <span className="hidden sm:inline">Heatmap</span>
-          </button>
+          {/* Right: Smart Filter Presets & Telemetry Toggle */}
+          <div className="flow-preset-actions flex items-center gap-1.5 flex-nowrap flex-shrink-0">
+            <div className="flow-preset-strip flex items-center gap-1.5 py-0.5">
+              <span className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 mr-1 hidden xl:inline">Presets:</span>
+              {[
+                { id: "all", label: "All" },
+                { id: "arbitrage", label: "💰 Cash Arbitrage", count: deals.filter(d => d.isArbitrage).length },
+                { id: "consensus", label: "🔥 Consensus Drops", count: consensusDealsCount },
+                { id: "desidime_hot", label: "🔥 Community Heat", count: deals.filter(d => (d.desidimeTemperature || 0) >= 100 || d.isCommunityVerified).length },
+                { id: "loot_drops", label: "⚡ Loot Drops (80+)", count: lootCount },
+                { id: "steal_deals", label: "💎 Steal Deals (60+)", count: stealCount },
+                { id: "under_499", label: "🏷️ <₹499", count: under499Count },
+                { id: "electronics", label: "📱 Tech" },
+                { id: "fashion", label: "👗 Fashion" },
+                { id: "grocery", label: "🛒 Grocery" },
+              ].map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => { setSmartPreset(p.id); setPage(1); }}
+                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 active:scale-95 ${smartPreset === p.id
+                      ? "bg-white/20 text-white border border-white/30 shadow-sm"
+                      : "bg-white/[0.03] text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] border border-white/5"
+                    }`}
+                >
+                  <span>{p.label}</span>
+                  {p.count !== undefined && (
+                    <span className="text-[9px] font-mono opacity-80 font-normal">({p.count})</span>
+                  )}
+                </button>
+              ))}
+            </div>
 
-          {/* Distributed Architecture & Topology Modal Button */}
-          <button
-            onClick={() => setTopologyModalOpen(true)}
-            className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25 hover:border-indigo-400 flex-shrink-0"
-            title="Inspect DealFlow Interactive Distributed Architecture & Pipeline Map"
-          >
-            <Network size={12} className="text-indigo-400" />
-            <span className="hidden sm:inline">Topology</span>
-          </button>
+            {/* Channel Velocity Heatmap Modal Button */}
+            <button
+              onClick={() => setHeatmapModalOpen(true)}
+              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-white/[0.04] text-slate-300 border-white/10 hover:bg-white/[0.08] hover:text-amber-300 flex-shrink-0"
+              title="Open 24-Hour Channel Velocity Heatmap"
+            >
+              <Flame size={12} className="text-amber-400 fill-amber-400/20" />
+              <span className="hidden sm:inline">Heatmap</span>
+            </button>
 
-          {/* 1-Click Deal Intelligence Purge */}
-          <button
-            onClick={async () => {
-              toast.loading("Scanning and purging non-deals...", { id: "purge" });
-              const res = await apiPurgeNonDeals();
-              if (res && res.success) {
-                toast.success(`✨ Purged ${res.purged_count} non-deal financial leads!`, { id: "purge" });
-                if (onRefresh) onRefresh();
-              } else {
-                toast.error("Purge check complete. No junk found.", { id: "purge" });
-              }
-            }}
-            className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-rose-500/15 text-rose-300 border-rose-500/30 hover:bg-rose-500/25 hover:border-rose-400 flex-shrink-0"
-            title="Scan and auto-purge bank accounts, financial leads, credit cards & loan apps from pending queue"
-          >
-            <Sparkles size={12} className="text-rose-400" />
-            <span className="hidden sm:inline">Purge Non-Deals</span>
-          </button>
+            {/* Distributed Architecture & Topology Modal Button */}
+            <button
+              onClick={() => setTopologyModalOpen(true)}
+              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25 hover:border-indigo-400 flex-shrink-0"
+              title="Inspect DealFlow Interactive Distributed Architecture & Pipeline Map"
+            >
+              <Network size={12} className="text-indigo-400" />
+              <span className="hidden sm:inline">Topology</span>
+            </button>
+
+            {/* 1-Click Deal Intelligence Purge */}
+            <button
+              onClick={async () => {
+                toast.loading("Scanning and purging non-deals...", { id: "purge" });
+                const res = await apiPurgeNonDeals();
+                if (res && res.success) {
+                  toast.success(`✨ Purged ${res.purged_count} non-deal financial leads!`, { id: "purge" });
+                  if (onRefresh) onRefresh();
+                } else {
+                  toast.error("Purge check complete. No junk found.", { id: "purge" });
+                }
+              }}
+              className="px-2.5 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 border bg-rose-500/15 text-rose-300 border-rose-500/30 hover:bg-rose-500/25 hover:border-rose-400 flex-shrink-0"
+              title="Scan and auto-purge bank accounts, financial leads, credit cards & loan apps from pending queue"
+            >
+              <Sparkles size={12} className="text-rose-400" />
+              <span className="hidden sm:inline">Purge Non-Deals</span>
+            </button>
+          </div>
         </div>
-      </div>
 
       </section></div>, document.body)}
 
@@ -3996,11 +3974,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                   <div
                     key={d.id}
                     onClick={() => setSelectedSplitId(d.id)}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 select-none ${
-                      isSel
+                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center gap-3 select-none ${isSel
                         ? "bg-emerald-500/10 border-emerald-400/50 shadow-md shadow-emerald-500/10 ring-1 ring-emerald-400/40"
                         : "bg-white/[0.02] border-white/6 hover:border-white/15 hover:bg-white/[0.04]"
-                    }`}
+                      }`}
                   >
                     {/* Thumbnail */}
                     <div className="w-11 h-11 rounded-lg bg-[#080911] border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -4189,13 +4166,13 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                     const u = modalUrl.toLowerCase();
                     const detected = u.includes("amazon") || u.includes("amzn") ? "Amazon"
                       : u.includes("flipkart") || u.includes("fkrt") ? "Flipkart"
-                      : u.includes("myntra") || u.includes("myntr") ? "Myntra"
-                      : u.includes("ajio") ? "AJIO"
-                      : u.includes("blinkit") ? "Blinkit"
-                      : u.includes("desidime") || u.includes("ddime") ? "DesiDime"
-                      : u.includes("swiggy") ? "Swiggy"
-                      : u.includes("shopsy") ? "Shopsy"
-                      : null;
+                        : u.includes("myntra") || u.includes("myntr") ? "Myntra"
+                          : u.includes("ajio") ? "AJIO"
+                            : u.includes("blinkit") ? "Blinkit"
+                              : u.includes("desidime") || u.includes("ddime") ? "DesiDime"
+                                : u.includes("swiggy") ? "Swiggy"
+                                  : u.includes("shopsy") ? "Shopsy"
+                                    : null;
                     if (detected) {
                       return (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
@@ -4248,7 +4225,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                         try {
                           const text = await navigator.clipboard.readText();
                           if (text) setModalUrl(text.trim());
-                        } catch {}
+                        } catch { }
                       }}
                       className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md text-[10px] font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1 transition-all cursor-pointer"
                       title="Paste from clipboard"
@@ -4284,11 +4261,10 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                     return (
                       <div
                         key={s.name}
-                        className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${
-                          isMatched
+                        className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 ${isMatched
                             ? "bg-indigo-500/20 text-white border-indigo-400/50 shadow-[0_0_12px_rgba(99,102,241,0.3)] scale-[1.03]"
                             : "bg-white/[0.03] text-slate-300 border-white/8 hover:bg-white/[0.06] hover:text-white"
-                        }`}
+                          }`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
                         <span>{s.name}</span>
@@ -4453,7 +4429,7 @@ function ReviewView({ deals, onApprove, onReject, onEdit, onAddDeal, onRefresh, 
                 </button>
               </div>
             </div>
-            
+
             <div className="flex-1 w-full rounded-2xl overflow-hidden border border-white/10 bg-[#020617] relative">
               <iframe
                 src="/dealflow-architecture.html"
@@ -4482,8 +4458,8 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
   const [channelQuery, setChannelQuery] = useState("");
   const [starsOnly, setStarsOnly] = useState(false);
   const [starred, setStarred] = useState<string[]>(() => { try { const saved = JSON.parse(localStorage.getItem("dealflow-starred-channels") || "[]"); return Array.isArray(saved) ? saved.filter(x => typeof x === "string") : []; } catch { return []; } });
-  const toggleStar = (id: string) => setStarred(prev => { const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]; try { localStorage.setItem("dealflow-starred-channels", JSON.stringify(next)); } catch {} return next; });
-  const visibleChannels = chs.filter(ch => (!starsOnly || starred.includes(ch.id)) && `${ch.name} ${ch.id}`.toLowerCase().includes(channelQuery.toLowerCase())).sort((a,b) => Number((b.deals_24h || 0) > 0) - Number((a.deals_24h || 0) > 0) || Number(starred.includes(b.id)) - Number(starred.includes(a.id)) || (b.deals_24h || 0) - (a.deals_24h || 0) || String(a.name).localeCompare(String(b.name)));
+  const toggleStar = (id: string) => setStarred(prev => { const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]; try { localStorage.setItem("dealflow-starred-channels", JSON.stringify(next)); } catch { } return next; });
+  const visibleChannels = chs.filter(ch => (!starsOnly || starred.includes(ch.id)) && `${ch.name} ${ch.id}`.toLowerCase().includes(channelQuery.toLowerCase())).sort((a, b) => Number((b.deals_24h || 0) > 0) - Number((a.deals_24h || 0) > 0) || Number(starred.includes(b.id)) - Number(starred.includes(a.id)) || (b.deals_24h || 0) - (a.deals_24h || 0) || String(a.name).localeCompare(String(b.name)));
   const [loading, setLoading] = useState(true);
   const [channelSubTab, setChannelSubTab] = useState<"directory" | "heatmap" | "auto_rules">("directory");
   const [showAdd, setShowAdd] = useState(false);
@@ -4530,7 +4506,7 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
             const pretty = toChName(c.id);
             const isCustom = c.name && c.name !== c.id && c.name !== fallback;
             const finalName = isCustom ? c.name : (pretty !== fallback && pretty !== "Unknown") ? pretty : (c.name || c.id);
-            
+
             const existing = channelByCanonicalName[finalName];
             if (!existing || (c.deals_24h || 0) > (existing.deals_24h || 0)) {
               channelByCanonicalName[finalName] = {
@@ -4563,7 +4539,7 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
   const toggleChannel = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, active: !current } : c)));
     try {
-      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, { 
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/toggle`, {
         method: "PUT",
         headers: getAdminHeaders(false),
       });
@@ -4582,7 +4558,7 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
   const toggleAutoApproveTg = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve_tg: !current, auto_approve: !current } : c)));
     try {
-      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-tg`, { 
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-tg`, {
         method: "PUT",
         headers: getAdminHeaders(false),
       });
@@ -4599,7 +4575,7 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
   const toggleAutoApproveWeb = async (id: string, current: boolean) => {
     setChs(cs => cs.map(c => (c.id === id ? { ...c, auto_approve_web: !current } : c)));
     try {
-      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-web`, { 
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}/auto-approve-web`, {
         method: "PUT",
         headers: getAdminHeaders(false),
       });
@@ -4618,7 +4594,7 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
     const removed = chs.find(c => c.id === id);
     setChs(cs => cs.filter(c => c.id !== id));
     try {
-      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}`, { 
+      const res = await fetch(`${API_BASE}/api/v1/channels/config/${encodeURIComponent(id)}`, {
         method: "DELETE",
         headers: getAdminHeaders(false),
       });
@@ -4691,34 +4667,32 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
       {/* Live Worker Telemetry & Engine Health Deck */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-2xl glass-card border border-white/10 flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
-            systemHealth?.status === "ok"
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${systemHealth?.status === "ok"
               ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
               : systemHealth?.status === "degraded"
-              ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
-              : "bg-rose-500/15 border-rose-500/30 text-rose-400"
-          }`}>
+                ? "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                : "bg-rose-500/15 border-rose-500/30 text-rose-400"
+            }`}>
             <Zap size={16} />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${
-                systemHealth?.status === "ok"
+              <span className={`w-2 h-2 rounded-full ${systemHealth?.status === "ok"
                   ? "bg-emerald-400 animate-pulse"
                   : systemHealth?.status === "degraded"
-                  ? "bg-amber-400 animate-pulse"
-                  : "bg-rose-500"
-              }`} />
+                    ? "bg-amber-400 animate-pulse"
+                    : "bg-rose-500"
+                }`} />
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">FastAPI Engine</span>
             </div>
             <p className="text-xs font-bold text-white mt-0.5">
               {systemHealth?.status === "ok"
                 ? "Online (200 OK)"
                 : systemHealth?.status === "degraded"
-                ? "Degraded"
-                : systemHealth?.status === "checking"
-                ? "Checking..."
-                : "Offline (Unreachable)"}
+                  ? "Degraded"
+                  : systemHealth?.status === "checking"
+                    ? "Checking..."
+                    : "Offline (Unreachable)"}
             </p>
           </div>
         </div>
@@ -4767,22 +4741,20 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
       <div className="flex items-center gap-2 p-1 bg-white/[0.03] border border-white/10 rounded-2xl w-fit">
         <button
           onClick={() => setChannelSubTab("directory")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            channelSubTab === "directory"
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${channelSubTab === "directory"
               ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25"
               : "text-slate-400 hover:text-white hover:bg-white/5"
-          }`}
+            }`}
         >
           <Radio size={14} className="text-emerald-400" />
           <span>Channel Directory & Stream Config ({chs.length})</span>
         </button>
         <button
           onClick={() => setChannelSubTab("heatmap")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            channelSubTab === "heatmap"
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${channelSubTab === "heatmap"
               ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25"
               : "text-slate-400 hover:text-white hover:bg-white/5"
-          }`}
+            }`}
         >
           <Flame size={14} className="text-amber-400 fill-amber-400/20" />
           <span>24H Channel Velocity Heatmap</span>
@@ -4790,11 +4762,10 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
         </button>
         <button
           onClick={() => setChannelSubTab("auto_rules")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            channelSubTab === "auto_rules"
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${channelSubTab === "auto_rules"
               ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25"
               : "text-slate-400 hover:text-white hover:bg-white/5"
-          }`}
+            }`}
         >
           <Cpu size={14} className="text-emerald-300" />
           <span>🤖 Smart Auto-Rules v2</span>
@@ -4827,147 +4798,145 @@ function ChannelsView({ systemHealth }: { systemHealth?: SystemHealth }) {
             </button>
           </div>
 
-      {showAdd && (
-        <div className="flex items-center gap-2 p-3.5 rounded-2xl glass-panel border border-primary/30 animate-slide-up">
-          <input value={newChannelInput} onChange={e => setNewChannelInput(e.target.value)}
-            placeholder="Invite link: https://t.me/+... or username: @offerzone"
-            className="flex-1 px-3.5 py-2.5 rounded-xl text-xs font-mono text-white bg-slate-950/80 border border-white/10 focus:outline-none focus:border-primary/50"
-            onKeyDown={e => e.key === "Enter" && addChannel()} />
-          <button onClick={addChannel}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95">
-            Connect
-          </button>
-        </div>
-      )}
+          {showAdd && (
+            <div className="flex items-center gap-2 p-3.5 rounded-2xl glass-panel border border-primary/30 animate-slide-up">
+              <input value={newChannelInput} onChange={e => setNewChannelInput(e.target.value)}
+                placeholder="Invite link: https://t.me/+... or username: @offerzone"
+                className="flex-1 px-3.5 py-2.5 rounded-xl text-xs font-mono text-white bg-slate-950/80 border border-white/10 focus:outline-none focus:border-primary/50"
+                onKeyDown={e => e.key === "Enter" && addChannel()} />
+              <button onClick={addChannel}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white glow-pill-primary hover:opacity-90 active:scale-95">
+                Connect
+              </button>
+            </div>
+          )}
 
-      <div className="flow-directory-search"><Search size={16}/><input aria-label="Search channel directory" placeholder="Search channel name or username…" value={channelQuery} onChange={e => setChannelQuery(e.target.value)}/><button aria-pressed={starsOnly} onClick={() => setStarsOnly(v => !v)}><Star size={14}/>Starred</button><span>{visibleChannels.length} channels</span></div>
-      <p className="flow-directory-hint">Active sources first · Channels with no deals in 24h appear last · Stars stay on this browser</p>
-      {!loading && visibleChannels.length === 0 && <p role="status">No matching channels. Try another name or turn off Starred.</p>}
-      {/* Grid */}
-      <div className="flow-channel-directory grid grid-cols-1 md:grid-cols-2 gap-3.5">
-        {loading && chs.length === 0 ? (
-          <div className="col-span-2 text-center py-20 text-xs text-slate-400">Loading channels…</div>
-        ) : (
-          visibleChannels.map(ch => (
-            <div key={ch.id} data-zero-deals={(ch.deals_24h || 0) === 0} className="flow-channel-card p-4 rounded-2xl glass-card flex flex-col justify-between gap-3 border border-white/8 hover:border-white/15">
-              <div className="flex items-center gap-3.5">
-                <button className="flow-channel-star" aria-label={`${starred.includes(ch.id) ? "Unstar" : "Star"} ${ch.name || ch.id}`} aria-pressed={starred.includes(ch.id)} onClick={() => toggleStar(ch.id)}><Star size={17}/></button>
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-extrabold text-white flex-shrink-0 glow-pill-accent">
-                  {(ch.name || ch.id || "C")[0].toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0"
-                  onDoubleClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}
-                  title="Double-click to edit name">
-                  {editingId === ch.id ? (
+          <div className="flow-directory-search"><Search size={16} /><input aria-label="Search channel directory" placeholder="Search channel name or username…" value={channelQuery} onChange={e => setChannelQuery(e.target.value)} /><button aria-pressed={starsOnly} onClick={() => setStarsOnly(v => !v)}><Star size={14} />Starred</button><span>{visibleChannels.length} channels</span></div>
+          <p className="flow-directory-hint">Active sources first · Channels with no deals in 24h appear last · Stars stay on this browser</p>
+          {!loading && visibleChannels.length === 0 && <p role="status">No matching channels. Try another name or turn off Starred.</p>}
+          {/* Grid */}
+          <div className="flow-channel-directory grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {loading && chs.length === 0 ? (
+              <div className="col-span-2 text-center py-20 text-xs text-slate-400">Loading channels…</div>
+            ) : (
+              visibleChannels.map(ch => (
+                <div key={ch.id} data-zero-deals={(ch.deals_24h || 0) === 0} className="flow-channel-card p-4 rounded-2xl glass-card flex flex-col justify-between gap-3 border border-white/8 hover:border-white/15">
+                  <div className="flex items-center gap-3.5">
+                    <button className="flow-channel-star" aria-label={`${starred.includes(ch.id) ? "Unstar" : "Star"} ${ch.name || ch.id}`} aria-pressed={starred.includes(ch.id)} onClick={() => toggleStar(ch.id)}><Star size={17} /></button>
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-sm font-extrabold text-white flex-shrink-0 glow-pill-accent">
+                      {(ch.name || ch.id || "C")[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0"
+                      onDoubleClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}
+                      title="Double-click to edit name">
+                      {editingId === ch.id ? (
+                        <div className="flex items-center gap-2">
+                          <input autoFocus value={editName} onChange={e => setEditName(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === "Enter") saveAlias(ch.id, editName);
+                              if (e.key === "Escape") setEditingId(null);
+                            }}
+                            onBlur={() => saveAlias(ch.id, editName)}
+                            className="w-full px-2 py-1 rounded-lg text-xs font-bold text-white bg-slate-900 border border-primary/50 focus:outline-none" />
+                          <button onClick={() => saveAlias(ch.id, editName)} className="text-emerald-400 hover:text-emerald-300">
+                            <Check size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="cursor-pointer group flex flex-col" onClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}>
+                          <p className="text-xs font-bold text-white group-hover:text-primary transition-colors flex items-center gap-1.5">
+                            {ch.name || ch.id}
+                            <PenLine size={10} className="opacity-0 group-hover:opacity-100 text-slate-400" />
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-mono truncate mt-0.5">{ch.id}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {ch.health === "dead_link" || ch.health === "dead_link_warning" ? (
+                              <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1">
+                                <AlertTriangle size={10} /> Link Inactive / Dead
+                              </span>
+                            ) : (ch.deals_24h ?? 0) > 0 ? (
+                              <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Stream
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-medium px-2 py-0.5 rounded-md bg-white/5 text-slate-400 border border-white/10">
+                                0 deals in 24h
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col items-end flex-shrink-0">
+                      <span className="text-base font-extrabold font-mono text-white">
+                        {ch.deals_24h ?? 0}
+                      </span>
+                      <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">24h Deals</span>
+                    </div>
+                  </div>
+
+                  {/* Controls Footer */}
+                  <div className="flex items-center justify-between pt-2.5 border-t border-white/5 text-[11px]">
                     <div className="flex items-center gap-2">
-                      <input autoFocus value={editName} onChange={e => setEditName(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === "Enter") saveAlias(ch.id, editName);
-                          if (e.key === "Escape") setEditingId(null);
-                        }}
-                        onBlur={() => saveAlias(ch.id, editName)}
-                        className="w-full px-2 py-1 rounded-lg text-xs font-bold text-white bg-slate-900 border border-primary/50 focus:outline-none" />
-                      <button onClick={() => saveAlias(ch.id, editName)} className="text-emerald-400 hover:text-emerald-300">
-                        <Check size={14} />
+                      <span className={`w-2 h-2 rounded-full ${ch.active ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
+                      <span className="text-slate-400 font-medium">{ch.active ? "Listening" : "Paused"}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Update Invite Link */}
+                      <button onClick={() => {
+                        setUpdatingChannel({ id: ch.id, name: ch.name || ch.id, link: ch.invite_link || ch.id });
+                        setNewLinkInput("");
+                      }}
+                        className="w-7 h-7 rounded-xl flex items-center justify-center bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all shadow-sm"
+                        title="Update Invite Link / Reconnect">
+                        <LinkIcon size={12} />
+                      </button>
+
+                      {/* Dual Independent Auto-Post: Telegram & Website */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* 1. Telegram Auto-Post Toggle */}
+                        <button
+                          onClick={() => toggleAutoApproveTg(ch.id, Boolean(ch.auto_approve_tg ?? ch.auto_approve))}
+                          className={`text-[9.5px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${Boolean(ch.auto_approve_tg ?? ch.auto_approve)
+                              ? "bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-sm"
+                              : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
+                            }`}
+                          title="Toggle automatic broadcast to Telegram Channel (@dealsforindiachannel)"
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "bg-sky-400 animate-pulse" : "bg-slate-600"}`} />
+                          <span>✈️ TG {Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "ON" : "OFF"}</span>
+                        </button>
+
+                        {/* 2. Website Auto-Post Toggle */}
+                        <button
+                          onClick={() => toggleAutoApproveWeb(ch.id, Boolean(ch.auto_approve_web))}
+                          className={`text-[9.5px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${Boolean(ch.auto_approve_web)
+                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm"
+                              : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
+                            }`}
+                          title="Toggle automatic publishing to Website (Strictly requires verified product image)"
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${Boolean(ch.auto_approve_web) ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
+                          <span>🌐 Web {Boolean(ch.auto_approve_web) ? "ON" : "OFF"}</span>
+                        </button>
+                      </div>
+                      <button onClick={() => toggleChannel(ch.id, ch.active)}
+                        className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${ch.active ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white"}`} title={ch.active ? "Pause" : "Resume"}>
+                        {ch.active ? <Check size={12} /> : <X size={12} />}
+                      </button>
+                      <button onClick={() => deleteChannel(ch.id)}
+                        className="w-7 h-7 rounded-xl flex items-center justify-center bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-colors" title="Delete Channel">
+                        <Trash2 size={12} />
                       </button>
                     </div>
-                  ) : (
-                    <div className="cursor-pointer group flex flex-col" onClick={() => { setEditingId(ch.id); setEditName(ch.name || ch.id); }}>
-                      <p className="text-xs font-bold text-white group-hover:text-primary transition-colors flex items-center gap-1.5">
-                        {ch.name || ch.id}
-                        <PenLine size={10} className="opacity-0 group-hover:opacity-100 text-slate-400" />
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-mono truncate mt-0.5">{ch.id}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {ch.health === "dead_link" || ch.health === "dead_link_warning" ? (
-                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1">
-                            <AlertTriangle size={10} /> Link Inactive / Dead
-                          </span>
-                        ) : (ch.deals_24h ?? 0) > 0 ? (
-                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Stream
-                          </span>
-                        ) : (
-                          <span className="text-[9px] font-medium px-2 py-0.5 rounded-md bg-white/5 text-slate-400 border border-white/10">
-                            0 deals in 24h
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col items-end flex-shrink-0">
-                  <span className="text-base font-extrabold font-mono text-white">
-                    {ch.deals_24h ?? 0}
-                  </span>
-                  <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">24h Deals</span>
-                </div>
-              </div>
-
-              {/* Controls Footer */}
-              <div className="flex items-center justify-between pt-2.5 border-t border-white/5 text-[11px]">
-                <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${ch.active ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
-                  <span className="text-slate-400 font-medium">{ch.active ? "Listening" : "Paused"}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {/* Update Invite Link */}
-                  <button onClick={() => {
-                    setUpdatingChannel({ id: ch.id, name: ch.name || ch.id, link: ch.invite_link || ch.id });
-                    setNewLinkInput("");
-                  }}
-                    className="w-7 h-7 rounded-xl flex items-center justify-center bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500 hover:text-white transition-all shadow-sm"
-                    title="Update Invite Link / Reconnect">
-                    <LinkIcon size={12} />
-                  </button>
-
-                  {/* Dual Independent Auto-Post: Telegram & Website */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {/* 1. Telegram Auto-Post Toggle */}
-                    <button
-                      onClick={() => toggleAutoApproveTg(ch.id, Boolean(ch.auto_approve_tg ?? ch.auto_approve))}
-                      className={`text-[9.5px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
-                        Boolean(ch.auto_approve_tg ?? ch.auto_approve)
-                          ? "bg-sky-500/20 text-sky-300 border-sky-500/40 shadow-sm"
-                          : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
-                      }`}
-                      title="Toggle automatic broadcast to Telegram Channel (@dealsforindiachannel)"
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "bg-sky-400 animate-pulse" : "bg-slate-600"}`} />
-                      <span>✈️ TG {Boolean(ch.auto_approve_tg ?? ch.auto_approve) ? "ON" : "OFF"}</span>
-                    </button>
-
-                    {/* 2. Website Auto-Post Toggle */}
-                    <button
-                      onClick={() => toggleAutoApproveWeb(ch.id, Boolean(ch.auto_approve_web))}
-                      className={`text-[9.5px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1 cursor-pointer ${
-                        Boolean(ch.auto_approve_web)
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm"
-                          : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
-                      }`}
-                      title="Toggle automatic publishing to Website (Strictly requires verified product image)"
-                    >
-                      <span className={`w-1.5 h-1.5 rounded-full ${Boolean(ch.auto_approve_web) ? "bg-emerald-400 animate-pulse" : "bg-slate-600"}`} />
-                      <span>🌐 Web {Boolean(ch.auto_approve_web) ? "ON" : "OFF"}</span>
-                    </button>
                   </div>
-                  <button onClick={() => toggleChannel(ch.id, ch.active)}
-                    className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${ch.active ? "bg-slate-800 text-slate-400 hover:text-white" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white"}`} title={ch.active ? "Pause" : "Resume"}>
-                    {ch.active ? <Check size={12} /> : <X size={12} />}
-                  </button>
-                  <button onClick={() => deleteChannel(ch.id)}
-                    className="w-7 h-7 rounded-xl flex items-center justify-center bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white transition-colors" title="Delete Channel">
-                    <Trash2 size={12} />
-                  </button>
                 </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-      </>
+              ))
+            )}
+          </div>
+        </>
       )}
 
       {/* Update Channel Invite Link Modal */}
@@ -5485,7 +5454,7 @@ function Sidebar({ tab, setTab, pending, dark, setDark, soundAlerts, setSoundAle
       <div className="flow-sidebar-footer">
         <button className="flow-sound-control" role="switch" aria-checked={soundAlerts} aria-label="Sound alerts" onClick={() => {
           const next = !soundAlerts; setSoundAlerts(next);
-          try { localStorage.setItem("dealflow_sound_alerts", String(next)); } catch {}
+          try { localStorage.setItem("dealflow_sound_alerts", String(next)); } catch { }
           if (next) playAlertChime();
         }}><span className="flow-sound-icon">{soundAlerts ? <Volume2 size={16} /> : <VolumeX size={16} />}</span><span>Sound alerts</span><span className="flow-switch" aria-hidden="true"><span /></span></button>
         <section className="flow-engine-panel" aria-label="Backend connection status">
@@ -5510,7 +5479,7 @@ export default function App() {
       if (v === "channels") return "Channels";
       if (v === "videos") return "Videos";
       if (v === "settings") return "Settings";
-    } catch {}
+    } catch { }
     return "Review";
   });
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -5615,7 +5584,7 @@ export default function App() {
         tg.ready();
         tg.expand();
       }
-    } catch {}
+    } catch { }
   }, []);
 
   const undoTimers = useRef<Record<string, any>>({});
@@ -5701,13 +5670,13 @@ export default function App() {
                 loadDeals();
               }, 1500);
             }
-          } catch {}
+          } catch { }
         };
         ws.onclose = () => {
           if (stopped) return;
           reconnectTimer = setTimeout(connect, 3000);
         };
-      } catch {}
+      } catch { }
     };
     connect();
     return () => {
@@ -5731,7 +5700,7 @@ export default function App() {
       if (tg?.HapticFeedback) {
         tg.HapticFeedback.impactOccurred("medium");
       }
-    } catch {}
+    } catch { }
 
     const previousDeal = deals.find(d => d.id === id);
     const duplicateIds: string[] = (previousDeal as any)?.duplicateIds || (previousDeal as any)?.duplicate_hashes || [];
@@ -5767,7 +5736,7 @@ export default function App() {
         if (ok) {
           toast.success("✨ Deal broadcast successfully!", { id: `approve-${id}` });
           for (const dupId of duplicateIds) {
-            apiApprove(dupId, resolvedChanges).catch(() => {});
+            apiApprove(dupId, resolvedChanges).catch(() => { });
           }
         } else {
           toast.error("⚠️ Broadcast failed. Restoring deal to pending.", { id: `approve-${id}` });
@@ -5807,7 +5776,7 @@ export default function App() {
           setDeals(prev => prev.map(d => affectedIds.has(d.id) ? { ...d, status: previousDeal?.status || "pending" } : d));
         } else {
           for (const dupId of duplicateIds) {
-            apiApprove(dupId, resolvedChanges).catch(() => {});
+            apiApprove(dupId, resolvedChanges).catch(() => { });
           }
         }
       }
@@ -5855,7 +5824,7 @@ export default function App() {
       if (!isCancelled) {
         await apiReject(id);
         for (const dupId of duplicateIds) {
-          apiReject(dupId).catch(() => {});
+          apiReject(dupId).catch(() => { });
         }
       }
     }, 5000);
@@ -5919,9 +5888,8 @@ export default function App() {
           const iconType = id === "Review" ? "review" : id === "Posted" ? "broadcast" : id === "Channels" ? "channels" : id === "Videos" ? "videos" : "settings";
           return (
             <button key={id} onClick={() => setTab(id)}
-              className={`relative flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-all ${
-                active ? "text-indigo-400 font-extrabold" : "text-slate-400 hover:text-white"
-              }`}>
+              className={`relative flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl text-[10px] font-bold transition-all ${active ? "text-indigo-400 font-extrabold" : "text-slate-400 hover:text-white"
+                }`}>
               <Nav3DIcon icon={iconType as "review" | "broadcast" | "channels" | "videos" | "settings"} active={active} />
               <span className="text-[9.5px] tracking-normal">{label}</span>
               {id === "Review" && pendingCount > 0 && (
