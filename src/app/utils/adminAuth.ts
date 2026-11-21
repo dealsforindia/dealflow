@@ -9,12 +9,9 @@ export function getAdminToken(): string | null {
     }
     const stored = localStorage.getItem("dealflow_admin_token");
     if (stored) return stored;
-    // Default master admin token so curator review deck automatically connects
-    const defaultToken = "df_adm_310e5cb36e1bab32dab87ab0f088e4583765f9c0b2b6d685";
-    localStorage.setItem("dealflow_admin_token", defaultToken);
-    return defaultToken;
+    return null;
   } catch {
-    return "df_adm_310e5cb36e1bab32dab87ab0f088e4583765f9c0b2b6d685";
+    return null;
   }
 }
 
